@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "parse5": "^7.3.0",
+    "parse5": "^8.0.1",
     "playwright": "^1.62.1",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3",
