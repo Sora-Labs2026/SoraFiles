@@ -58,6 +58,20 @@ Sora Files uses the following open-source libraries for local file processing. C
 - Source: https://github.com/101arrowz/fflate
 - Use: creating local ZIP downloads and validating DOCX containers
 
+## ag-psd
+
+- Copyright ag-psd contributors
+- License: MIT
+- Source: https://github.com/Agamnentzar/ag-psd
+- Use: reading and flattening supported PSD image documents in the browser
+
+## UTIF.js
+
+- Copyright Photopea and UTIF.js contributors
+- License: MIT
+- Source: https://github.com/photopea/UTIF.js
+- Use: reading supported TIFF image data in the browser
+
 ## Tesseract.js & Tesseract.js Core
 
 - Copyright Jerome Wu and Tesseract.js contributors

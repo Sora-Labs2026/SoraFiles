@@ -26,6 +26,9 @@ CLAUDE.md
 Questions.txt
 MASTER_REFERENCE*.txt
 SoraFiles_*_Prompt.txt
+Sora_Files_*_Prompt.txt
+Sora*Master*Prompt*.txt
+pasted-text.txt
 00-*.txt
 [0-9][0-9]-*.txt
 reference image.png
@@ -33,6 +36,7 @@ design-system/
 *.zip
 
 # logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -48,3 +52,8 @@ pnpm-debug.log*
 .DS_Store
 .idea/
 .vscode/
+Thumbs.db
+Desktop.ini
+coverage/
+playwright-report/
+test-results/

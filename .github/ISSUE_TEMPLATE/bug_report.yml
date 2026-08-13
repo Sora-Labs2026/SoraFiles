@@ -1,0 +1,68 @@
+name: Bug report
+description: Report a reproducible problem with SoraFiles.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve SoraFiles. Do not include confidential files, personal data, credentials, or exploitable security details. Report security issues privately using the security policy.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+      placeholder: A concise description of the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use synthetic or non-sensitive files only.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Choose ...
+        4. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and environment
+      description: Include browser/version, operating system, device, and relevant file format or approximate size.
+      placeholder: Firefox 140, Windows 11, PDF about 4 MB
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Use the commit SHA when running locally, if known.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs or screenshots
+      description: Remove filenames, file contents, credentials, personal data, and other sensitive information first.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed sensitive information and did not attach confidential files.
+          required: true
+        - label: This is not a security vulnerability or privacy leak.
+          required: true

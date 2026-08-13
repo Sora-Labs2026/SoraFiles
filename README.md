@@ -8,7 +8,7 @@ Free, privacy-first PDF and image tools that run locally in your browser.
 
 > **Active development:** this repository is an early public snapshot of SoraFiles after its verified homepage and design-system work. The application is usable today, but its processing architecture, documentation, and contributor experience are still being hardened in public.
 
-[Use SoraFiles](https://sorafiles.com) · [Report a security issue](SECURITY.md) · [Contribute](CONTRIBUTING.md)
+[Use SoraFiles](https://sorafiles.com) · [Source code](https://github.com/Sora-Labs2026/SoraFiles) · [Report a security issue](SECURITY.md) · [Contribute](CONTRIBUTING.md)
 
 ## Why SoraFiles exists
 
@@ -57,15 +57,29 @@ SoraFiles shows relevant tradeoffs before processing and rejects formats or vari
 - Static deployment through Cloudflare Workers assets
 - Real-output browser tests that parse generated PDFs, DOCX files, ZIP archives, and images
 
-## Run locally
+## Local development
 
-Requirements: Node.js 22.12 or newer.
+Requirements:
+
+- Node.js 22.12 or newer (`.nvmrc` is provided)
+- npm and the committed `package-lock.json`
+- Playwright Chromium only when running browser tests
 
 ```bash
 npm ci
 npm run verify:ocr
 npm run dev
 ```
+
+No environment variables are required for ordinary development or file processing. Copy `.env.example` only when you need its documented optional Astro build flag; browser-test overrides are set in your shell. Never put credentials or private files in `.env`.
+
+Optional configuration:
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `PUBLIC_ADSENSE_ENABLED` | Include the existing AdSense loader in a manual Astro build | `false` |
+| `SORA_BASE_URL` | Point browser tests at an already-running preview; set in your shell | `http://localhost:4321` |
+| `SORA_BROWSER_PATH` | Use an explicit Chromium-compatible executable in browser tests; set in your shell | Playwright Chromium |
 
 Astro will print the local development URL. To create and preview a production build:
 
@@ -74,12 +88,21 @@ npm run build
 npm run preview
 ```
 
-Useful verification commands:
+Run the complete non-browser validation baseline with:
 
 ```bash
-npx astro check
+npm run check
+```
+
+The underlying focused commands are:
+
+```bash
+npm run typecheck
+npm run verify:brand
+npm run build
 npm run test:unit
 npm run validate:i18n
+npm run validate:seo
 npm run test:tools:smoke
 ```
 
@@ -87,6 +110,20 @@ Browser tests require a locally installed Playwright Chromium build:
 
 ```bash
 npx playwright install chromium
+```
+
+`npm run test:tools` runs the longer real-output and recovery suite. `npm run test:site` builds the site and checks representative routes, responsive layouts, and no-JavaScript rendering.
+
+## Repository structure
+
+```text
+src/pages/       Astro routes
+src/components/  shared UI and local tool workbenches
+src/lib/         local OCR, PDF, and discovery logic
+src/i18n/        19-language content contracts
+public/          static icons, PDF.js, and integrity-pinned OCR assets
+scripts/         build and validation utilities
+tests/           unit, browser, fixtures, and real-output validation
 ```
 
 ## Project status
@@ -111,7 +148,7 @@ This roadmap describes user-facing outcomes only. Internal architecture, impleme
 
 ## Contributing and security
 
-Early issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes. Report potential vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+Early issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) before proposing changes. Use the GitHub issue forms for bugs and feature requests. Report potential vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## Sora Labs
 
@@ -126,3 +163,7 @@ SoraFiles is built by **Sora Labs**.
 ## License
 
 SoraFiles is licensed under the [GNU Affero General Public License v3.0 only](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for bundled dependency notices.
+
+Copyright © 2026 Sora Labs.
+
+This repository contains the public source for released SoraFiles code and public development work. Credentials, private infrastructure, internal planning, and security-sensitive operational material are not part of the application source and are not published.
