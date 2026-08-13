@@ -498,9 +498,10 @@ async function runPdfCompression(page) {
 }
 
 await ensureAstroServer();
-const executablePath = process.env.SORA_BROWSER_PATH ??
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
-const browser = await chromium.launch({ headless: true, executablePath });
+const browserLaunchOptions = process.env.SORA_BROWSER_PATH
+  ? { headless: true, executablePath: process.env.SORA_BROWSER_PATH }
+  : { headless: true };
+const browser = await chromium.launch(browserLaunchOptions);
 
 try {
   const page = await browser.newPage({ acceptDownloads: true });
