@@ -101,12 +101,13 @@ Currently verified:
 
 Actively being improved:
 
-- Shared cancellable PDF processing and memory/resource safeguards
-- Stronger worker boundaries and runtime output validation
-- Third-party script isolation on processing routes
-- Contributor documentation, automation, and release reproducibility
+- Faster, more dependable PDF tools for larger and more complex files
+- Clear progress, cancellation, and helpful recovery when a device reaches its limits
+- Higher-quality PDF compression and conversion with honest output tradeoffs
+- Stronger privacy protection across file-tool pages
+- Broader accessibility, language, and browser-compatibility coverage
 
-This is intentionally a high-level public roadmap. Internal development prompts and operational planning are not part of the repository.
+This roadmap describes user-facing outcomes only. Internal architecture, implementation plans, security-sensitive details, development prompts, and operational planning are not published.
 
 ## Contributing and security
 
