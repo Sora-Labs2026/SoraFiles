@@ -1,0 +1,50 @@
+# build output
+dist/
+.astro/
+.wrangler/
+.wrangler-state/
+
+# dependencies
+node_modules/
+
+# task-local evidence and orchestration ledgers
+.artifacts/
+.superpowers/
+
+# private project operations and AI continuity
+.ai/
+.agent/
+.agents/
+.claude/
+.codex/
+docs/architecture/
+docs/superpowers/
+skill-observations/
+AI WORK LOG.txt
+AGENTS.md
+CLAUDE.md
+Questions.txt
+MASTER_REFERENCE*.txt
+SoraFiles_*_Prompt.txt
+00-*.txt
+[0-9][0-9]-*.txt
+reference image.png
+design-system/
+*.zip
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# environment variables
+.env
+.env.production
+.env.*
+!.env.example
+
+# operating-system and IDE files
+.DS_Store
+.idea/
+.vscode/

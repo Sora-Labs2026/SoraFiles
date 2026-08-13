@@ -1,0 +1,21 @@
+---
+export interface FaqItem { question: string; answer: string; }
+interface Props { items: FaqItem[]; title?: string; }
+const { items, title = 'Questions about this tool' } = Astro.props;
+---
+<section aria-labelledby="tool-faq-heading" class="border-t border-line bg-canvas px-5 py-18 sm:px-6 sm:py-24">
+  <div class="mx-auto max-w-4xl">
+    <h2 id="tool-faq-heading" class="text-balance text-[clamp(1.75rem,4vw,2.5rem)] font-semibold leading-tight tracking-[-0.04em] text-ink">{title}</h2>
+    <div class="mt-8 divide-y divide-line border-y border-line">
+      {items.map(({ question, answer }) => (
+        <details class="group">
+          <summary class="flex min-h-16 list-none items-center justify-between gap-5 py-4 font-medium text-ink marker:content-none">
+            <span>{question}</span>
+            <svg aria-hidden="true" viewBox="0 0 16 16" class="h-4 w-4 shrink-0 text-muted transition-transform duration-200 group-open:rotate-45 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
+          </summary>
+          <p class="max-w-3xl pb-6 text-sm leading-7 text-muted">{answer}</p>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>

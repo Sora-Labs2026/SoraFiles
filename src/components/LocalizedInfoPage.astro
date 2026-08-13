@@ -1,0 +1,9 @@
+---
+import type { LocalizedInfoPage } from '../i18n/types';
+interface Props { page: LocalizedInfoPage; }
+const { page } = Astro.props;
+---
+<main id="main">
+  <section class="grid-surface border-b border-line px-5 py-16 sm:px-6 sm:py-24"><div class="mx-auto max-w-5xl"><h1 class="max-w-4xl text-balance text-[clamp(2.4rem,6vw,4.5rem)] font-semibold leading-[1] tracking-[-0.05em]">{page.h1}</h1><p class="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted">{page.intro}</p>{page.updated && <p class="mt-5 text-sm text-muted">{page.updated}</p>}</div></section>
+  <article class="mx-auto max-w-3xl px-5 py-16 sm:px-6 sm:py-24"><div class="space-y-10">{page.sections.map((section) => <section><h2 class="text-xl font-semibold text-ink">{section.heading}</h2>{section.paragraphs.map((paragraph) => <p class="mt-3 text-base leading-8 text-muted">{paragraph}</p>)}</section>)}</div></article>
+</main>

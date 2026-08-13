@@ -1,0 +1,155 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+const description = 'Contact Sora Files support with product questions, privacy requests, legal notices, bug reports, feature requests, or accessibility feedback.';
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  name: 'Contact Sora Files',
+  url: 'https://sorafiles.com/contact',
+  description,
+  mainEntity: { '@type': 'WebSite', name: 'Sora Files', url: 'https://sorafiles.com/' },
+};
+---
+
+<Layout title="Contact Sora Files | Product & Privacy Support" {description} canonicalPath="/contact" {schema}>
+  <Header />
+  <main id="main">
+    <section class="grid-surface relative overflow-hidden border-b border-line px-5 py-16 sm:px-6 sm:py-24">
+      <div class="soft-noise pointer-events-none absolute inset-0" aria-hidden="true"></div>
+      <div class="relative mx-auto max-w-5xl">
+        <h1 class="max-w-4xl text-balance text-[clamp(2.25rem,5.5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.05em]">How can we help?</h1>
+        <p class="mt-6 max-w-2xl text-pretty text-lg leading-8 text-muted">Send a question, report a problem, or suggest the next Sora Files tool. Your message will be delivered to <strong class="font-medium text-ink">Sora Files support.</strong></p>
+      </div>
+    </section>
+
+    <section aria-labelledby="contact-form-heading" class="px-5 py-16 sm:px-6 sm:py-24">
+      <div class="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:items-start">
+        <aside class="lg:sticky lg:top-24">
+          <p class="eyebrow text-xs font-semibold text-violet">Before you send</p>
+          <h2 id="contact-form-heading" class="mt-3 text-balance text-3xl font-semibold tracking-[-0.035em]">Give us enough detail to help.</h2>
+          <ul class="mt-6 space-y-4 text-sm leading-7 text-muted">
+            <li class="flex gap-3"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue" aria-hidden="true"></span><span>For tool problems, include the browser, device, file format, approximate size, and exact error message.</span></li>
+            <li class="flex gap-3"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue" aria-hidden="true"></span><span>Remove passwords, financial information, signatures, and other sensitive content from attachments.</span></li>
+            <li class="flex gap-3"><span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue" aria-hidden="true"></span><span>Keep source files on your device unless an attachment is genuinely necessary to explain the issue.</span></li>
+          </ul>
+          <div class="mt-8 rounded-card border border-line bg-canvas p-5 text-sm leading-7 text-muted">
+            <p class="font-medium text-ink">Attachment limit</p>
+            <p class="mt-1">One optional PDF, image, document, text file, or ZIP up to 10 MB.</p>
+          </div>
+        </aside>
+
+        <div class="overflow-hidden rounded-card border border-line bg-surface shadow-card">
+          <div id="sent-message" hidden role="status" class="border-b border-green/20 bg-green-soft px-6 py-4 text-sm leading-6 text-green sm:px-8">Thank you. Your message was submitted successfully.</div>
+          <form data-contact-form id="contact-form" action="https://formsubmit.co/soralabs2026@gmail.com" method="POST" enctype="multipart/form-data" class="space-y-6 p-6 sm:p-8">
+            <input type="hidden" name="_next" value="https://sorafiles.com/contact?sent=1" />
+            <input id="email-subject" type="hidden" name="_subject" value="Sora Files: General Question" />
+            <input type="hidden" name="_template" value="table" />
+            <input type="text" name="_honey" class="hidden" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+            <div class="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label for="contact-name" class="block text-sm font-medium text-ink">Name</label>
+                <input id="contact-name" name="Name" type="text" autocomplete="name" required maxlength="100" placeholder="Your name…" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3.5 text-sm text-ink placeholder:text-muted/70 focus:border-blue focus:ring-2 focus:ring-blue/15" />
+              </div>
+              <div>
+                <label for="contact-email" class="block text-sm font-medium text-ink">Email address</label>
+                <input id="contact-email" name="email" type="email" autocomplete="email" required maxlength="254" spellcheck="false" placeholder="you@example.com…" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3.5 text-sm text-ink placeholder:text-muted/70 focus:border-blue focus:ring-2 focus:ring-blue/15" />
+              </div>
+            </div>
+
+            <div>
+              <label for="contact-category" class="block text-sm font-medium text-ink">Subject</label>
+              <select id="contact-category" name="Category" autocomplete="off" required class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3.5 text-sm text-ink focus:border-blue focus:ring-2 focus:ring-blue/15">
+                <option value="General Question">General Question</option>
+                <option value="Product Support">Product Support</option>
+                <option value="Bug Report">Bug Report</option>
+                <option value="Feature Request">Feature Request</option>
+                <option value="Privacy Question">Privacy Question</option>
+                <option value="Legal Notice">Legal Notice</option>
+                <option value="Accessibility Feedback">Accessibility Feedback</option>
+                <option value="Partnership or Press">Partnership or Press</option>
+                <option value="Open Source or Licensing">Open Source or Licensing</option>
+                <option value="Security Report">Security Report</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="contact-message" class="block text-sm font-medium text-ink">Message</label>
+              <textarea id="contact-message" name="Message" autocomplete="off" required minlength="20" maxlength="5000" rows="8" placeholder="Describe your question or issue…" class="mt-2 w-full resize-y rounded-control border border-line bg-surface px-3.5 py-3 text-sm leading-6 text-ink placeholder:text-muted/70 focus:border-blue focus:ring-2 focus:ring-blue/15"></textarea>
+              <div class="mt-2 flex justify-between gap-4 text-xs text-muted"><span>Minimum 20 characters</span><output id="message-count" for="contact-message" class="tabular-nums">0 / 5,000</output></div>
+            </div>
+
+            <div data-contact-attachment-disclosure>
+              <label for="contact-attachment" class="block text-sm font-medium text-ink">Attachment <span class="font-normal text-muted">(optional)</span></label>
+              <div class="mt-2 rounded-control border border-dashed border-line-strong bg-canvas p-4 focus-within:border-blue focus-within:ring-2 focus-within:ring-blue/15">
+                <input id="contact-attachment" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx,.txt,.zip,application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip" aria-describedby="attachment-help attachment-status" class="block w-full text-sm text-muted file:mr-4 file:min-h-10 file:rounded-control file:border-0 file:bg-surface file:px-4 file:text-sm file:font-medium file:text-ink file:shadow-small hover:file:bg-canvas" />
+                <p id="attachment-help" class="mt-3 text-xs leading-5 text-muted">PDF, JPG, PNG, WebP, HEIC, HEIF, DOC, DOCX, TXT, or ZIP · maximum 10 MB</p>
+                <p id="attachment-status" class="mt-2 text-xs font-medium text-ink" aria-live="polite"></p>
+              </div>
+            </div>
+
+            <label class="flex cursor-pointer items-start gap-3 rounded-control bg-canvas p-4 text-sm leading-6 text-muted">
+              <input id="contact-consent" name="Consent" type="checkbox" value="Agreed" required class="mt-1.5 shrink-0 accent-blue" />
+              <span>I understand that my name, email, message, and optional attachment will be transmitted to FormSubmit for delivery to Sora Files support, as explained in the <a href="/privacy" class="font-medium text-blue underline decoration-blue/30 underline-offset-4 hover:decoration-blue">Privacy Policy</a>.</span>
+            </label>
+
+            <div id="form-error" hidden role="alert" class="rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></div>
+            <button id="submit-contact" type="submit" class="inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-6 text-sm font-medium text-action-contrast shadow-small transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-60 sm:w-auto">Send Message</button>
+            <p class="text-xs leading-5 text-muted">Spam protection may ask you to complete a verification step. Please do not send confidential files.</p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('#contact-form');
+  const category = document.querySelector<HTMLSelectElement>('#contact-category');
+  const emailSubject = document.querySelector<HTMLInputElement>('#email-subject');
+  const message = document.querySelector<HTMLTextAreaElement>('#contact-message');
+  const messageCount = document.querySelector<HTMLOutputElement>('#message-count');
+  const attachment = document.querySelector<HTMLInputElement>('#contact-attachment');
+  const attachmentStatus = document.querySelector<HTMLElement>('#attachment-status');
+  const errorBox = document.querySelector<HTMLElement>('#form-error');
+  const submitButton = document.querySelector<HTMLButtonElement>('#submit-contact');
+  const sentMessage = document.querySelector<HTMLElement>('#sent-message');
+
+  if (new URLSearchParams(window.location.search).get('sent') === '1' && sentMessage) {
+    sentMessage.hidden = false;
+  }
+
+  category?.addEventListener('change', () => {
+    if (emailSubject) emailSubject.value = `Sora Files: ${category.value}`;
+  });
+
+  message?.addEventListener('input', () => {
+    if (messageCount) messageCount.value = `${message.value.length.toLocaleString()} / 5,000`;
+  });
+
+  attachment?.addEventListener('change', () => {
+    if (!attachmentStatus || !errorBox) return;
+    const file = attachment.files?.[0];
+    errorBox.hidden = true;
+    errorBox.textContent = '';
+    attachmentStatus.textContent = file ? `${file.name} · ${(file.size / 1_000_000).toFixed(2)} MB` : '';
+    if (file && file.size > 10_000_000) {
+      attachment.value = '';
+      attachmentStatus.textContent = '';
+      errorBox.textContent = 'The attachment is larger than 10 MB. Choose a smaller file, remove it, or describe the issue without an attachment.';
+      errorBox.hidden = false;
+      attachment.focus();
+    }
+  });
+
+  form?.addEventListener('submit', () => {
+    if (!submitButton) return;
+    submitButton.disabled = true;
+    submitButton.textContent = 'Sending…';
+  });
+</script>

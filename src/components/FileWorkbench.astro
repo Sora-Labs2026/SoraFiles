@@ -1,0 +1,544 @@
+---
+import type { LocalizedToolCopy } from '../i18n/types';
+import type { LocalePath } from '../i18n/config';
+import { getWorkbenchMessages } from '../i18n/workbench';
+interface Props { locale?: LocalePath; copy?: LocalizedToolCopy; }
+const { locale = 'en', copy = { title: 'Compress Images', description: 'Compress and resize JPG, PNG, WebP, HEIC, or HEIF locally.', note: 'Auto targets a useful reduction while preserving acceptable quality. Metadata may not be preserved; the original is never changed.' } as LocalizedToolCopy } = Astro.props;
+const m = getWorkbenchMessages(locale);
+---
+<section data-workbench id="image-tool" aria-labelledby="tool-heading" class="relative mx-auto max-w-5xl scroll-mt-24 px-5 sm:px-6" data-localized={locale !== 'en' ? 'true' : 'false'} data-copy-description={copy.description} data-copy-note={copy.note}>
+  <div class="overflow-hidden rounded-card bg-surface shadow-card">
+    <div class="border-b border-line px-5 py-4 sm:px-7">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="eyebrow text-xs font-semibold text-blue">{m.localImageTool}</p>
+          <h2 id="tool-heading" class="mt-1 text-lg font-semibold tracking-tight">{copy.title}</h2>
+        </div>
+        <div class="inline-flex items-center gap-2 rounded-full bg-green-soft px-3 py-1.5 text-xs font-medium text-green">
+          <span class="h-2 w-2 rounded-full bg-green" aria-hidden="true"></span>
+          {m.processedHere}
+        </div>
+      </div>
+    </div>
+
+    <div id="empty-state" class="p-4 sm:p-7">
+      <div id="drop-zone" class="group relative flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-line-strong bg-canvas px-5 py-12 text-center transition-colors hover:border-blue/60 hover:bg-surface sm:min-h-80">
+        <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-surface shadow-small transition-transform group-hover:-translate-y-0.5 motion-reduce:transform-none">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7">
+            <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" stroke-linecap="round" />
+          </svg>
+        </div>
+        <h3 class="mt-5 text-xl font-semibold tracking-tight">{m.chooseImage}</h3>
+        <p class="mt-2 max-w-md text-sm leading-6 text-muted">JPG, PNG, WebP, HEIC, HEIF · {m.processedHere}</p>
+        <button id="choose-file" type="button" class="mt-6 inline-flex min-h-12 items-center justify-center rounded-control bg-action px-6 text-sm font-medium text-action-contrast shadow-small transition-colors hover:bg-action-hover">
+          {m.chooseImage}
+        </button>
+        <p class="mt-3 hidden text-xs text-muted sm:block">{m.dragDrop}</p>
+        <input id="file-input" name="imageFile" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" aria-label={m.chooseImage} aria-describedby="file-help" />
+        <p id="file-help" class="sr-only">{copy.description}</p>
+        <p id="file-error" hidden role="alert" class="mt-4 max-w-md break-words rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
+      </div>
+    </div>
+
+    <div id="work-state" hidden class="grid lg:grid-cols-[1.12fr_0.88fr]">
+      <div class="border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
+        <div class="flex items-start gap-4">
+          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-blue-soft text-blue">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7">
+              <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+              <circle cx="9" cy="10" r="1.5" />
+              <path d="m5 17 4.5-4 3.2 2.8 2.3-2 4 3.2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p id="file-name" class="truncate text-sm font-semibold"></p>
+            <p id="file-meta" class="mt-1 text-xs text-muted"></p>
+          </div>
+          <button id="clear-file" type="button" class="inline-flex min-h-10 items-center rounded-control px-3 text-sm text-muted transition-colors hover:bg-canvas hover:text-ink">{m.remove}</button>
+        </div>
+
+        <div class="mt-6 overflow-hidden rounded-xl border border-line bg-canvas">
+          <img id="source-preview" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt={copy.title} width="1600" height="900" class="h-64 w-full object-contain sm:h-80" />
+        </div>
+
+        <div id="analysis-note" class="mt-4 rounded-control bg-blue-soft px-4 py-3 text-sm leading-6 text-blue-strong"></div>
+      </div>
+
+      <form data-workbench-controls id="settings-form" class="p-5 sm:p-7">
+        <fieldset>
+          <legend class="text-sm font-semibold">{m.compressionGoal}</legend>
+          <div class="mt-3 grid grid-cols-3 rounded-control bg-canvas p-1 text-sm">
+            <label class="cursor-pointer">
+              <input class="peer sr-only" type="radio" name="mode" value="auto" checked />
+              <span class="flex min-h-10 items-center justify-center rounded-md px-2 text-muted peer-checked:bg-surface peer-checked:text-ink peer-checked:shadow-small">{m.auto}</span>
+            </label>
+            <label class="cursor-pointer">
+              <input class="peer sr-only" type="radio" name="mode" value="target" />
+              <span class="flex min-h-10 items-center justify-center rounded-md px-2 text-muted peer-checked:bg-surface peer-checked:text-ink peer-checked:shadow-small">{m.targetSize}</span>
+            </label>
+            <label class="cursor-pointer">
+              <input class="peer sr-only" type="radio" name="mode" value="percent" />
+              <span class="flex min-h-10 items-center justify-center rounded-md px-2 text-muted peer-checked:bg-surface peer-checked:text-ink peer-checked:shadow-small">{m.reduceBy}</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div id="target-controls" hidden class="mt-5">
+          <label for="target-kb" class="text-sm font-medium">{m.keepUnder}</label>
+          <div class="mt-2 flex items-center rounded-control border border-line bg-surface focus-within:border-blue focus-within:ring-2 focus-within:ring-blue/15">
+            <input id="target-kb" name="targetKb" type="number" inputmode="numeric" autocomplete="off" min="20" max="50000" value="500" class="min-h-12 w-full rounded-control px-3 text-sm outline-none" />
+            <span class="pr-4 text-sm text-muted">KB</span>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-2" aria-label={m.targetSize}>
+            <button type="button" data-target="100" class="rounded-full border border-line px-3 py-1.5 text-xs text-muted hover:border-line-strong hover:text-ink">100 KB</button>
+            <button type="button" data-target="200" class="rounded-full border border-line px-3 py-1.5 text-xs text-muted hover:border-line-strong hover:text-ink">200 KB</button>
+            <button type="button" data-target="500" class="rounded-full border border-line px-3 py-1.5 text-xs text-muted hover:border-line-strong hover:text-ink">500 KB</button>
+            <button type="button" data-target="1000" class="rounded-full border border-line px-3 py-1.5 text-xs text-muted hover:border-line-strong hover:text-ink">1 MB</button>
+          </div>
+        </div>
+
+        <div id="percent-controls" hidden class="mt-5">
+          <div class="flex items-center justify-between gap-4">
+            <label for="reduction-percent" class="text-sm font-medium">{m.approximateReduction}</label>
+            <output id="percent-output" for="reduction-percent" class="font-mono text-sm">50%</output>
+          </div>
+          <input id="reduction-percent" name="reductionPercent" type="range" min="10" max="80" step="5" value="50" class="mt-3 w-full accent-ink" />
+        </div>
+
+        <div class="mt-5">
+          <label for="output-format" class="text-sm font-medium">{m.outputFormat}</label>
+          <select id="output-format" name="outputFormat" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink focus:border-blue focus:ring-2 focus:ring-blue/15">
+            <option value="image/jpeg">JPG</option>
+            <option value="image/webp">WebP</option>
+            <option value="image/png">PNG</option>
+          </select>
+        </div>
+
+        <div id="format-warning" hidden role="status" class="mt-4 rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></div>
+
+        <details class="mt-5 rounded-control border border-line px-4 py-3">
+          <summary class="cursor-pointer text-sm font-medium">{m.whatChanges}</summary>
+          <p class="mt-3 text-sm leading-6 text-muted">{copy.note}</p>
+        </details>
+
+        <button id="process-file" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-60">
+          {m.process}
+        </button>
+        <p data-workbench-status id="process-status" class="mt-3 min-h-5 text-center text-xs text-muted" aria-live="polite"></p>
+      </form>
+    </div>
+
+    <div data-workbench-result id="result-state" hidden class="border-t border-line bg-canvas p-5 sm:p-7">
+      <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+        <div>
+          <div class="inline-flex items-center gap-2 text-sm font-semibold text-green">
+            <svg aria-hidden="true" viewBox="0 0 20 20" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 10 4 4 8-8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            {m.ready}
+          </div>
+          <p id="result-stats" class="mt-2 text-sm text-muted"></p>
+        </div>
+        <a id="download-result" class="inline-flex min-h-12 items-center justify-center rounded-control bg-blue px-6 text-sm font-medium text-white transition-colors hover:bg-blue-strong">{m.download}</a>
+      </div>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        <figure class="overflow-hidden rounded-xl border border-line bg-surface">
+          <img id="before-preview" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt={`${copy.title} · ${m.original}`} width="1600" height="900" class="h-48 w-full object-contain" />
+          <figcaption class="border-t border-line px-4 py-2 text-xs text-muted">{m.original}</figcaption>
+        </figure>
+        <figure class="overflow-hidden rounded-xl border border-line bg-surface">
+          <img id="after-preview" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt={`${copy.title} · ${m.newFile}`} width="1600" height="900" class="h-48 w-full object-contain" />
+          <figcaption class="border-t border-line px-4 py-2 text-xs text-muted">{m.newFile}</figcaption>
+        </figure>
+      </div>
+      <p id="result-warning" hidden class="mt-4 rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
+    </div>
+  </div>
+
+  <p class="mt-4 text-center text-xs leading-5 text-muted">{copy.note}</p>
+</section>
+
+<script type="application/json" id="file-workbench-messages" is:inline set:html={JSON.stringify(m).replace(/</g, '\\u003c')}></script>
+
+<script>
+  import { setDisplayedFilename } from '../utils/filename';
+  import type { WorkbenchMessages } from '../i18n/workbench';
+
+  const fileMessages = JSON.parse(document.querySelector('#file-workbench-messages')?.textContent || '{}') as WorkbenchMessages;
+
+  type InputMime = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic';
+  type OutputMime = 'image/jpeg' | 'image/png' | 'image/webp';
+
+  const $ = <T extends HTMLElement>(selector: string) => {
+    const element = document.querySelector<T>(selector);
+    if (!element) throw new Error(`Missing element: ${selector}`);
+    return element;
+  };
+
+  const input = $('#file-input') as HTMLInputElement;
+  const imageToolRoot = $('#image-tool');
+  const localizedWorkbench = imageToolRoot.dataset.localized === 'true';
+  const chooseButton = $('#choose-file') as HTMLButtonElement;
+  const dropZone = $('#drop-zone');
+  const emptyState = $('#empty-state');
+  const workState = $('#work-state');
+  const resultState = $('#result-state');
+  const sourcePreview = $('#source-preview') as HTMLImageElement;
+  const formatSelect = $('#output-format') as HTMLSelectElement;
+  const targetControls = $('#target-controls');
+  const percentControls = $('#percent-controls');
+  const targetInput = $('#target-kb') as HTMLInputElement;
+  const percentInput = $('#reduction-percent') as HTMLInputElement;
+  const percentOutput = $('#percent-output') as HTMLOutputElement;
+  const formatWarning = $('#format-warning');
+  const status = $('#process-status');
+  const fileError = $('#file-error');
+  const processButton = $('#process-file') as HTMLButtonElement;
+  const processButtonLabel = processButton.textContent?.trim() ?? fileMessages.process;
+  const form = $('#settings-form') as HTMLFormElement;
+
+  let selectedFile: File | null = null;
+  let selectedMime: InputMime | null = null;
+  let sourceUrl: string | null = null;
+  let resultUrl: string | null = null;
+  let hasTransparency = false;
+
+  const formatBytes = (bytes: number) => {
+    if (bytes < 1000) return `${bytes} B`;
+    if (bytes < 1_000_000) return `${(bytes / 1000).toFixed(bytes < 100_000 ? 1 : 0)} KB`;
+    return `${(bytes / 1_000_000).toFixed(2)} MB`;
+  };
+
+  const detectMime = async (file: File): Promise<InputMime | null> => {
+    const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+    const riff = String.fromCharCode(...bytes.slice(0, 4));
+    const webp = String.fromCharCode(...bytes.slice(8, 12));
+    if (riff === 'RIFF' && webp === 'WEBP') return 'image/webp';
+    const ftyp = String.fromCharCode(...bytes.slice(4, 8));
+    const brand = String.fromCharCode(...bytes.slice(8, 12));
+    if (ftyp === 'ftyp' && ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1'].includes(brand)) return 'image/heic';
+    return null;
+  };
+
+  const canvasToBlob = (canvas: HTMLCanvasElement, mime: OutputMime, quality?: number) => new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('This browser could not encode the selected format.')), mime, quality);
+  });
+
+  const quantizePngPixels = (canvas: HTMLCanvasElement, colorLevels: number) => {
+    const context = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
+    if (!context) throw new Error('Canvas processing is not available in this browser.');
+    const image = context.getImageData(0, 0, canvas.width, canvas.height);
+    const lookup = new Uint8Array(256);
+    for (let value = 0; value < 256; value += 1) {
+      lookup[value] = Math.round(Math.round((value / 255) * colorLevels) * (255 / colorLevels));
+    }
+    for (let index = 0; index < image.data.length; index += 4) {
+      image.data[index] = lookup[image.data[index]];
+      image.data[index + 1] = lookup[image.data[index + 1]];
+      image.data[index + 2] = lookup[image.data[index + 2]];
+    }
+    context.putImageData(image, 0, 0);
+  };
+
+  const encodeOptimizedPng = async (canvas: HTMLCanvasElement, sourceBytes: number) => {
+    status.textContent = fileMessages.processing;
+    quantizePngPixels(canvas, 23);
+    let blob = await canvasToBlob(canvas, 'image/png');
+    if (blob.size > sourceBytes * 0.88) {
+      quantizePngPixels(canvas, 15);
+      blob = await canvasToBlob(canvas, 'image/png');
+    }
+    return blob;
+  };
+
+  const resizeCanvas = (source: HTMLCanvasElement, scale: number) => {
+    const resized = document.createElement('canvas');
+    resized.width = Math.max(1, Math.round(source.width * scale));
+    resized.height = Math.max(1, Math.round(source.height * scale));
+    const context = resized.getContext('2d', { alpha: true });
+    if (!context) throw new Error('Canvas resizing is not available in this browser.');
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(source, 0, 0, resized.width, resized.height);
+    return resized;
+  };
+
+  const imageToCanvas = async (file: File, mime: InputMime) => {
+    const bitmap = mime === 'image/heic'
+      ? await (await import('heic-to/csp')).heicTo({ blob: file, type: 'bitmap', options: { imageOrientation: 'from-image' } })
+      : await createImageBitmap(file, { imageOrientation: 'from-image' });
+    if (bitmap.width * bitmap.height > 32_000_000) {
+      bitmap.close();
+      throw new Error('This image is larger than 32 megapixels. Resize it first to avoid exhausting browser memory.');
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext('2d', { alpha: true });
+    if (!context) {
+      bitmap.close();
+      throw new Error('Canvas processing is not available in this browser.');
+    }
+    context.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    return { canvas, context };
+  };
+
+  const checkTransparency = (canvas: HTMLCanvasElement) => {
+    const sample = document.createElement('canvas');
+    const maxSide = 320;
+    const scale = Math.min(1, maxSide / Math.max(canvas.width, canvas.height));
+    sample.width = Math.max(1, Math.round(canvas.width * scale));
+    sample.height = Math.max(1, Math.round(canvas.height * scale));
+    const sampleContext = sample.getContext('2d', { willReadFrequently: true });
+    if (!sampleContext) return false;
+    sampleContext.drawImage(canvas, 0, 0, sample.width, sample.height);
+    const pixels = sampleContext.getImageData(0, 0, sample.width, sample.height).data;
+    for (let index = 3; index < pixels.length; index += 4) {
+      if (pixels[index] < 255) return true;
+    }
+    return false;
+  };
+
+  const updateMode = () => {
+    const mode = new FormData(form).get('mode');
+    if (mode !== 'auto' && formatSelect.value === 'image/png') {
+      formatSelect.value = 'image/webp';
+      updateWarning();
+      return;
+    }
+    targetControls.hidden = mode !== 'target';
+    percentControls.hidden = mode !== 'percent';
+  };
+
+  const updateWarning = () => {
+    const output = formatSelect.value as OutputMime;
+    let message = '';
+    if (hasTransparency && output === 'image/jpeg') {
+      message = 'JPEG cannot keep transparency. Transparent areas will become white. Choose WebP or PNG to keep them transparent.';
+    } else if (output === 'image/png') {
+      message = 'PNG Auto mode reduces color precision locally and keeps transparency. It preserves dimensions when possible, then resizes only if needed to save at least 20%. Choosing a target size or reduction amount switches the output to WebP.';
+    }
+    formatWarning.textContent = message;
+    formatWarning.hidden = !message;
+    updateMode();
+  };
+
+  const clearUrls = () => {
+    if (sourceUrl) URL.revokeObjectURL(sourceUrl);
+    if (resultUrl) URL.revokeObjectURL(resultUrl);
+    sourceUrl = null;
+    resultUrl = null;
+  };
+
+  const reset = () => {
+    clearUrls();
+    selectedFile = null;
+    selectedMime = null;
+    hasTransparency = false;
+    input.value = '';
+    emptyState.hidden = false;
+    workState.hidden = true;
+    resultState.hidden = true;
+    status.textContent = '';
+    fileError.textContent = '';
+    fileError.hidden = true;
+  };
+
+  const loadFile = async (file: File) => {
+    reset();
+    status.textContent = fileMessages.processing;
+    try {
+      if (file.size > 50_000_000) throw new Error('Choose an image smaller than 50 MB to protect browser memory.');
+      const detectedMime = await detectMime(file);
+      if (!detectedMime) throw new Error('Choose a valid JPG, PNG, WebP, HEIC, or HEIF image. The file signature is not supported.');
+      const { canvas } = await imageToCanvas(file, detectedMime);
+      hasTransparency = detectedMime !== 'image/jpeg' && checkTransparency(canvas);
+      selectedFile = file;
+      selectedMime = detectedMime;
+      sourceUrl = URL.createObjectURL(file);
+      sourcePreview.src = sourceUrl;
+      setDisplayedFilename($('#file-name'), file.name);
+      $('#file-meta').textContent = `${formatBytes(file.size)} · ${canvas.width} × ${canvas.height} · ${detectedMime.replace('image/', '').toUpperCase()}`;
+      $('#analysis-note').textContent = localizedWorkbench
+        ? (imageToolRoot.dataset.copyDescription || '')
+        : detectedMime === 'image/heic'
+        ? 'HEIC decoded locally. The primary still image is ready; Live Photo video, bursts, depth maps, and original metadata are not included.'
+        : hasTransparency
+        ? 'Transparency detected. WebP is recommended because it can keep transparent pixels while often producing a smaller file.'
+        : 'The image is ready. Auto aims for about 30% savings and only reduces dimensions when re-encoding alone cannot save at least 20%.';
+      formatSelect.value = detectedMime === 'image/heic' ? 'image/jpeg' : hasTransparency ? 'image/webp' : detectedMime;
+      emptyState.hidden = true;
+      workState.hidden = false;
+      resultState.hidden = true;
+      status.textContent = '';
+      updateWarning();
+    } catch (error) {
+      reset();
+      const detail = error instanceof Error ? error.message : '';
+      fileError.textContent = localizedWorkbench ? (/size|MB|megapixel/i.test(detail) ? fileMessages.tooLarge : fileMessages.invalidFile) : (detail || fileMessages.failed);
+      fileError.hidden = false;
+    }
+  };
+
+  const encodeForTarget = async (canvas: HTMLCanvasElement, mime: 'image/jpeg' | 'image/webp', targetBytes: number) => {
+    let low = 0.24;
+    let high = 0.94;
+    let best = await canvasToBlob(canvas, mime, low);
+    for (let attempt = 0; attempt < 9; attempt += 1) {
+      const quality = (low + high) / 2;
+      const blob = await canvasToBlob(canvas, mime, quality);
+      if (blob.size <= targetBytes) {
+        best = blob;
+        low = quality;
+      } else {
+        high = quality;
+      }
+    }
+    return best;
+  };
+
+  const encodeAuto = async (sourceCanvas: HTMLCanvasElement, mime: OutputMime, sourceBytes: number) => {
+    const preferredBytes = Math.floor(sourceBytes * 0.7);
+    const minimumUsefulBytes = Math.floor(sourceBytes * 0.8);
+    let outputCanvas = sourceCanvas;
+    let blob = mime === 'image/png'
+      ? await encodeOptimizedPng(outputCanvas, sourceBytes)
+      : await encodeForTarget(outputCanvas, mime, preferredBytes);
+    let resized = false;
+
+    for (let attempt = 0; blob.size > minimumUsefulBytes && attempt < 4; attempt += 1) {
+      status.textContent = fileMessages.processing;
+      const estimatedScale = Math.sqrt(preferredBytes / Math.max(blob.size, 1)) * 0.96;
+      const scale = Math.min(0.92, Math.max(0.72, estimatedScale));
+      outputCanvas = resizeCanvas(outputCanvas, scale);
+      resized = true;
+      blob = mime === 'image/png'
+        ? await encodeOptimizedPng(outputCanvas, sourceBytes)
+        : await encodeForTarget(outputCanvas, mime, preferredBytes);
+    }
+
+    return { blob, outputCanvas, resized, preferredBytes };
+  };
+
+  const processImage = async () => {
+    if (!selectedFile || !selectedMime) return;
+    processButton.disabled = true;
+    processButton.textContent = fileMessages.processing;
+    resultState.hidden = true;
+    status.textContent = fileMessages.processing;
+    try {
+      const mime = formatSelect.value as OutputMime;
+      const mode = new FormData(form).get('mode');
+      const { canvas, context } = await imageToCanvas(selectedFile, selectedMime);
+      if (mime === 'image/jpeg' && hasTransparency) {
+        context.globalCompositeOperation = 'destination-over';
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      let blob: Blob;
+      let targetBytes: number | null = null;
+      let optimizedPng = false;
+      let outputCanvas = canvas;
+      let autoResized = false;
+      if (mode === 'auto') {
+        const autoResult = await encodeAuto(canvas, mime, selectedFile.size);
+        blob = autoResult.blob;
+        outputCanvas = autoResult.outputCanvas;
+        autoResized = autoResult.resized;
+        targetBytes = autoResult.preferredBytes;
+        optimizedPng = mime === 'image/png';
+      } else if (mime === 'image/png') {
+        blob = await encodeOptimizedPng(canvas, selectedFile.size);
+        optimizedPng = true;
+      } else if (mode === 'target') {
+        const targetKb = Number(targetInput.value);
+        if (!Number.isFinite(targetKb) || targetKb < 20) throw new Error('Enter a target of at least 20 KB.');
+        targetBytes = Math.floor(targetKb * 1000 * 0.97);
+        blob = await encodeForTarget(canvas, mime, targetBytes);
+      } else if (mode === 'percent') {
+        const reduction = Number(percentInput.value) / 100;
+        targetBytes = Math.floor(selectedFile.size * (1 - reduction));
+        blob = await encodeForTarget(canvas, mime, targetBytes);
+      } else {
+        throw new Error('Choose a compression goal and try again.');
+      }
+
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+      resultUrl = URL.createObjectURL(blob);
+      const extension = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1];
+      const base = selectedFile.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'image';
+      const download = $('#download-result') as HTMLAnchorElement;
+      download.href = resultUrl;
+      download.download = `${base}-smaller.${extension}`;
+      ($('#before-preview') as HTMLImageElement).src = sourceUrl ?? '';
+      ($('#after-preview') as HTMLImageElement).src = resultUrl;
+
+      const saved = selectedFile.size - blob.size;
+      const percent = Math.round((saved / selectedFile.size) * 100);
+      $('#result-stats').textContent = localizedWorkbench
+        ? `${formatBytes(selectedFile.size)} → ${formatBytes(blob.size)}${saved > 0 ? ` · −${percent}%` : ''}${autoResized ? ` · ${outputCanvas.width} × ${outputCanvas.height}` : ''}`
+        : `${formatBytes(selectedFile.size)} → ${formatBytes(blob.size)}${saved > 0 ? ` · ${percent}% smaller` : ' · output is larger than the original'}${autoResized ? ` · ${outputCanvas.width} × ${outputCanvas.height}` : ''}`;
+
+      const resultWarning = $('#result-warning');
+      const missedTarget = mode !== 'auto' && targetBytes !== null && blob.size > targetBytes;
+      const missedAutoMinimum = mode === 'auto' && blob.size > selectedFile.size * 0.8;
+      resultWarning.textContent = localizedWorkbench && (missedAutoMinimum || autoResized || missedTarget || optimizedPng || blob.size >= selectedFile.size)
+        ? fileMessages.review
+        : missedAutoMinimum
+        ? `Auto could not reach 20% savings without reducing the image further. The best local result is ${formatBytes(blob.size)}; try WebP or choose Reduce by for a more aggressive result.`
+        : autoResized
+          ? `Auto preserved full resolution first, then reduced dimensions from ${canvas.width} × ${canvas.height} to ${outputCanvas.width} × ${outputCanvas.height} to achieve a useful reduction. Review the preview before replacing the original.`
+        : missedTarget
+        ? `This target could not be reached at a safe minimum quality without resizing. The best full-size result is ${formatBytes(blob.size)}.`
+        : optimizedPng
+          ? 'PNG dimensions and transparency were preserved. Colors were quantized to make the file substantially easier to compress; inspect the preview before replacing an original.'
+        : blob.size >= selectedFile.size
+          ? 'This format did not reduce the file. Try WebP or a smaller target.'
+          : '';
+      resultWarning.hidden = !resultWarning.textContent;
+      resultState.hidden = false;
+      status.textContent = fileMessages.finished;
+      resultState.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '';
+      status.textContent = document.documentElement.lang === 'en' ? (detail || fileMessages.failed) : (/size|MB|megapixel|20 KB/i.test(detail) ? fileMessages.tooLarge : /valid|signature|decode|format/i.test(detail) ? fileMessages.invalidFile : fileMessages.failed);
+    } finally {
+      processButton.disabled = false;
+      processButton.textContent = processButtonLabel;
+    }
+  };
+
+  chooseButton.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => input.files?.[0] && void loadFile(input.files[0]));
+  $('#clear-file').addEventListener('click', reset);
+  form.addEventListener('change', event => {
+    if ((event.target as HTMLInputElement).name === 'mode') updateMode();
+  });
+  formatSelect.addEventListener('change', updateWarning);
+  percentInput.addEventListener('input', () => { percentOutput.value = `${percentInput.value}%`; });
+  form.addEventListener('submit', event => { event.preventDefault(); void processImage(); });
+  document.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
+    button.addEventListener('click', () => { targetInput.value = button.dataset.target ?? '500'; });
+  });
+
+  for (const eventName of ['dragenter', 'dragover']) {
+    dropZone.addEventListener(eventName, event => {
+      event.preventDefault();
+      dropZone.classList.add('border-blue', 'bg-blue-soft', 'select-none');
+    });
+  }
+  for (const eventName of ['dragleave', 'drop']) {
+    dropZone.addEventListener(eventName, event => {
+      event.preventDefault();
+      dropZone.classList.remove('border-blue', 'bg-blue-soft', 'select-none');
+    });
+  }
+  dropZone.addEventListener('drop', event => {
+    const file = event.dataTransfer?.files[0];
+    if (file) void loadFile(file);
+  });
+  window.addEventListener('beforeunload', clearUrls);
+</script>

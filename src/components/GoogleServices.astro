@@ -1,0 +1,40 @@
+---
+interface Props {
+  analyticsId?: string;
+  adsenseClient?: string;
+  enableAds?: boolean;
+}
+
+const {
+  analyticsId = 'G-GQ973RY74K',
+  adsenseClient = 'ca-pub-1154591227955054',
+  enableAds = process.env.PUBLIC_ADSENSE_ENABLED === 'true',
+} = Astro.props;
+---
+
+<script is:inline define:vars={{ analyticsId }}>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() {
+    dataLayer.push(arguments);
+  }
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    analytics_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    wait_for_update: 500,
+  });
+  gtag('js', new Date());
+  gtag('config', analyticsId, { anonymize_ip: true });
+</script>
+<script async src={`https://www.googletagmanager.com/gtag/js?id=${analyticsId}`} is:inline></script>
+{
+  enableAds && (
+    <script
+      async
+      src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+      crossorigin="anonymous"
+      is:inline
+    />
+  )
+}

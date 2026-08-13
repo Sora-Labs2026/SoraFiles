@@ -1,0 +1,57 @@
+---
+import { tools } from '../data/tools';
+import type { LocalePath } from '../i18n/config';
+import { localizedPath } from '../i18n/config';
+import type { LocaleContent } from '../i18n/types';
+import { popularWorkflowSlugs } from '../lib/tool-discovery';
+import ToolIcon from './ToolIcon.astro';
+
+interface Props {
+  locale: LocalePath;
+  content: LocaleContent;
+}
+
+const { locale, content } = Astro.props;
+const workflows = popularWorkflowSlugs.map((slug) => {
+  const tool = tools.find((candidate) => candidate.slug === slug);
+  if (!tool) throw new Error(`Missing popular workflow tool: ${slug}`);
+  return { tool, copy: content.tools[slug] };
+});
+---
+
+<section data-popular-workflows aria-labelledby="popular-workflows-heading" class="px-4 pt-10 text-start sm:px-6 sm:pt-14">
+  <div class="mx-auto max-w-6xl border-x border-t border-line bg-surface">
+    <div class="border-b border-line px-5 py-6 sm:px-7">
+      <h2 id="popular-workflows-heading" class="type-section text-ink">
+        {content.home.popularTitle}
+      </h2>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-muted">{content.home.popularIntro}</p>
+    </div>
+
+    <nav aria-labelledby="popular-workflows-heading" class="grid sm:grid-cols-2 lg:grid-cols-3">
+      {workflows.map(({ tool, copy }) => (
+        <a
+          data-popular-workflow
+          data-tool-slug={tool.slug}
+          href={localizedPath(locale, tool.href)}
+          class="group -mb-px -me-px min-w-0 border-b border-e border-line bg-canvas p-5 text-start transition-[background-color,border-color] duration-200 hover:border-line-strong hover:bg-surface"
+        >
+          <span class="flex items-start justify-between gap-4">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-control border border-line bg-surface text-blue">
+              <ToolIcon icon={tool.icon} />
+            </span>
+            <span class="rounded-full border border-line bg-surface px-2.5 py-1 font-mono text-[0.6875rem] font-medium text-muted">
+              {tool.formats.slice(0, 3).join(' · ')}
+            </span>
+          </span>
+          <span class="mt-5 block break-words text-base font-semibold tracking-tight text-ink">{copy.title}</span>
+          <span class="mt-2 block break-words text-sm leading-6 text-muted">{copy.short}</span>
+          <span class="mt-4 flex items-center gap-2 text-xs font-medium text-green">
+            <span class="h-1.5 w-1.5 rounded-full bg-green" aria-hidden="true"></span>
+            {content.common.localProcessing}
+          </span>
+        </a>
+      ))}
+    </nav>
+  </div>
+</section>

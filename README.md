@@ -1,0 +1,127 @@
+<p align="center">
+  <img src="favicon.png" alt="SoraFiles gradient S" width="112" height="112">
+</p>
+
+# SoraFiles
+
+Free, privacy-first PDF and image tools that run locally in your browser.
+
+> **Active development:** this repository is an early public snapshot of SoraFiles after its verified homepage and design-system work. The application is usable today, but its processing architecture, documentation, and contributor experience are still being hardened in public.
+
+[Use SoraFiles](https://sorafiles.com) · [Report a security issue](SECURITY.md) · [Contribute](CONTRIBUTING.md)
+
+## Why SoraFiles exists
+
+Everyday file tasks should not require an account, a watermark, or an upload queue. SoraFiles performs its supported PDF, image, HEIC, OCR, and basic document operations in the browser using local JavaScript, Web Workers, WebAssembly, and browser APIs. The original file is never overwritten.
+
+## Available tools
+
+- Convert images between common formats
+- Compress and resize JPG, PNG, WebP, HEIC, and HEIF images
+- Convert HEIC/HEIF photos to JPG
+- Compress PDFs using explicit rasterization presets
+- Merge, split, and rotate PDFs
+- Convert JPG/PNG images to PDF
+- Render PDF pages as JPG images
+- Convert PDF text to a basic DOCX, with opt-in local OCR for scan-like pages
+- Convert DOCX text to a basic PDF
+
+The interface is statically rendered with Astro, supports 19 languages, includes right-to-left Arabic layouts, and remains navigable when JavaScript is disabled wherever processing is not required.
+
+## Privacy model
+
+SoraFiles has no file-upload or server-processing endpoint for its file tools. First-party processing code reads the selected file on the device and creates a new local result for download.
+
+Some page-level services are separate from file processing:
+
+- The Contact form sends the fields and optional attachment a user explicitly submits to FormSubmit for delivery to Sora Labs.
+- Production builds may include ordinary analytics or advertising scripts. First-party tool code does not intentionally send file contents to those services; stronger third-party isolation on processing routes remains active development.
+
+Do not use this software as a substitute for your organization’s document-handling, legal, or security requirements.
+
+## Honest limitations
+
+- PDF compression rasterizes pages. It can remove selectable text, links, forms, signatures, bookmarks, and accessibility structure, and an already efficient PDF can become larger.
+- PDF-to-Word and Word-to-PDF are text-focused conversions, not exact layout reconstruction.
+- OCR accuracy depends on scan quality, language, handwriting, layout, and device resources.
+- Browser codec support, file complexity, and available memory can limit an operation.
+- Static image conversion can flatten layers, animation, extra frames/pages, metadata, or color-profile information.
+
+SoraFiles shows relevant tradeoffs before processing and rejects formats or variants it cannot handle truthfully.
+
+## Technology
+
+- Astro 7 static multi-page application
+- Strict TypeScript and Tailwind CSS 4
+- PDF.js, pdf-lib, Tesseract.js, heic-to, Canvas, Web Workers, and WebAssembly
+- Static deployment through Cloudflare Workers assets
+- Real-output browser tests that parse generated PDFs, DOCX files, ZIP archives, and images
+
+## Run locally
+
+Requirements: Node.js 22.12 or newer.
+
+```bash
+npm ci
+npm run verify:ocr
+npm run dev
+```
+
+Astro will print the local development URL. To create and preview a production build:
+
+```bash
+npm run build
+npm run preview
+```
+
+Useful verification commands:
+
+```bash
+npx astro check
+npm run test:unit
+npm run validate:i18n
+npm run test:tools:smoke
+```
+
+Browser tests require a locally installed Playwright Chromium build:
+
+```bash
+npx playwright install chromium
+```
+
+## Project status
+
+Currently verified:
+
+- Eleven public file tools and real output fixtures
+- Local OCR assets for supported languages
+- 342 static pages and 323 localized canonical URLs
+- Responsive light/dark/system themes, keyboard access, reduced motion, RTL, and zoom/reflow coverage
+- No account requirement, no watermark, and no overwrite of the original file
+
+Actively being improved:
+
+- Shared cancellable PDF processing and memory/resource safeguards
+- Stronger worker boundaries and runtime output validation
+- Third-party script isolation on processing routes
+- Contributor documentation, automation, and release reproducibility
+
+This is intentionally a high-level public roadmap. Internal development prompts and operational planning are not part of the repository.
+
+## Contributing and security
+
+Early issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes. Report potential vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+
+## Sora Labs
+
+SoraFiles is built by **Sora Labs**.
+
+- Website: [sorafiles.com](https://sorafiles.com)
+- Medium: [@soralabs2026](https://medium.com/@soralabs2026)
+- Reddit: [u/Sora-Labs](https://www.reddit.com/user/Sora-Labs/)
+- Indie Hackers: [SoraLabs](https://www.indiehackers.com/SoraLabs)
+- Hacker News: [SoraLabs](https://news.ycombinator.com/user?id=SoraLabs)
+
+## License
+
+SoraFiles is licensed under the [GNU Affero General Public License v3.0 only](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for bundled dependency notices.

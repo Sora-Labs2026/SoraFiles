@@ -1,0 +1,57 @@
+---
+import { tools } from '../data/tools';
+import ToolIcon from './ToolIcon.astro';
+
+const tones = {
+  indigo: 'bg-blue-soft text-blue',
+  cyan: 'bg-cyan-soft text-cyan',
+  violet: 'bg-violet-soft text-violet',
+  coral: 'bg-coral-soft text-coral',
+  pink: 'bg-pink-soft text-pink',
+  green: 'bg-green-soft text-green',
+};
+---
+
+<section id="all-tools" aria-labelledby="tools-heading" class="scroll-mt-20 px-5 pb-20 sm:px-6 sm:pb-28">
+  <div class="mx-auto max-w-6xl">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div class="max-w-3xl">
+        <p class="eyebrow text-xs font-semibold text-blue">Choose a tool</p>
+        <h2 id="tools-heading" class="mt-3 text-balance text-3xl font-semibold tracking-[-0.04em] sm:text-5xl">One clean workspace for every file task.</h2>
+      </div>
+      <p class="max-w-md text-sm leading-6 text-muted">Every available tool below runs on this device. No file is sent to a processing server.</p>
+    </div>
+
+    <div class="mt-9 grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {tools.map((tool, index) => (
+        <a
+          href={tool.href}
+          class:list={[
+            'group relative min-w-0 cursor-pointer overflow-hidden rounded-card border border-line bg-surface p-5 shadow-small transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-blue/40 hover:shadow-card motion-reduce:transform-none',
+            index === 0 && 'sm:col-span-2 lg:col-span-2 lg:row-span-2 sm:p-7',
+          ]}
+        >
+          {index === 0 && <span aria-hidden="true" class="pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-green-soft blur-3xl"></span>}
+          {tool.badge && <span class="absolute right-4 top-4 rounded-full border border-blue/10 bg-blue-soft px-2.5 py-1 text-[11px] font-semibold text-blue">{tool.badge}</span>}
+          <span class:list={['relative flex items-center justify-center rounded-xl', tones[tool.tone], index === 0 ? 'h-14 w-14' : 'h-11 w-11']}>
+            <ToolIcon icon={tool.icon} />
+          </span>
+          <h3 class:list={['relative mt-5 font-semibold tracking-tight', index === 0 ? 'text-2xl sm:text-3xl' : 'text-base']}>{tool.title}</h3>
+          <p class="relative mt-1 text-xs font-semibold text-muted">{tool.short}</p>
+          <p class:list={['relative mt-3 text-sm leading-6 text-muted', index === 0 && 'max-w-xl sm:text-base sm:leading-7']}>{tool.description}</p>
+          {index === 0 && (
+            <div class="relative mt-7 grid max-w-xl grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line text-xs text-muted sm:grid-cols-4">
+              {['JPG', 'PNG', 'HEIC', 'WebP'].map((format) => <span class="bg-canvas px-3 py-2.5 text-center font-semibold">{format}</span>)}
+            </div>
+          )}
+          <span class="relative mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-blue">
+            Open tool
+            <svg aria-hidden="true" viewBox="0 0 16 16" class="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M3 8h9M9 4.5 12.5 8 9 11.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>

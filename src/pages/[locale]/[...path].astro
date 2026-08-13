@@ -1,0 +1,54 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import LocalizedHome from '../../components/LocalizedHome.astro';
+import LocalizedToolPage from '../../components/LocalizedToolPage.astro';
+import LocalizedInfoPage from '../../components/LocalizedInfoPage.astro';
+import LocalizedContactPage from '../../components/LocalizedContactPage.astro';
+import { tools } from '../../data/tools';
+import { localeContent, getLocaleContent } from '../../i18n';
+import { localeByPath, localizedPath, localizedRoutePaths, type LocalePath, type LocalizedRoutePath } from '../../i18n/config';
+
+export function getStaticPaths() {
+  return Object.keys(localeContent).flatMap((locale) => localizedRoutePaths.map((route) => ({
+    params: { locale, path: route === '/' ? undefined : route.slice(1) },
+    props: { locale, basePath: route },
+  })));
+}
+
+interface Props { locale: LocalePath; basePath: LocalizedRoutePath; }
+const { locale, basePath } = Astro.props as Props;
+const content = getLocaleContent(locale);
+const localeMeta = localeByPath.get(locale)!;
+const tool = tools.find((item) => item.href === basePath);
+const pageKey = (basePath === '/open-source' ? 'openSource' : basePath.slice(1)) as keyof typeof content.pages;
+const infoPage = pageKey in content.pages ? content.pages[pageKey] : undefined;
+const isHome = basePath === '/';
+const canonicalPath = localizedPath(locale, basePath);
+const title = isHome ? content.home.title : tool ? `${content.tools[tool.slug].title} | Sora Files` : infoPage?.title ?? 'Sora Files';
+const description = isHome ? content.home.description : tool ? content.tools[tool.slug].description : infoPage?.description ?? content.home.description;
+const schema = isHome ? {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'CollectionPage', name: content.home.h1, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description },
+    { '@type': 'ItemList', itemListElement: tools.map((item, index) => ({ '@type': 'ListItem', position: index + 1, name: content.tools[item.slug].title, url: new URL(localizedPath(locale, item.href), 'https://sorafiles.com').toString() })) },
+    { '@type': 'FAQPage', mainEntity: content.home.faqs.map(({ question, answer }) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) },
+  ],
+} : tool ? {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebApplication', name: `${content.tools[tool.slug].title} - Sora Files`, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, applicationCategory: 'UtilitiesApplication', operatingSystem: 'Any modern web browser', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, description },
+    { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: content.common.home, item: new URL(localizedPath(locale, '/'), 'https://sorafiles.com').toString() }, { '@type': 'ListItem', position: 2, name: content.tools[tool.slug].title, item: new URL(canonicalPath, 'https://sorafiles.com').toString() }] },
+    { '@type': 'FAQPage', mainEntity: content.tools[tool.slug].faqs.map(({ question, answer }) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) },
+  ],
+} : { '@context': 'https://schema.org', '@type': pageKey === 'contact' ? 'ContactPage' : pageKey === 'about' ? 'AboutPage' : 'WebPage', name: infoPage?.h1, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description };
+---
+<Layout {title} {description} {canonicalPath} alternatePath={basePath} {schema} {locale}>
+  <Header {locale} />
+  {isHome && <LocalizedHome {locale} {content} />}
+  {tool && <LocalizedToolPage {locale} {content} {tool} copy={content.tools[tool.slug]} />}
+  {infoPage && pageKey !== 'contact' && <LocalizedInfoPage page={infoPage} />}
+  {infoPage && pageKey === 'contact' && <LocalizedContactPage {locale} page={content.pages.contact} />}
+  <Footer {locale} />
+</Layout>

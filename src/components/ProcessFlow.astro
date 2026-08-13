@@ -1,0 +1,33 @@
+---
+interface Step {
+  title: string;
+  text: string;
+}
+
+interface Props {
+  title: string;
+  steps: Step[];
+}
+
+const { title, steps } = Astro.props;
+---
+
+<section class="border-b border-line bg-canvas px-5 py-16 sm:px-6 sm:py-20" aria-labelledby="process-flow-heading">
+  <div class="mx-auto max-w-6xl">
+    <h2 id="process-flow-heading" class="text-balance text-[clamp(1.75rem,4vw,2.5rem)] font-semibold tracking-[-0.04em] text-ink">
+      {title}
+    </h2>
+
+    <ol class="mt-10 grid border-l border-t border-line sm:grid-cols-3">
+      {steps.map((step, index) => (
+        <li class="-ml-px -mt-px border border-line bg-surface p-6 sm:p-7">
+          <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-soft font-mono text-xs font-semibold text-blue" aria-hidden="true">
+            0{index + 1}
+          </span>
+          <h3 class="mt-4 font-semibold tracking-tight text-ink">{step.title}</h3>
+          <p class="mt-2 text-sm leading-6 text-muted">{step.text}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>

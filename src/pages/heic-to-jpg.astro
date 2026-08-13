@@ -1,0 +1,39 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import FileWorkbench from '../components/FileWorkbench.astro';
+import ToolPageHero from '../components/ToolPageHero.astro';
+import ToolFaq from '../components/ToolFaq.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { toolBySlug } from '../data/tools';
+
+const description = 'Convert HEIC and HEIF photos to JPG locally in your browser. Free private HEIC-to-JPG converter with no upload, account, or watermark.';
+const keywords = 'HEIC to JPG converter free, free HEIC to JPG converter no upload, convert iPhone photos HEIC to JPG online free, HEIF to JPG local';
+const tool = toolBySlug.get('heic-to-jpg')!;
+const faqItems = [
+  { question: 'Can I convert HEIC to JPG without uploading?', answer: 'Yes. The HEIC or HEIF photo is decoded and converted in your browser, so it does not leave your device for processing.' },
+  { question: 'Does the converter work with iPhone photos?', answer: 'Yes. It supports common HEIC and HEIF photos created by iPhones. Some unusual file variations may not decode in every browser, and the tool reports that honestly.' },
+  { question: 'Will converting HEIC overwrite my photo?', answer: 'No. Sora Files creates a separate JPG download and leaves the original HEIC or HEIF file unchanged.' },
+  { question: 'Can I also reduce the JPG file size?', answer: 'Yes. The shared image workspace includes automatic, percentage, and target-size compression controls.' },
+];
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebApplication', name: 'Sora Files HEIC to JPG Converter', url: 'https://sorafiles.com/heic-to-jpg', applicationCategory: 'UtilitiesApplication', operatingSystem: 'Any operating system with a modern web browser', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, description },
+    { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Home', item: 'https://sorafiles.com/' }, { '@type': 'ListItem', position: 2, name: 'HEIC to JPG', item: 'https://sorafiles.com/heic-to-jpg' }] },
+    { '@type': 'FAQPage', mainEntity: faqItems.map(({ question, answer }) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) },
+  ],
+};
+---
+<Layout title="HEIC to JPG Without Uploading — Free | Sora Files" {description} {keywords} canonicalPath="/heic-to-jpg" {schema}>
+  <Header />
+  <main id="main">
+    <ToolPageHero tool={tool} h1="Convert HEIC to JPG without uploading." intro="Make iPhone photos easier to open and share in the same private image workspace. No account, watermark, or server copy." limitations={['HEIC support depends on the file and browser environment. Unsupported variations are reported without uploading the photo.']} />
+    <div class="bg-canvas pb-20 pt-8 sm:pb-28 sm:pt-10"><FileWorkbench /></div>
+    <section class="border-t border-line px-5 py-20 sm:px-6"><div class="mx-auto grid max-w-5xl gap-12 lg:grid-cols-[1.1fr_0.9fr]"><article><h2 class="text-balance text-3xl font-semibold tracking-[-0.035em]">Convert iPhone photos on your device</h2><p class="mt-5 text-sm leading-7 text-muted">Apple devices commonly save photos as HEIC or HEIF because these formats store good visual quality efficiently. Some forms, editors, and older devices still expect JPG. Sora Files decodes the selected photo and creates the compatible image inside your browser, so the source file does not need to be uploaded to a conversion server.</p><p class="mt-4 text-sm leading-7 text-muted">Select the HEIC or HEIF photo, choose JPG as the output, and create the result. You can also use the compression controls when a website imposes a maximum KB or MB size. The converted photo is a separate download: Sora Files never overwrites the original and adds no watermark.</p></article><div><h2 class="text-xl font-semibold">How to convert HEIC to JPG privately</h2><ol class="mt-5 space-y-4"><li class="flex gap-4 text-sm leading-6 text-muted"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue text-xs font-semibold text-white">1</span><span>Choose an HEIC or HEIF photo from this device.</span></li><li class="flex gap-4 text-sm leading-6 text-muted"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue text-xs font-semibold text-white">2</span><span>Select JPG and the compression mode you need.</span></li><li class="flex gap-4 text-sm leading-6 text-muted"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue text-xs font-semibold text-white">3</span><span>Convert locally, check the preview, and download the JPG.</span></li></ol><p class="mt-8 border-y border-line py-5 text-sm leading-6 text-muted"><span class="font-medium text-ink">Compatibility:</span> HEIC support depends on the file and browser environment. The tool explains any unsupported variation without sending the photo elsewhere.</p></div></div></section>
+    <ToolFaq items={faqItems} title="HEIC to JPG questions" />
+    <RelatedTools slugs={tool.related} />
+  </main>
+  <Footer />
+</Layout>

@@ -1,0 +1,340 @@
+---
+import type { LocalizedToolCopy } from '../i18n/types';
+import type { LocalePath } from '../i18n/config';
+import { getWorkbenchMessages } from '../i18n/workbench';
+interface Props { locale?: LocalePath; copy?: LocalizedToolCopy; }
+const { locale = 'en', copy = { title: 'Image Converter', description: 'Convert supported image formats to JPG, PNG, or WebP locally.', note: 'Pixel dimensions are preserved. Animated or multipage files use the first frame or page; metadata, layers, animation, and camera data are not copied.' } as LocalizedToolCopy } = Astro.props;
+const m = getWorkbenchMessages(locale);
+---
+<section data-workbench id="image-converter" aria-labelledby="converter-heading" class="relative mx-auto max-w-5xl scroll-mt-24 px-5 sm:px-6" data-localized={locale !== 'en' ? 'true' : 'false'} data-copy-description={copy.description} data-copy-note={copy.note}>
+  <div class="overflow-hidden rounded-card bg-surface shadow-card">
+    <div class="border-b border-line px-5 py-4 sm:px-7">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="eyebrow text-xs font-semibold text-blue">{m.localImageTool}</p>
+          <h2 id="converter-heading" class="mt-1 text-lg font-semibold tracking-tight">{copy.title}</h2>
+        </div>
+        <div class="inline-flex items-center gap-2 rounded-full bg-green-soft px-3 py-1.5 text-xs font-medium text-green">
+          <span class="h-2 w-2 rounded-full bg-green" aria-hidden="true"></span>
+          {m.processedHere}
+        </div>
+      </div>
+    </div>
+
+    <div id="converter-empty" class="p-4 sm:p-7">
+      <div id="converter-drop-zone" class="group flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-line-strong bg-canvas px-5 py-12 text-center transition-colors hover:border-blue/60 hover:bg-surface sm:min-h-80">
+        <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-surface text-green shadow-small transition-transform group-hover:-translate-y-0.5 motion-reduce:transform-none">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="12" height="12" rx="2"></rect><circle cx="7" cy="8" r="1"></circle><path d="m5 14 3-3 2.5 2 2-1.5L15 14M18 9v11M15 17l3 3 3-3"></path>
+          </svg>
+        </div>
+        <h3 class="mt-5 text-xl font-semibold tracking-tight">{m.chooseImage}</h3>
+        <p class="mt-2 max-w-xl text-sm leading-6 text-muted">JPG, PNG, WebP, GIF, BMP, AVIF, SVG, HEIC, HEIF, TIFF, PSD</p>
+        <button id="converter-choose" type="button" class="mt-6 inline-flex min-h-12 items-center justify-center rounded-control bg-action px-6 text-sm font-medium text-action-contrast shadow-small transition-colors hover:bg-action-hover">{m.chooseImage}</button>
+        <p class="mt-3 hidden text-xs text-muted sm:block">{m.dragDrop}</p>
+        <input id="converter-input" name="imageFile" autocomplete="off" class="sr-only" type="file" accept="image/*,.heic,.heif,.tif,.tiff,.psd,.jfif,.pjpeg,.pjp,.ico,.jp2,.j2k,.jpf,.jpx,.dng,.cr2,.cr3,.nef,.arw,.raf,.orf,.rw2,.indd" aria-label={m.chooseImage} aria-describedby="converter-help" />
+        <p id="converter-help" class="sr-only">{copy.description}</p>
+        <p id="converter-error" hidden role="alert" class="mt-4 max-w-xl break-words rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
+      </div>
+    </div>
+
+    <div id="converter-work" hidden class="grid lg:grid-cols-[1.12fr_0.88fr]">
+      <div class="border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
+        <div class="flex items-start gap-4">
+          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-green-soft text-green">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"></rect><circle cx="9" cy="10" r="1.5"></circle><path d="m5 17 4.5-4 3.2 2.8 2.3-2 4 3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+          <div class="min-w-0 flex-1"><p id="converter-file-name" class="truncate text-sm font-semibold"></p><p id="converter-file-meta" class="mt-1 text-xs text-muted"></p></div>
+          <button id="converter-clear" type="button" class="inline-flex min-h-10 items-center rounded-control px-3 text-sm text-muted transition-colors hover:bg-canvas hover:text-ink">{m.remove}</button>
+        </div>
+        <div class="mt-6 overflow-hidden rounded-xl border border-line bg-canvas"><canvas id="converter-preview" width="1600" height="900" role="img" aria-label={copy.title} class="h-64 w-full object-contain sm:h-80"></canvas></div>
+        <p id="converter-note" class="mt-4 rounded-control bg-blue-soft px-4 py-3 text-sm leading-6 text-blue-strong"></p>
+      </div>
+
+      <form data-workbench-controls id="converter-form" class="p-5 sm:p-7">
+        <label for="converter-format" class="text-sm font-medium">{m.convertTo}</label>
+        <select id="converter-format" name="outputFormat" autocomplete="off" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink focus:border-blue focus:ring-2 focus:ring-blue/15">
+          <option value="image/jpeg">JPG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WebP</option>
+        </select>
+
+        <div id="converter-quality-wrap" class="mt-6">
+          <div class="flex items-center justify-between gap-4"><label for="converter-quality" class="text-sm font-medium">{m.imageQuality}</label><output id="converter-quality-value" for="converter-quality" class="font-mono text-sm">88%</output></div>
+          <input id="converter-quality" name="quality" autocomplete="off" type="range" min="40" max="100" step="1" value="88" class="mt-3 w-full accent-ink" />
+          <p class="mt-2 text-xs leading-5 text-muted">{copy.note}</p>
+        </div>
+
+        <div id="converter-warning" hidden role="status" class="mt-5 rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></div>
+        <details class="mt-5 rounded-control border border-line px-4 py-3">
+          <summary class="cursor-pointer text-sm font-medium">{m.whatPreserved}</summary>
+          <p class="mt-3 text-sm leading-6 text-muted">{copy.note}</p>
+        </details>
+        <button id="converter-submit" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-60">{m.process}</button>
+        <p data-workbench-status id="converter-status" class="mt-3 min-h-5 text-center text-xs text-muted" aria-live="polite"></p>
+      </form>
+    </div>
+
+    <div data-workbench-result id="converter-result" hidden class="border-t border-line bg-canvas p-5 sm:p-7">
+      <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+        <div><div class="inline-flex items-center gap-2 text-sm font-semibold text-green"><svg aria-hidden="true" viewBox="0 0 20 20" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 10 4 4 8-8" stroke-linecap="round" stroke-linejoin="round"></path></svg>{m.ready}</div><p id="converter-stats" class="mt-2 text-sm text-muted"></p></div>
+        <a id="converter-download" class="inline-flex min-h-12 items-center justify-center rounded-control bg-blue px-6 text-sm font-medium text-white transition-colors hover:bg-blue-strong">{m.download}</a>
+      </div>
+    </div>
+  </div>
+  <p class="mt-4 text-center text-xs leading-5 text-muted">{copy.note}</p>
+</section>
+
+<script type="application/json" id="converter-workbench-messages" is:inline set:html={JSON.stringify(m).replace(/</g, '\\u003c')}></script>
+
+<script>
+  import { setDisplayedFilename } from '../utils/filename';
+  import type { WorkbenchMessages } from '../i18n/workbench';
+
+  const converterMessages = JSON.parse(document.querySelector('#converter-workbench-messages')?.textContent || '{}') as WorkbenchMessages;
+
+  type SourceKind = 'jpeg' | 'png' | 'webp' | 'gif' | 'bmp' | 'avif' | 'svg' | 'ico' | 'jp2' | 'heic' | 'tiff' | 'psd';
+  type OutputMime = 'image/jpeg' | 'image/png' | 'image/webp';
+  type LoadedImage = { canvas: HTMLCanvasElement; kind: SourceKind; detail: string };
+
+  const $ = <T extends HTMLElement>(selector: string) => {
+    const element = document.querySelector<T>(selector);
+    if (!element) throw new Error(`Missing element: ${selector}`);
+    return element;
+  };
+
+  const input = $('#converter-input') as HTMLInputElement;
+  const choose = $('#converter-choose') as HTMLButtonElement;
+  const dropZone = $('#converter-drop-zone');
+  const empty = $('#converter-empty');
+  const work = $('#converter-work');
+  const result = $('#converter-result');
+  const errorBox = $('#converter-error');
+  const preview = $('#converter-preview') as HTMLCanvasElement;
+  const format = $('#converter-format') as HTMLSelectElement;
+  const quality = $('#converter-quality') as HTMLInputElement;
+  const qualityValue = $('#converter-quality-value') as HTMLOutputElement;
+  const qualityWrap = $('#converter-quality-wrap');
+  const warning = $('#converter-warning');
+  const form = $('#converter-form') as HTMLFormElement;
+  const submit = $('#converter-submit') as HTMLButtonElement;
+  const status = $('#converter-status');
+  const download = $('#converter-download') as HTMLAnchorElement;
+  const converterRoot = $('#image-converter');
+  const localizedConverter = converterRoot.dataset.localized === 'true';
+  const submitLabel = submit.textContent?.trim() ?? converterMessages.process;
+  const rawExtensions = new Set(['dng', 'cr2', 'cr3', 'nef', 'nrw', 'arw', 'srf', 'sr2', 'raf', 'orf', 'rw2', 'pef', 'x3f']);
+  const jpeg2000Extensions = new Set(['jp2', 'j2k', 'jpf', 'jpx', 'jpm', 'mj2']);
+  let selectedFile: File | null = null;
+  let sourceCanvas: HTMLCanvasElement | null = null;
+  let sourceKind: SourceKind | null = null;
+  let resultUrl: string | null = null;
+  let transparency = false;
+
+  const formatNumber = (value: number, digits: number) => new Intl.NumberFormat(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+  const formatBytes = (bytes: number) => bytes < 1000 ? `${formatNumber(bytes, 0)} B` : bytes < 1_000_000 ? `${formatNumber(bytes / 1000, bytes < 100_000 ? 1 : 0)} KB` : `${formatNumber(bytes / 1_000_000, 2)} MB`;
+  const extensionOf = (name: string) => name.toLowerCase().split('.').pop() ?? '';
+  const startsWith = (bytes: Uint8Array, values: number[]) => values.every((value, index) => bytes[index] === value);
+  const ascii = (bytes: Uint8Array, start: number, length: number) => String.fromCharCode(...bytes.slice(start, start + length));
+
+  const detectKind = async (file: File): Promise<SourceKind> => {
+    const extension = extensionOf(file.name);
+    if (extension === 'indd') throw new Error('INDD is an Adobe InDesign document, not an image format. Export the page as JPG or PNG from InDesign first.');
+    if (rawExtensions.has(extension)) throw new Error(`${extension.toUpperCase()} is a camera RAW format. Safe local RAW development is not available yet; export it as JPG, PNG, or TIFF in your camera software first.`);
+    if (jpeg2000Extensions.has(extension)) return 'jp2';
+
+    const bytes = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
+    if (startsWith(bytes, [0xff, 0xd8, 0xff])) return 'jpeg';
+    if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47])) return 'png';
+    if (ascii(bytes, 0, 4) === 'GIF8') return 'gif';
+    if (ascii(bytes, 0, 4) === 'RIFF' && ascii(bytes, 8, 4) === 'WEBP') return 'webp';
+    if (ascii(bytes, 0, 2) === 'BM') return 'bmp';
+    if (startsWith(bytes, [0x49, 0x49, 0x2a, 0x00]) || startsWith(bytes, [0x4d, 0x4d, 0x00, 0x2a])) return 'tiff';
+    if (ascii(bytes, 0, 4) === '8BPS') return 'psd';
+    if (startsWith(bytes, [0x00, 0x00, 0x01, 0x00])) return 'ico';
+    if (startsWith(bytes, [0x00, 0x00, 0x00, 0x0c, 0x6a, 0x50, 0x20, 0x20]) || startsWith(bytes, [0xff, 0x4f, 0xff, 0x51])) return 'jp2';
+    if (ascii(bytes, 4, 4) === 'ftyp') {
+      const brand = ascii(bytes, 8, 4);
+      if (['heic', 'heif', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1'].includes(brand)) return 'heic';
+      if (['avif', 'avis'].includes(brand)) return 'avif';
+    }
+    const textStart = new TextDecoder().decode(bytes).replace(/^\uFEFF/, '').trimStart().slice(0, 500).toLowerCase();
+    if (textStart.startsWith('<svg') || (textStart.startsWith('<?xml') && textStart.includes('<svg'))) return 'svg';
+    throw new Error('This file does not contain a supported image signature. Try JPG, PNG, WebP, GIF, BMP, AVIF, SVG, HEIC, HEIF, TIFF, or PSD.');
+  };
+
+  const makeCanvas = (width: number, height: number) => {
+    if (width < 1 || height < 1 || width * height > 32_000_000) throw new Error('This image is empty or larger than 32 megapixels. Use a smaller image to protect browser memory.');
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return canvas;
+  };
+
+  const nativeToCanvas = async (file: File) => {
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      const canvas = makeCanvas(bitmap.width, bitmap.height);
+      const context = canvas.getContext('2d', { alpha: true });
+      if (!context) throw new Error('Canvas processing is unavailable.');
+      context.drawImage(bitmap, 0, 0);
+      bitmap.close();
+      return canvas;
+    } catch {
+      const url = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        image.decoding = 'async';
+        image.src = url;
+        await image.decode();
+        const canvas = makeCanvas(image.naturalWidth, image.naturalHeight);
+        const context = canvas.getContext('2d', { alpha: true });
+        if (!context) throw new Error('Canvas processing is unavailable.');
+        context.drawImage(image, 0, 0);
+        return canvas;
+      } catch {
+        throw new Error('This browser cannot decode this image variation. Try converting it to JPG or PNG in its original app first.');
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+  };
+
+  const heicToCanvas = async (file: File) => {
+    const bitmap = await (await import('heic-to/csp')).heicTo({ blob: file, type: 'bitmap', options: { imageOrientation: 'from-image' } });
+    const canvas = makeCanvas(bitmap.width, bitmap.height);
+    const context = canvas.getContext('2d', { alpha: true });
+    if (!context) { bitmap.close(); throw new Error('Canvas processing is unavailable.'); }
+    context.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    return canvas;
+  };
+
+  const tiffToCanvas = async (file: File) => {
+    const buffer = await file.arrayBuffer();
+    const UTIF = (await import('utif')).default;
+    const pages = UTIF.decode(buffer);
+    if (!pages.length) throw new Error('No image page was found in this TIFF file.');
+    UTIF.decodeImage(buffer, pages[0]);
+    const rgba = UTIF.toRGBA8(pages[0]);
+    const canvas = makeCanvas(pages[0].width, pages[0].height);
+    const context = canvas.getContext('2d', { alpha: true });
+    if (!context) throw new Error('Canvas processing is unavailable.');
+    context.putImageData(new ImageData(new Uint8ClampedArray(rgba), canvas.width, canvas.height), 0, 0);
+    return { canvas, pageCount: pages.length };
+  };
+
+  const psdToCanvas = async (file: File) => {
+    const { readPsd } = await import('ag-psd');
+    const psd = readPsd(await file.arrayBuffer(), { useImageData: true, skipLayerImageData: true, skipThumbnail: true, skipLinkedFilesData: true, totalMemoryLimit: 350_000_000 });
+    if (!psd.imageData) throw new Error('This PSD does not contain a readable flattened composite image.');
+    const canvas = makeCanvas(psd.width, psd.height);
+    const context = canvas.getContext('2d', { alpha: true });
+    if (!context) throw new Error('Canvas processing is unavailable.');
+    const pixels = new Uint8ClampedArray(psd.imageData.data);
+    context.putImageData(new ImageData(pixels, psd.imageData.width, psd.imageData.height), 0, 0);
+    return canvas;
+  };
+
+  const loadImage = async (file: File, kind: SourceKind): Promise<LoadedImage> => {
+    if (kind === 'heic') return { canvas: await heicToCanvas(file), kind, detail: 'The primary HEIC/HEIF still image was decoded locally.' };
+    if (kind === 'tiff') { const decoded = await tiffToCanvas(file); return { canvas: decoded.canvas, kind, detail: decoded.pageCount > 1 ? `The first of ${decoded.pageCount} TIFF pages is ready.` : 'The TIFF image was decoded locally.' }; }
+    if (kind === 'psd') return { canvas: await psdToCanvas(file), kind, detail: 'The PSD flattened composite is ready; editable layers remain only in the original.' };
+    const details: Partial<Record<SourceKind, string>> = { gif: 'The first GIF frame is ready; animation is not included in the converted file.', avif: 'The AVIF still image was decoded by this browser.', svg: 'The SVG was rendered to pixels locally.', ico: 'The ICO image was decoded by this browser.', jp2: 'The JPEG 2000 image was decoded by this browser.' };
+    return { canvas: await nativeToCanvas(file), kind, detail: details[kind] ?? 'The image is ready to convert locally.' };
+  };
+
+  const hasTransparency = (canvas: HTMLCanvasElement) => {
+    const sample = document.createElement('canvas');
+    const scale = Math.min(1, 300 / Math.max(canvas.width, canvas.height));
+    sample.width = Math.max(1, Math.round(canvas.width * scale));
+    sample.height = Math.max(1, Math.round(canvas.height * scale));
+    const context = sample.getContext('2d', { willReadFrequently: true });
+    if (!context) return false;
+    context.drawImage(canvas, 0, 0, sample.width, sample.height);
+    const pixels = context.getImageData(0, 0, sample.width, sample.height).data;
+    for (let index = 3; index < pixels.length; index += 4) if (pixels[index] < 255) return true;
+    return false;
+  };
+
+  const drawPreview = (canvas: HTMLCanvasElement) => {
+    preview.width = canvas.width;
+    preview.height = canvas.height;
+    preview.getContext('2d')?.drawImage(canvas, 0, 0);
+  };
+
+  const reset = () => {
+    if (resultUrl) URL.revokeObjectURL(resultUrl);
+    resultUrl = null; selectedFile = null; sourceCanvas = null; sourceKind = null; transparency = false;
+    input.value = ''; empty.hidden = false; work.hidden = true; result.hidden = true; errorBox.hidden = true; errorBox.textContent = ''; status.textContent = '';
+  };
+
+  const loadFile = async (file: File) => {
+    reset();
+    try {
+      if (file.size > 50_000_000) throw new Error('Choose a file smaller than 50\u00a0MB to protect browser memory.');
+      const kind = await detectKind(file);
+      const loaded = await loadImage(file, kind);
+      selectedFile = file; sourceCanvas = loaded.canvas; sourceKind = kind; transparency = hasTransparency(loaded.canvas);
+      drawPreview(loaded.canvas);
+      setDisplayedFilename($('#converter-file-name'), file.name);
+      $('#converter-file-meta').textContent = `${formatBytes(file.size)} · ${loaded.canvas.width} × ${loaded.canvas.height} · ${kind.toUpperCase()}`;
+      $('#converter-note').textContent = localizedConverter ? (converterRoot.dataset.copyDescription || '') : `${loaded.detail} Pixel dimensions will stay ${loaded.canvas.width} × ${loaded.canvas.height}.`;
+      format.value = transparency ? 'image/png' : kind === 'png' ? 'image/png' : 'image/jpeg';
+      updateFormat(); empty.hidden = true; work.hidden = false;
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '';
+      errorBox.textContent = localizedConverter ? (/50|32|memory|large/i.test(detail) ? converterMessages.tooLarge : converterMessages.invalidFile) : (detail || converterMessages.invalidFile);
+      errorBox.hidden = false;
+    }
+  };
+
+  const updateFormat = () => {
+    const mime = format.value as OutputMime;
+    qualityWrap.hidden = mime === 'image/png';
+    const message = transparency && mime === 'image/jpeg' ? 'JPG cannot preserve transparency. Transparent areas will be filled with white.' : '';
+    warning.textContent = localizedConverter && message ? converterMessages.review : message; warning.hidden = !message;
+  };
+
+  const canvasToBlob = (canvas: HTMLCanvasElement, mime: OutputMime, amount: number) => new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(blob => blob && blob.type === mime ? resolve(blob) : reject(new Error(`This browser could not encode ${mime.replace('image/', '').toUpperCase()}.`)), mime, amount);
+  });
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    void (async () => {
+      if (!selectedFile || !sourceCanvas || !sourceKind) return;
+      submit.disabled = true; submit.textContent = converterMessages.processing; result.hidden = true; status.textContent = converterMessages.processing;
+      try {
+        const mime = format.value as OutputMime;
+        const outputCanvas = makeCanvas(sourceCanvas.width, sourceCanvas.height);
+        const context = outputCanvas.getContext('2d', { alpha: true });
+        if (!context) throw new Error('Canvas processing is unavailable.');
+        if (mime === 'image/jpeg') { context.fillStyle = '#ffffff'; context.fillRect(0, 0, outputCanvas.width, outputCanvas.height); }
+        context.drawImage(sourceCanvas, 0, 0);
+        const blob = await canvasToBlob(outputCanvas, mime, Number(quality.value) / 100);
+        if (resultUrl) URL.revokeObjectURL(resultUrl);
+        resultUrl = URL.createObjectURL(blob);
+        const extension = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1];
+        const base = selectedFile.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'image';
+        download.href = resultUrl; download.download = `${base}-converted.${extension}`;
+        $('#converter-stats').textContent = `${sourceKind.toUpperCase()} → ${extension.toUpperCase()} · ${formatBytes(selectedFile.size)} → ${formatBytes(blob.size)} · ${outputCanvas.width} × ${outputCanvas.height}`;
+        result.hidden = false; status.textContent = converterMessages.finished;
+        result.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : '';
+        status.textContent = localizedConverter ? converterMessages.failed : (detail || converterMessages.failed);
+      } finally { submit.disabled = false; submit.textContent = submitLabel; }
+    })();
+  });
+
+  choose.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => input.files?.[0] && void loadFile(input.files[0]));
+  $('#converter-clear').addEventListener('click', reset);
+  format.addEventListener('change', updateFormat);
+  quality.addEventListener('input', () => { qualityValue.value = `${quality.value}%`; });
+  for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, event => { event.preventDefault(); dropZone.classList.add('border-blue', 'bg-blue-soft', 'select-none'); });
+  for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, event => { event.preventDefault(); dropZone.classList.remove('border-blue', 'bg-blue-soft', 'select-none'); });
+  dropZone.addEventListener('drop', event => { const file = event.dataTransfer?.files[0]; if (file) void loadFile(file); });
+  window.addEventListener('beforeunload', () => { if (resultUrl) URL.revokeObjectURL(resultUrl); });
+</script>

@@ -1,0 +1,31 @@
+---
+import ProcessFlow from './ProcessFlow.astro';
+
+interface Step {
+  title: string;
+  text: string;
+}
+
+interface Props {
+  title: string;
+  intro: string;
+  flowTitle: string;
+  steps: Step[];
+}
+
+const { title, intro, flowTitle, steps } = Astro.props;
+---
+
+<div data-privacy-proof class="text-start">
+  <section aria-labelledby="privacy-architecture-heading" class="border-b border-line bg-surface px-5 py-16 sm:px-6 sm:py-20">
+    <div class="mx-auto max-w-6xl">
+      <div data-privacy-architecture class="module-surface grid items-start gap-6 bg-canvas sm:p-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12">
+        <h2 id="privacy-architecture-heading" class="type-section text-ink">{title}</h2>
+        <p class="text-pretty text-base leading-7 text-muted">{intro}</p>
+      </div>
+    </div>
+  </section>
+  <div data-process-flow>
+    <ProcessFlow title={flowTitle} {steps} />
+  </div>
+</div>

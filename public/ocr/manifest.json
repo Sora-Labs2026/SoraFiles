@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "path": "lang/ara.traineddata.gz",
+      "bytes": 1661906,
+      "sha256": "f4746c44b02342dd5b3d4f0198000f47d7c49f1a229e63e0f436c0592dcd9639"
+    },
+    {
+      "path": "lang/chi_sim.traineddata.gz",
+      "bytes": 1718768,
+      "sha256": "b8a23f10c7de500891eb458a8adc9cc58ab7f242f08b7d149f5e9aea4ad5db7c"
+    },
+    {
+      "path": "lang/chi_tra.traineddata.gz",
+      "bytes": 1656239,
+      "sha256": "11fe2610dab05d8a880d02f193ce70203f4c4bbe061b987d5529a2c038a22743"
+    },
+    {
+      "path": "lang/deu.traineddata.gz",
+      "bytes": 1333102,
+      "sha256": "306c4280d0cbed46fbff727486bd43b92730181bae80f56941a091f363bdf28b"
+    },
+    {
+      "path": "lang/eng.traineddata.gz",
+      "bytes": 2952873,
+      "sha256": "45b4cb346724ac1774f1c36f42f182b887bcdb28ebe63e6fff90ac41f3fcff91"
+    },
+    {
+      "path": "lang/fra.traineddata.gz",
+      "bytes": 707406,
+      "sha256": "d611139672b3752c7097e671e4a1d9209dfd37f2aeb081ef6487fba3351e9255"
+    },
+    {
+      "path": "lang/hin.traineddata.gz",
+      "bytes": 1389692,
+      "sha256": "f3b6a0d320df38d886178cdd727b90dbf9df3db053adb32bd9cf73f0463cda07"
+    },
+    {
+      "path": "lang/ind.traineddata.gz",
+      "bytes": 1194182,
+      "sha256": "a8896d2f584a5baae73d658b86b765acc7b15b7ba05e014f62b1a2a23b699a91"
+    },
+    {
+      "path": "lang/ita.traineddata.gz",
+      "bytes": 1660998,
+      "sha256": "f702fcfad297ce028ede3626d1467b67939f23ff23595f9badd54681cf25a4d3"
+    },
+    {
+      "path": "lang/jpn.traineddata.gz",
+      "bytes": 2030256,
+      "sha256": "2b63ebfbf1484de4a08ce53b29ef98a1c17658a93cbd38acb665d7d316d0be88"
+    },
+    {
+      "path": "lang/kor.traineddata.gz",
+      "bytes": 1572336,
+      "sha256": "78c21276ab14c9bb734d83be1055d9fe5469a4e7e977c51ad385be5737e61126"
+    },
+    {
+      "path": "lang/nld.traineddata.gz",
+      "bytes": 3005696,
+      "sha256": "a2d904b6ddc4feb0d31ecfcd7361a554102e7aa2e278c54f4fc029e0d0815571"
+    },
+    {
+      "path": "lang/pol.traineddata.gz",
+      "bytes": 2642356,
+      "sha256": "a20fdec4ff99d8f8e84c708da3e42a4e935c26863055a0ed88aef5c66a59b91b"
+    },
+    {
+      "path": "lang/por.traineddata.gz",
+      "bytes": 1392239,
+      "sha256": "dacebc1386ddaaf8389f81094236cca0d690897cde693d48cbdaa881c86e2b4c"
+    },
+    {
+      "path": "lang/rus.traineddata.gz",
+      "bytes": 2679598,
+      "sha256": "f51f5edc992249ff9b70a227b22f242dfa47b2b1bbc7ae0ea74908640c101f6a"
+    },
+    {
+      "path": "lang/spa.traineddata.gz",
+      "bytes": 2100190,
+      "sha256": "40be52f97b5d4eb7460073dc1f94cd546b27150333c0bf854ed7e7132db6bceb"
+    },
+    {
+      "path": "lang/tha.traineddata.gz",
+      "bytes": 896631,
+      "sha256": "4550a5505184d1b79cf10416d5b19e643001d95411d5e717954dd26feef3ae74"
+    },
+    {
+      "path": "lang/tur.traineddata.gz",
+      "bytes": 2141291,
+      "sha256": "384ba0dc28040451b7818d7d60e0a88df0d3003fa5a01d713a468779bc3d8c04"
+    },
+    {
+      "path": "lang/vie.traineddata.gz",
+      "bytes": 1423003,
+      "sha256": "2284f610f262a1b19ec8df9f196b9ff6ce38ddb4a66329e998941df4b8961c8d"
+    },
+    {
+      "path": "licenses/tessdata-apache-2.0.txt",
+      "bytes": 11357,
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+    },
+    {
+      "path": "licenses/tesseract-core.txt",
+      "bytes": 11358,
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+    },
+    {
+      "path": "licenses/tesseract-js.txt",
+      "bytes": 11357,
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+    },
+    {
+      "path": "runtime/tesseract-core-lstm.wasm.js",
+      "bytes": 3896484,
+      "sha256": "eef5f8b2f8e20e150680b20adaec4a60babafee3adbe8a94583c81fee46e8680"
+    },
+    {
+      "path": "runtime/tesseract-core-relaxedsimd-lstm.wasm.js",
+      "bytes": 3905767,
+      "sha256": "861a536cf9ef8e63cb644d57bab39c388f37f7d6b6f60024b741c5f6b39a59b3"
+    },
+    {
+      "path": "runtime/tesseract-core-relaxedsimd.wasm.js",
+      "bytes": 4697227,
+      "sha256": "843074aa5bad1cc6421b74a86201768ced9f244795e4d81435435a61a40ce535"
+    },
+    {
+      "path": "runtime/tesseract-core-simd-lstm.wasm.js",
+      "bytes": 3899472,
+      "sha256": "c58b46a4c796c0b8afccf77591d5b875b6896b45d402bbce8caa6f5362447b38"
+    },
+    {
+      "path": "runtime/tesseract-core-simd.wasm.js",
+      "bytes": 4690932,
+      "sha256": "6b61ef4e911b5cf57e656bbfe983d6e2b3711a02dd164154ddda064566e8e09d"
+    },
+    {
+      "path": "runtime/tesseract-core.wasm.js",
+      "bytes": 4687944,
+      "sha256": "0bc6ce3e5fbbd0cd89706cf2fd70960e3372f4f01ee24265b26990808aaeb286"
+    },
+    {
+      "path": "runtime/worker.min.js",
+      "bytes": 111307,
+      "sha256": "576b7df7e3393e137e51849357c9adb53fe7ac1bb69bfa06cf3d61520f182c6d"
+    }
+  ]
+}

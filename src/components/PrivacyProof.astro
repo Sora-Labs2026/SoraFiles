@@ -1,0 +1,13 @@
+---
+import PrivacyProofGrid from './PrivacyProofGrid.astro';
+import { getLocaleContent } from '../i18n';
+
+const content = getLocaleContent('en');
+---
+
+<PrivacyProofGrid
+  title={content.home.privacyTitle}
+  intro={content.home.privacyIntro}
+  flowTitle={content.home.privacyProof.title}
+  steps={content.home.privacySteps}
+/>

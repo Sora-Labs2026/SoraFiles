@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+<Layout title="HEIC to JPG Converter | Sora Files" description="Convert HEIC and HEIF images to JPG locally with the Sora Files image compressor." canonicalPath="/heic-to-jpg" noIndex={true}>
+  <Header />
+  <main id="main" class="grid-surface px-5 py-24 sm:px-6 sm:py-36">
+    <div class="mx-auto max-w-3xl rounded-card bg-surface p-7 text-center shadow-card sm:p-12">
+      <p class="eyebrow text-xs font-semibold text-blue">One image workspace</p>
+      <h1 class="mt-4 text-balance text-[clamp(2.25rem,5.5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.05em]">HEIC is part of the image compressor.</h1>
+      <p class="mx-auto mt-5 max-w-xl text-base leading-7 text-muted">Choose JPG, PNG, WebP, HEIC, or HEIF in the same tool. Sora Files detects the format and recommends a compatible output.</p>
+      <a href="/heic-to-jpg" class="mt-8 inline-flex min-h-12 items-center justify-center rounded-control bg-action px-6 text-sm font-medium text-action-contrast hover:bg-action-hover">Open HEIC to JPG</a>
+    </div>
+  </main>
+  <Footer />
+</Layout>

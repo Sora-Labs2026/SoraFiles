@@ -1,0 +1,66 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import LocalizedHome from '../components/LocalizedHome.astro';
+import { tools } from '../data/tools';
+import { getLocaleContent } from '../i18n';
+
+const content = getLocaleContent('en');
+
+const description = 'Use instant, free PDF and image tools in your browser. Compress, convert, merge, split, and resize files locally with no account or watermark.';
+const keywords = 'compress PDF no upload, private PDF compressor, merge PDF local, split PDF without uploading, image converter, compress image online free, HEIC to JPG, PDF to image, image to PDF';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': 'https://sorafiles.com/#website',
+      name: 'Sora Files',
+      alternateName: ['SoraFiles'],
+      url: 'https://sorafiles.com/',
+      description,
+    },
+    {
+      '@type': 'WebApplication',
+      '@id': 'https://sorafiles.com/#application',
+      name: 'Sora Files',
+      url: 'https://sorafiles.com/',
+      applicationCategory: 'UtilitiesApplication',
+      operatingSystem: 'Any operating system with a modern web browser',
+      isAccessibleForFree: true,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      description,
+      featureList: tools.map((tool) => tool.title),
+    },
+    {
+      '@type': 'ItemList',
+      '@id': 'https://sorafiles.com/#tools',
+      name: 'Sora Files PDF and image tools',
+      numberOfItems: tools.length,
+      itemListElement: tools.map((tool, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: tool.title,
+        url: new URL(tool.href, 'https://sorafiles.com').href,
+      })),
+    },
+    {
+      '@type': 'FAQPage',
+      '@id': 'https://sorafiles.com/#faq',
+      mainEntity: content.home.faqs.map(({ question, answer }) => ({
+        '@type': 'Question',
+        name: question,
+        acceptedAnswer: { '@type': 'Answer', text: answer },
+      })),
+    },
+  ],
+};
+---
+
+<Layout title={content.home.title} description={content.home.description} {keywords} {schema}>
+  <Header locale="en" />
+  <LocalizedHome locale="en" {content} />
+  <Footer locale="en" />
+</Layout>

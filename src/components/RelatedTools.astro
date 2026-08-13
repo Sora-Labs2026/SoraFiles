@@ -1,0 +1,26 @@
+---
+import { toolBySlug, type PublicToolSlug } from '../data/tools';
+import ToolIcon from './ToolIcon.astro';
+import { getCommonMessages, getLocaleContent } from '../i18n';
+import { localizedPath, type LocalePath } from '../i18n/config';
+interface Props { slugs: PublicToolSlug[]; title?: string; locale?: LocalePath; }
+const { slugs, locale = 'en' } = Astro.props;
+const common = getCommonMessages(locale);
+const title = Astro.props.title ?? common.relatedTools;
+const related = slugs.map((slug) => toolBySlug.get(slug)).filter(Boolean);
+const translatedTools = locale === 'en' ? undefined : getLocaleContent(locale).tools;
+---
+<section class="border-t border-line bg-surface px-5 py-16 sm:px-6 sm:py-20">
+  <nav aria-label={title} class="mx-auto max-w-5xl">
+    <h2 class="text-xl font-semibold tracking-tight text-ink">{title}</h2>
+    <div class="mt-5 grid border-l border-t border-line sm:grid-cols-2 lg:grid-cols-3">
+      {related.map((tool) => tool && (
+        <a href={localizedPath(locale, tool.href)} class="group -ml-px -mt-px flex min-h-24 items-center gap-4 border border-line bg-surface p-4 transition-[border-color,background-color] duration-200 hover:border-line-strong hover:bg-canvas">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-canvas text-muted"><ToolIcon icon={tool.icon} /></span>
+          <span class="min-w-0"><strong class="block text-sm text-ink">{translatedTools?.[tool.slug].title ?? tool.title}</strong><span class="mt-1 block text-xs text-muted">{translatedTools?.[tool.slug].short ?? tool.short}</span></span>
+          <svg aria-hidden="true" viewBox="0 0 16 16" class="ml-auto h-4 w-4 shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h9M9 4.5 12.5 8 9 11.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      ))}
+    </div>
+  </nav>
+</section>

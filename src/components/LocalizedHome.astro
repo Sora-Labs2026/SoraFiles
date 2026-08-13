@@ -1,0 +1,39 @@
+---
+import type { LocaleContent } from '../i18n/types';
+import type { LocalePath } from '../i18n/config';
+import HomeHero from './HomeHero.astro';
+import PopularWorkflows from './PopularWorkflows.astro';
+import LocalizedToolExplorer from './LocalizedToolExplorer.astro';
+import PrivacyProofGrid from './PrivacyProofGrid.astro';
+import ToolFaq from './ToolFaq.astro';
+
+interface Props { locale: LocalePath; content: LocaleContent; }
+const { locale, content } = Astro.props;
+---
+<main id="main">
+  <div data-home-workspace class="border-b border-line bg-canvas">
+    <HomeHero {content} />
+    <PopularWorkflows {locale} {content} />
+    <LocalizedToolExplorer {locale} {content} />
+  </div>
+  <PrivacyProofGrid
+    title={content.home.privacyTitle}
+    intro={content.home.privacyIntro}
+    flowTitle={content.home.privacyProof.title}
+    steps={content.home.privacySteps}
+  />
+  <section data-home-content class="px-5 py-18 text-start sm:px-6 sm:py-24">
+    <div class="mx-auto max-w-5xl">
+      <h2 class="type-section max-w-3xl">{content.home.contentTitle}</h2>
+      <div class="mt-12 grid gap-10 lg:grid-cols-3">
+        {content.home.contentSections.map((section) => (
+          <article>
+            <h3 class="text-lg font-semibold">{section.heading}</h3>
+            {section.paragraphs.map((paragraph) => <p data-home-ocr-disclosure={paragraph.includes('OCR') ? '' : undefined} class="mt-4 text-sm leading-7 text-muted">{paragraph}</p>)}
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+  <ToolFaq items={content.home.faqs} title={content.home.faqTitle} />
+</main>

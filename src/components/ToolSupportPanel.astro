@@ -1,0 +1,39 @@
+---
+interface Props {
+  formats: string[];
+  limitations?: string[];
+  status?: 'stable' | 'basic';
+  labels?: {
+    heading: string;
+    stable: string;
+    basic: string;
+    formats: string;
+    privacy: string;
+    privacyText: string;
+    result: string;
+    resultText: string;
+    limitations: string;
+  };
+}
+const defaults = { heading: 'Support at a glance', stable: 'Verified flow', basic: 'Basic conversion', formats: 'Formats', privacy: 'Privacy', privacyText: 'Processes locally in this browser.', result: 'Result', resultText: 'Creates a separate download. Your original is not overwritten.', limitations: 'Known limitations' };
+const { formats, limitations = [], status = 'stable', labels = defaults } = Astro.props;
+---
+<aside aria-label="Tool support details" class="border border-line bg-canvas p-5 sm:p-6">
+  <div class="flex items-center justify-between gap-4">
+    <h2 class="text-sm font-semibold text-ink">{labels.heading}</h2>
+    <span class:list={['rounded-full px-2.5 py-1 text-[11px] font-medium', status === 'stable' ? 'bg-green-soft text-green' : 'bg-amber-soft text-amber']}>{status === 'stable' ? labels.stable : labels.basic}</span>
+  </div>
+  <dl class="mt-5 grid gap-4 text-sm">
+    <div><dt class="font-medium text-ink">{labels.formats}</dt><dd class="mt-1 text-muted">{formats.join(', ')}</dd></div>
+    <div><dt class="font-medium text-ink">{labels.privacy}</dt><dd class="mt-1 text-muted">{labels.privacyText}</dd></div>
+    <div><dt class="font-medium text-ink">{labels.result}</dt><dd class="mt-1 text-muted">{labels.resultText}</dd></div>
+  </dl>
+  {limitations.length > 0 && (
+    <details class="mt-5 border-t border-line pt-4">
+      <summary class="min-h-11 list-none py-2 text-sm font-medium text-ink marker:content-none">{labels.limitations} <span aria-hidden="true" class="text-muted">+</span></summary>
+      <ul class="mt-2 grid gap-2 pl-5 text-sm leading-6 text-muted">
+        {limitations.map((item) => <li class="list-disc">{item}</li>)}
+      </ul>
+    </details>
+  )}
+</aside>

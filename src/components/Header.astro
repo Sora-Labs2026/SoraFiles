@@ -1,0 +1,91 @@
+---
+import BrandMark from './BrandMark.astro';
+import { localizedPath, type LocalePath } from '../i18n/config';
+import { getCommonMessages } from '../i18n';
+import { themeMessages } from '../i18n/theme';
+
+interface Props { locale?: LocalePath; }
+const { locale = 'en' } = Astro.props;
+const messages = getCommonMessages(locale);
+const themes = themeMessages[locale];
+const hrefFor = (path: string) => localizedPath(locale, path);
+const companyLinks = [
+  { href: hrefFor('/about'), label: messages.about },
+  { href: hrefFor('/contact'), label: messages.contact },
+  { href: hrefFor('/privacy'), label: messages.privacy },
+  { href: hrefFor('/terms'), label: messages.terms },
+];
+const pathname = Astro.url.pathname;
+const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href.split('#')[0]);
+---
+
+<header data-glass-surface="header" class="glass-surface sticky top-0 z-40">
+  <div class="page-gutter mx-auto flex h-16 max-w-7xl items-center justify-between">
+    <a href={hrefFor('/')} class="flex items-center gap-2.5 rounded-md text-[15px] font-semibold tracking-tight" aria-label={`Sora Files — ${messages.home}`}>
+      <BrandMark />
+      <span translate="no"><span class="text-ink">Sora</span> <span class="text-blue">Files</span></span>
+    </a>
+
+    <div class="flex items-center gap-1.5">
+      <nav aria-label={messages.menu} class="mr-2 hidden h-16 items-center gap-1 text-sm text-muted lg:flex">
+        <a class:list={['inline-flex h-full items-center border-b-2 px-3 font-medium transition-colors duration-200 hover:text-ink', pathname === hrefFor('/') ? 'border-ink text-ink' : 'border-transparent']} href={`${hrefFor('/')}#all-tools`} aria-current={pathname === hrefFor('/') ? 'page' : undefined}>{messages.allTools}</a>
+        <a class:list={['inline-flex h-full items-center border-b-2 px-3 transition-colors duration-200 hover:text-ink', isActive(hrefFor('/image-converter')) ? 'border-ink text-ink' : 'border-transparent']} href={hrefFor('/image-converter')} aria-current={isActive(hrefFor('/image-converter')) ? 'page' : undefined}>{messages.images}</a>
+        <a class:list={['inline-flex h-full items-center border-b-2 px-3 transition-colors duration-200 hover:text-ink', isActive(hrefFor('/pdf')) ? 'border-ink text-ink' : 'border-transparent']} href={hrefFor('/pdf')} aria-current={isActive(hrefFor('/pdf')) ? 'page' : undefined}>{messages.pdf}</a>
+        {companyLinks.slice(0, 2).map((link) => <a class:list={['inline-flex h-full items-center border-b-2 px-3 transition-colors duration-200 hover:text-ink', isActive(link.href) ? 'border-ink text-ink' : 'border-transparent']} href={link.href} aria-current={isActive(link.href) ? 'page' : undefined}>{link.label}</a>)}
+      </nav>
+
+      <details data-theme-menu class="group relative">
+        <summary data-theme-name={themes.theme} data-theme-label-system={themes.system} data-theme-label-dark={themes.dark} data-theme-label-light={themes.light} aria-label={`${themes.theme}: ${themes.system}`} title={`${themes.theme}: ${themes.system}`} class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-control text-muted transition-colors marker:content-none hover:bg-canvas hover:text-ink">
+          <span data-theme-icon="system" aria-hidden="true"><svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" stroke-linecap="round" /></svg></span>
+          <span data-theme-icon="dark" hidden aria-hidden="true"><svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+          <span data-theme-icon="light" hidden aria-hidden="true"><svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.5" /><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" stroke-linecap="round" /></svg></span>
+        </summary>
+        <div role="menu" class="absolute end-0 top-12 z-50 w-[min(14rem,calc(100vw-40px))] max-[30rem]:fixed max-[30rem]:inset-x-5 max-[30rem]:top-[calc(4rem+1px)] max-[30rem]:max-h-[calc(100dvh-5.25rem)] max-[30rem]:w-auto max-[30rem]:overflow-y-auto max-[30rem]:overscroll-contain rounded-xl border border-line bg-surface p-1.5 shadow-card">
+          <button type="button" role="menuitemradio" data-theme-option="system" aria-checked="true" class="flex min-h-11 w-full items-center gap-2.5 rounded-control px-3 py-2 text-sm text-ink transition-colors hover:bg-canvas aria-checked:bg-canvas aria-checked:font-semibold">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" stroke-linecap="round" /></svg>
+            <span>{themes.system}</span>
+          </button>
+          <button type="button" role="menuitemradio" data-theme-option="dark" aria-checked="false" class="flex min-h-11 w-full items-center gap-2.5 rounded-control px-3 py-2 text-sm text-ink transition-colors hover:bg-canvas aria-checked:bg-canvas aria-checked:font-semibold">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <span>{themes.dark}</span>
+          </button>
+          <button type="button" role="menuitemradio" data-theme-option="light" aria-checked="false" class="flex min-h-11 w-full items-center gap-2.5 rounded-control px-3 py-2 text-sm text-ink transition-colors hover:bg-canvas aria-checked:bg-canvas aria-checked:font-semibold">
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.5" /><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" stroke-linecap="round" /></svg>
+            <span>{themes.light}</span>
+          </button>
+          <div role="separator" class="my-1 border-t border-line"></div>
+          <button type="button" role="menuitemcheckbox" data-ambient-preference data-ambient-label-on={themes.ambientOn} data-ambient-label-off={themes.ambientOff} data-ambient-label-suppressed={themes.ambientSystemSuppressed} aria-checked="true" class="flex min-h-11 w-full items-center gap-2.5 rounded-control px-3 py-2 text-sm text-ink transition-colors hover:bg-canvas aria-checked:bg-canvas">
+            <svg data-ambient-glyph aria-hidden="true" viewBox="0 0 24 24" class="ambient-preference-glyph h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="9" cy="14" r="5" />
+              <circle cx="15.5" cy="8.5" r="3.5" />
+              <circle data-ambient-glyph-fill cx="9" cy="14" r="3.25" fill="currentColor" stroke="none" />
+            </svg>
+            <span data-ambient-label>{themes.ambientBubbles}</span>
+            <span data-ambient-state-label class="ms-auto text-xs text-muted">{themes.ambientOn}</span>
+          </button>
+        </div>
+      </details>
+
+      <details class="group relative lg:hidden">
+      <summary aria-label={messages.menu} class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-2 rounded-control px-3 text-sm font-medium text-muted marker:content-none hover:bg-canvas hover:text-ink">
+        <span class="hidden min-[30rem]:inline">{messages.menu}</span>
+        <svg aria-hidden="true" viewBox="0 0 16 16" class="h-4 w-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m4 6 4 4 4-4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </summary>
+      <nav aria-label={messages.menu} class="absolute end-0 top-12 w-[min(16rem,calc(100vw-40px))] max-[30rem]:fixed max-[30rem]:inset-x-5 max-[30rem]:top-[calc(4rem+1px)] max-[30rem]:max-h-[calc(100dvh-5.25rem)] max-[30rem]:w-auto max-[30rem]:overflow-y-auto max-[30rem]:overscroll-contain rounded-xl border border-line bg-surface p-2 shadow-card">
+        <a class="block rounded-control px-3 py-2.5 text-sm font-medium hover:bg-canvas" href={`${hrefFor('/')}#all-tools`}>{messages.allTools}</a>
+        <a class="block rounded-control px-3 py-2.5 text-sm font-medium hover:bg-canvas" href={hrefFor('/image-converter')}>{messages.imageConverter}</a>
+        <a class="block rounded-control px-3 py-2.5 text-sm font-medium hover:bg-canvas" href={hrefFor('/compress-image')}>{messages.compressImages}</a>
+        <a class="block rounded-control px-3 py-2.5 text-sm font-medium hover:bg-canvas" href={hrefFor('/pdf')}>{messages.compressPdf}</a>
+        <div class="my-2 border-t border-line"></div>
+        {companyLinks.map((link) => <a class="block rounded-control px-3 py-2.5 text-sm text-muted hover:bg-canvas hover:text-ink" href={link.href}>{link.label}</a>)}
+      </nav>
+      </details>
+    </div>
+  </div>
+</header>
+
+<script>
+  import { initializeAmbientPreferenceControls } from '../scripts/ambient-bubbles';
+
+  initializeAmbientPreferenceControls(document);
+</script>

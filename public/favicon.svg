@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 32 32" role="img" aria-label="Sora Files">
+  <rect width="32" height="32" rx="7" fill="#2563eb"/>
+  <path d="M7 4h11l5 5v16a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Z" fill="#fff"/>
+  <path d="M18 4v5h5" fill="#dbeafe"/>
+  <path d="M9 13h8M9 17h7M9 21h4" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round"/>
+  <rect x="18" y="18" width="12" height="12" rx="3.5" fill="#d97706" stroke="#fff" stroke-width="1.5"/>
+  <path d="M21.5 24h5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+</svg>

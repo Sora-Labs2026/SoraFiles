@@ -1,0 +1,64 @@
+{
+  "name": "sorafiles.com",
+  "type": "module",
+  "version": "0.0.1",
+  "license": "AGPL-3.0-only",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sora-Labs2026/SoraFiles.git"
+  },
+  "homepage": "https://sorafiles.com",
+  "bugs": {
+    "url": "https://github.com/Sora-Labs2026/SoraFiles/issues"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:production": "node scripts/build-production.mjs",
+    "preview": "astro preview",
+    "preview:cloudflare": "npm run build && wrangler dev",
+    "assets:brand": "node scripts/generate-brand-icons.mjs",
+    "sync:ocr": "node scripts/sync-ocr-assets.mjs",
+    "verify:ocr": "node scripts/verify-ocr-assets.mjs",
+    "validate:i18n": "node scripts/validate-i18n.mjs",
+    "test:tools": "node tests/e2e/tool-flows.mjs",
+    "test:tools:smoke": "node tests/e2e/tool-flows.mjs --smoke",
+    "test:unit": "npx tsx --test tests/unit/*.test.mjs",
+    "test:site": "npm run build && node tests/e2e/site-shell.mjs",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "ag-psd": "^31.0.2",
+    "astro": "^7.2.0",
+    "docx": "^9.7.1",
+    "fflate": "^0.8.3",
+    "heic-to": "^1.5.2",
+    "jspdf": "^4.2.1",
+    "mammoth": "^1.12.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.2.108",
+    "tailwindcss": "^4.3.3",
+    "tesseract.js": "^7.0.0",
+    "tesseract.js-core": "^7.0.0",
+    "utif": "^3.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "parse5": "^7.3.0",
+    "playwright": "^1.62.1",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.120.0"
+  },
+  "allowScripts": {
+    "core-js@3.50.0": true,
+    "esbuild@0.28.2": true,
+    "esbuild@0.28.1": true,
+    "workerd@1.20260801.1": true
+  }
+}

@@ -1,0 +1,14 @@
+---
+import ToolExplorer from './ToolExplorer.astro';
+import type { LocalePath } from '../i18n/config';
+import type { LocaleContent } from '../i18n/types';
+
+interface Props {
+  locale: LocalePath;
+  content: LocaleContent;
+}
+
+const { locale, content } = Astro.props;
+---
+
+<ToolExplorer {locale} {content} />

@@ -1,0 +1,38 @@
+---
+interface Props {
+  icon: 'device' | 'account' | 'watermark' | 'original';
+}
+
+const { icon } = Astro.props;
+---
+
+{icon === 'device' && (
+  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6 text-blue" fill="none" stroke="currentColor" stroke-width="1.8">
+    <rect x="4" y="3" width="16" height="18" rx="2" />
+    <path d="M9 7h6M12 17v.01" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+)}
+
+{icon === 'account' && (
+  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6 text-cyan" fill="none" stroke="currentColor" stroke-width="1.8">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="10" cy="7" r="4" />
+    <line x1="17" y1="11" x2="23" y2="11" stroke-linecap="round" />
+  </svg>
+)}
+
+{icon === 'watermark' && (
+  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6 text-violet" fill="none" stroke="currentColor" stroke-width="1.8">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 8v8M8 12h8" stroke-linecap="round" />
+    <line x1="3" y1="3" x2="21" y2="21" stroke-linecap="round" />
+  </svg>
+)}
+
+{icon === 'original' && (
+  <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6 text-green" fill="none" stroke="currentColor" stroke-width="1.8">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="9" y1="15" x2="15" y2="15" stroke-linecap="round" />
+  </svg>
+)}

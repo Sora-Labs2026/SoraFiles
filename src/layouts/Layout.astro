@@ -1,0 +1,166 @@
+---
+import '../styles/global.css';
+import GoogleServices from '../components/GoogleServices.astro';
+import AmbientBubbles from '../components/AmbientBubbles.astro';
+import { localeByPath, localeDefinitions, publishedAlternates, type LocalePath } from '../i18n/config';
+import { ambientModeForRoute } from '../lib/ambient';
+
+interface Props {
+  title: string;
+  description?: string;
+  canonicalPath?: string;
+  keywords?: string;
+  imagePath?: string;
+  imageAlt?: string;
+  noIndex?: boolean;
+  schema?: Record<string, unknown> | Record<string, unknown>[];
+  locale?: LocalePath;
+  alternatePath?: string;
+}
+
+const {
+  title,
+  description = 'Use free private PDF and image tools locally in your browser. No account, no watermark, and clear output controls.',
+  canonicalPath = '/',
+  keywords,
+  imagePath = '/og-image.png',
+  imageAlt = 'Sora Files free private PDF and image tools',
+  noIndex = false,
+  schema,
+  locale = 'en',
+  alternatePath = canonicalPath,
+} = Astro.props;
+
+const canonical = new URL(canonicalPath, 'https://sorafiles.com');
+const socialImage = new URL(imagePath, 'https://sorafiles.com');
+const serializedSchema = schema ? JSON.stringify(schema).replace(/</g, '\\u003c') : undefined;
+const localeMeta = localeByPath.get(locale) ?? localeByPath.get('en')!;
+const alternates = noIndex ? [] : publishedAlternates(alternatePath);
+const ambientMode = ambientModeForRoute(alternatePath);
+---
+
+<!doctype html>
+<html lang={localeMeta.code} dir={localeMeta.direction} data-locale={locale}>
+  <head>
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin="anonymous" />
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin="anonymous" />
+    <GoogleServices />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    {keywords && <meta name="keywords" content={keywords} />}
+    <meta name="robots" content={noIndex ? 'noindex,follow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'} />
+    <meta name="application-name" content="Sora Files" />
+    <meta name="apple-mobile-web-app-title" content="Sora Files" />
+    <meta name="theme-color" content="#fafafa" data-theme-color />
+    <script is:inline>
+      (() => {
+        try {
+          const savedTheme = localStorage.getItem('sora-theme');
+          const preference = ['system', 'dark', 'light'].includes(savedTheme) ? savedTheme : 'system';
+          const useDark = preference === 'dark' || (preference === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', useDark);
+          document.documentElement.dataset.theme = useDark ? 'dark' : 'light';
+          document.documentElement.dataset.themePreference = preference;
+          document.querySelector('[data-theme-color]')?.setAttribute('content', useDark ? '#0a0a0a' : '#fafafa');
+        } catch {}
+      })();
+    </script>
+    <link rel="canonical" href={canonical} />
+    {alternates.map((alternate) => <link rel="alternate" hreflang={alternate.hreflang} href={alternate.href} />)}
+    {alternates.length > 0 && <link rel="alternate" hreflang="x-default" href={new URL(alternatePath, 'https://sorafiles.com')} />}
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+    <link rel="apple-touch-icon" href="/icon-512.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sora Files" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content={localeMeta.og} />
+    {alternates.filter((alternate) => alternate.hreflang !== localeMeta.code).map((alternate) => {
+      const meta = localeDefinitions.find((item) => item.code === alternate.hreflang);
+      return meta && <meta property="og:locale:alternate" content={meta.og} />;
+    })}
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:image:secure_url" content={socialImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
+    <meta name="twitter:image:alt" content={imageAlt} />
+    {serializedSchema && <script type="application/ld+json" is:inline set:html={serializedSchema}></script>}
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-canvas font-sans text-ink antialiased">
+    {ambientMode !== 'off' && <AmbientBubbles mode={ambientMode} />}
+    <div class="site-content">
+      <a href="#main" class="fixed left-3 top-3 z-50 -translate-y-20 rounded-control bg-action px-4 py-2 text-sm font-medium text-action-contrast transition-transform focus:translate-y-0">Skip to content</a>
+      <slot />
+    </div>
+    <script is:inline>
+      const systemTheme = matchMedia('(prefers-color-scheme: dark)');
+      const validThemes = ['system', 'dark', 'light'];
+
+      const getThemePreference = () => {
+        const savedTheme = localStorage.getItem('sora-theme');
+        return validThemes.includes(savedTheme) ? savedTheme : 'system';
+      };
+
+      const applyTheme = (preference) => {
+        const isDark = preference === 'dark' || (preference === 'system' && systemTheme.matches);
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+        document.documentElement.dataset.themePreference = preference;
+        document.querySelector('[data-theme-color]')?.setAttribute('content', isDark ? '#0a0a0a' : '#fafafa');
+
+        document.querySelectorAll('[data-theme-menu]').forEach((menu) => {
+          const summary = menu.querySelector('summary');
+          if (summary instanceof HTMLElement) {
+            const preferenceLabel = summary.dataset[`themeLabel${preference[0].toUpperCase()}${preference.slice(1)}`];
+            const accessibleLabel = `${summary.dataset.themeName}: ${preferenceLabel}`;
+            summary.setAttribute('aria-label', accessibleLabel);
+            summary.setAttribute('title', accessibleLabel);
+            summary.querySelectorAll('[data-theme-icon]').forEach((icon) => {
+              if (icon instanceof HTMLElement) icon.hidden = icon.dataset.themeIcon !== preference;
+            });
+          }
+          menu.querySelectorAll('[data-theme-option]').forEach((opt) => {
+            if (opt instanceof HTMLElement) {
+              const val = opt.dataset.themeOption;
+              opt.setAttribute('aria-checked', val === preference ? 'true' : 'false');
+            }
+          });
+        });
+      };
+
+      document.querySelectorAll('[data-theme-option]').forEach((option) => {
+        option.addEventListener('click', (event) => {
+          if (!(event.currentTarget instanceof HTMLElement)) return;
+          const choice = event.currentTarget.dataset.themeOption;
+          if (choice && validThemes.includes(choice)) {
+            localStorage.setItem('sora-theme', choice);
+            applyTheme(choice);
+            const parentMenu = event.currentTarget.closest('[data-theme-menu]');
+            if (parentMenu && parentMenu.hasAttribute('open')) {
+              parentMenu.removeAttribute('open');
+            }
+          }
+        });
+      });
+
+      systemTheme.addEventListener('change', () => {
+        if (getThemePreference() === 'system') applyTheme('system');
+      });
+
+      applyTheme(getThemePreference());
+    </script>
+  </body>
+</html>

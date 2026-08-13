@@ -1,0 +1,30 @@
+---
+import type { ToolDefinition, ToolSlug } from '../data/tools';
+import type { LocaleContent, LocalizedToolCopy } from '../i18n/types';
+import type { LocalePath } from '../i18n/config';
+import ToolPageHero from './ToolPageHero.astro';
+import ToolFaq from './ToolFaq.astro';
+import RelatedTools from './RelatedTools.astro';
+import DocumentActionWorkbench from './DocumentActionWorkbench.astro';
+import FileWorkbench from './FileWorkbench.astro';
+import ImageConverterWorkbench from './ImageConverterWorkbench.astro';
+import PdfWorkbench from './PdfWorkbench.astro';
+
+interface Props { locale: LocalePath; content: LocaleContent; tool: ToolDefinition; copy: LocalizedToolCopy; }
+const { locale, content, tool, copy } = Astro.props;
+const actionSlugs = new Set(['merge-pdf', 'split-pdf', 'rotate-pdf', 'jpg-to-pdf', 'pdf-to-jpg', 'pdf-to-word', 'word-to-pdf']);
+---
+<main id="main">
+  <ToolPageHero {tool} h1={copy.h1} intro={copy.intro} limitations={[copy.note]} {locale} toolTitle={copy.title} />
+  <section class="bg-canvas pb-20 pt-8 sm:pb-28 sm:pt-10">
+    <div>
+      {tool.slug === 'compress-pdf' && <PdfWorkbench {locale} {copy} />}
+      {tool.slug === 'image-converter' && <ImageConverterWorkbench {locale} {copy} />}
+      {(tool.slug === 'compress-image' || tool.slug === 'heic-to-jpg') && <FileWorkbench {locale} {copy} />}
+      {actionSlugs.has(tool.slug) && <DocumentActionWorkbench tool={tool as ToolDefinition & { slug: ToolSlug }} {locale} {copy} />}
+    </div>
+  </section>
+  <section class="border-t border-line px-5 py-18 sm:px-6 sm:py-24"><div class="mx-auto grid max-w-5xl gap-12 lg:grid-cols-[1.1fr_0.9fr]"><article><h2 class="text-balance text-3xl font-semibold tracking-[-0.04em]">{copy.sectionTitle}</h2>{copy.paragraphs.map((paragraph) => <p class="mt-5 text-sm leading-7 text-muted">{paragraph}</p>)}</article><div><h2 class="text-xl font-semibold">{content.home.privacySteps[1].title}</h2><ol class="mt-5 space-y-4">{copy.steps.map((step, index) => <li class="flex gap-4 text-sm leading-6 text-muted"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue text-xs font-semibold text-white">{index + 1}</span><span>{step}</span></li>)}</ol><p data-pdf-to-word-ocr-disclosure={tool.slug === 'pdf-to-word' ? '' : undefined} class="mt-8 border-y border-line py-5 text-sm leading-7 text-muted"><strong class="font-medium text-ink">{content.common.limitations}:</strong> {copy.note}</p></div></div></section>
+  <ToolFaq items={copy.faqs} title={`${copy.title} · ${content.home.faqTitle}`} />
+  <RelatedTools slugs={tool.related} {locale} />
+</main>

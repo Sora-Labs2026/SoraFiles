@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+Sitemap: https://sorafiles.com/sitemap-index.xml

@@ -1,0 +1,35 @@
+---
+interface Props {
+  eyebrow?: string;
+  title: string;
+  intro: string;
+  compact?: boolean;
+}
+
+const { eyebrow, title, intro, compact = false } = Astro.props;
+---
+
+<section class:list={['grid-surface relative overflow-hidden border-b border-line bg-surface px-5 sm:px-6', compact ? 'py-10 sm:py-14' : 'py-14 sm:py-20']}>
+  <div class="relative mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+    <div>
+      {eyebrow && <p class="eyebrow text-xs font-semibold tracking-wider text-blue">{eyebrow}</p>}
+      <h1 class:list={['font-semibold tracking-[-0.04em] text-ink text-balance', compact ? 'text-[clamp(2rem,5vw,3.5rem)] leading-tight' : 'text-[clamp(2.5rem,6vw,5rem)] leading-[0.98]', eyebrow && 'mt-3']}>
+        {title}
+      </h1>
+      <p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg sm:leading-8">
+        {intro}
+      </p>
+      {Astro.slots.has('actions') && (
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <slot name="actions" />
+        </div>
+      )}
+    </div>
+
+    {Astro.slots.has('proof') && (
+      <div class="lg:justify-self-end w-full max-w-md">
+        <slot name="proof" />
+      </div>
+    )}
+  </div>
+</section>

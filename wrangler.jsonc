@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sora-files",
+  "main": "./worker.js",
+  "compatibility_date": "2026-08-09",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "sorafiles.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.sorafiles.com",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "./dist/",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "404-page",
+    "html_handling": "drop-trailing-slash"
+  }
+}
