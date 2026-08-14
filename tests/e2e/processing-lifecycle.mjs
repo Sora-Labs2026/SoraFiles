@@ -34,7 +34,8 @@ async function installLifecycleRecorder(page) {
 }
 
 async function assertCorruptEngineErrorsAreSafe(page) {
-  await page.goto(`${baseUrl}/pdf`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${baseUrl}/pdf`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(500);
   const results = await page.evaluate(async () => {
     const [{ pdfEngine }, { JobController }] = await Promise.all([
       import('/src/lib/processing/engines/pdf.ts'),
