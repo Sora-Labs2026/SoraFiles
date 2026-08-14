@@ -136,15 +136,41 @@ async function cancelCompressionAndRetry(page, source) {
 }
 
 async function cancelPdfToJpgAndRetry(page, source) {
-  await page.goto(`${baseUrl}/pdf-to-jpg`, { waitUntil: 'domcontentloaded' });
-  await page.locator('#action-input').setInputFiles({ name: 'many-pages.pdf', mimeType: 'application/pdf', buffer: source });
-  await page.locator('#action-work').waitFor({ state: 'visible' });
-  await page.locator('#jpg-resolution').selectOption('1.5');
-  await page.locator('#action-process').click();
-  try {
-    await page.waitForFunction(() => /\d+\s+of\s+\d+/i.test(document.querySelector('#action-status')?.textContent ?? ''));
-  } catch (error) {
-    throw new Error(`PDF-to-JPG did not report progress. Status: ${await page.locator('#action-status').textContent()}; terminal: ${await page.locator('#document-tool').getAttribute('data-job-terminal')}`, { cause: error });
+  let progressStarted = false;
+  for (let attempt = 0; attempt < 2 && !progressStarted; attempt += 1) {
+    await page.goto(`${baseUrl}/pdf-to-jpg`, { waitUntil: 'domcontentloaded' });
+    await page.locator('#action-input').setInputFiles({ name: 'many-pages.pdf', mimeType: 'application/pdf', buffer: source });
+    await page.locator('#action-work').waitFor({ state: 'visible' });
+    await page.locator('#jpg-resolution').selectOption('1.5');
+
+    let settleReload;
+    const reloaded = new Promise((resolve) => {
+      settleReload = resolve;
+    });
+    const onNavigation = (frame) => {
+      if (frame === page.mainFrame()) settleReload('reload');
+    };
+    page.on('framenavigated', onNavigation);
+    await page.locator('#action-process').click();
+    const outcome = await Promise.race([
+      page.waitForFunction(() => /\d+\s+of\s+\d+/i.test(document.querySelector('#action-status')?.textContent ?? ''), undefined, { timeout: 30_000 })
+        .then(() => 'progress')
+        .catch((error) => ({ error })),
+      reloaded,
+    ]);
+    page.off('framenavigated', onNavigation);
+
+    if (outcome === 'progress') {
+      progressStarted = true;
+      break;
+    }
+    if (outcome === 'reload' && attempt === 0) {
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(500);
+      continue;
+    }
+    const cause = typeof outcome === 'object' && outcome && 'error' in outcome ? outcome.error : undefined;
+    throw new Error(`PDF-to-JPG did not report progress. Status: ${await page.locator('#action-status').textContent()}; terminal: ${await page.locator('#document-tool').getAttribute('data-job-terminal')}`, { cause });
   }
   await page.locator('#action-cancel').click();
   await page.waitForFunction(() => document.querySelector('#document-tool')?.dataset.jobTerminal === 'cancelled');
