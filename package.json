@@ -35,6 +35,7 @@
     "test:tools": "node tests/e2e/tool-flows.mjs",
     "test:tools:smoke": "node tests/e2e/tool-flows.mjs --smoke",
     "test:unit": "tsx --test tests/unit/*.test.mjs",
+    "test:processing-contracts": "node --test tests/unit/processing-contracts.test.mjs",
     "test:site": "npm run build && node tests/e2e/site-shell.mjs",
     "astro": "astro"
   },

@@ -36,8 +36,37 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Start isolated production preview
+        run: npx astro preview --background --port 4390
+
       - name: Run responsive site checks
         run: node tests/e2e/site-shell.mjs
+        env:
+          SORA_BASE_URL: http://localhost:4390
 
-      - name: Smoke-test all public tools
-        run: npm run test:tools:smoke
+      - name: Test real outputs and recovery for all public tools
+        run: npm run test:tools
+        env:
+          SORA_BASE_URL: http://localhost:4390
+
+      - name: Test OCR disclosure
+        run: node tests/e2e/ocr-flows.mjs
+        env:
+          SORA_BASE_URL: http://localhost:4390
+
+      - name: Switch to isolated development server for lifecycle instrumentation
+        run: |
+          npx astro preview stop
+          npx astro dev --background --port 4391
+          node --input-type=module -e "await fetch('http://localhost:4391/src/lib/processing/engines/pdf.ts'); await new Promise(resolve => setTimeout(resolve, 8000))"
+
+      - name: Test processing cancellation, cleanup, and retry
+        run: node tests/e2e/processing-lifecycle.mjs
+        env:
+          SORA_BASE_URL: http://localhost:4391
+
+      - name: Stop browser-test servers
+        if: always()
+        run: |
+          npx astro preview stop
+          npx astro dev stop

@@ -77,7 +77,7 @@ async function runPdfToWordNoText(page) {
   await page.locator('#fidelity-confirm').check();
   await page.locator('#action-process').click();
   try {
-    await page.waitForFunction(() => document.querySelector('#action-status')?.textContent?.includes('No selectable text was found'), undefined, { timeout: 30_000 });
+    await page.waitForFunction(() => document.querySelector('#action-status')?.textContent?.includes('No readable text was found after local OCR'), undefined, { timeout: 30_000 });
   } catch (error) {
     throw new Error(`No-text recovery message was not shown. Status: ${await page.locator('#action-status').textContent()}`, { cause: error });
   }
@@ -182,7 +182,7 @@ async function runInvalidDocumentSignatures(page) {
     await page.goto(`${baseUrl}/${route}`, { waitUntil: 'domcontentloaded' });
     await page.locator('#action-input').setInputFiles({ name, mimeType, buffer: Buffer.from('not a real file') });
     await page.locator('#action-error').waitFor({ state: 'visible' });
-    assert.match((await page.locator('#action-error').textContent()) ?? '', /not a valid|valid DOCX/i, `${route} must explain the invalid signature.`);
+    assert.match((await page.locator('#action-error').textContent()) ?? '', /supported or valid|not a valid|valid DOCX/i, `${route} must explain the invalid signature.`);
     assert.ok(await page.locator('#action-result').isHidden(), `${route} must not expose a forged-file result.`);
     console.log(`PASS invalid signature ${route}`);
   }
@@ -243,10 +243,10 @@ async function runImageConverter(page) {
   console.log(`PASS image-converter HEIC to JPG ${heicDimensions.width}x${heicDimensions.height} ${heic.stats}`);
 
   const unsupportedCases = [
-    { name: 'corrupted.heic', mimeType: 'image/heic', expected: /supported image signature/i },
-    { name: 'unknown.bin', mimeType: 'application/octet-stream', expected: /supported image signature/i },
-    { name: 'camera.cr2', mimeType: 'image/x-canon-cr2', expected: /camera RAW format/i },
-    { name: 'layout.indd', mimeType: 'application/x-indesign', expected: /InDesign document, not an image/i },
+    { name: 'corrupted.heic', mimeType: 'image/heic', expected: /supported or valid/i },
+    { name: 'unknown.bin', mimeType: 'application/octet-stream', expected: /supported or valid/i },
+    { name: 'camera.cr2', mimeType: 'image/x-canon-cr2', expected: /supported or valid/i },
+    { name: 'layout.indd', mimeType: 'application/x-indesign', expected: /supported or valid/i },
   ];
   for (const current of unsupportedCases) {
     await page.goto(`${baseUrl}/image-converter`, { waitUntil: 'domcontentloaded' });
@@ -483,7 +483,7 @@ async function runPdfCompression(page) {
   }
 
   const invalidCases = [
-    { input: { name: 'forged.pdf', mimeType: 'application/pdf', buffer: Buffer.from('not a pdf') }, expected: /valid PDF signature/i },
+    { input: { name: 'forged.pdf', mimeType: 'application/pdf', buffer: Buffer.from('not a pdf') }, expected: /supported or valid/i },
     { input: { name: 'corrupt.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-not-a-document') }, expected: /invalid PDF|PDF could not|InvalidPDF/i },
     { input: fixturePath('mozilla-password-protected.pdf'), expected: /Password-protected PDFs are not supported/i },
   ];

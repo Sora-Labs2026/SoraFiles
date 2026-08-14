@@ -160,6 +160,9 @@ const m = getWorkbenchMessages(locale);
 <script type="application/json" id="file-workbench-messages" is:inline set:html={JSON.stringify(m).replace(/</g, '\\u003c')}></script>
 
 <script>
+  import { ProcessingError } from '../lib/processing/errors';
+  import { validateOutput } from '../lib/processing/output-validation';
+  import { assertAcceptedInput } from '../lib/processing/signatures';
   import { setDisplayedFilename } from '../utils/filename';
   import type { WorkbenchMessages } from '../i18n/workbench';
 
@@ -206,19 +209,6 @@ const m = getWorkbenchMessages(locale);
     if (bytes < 1000) return `${bytes} B`;
     if (bytes < 1_000_000) return `${(bytes / 1000).toFixed(bytes < 100_000 ? 1 : 0)} KB`;
     return `${(bytes / 1_000_000).toFixed(2)} MB`;
-  };
-
-  const detectMime = async (file: File): Promise<InputMime | null> => {
-    const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-    if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
-    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
-    const riff = String.fromCharCode(...bytes.slice(0, 4));
-    const webp = String.fromCharCode(...bytes.slice(8, 12));
-    if (riff === 'RIFF' && webp === 'WEBP') return 'image/webp';
-    const ftyp = String.fromCharCode(...bytes.slice(4, 8));
-    const brand = String.fromCharCode(...bytes.slice(8, 12));
-    if (ftyp === 'ftyp' && ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1'].includes(brand)) return 'image/heic';
-    return null;
   };
 
   const canvasToBlob = (canvas: HTMLCanvasElement, mime: OutputMime, quality?: number) => new Promise<Blob>((resolve, reject) => {
@@ -351,8 +341,11 @@ const m = getWorkbenchMessages(locale);
     status.textContent = fileMessages.processing;
     try {
       if (file.size > 50_000_000) throw new Error('Choose an image smaller than 50 MB to protect browser memory.');
-      const detectedMime = await detectMime(file);
-      if (!detectedMime) throw new Error('Choose a valid JPG, PNG, WebP, HEIC, or HEIF image. The file signature is not supported.');
+      const detected = await assertAcceptedInput(file, ['jpeg', 'png', 'webp', 'heif']);
+      const detectedMime: InputMime = detected.kind === 'jpeg' ? 'image/jpeg'
+        : detected.kind === 'png' ? 'image/png'
+          : detected.kind === 'webp' ? 'image/webp'
+            : 'image/heic';
       const { canvas } = await imageToCanvas(file, detectedMime);
       hasTransparency = detectedMime !== 'image/jpeg' && checkTransparency(canvas);
       selectedFile = file;
@@ -376,7 +369,7 @@ const m = getWorkbenchMessages(locale);
       updateWarning();
     } catch (error) {
       reset();
-      const detail = error instanceof Error ? error.message : '';
+      const detail = error instanceof ProcessingError ? fileMessages.invalidFile : error instanceof Error ? error.message : '';
       fileError.textContent = localizedWorkbench ? (/size|MB|megapixel/i.test(detail) ? fileMessages.tooLarge : fileMessages.invalidFile) : (detail || fileMessages.failed);
       fileError.hidden = false;
     }
@@ -466,6 +459,7 @@ const m = getWorkbenchMessages(locale);
         throw new Error('Choose a compression goal and try again.');
       }
 
+      await validateOutput(blob, mime === 'image/jpeg' ? 'jpeg' : mime === 'image/png' ? 'png' : 'webp');
       if (resultUrl) URL.revokeObjectURL(resultUrl);
       resultUrl = URL.createObjectURL(blob);
       const extension = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1];
@@ -503,7 +497,7 @@ const m = getWorkbenchMessages(locale);
       status.textContent = fileMessages.finished;
       resultState.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : '';
+      const detail = error instanceof ProcessingError ? fileMessages.failed : error instanceof Error ? error.message : '';
       status.textContent = document.documentElement.lang === 'en' ? (detail || fileMessages.failed) : (/size|MB|megapixel|20 KB/i.test(detail) ? fileMessages.tooLarge : /valid|signature|decode|format/i.test(detail) ? fileMessages.invalidFile : fileMessages.failed);
     } finally {
       processButton.disabled = false;

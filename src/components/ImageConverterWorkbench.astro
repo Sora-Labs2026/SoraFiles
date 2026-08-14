@@ -88,6 +88,9 @@ const m = getWorkbenchMessages(locale);
 <script type="application/json" id="converter-workbench-messages" is:inline set:html={JSON.stringify(m).replace(/</g, '\\u003c')}></script>
 
 <script>
+  import { ProcessingError } from '../lib/processing/errors';
+  import { validateOutput } from '../lib/processing/output-validation';
+  import { assertAcceptedInput } from '../lib/processing/signatures';
   import { setDisplayedFilename } from '../utils/filename';
   import type { WorkbenchMessages } from '../i18n/workbench';
 
@@ -123,8 +126,6 @@ const m = getWorkbenchMessages(locale);
   const converterRoot = $('#image-converter');
   const localizedConverter = converterRoot.dataset.localized === 'true';
   const submitLabel = submit.textContent?.trim() ?? converterMessages.process;
-  const rawExtensions = new Set(['dng', 'cr2', 'cr3', 'nef', 'nrw', 'arw', 'srf', 'sr2', 'raf', 'orf', 'rw2', 'pef', 'x3f']);
-  const jpeg2000Extensions = new Set(['jp2', 'j2k', 'jpf', 'jpx', 'jpm', 'mj2']);
   let selectedFile: File | null = null;
   let sourceCanvas: HTMLCanvasElement | null = null;
   let sourceKind: SourceKind | null = null;
@@ -133,36 +134,6 @@ const m = getWorkbenchMessages(locale);
 
   const formatNumber = (value: number, digits: number) => new Intl.NumberFormat(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
   const formatBytes = (bytes: number) => bytes < 1000 ? `${formatNumber(bytes, 0)} B` : bytes < 1_000_000 ? `${formatNumber(bytes / 1000, bytes < 100_000 ? 1 : 0)} KB` : `${formatNumber(bytes / 1_000_000, 2)} MB`;
-  const extensionOf = (name: string) => name.toLowerCase().split('.').pop() ?? '';
-  const startsWith = (bytes: Uint8Array, values: number[]) => values.every((value, index) => bytes[index] === value);
-  const ascii = (bytes: Uint8Array, start: number, length: number) => String.fromCharCode(...bytes.slice(start, start + length));
-
-  const detectKind = async (file: File): Promise<SourceKind> => {
-    const extension = extensionOf(file.name);
-    if (extension === 'indd') throw new Error('INDD is an Adobe InDesign document, not an image format. Export the page as JPG or PNG from InDesign first.');
-    if (rawExtensions.has(extension)) throw new Error(`${extension.toUpperCase()} is a camera RAW format. Safe local RAW development is not available yet; export it as JPG, PNG, or TIFF in your camera software first.`);
-    if (jpeg2000Extensions.has(extension)) return 'jp2';
-
-    const bytes = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
-    if (startsWith(bytes, [0xff, 0xd8, 0xff])) return 'jpeg';
-    if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47])) return 'png';
-    if (ascii(bytes, 0, 4) === 'GIF8') return 'gif';
-    if (ascii(bytes, 0, 4) === 'RIFF' && ascii(bytes, 8, 4) === 'WEBP') return 'webp';
-    if (ascii(bytes, 0, 2) === 'BM') return 'bmp';
-    if (startsWith(bytes, [0x49, 0x49, 0x2a, 0x00]) || startsWith(bytes, [0x4d, 0x4d, 0x00, 0x2a])) return 'tiff';
-    if (ascii(bytes, 0, 4) === '8BPS') return 'psd';
-    if (startsWith(bytes, [0x00, 0x00, 0x01, 0x00])) return 'ico';
-    if (startsWith(bytes, [0x00, 0x00, 0x00, 0x0c, 0x6a, 0x50, 0x20, 0x20]) || startsWith(bytes, [0xff, 0x4f, 0xff, 0x51])) return 'jp2';
-    if (ascii(bytes, 4, 4) === 'ftyp') {
-      const brand = ascii(bytes, 8, 4);
-      if (['heic', 'heif', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1'].includes(brand)) return 'heic';
-      if (['avif', 'avis'].includes(brand)) return 'avif';
-    }
-    const textStart = new TextDecoder().decode(bytes).replace(/^\uFEFF/, '').trimStart().slice(0, 500).toLowerCase();
-    if (textStart.startsWith('<svg') || (textStart.startsWith('<?xml') && textStart.includes('<svg'))) return 'svg';
-    throw new Error('This file does not contain a supported image signature. Try JPG, PNG, WebP, GIF, BMP, AVIF, SVG, HEIC, HEIF, TIFF, or PSD.');
-  };
-
   const makeCanvas = (width: number, height: number) => {
     if (width < 1 || height < 1 || width * height > 32_000_000) throw new Error('This image is empty or larger than 32 megapixels. Use a smaller image to protect browser memory.');
     const canvas = document.createElement('canvas');
@@ -273,7 +244,8 @@ const m = getWorkbenchMessages(locale);
     reset();
     try {
       if (file.size > 50_000_000) throw new Error('Choose a file smaller than 50\u00a0MB to protect browser memory.');
-      const kind = await detectKind(file);
+      const detected = await assertAcceptedInput(file, ['jpeg', 'png', 'webp', 'gif', 'bmp', 'avif', 'svg', 'ico', 'heif', 'tiff', 'psd', 'jpeg-2000']);
+      const kind = (detected.kind === 'heif' ? 'heic' : detected.kind === 'jpeg-2000' ? 'jp2' : detected.kind) as SourceKind;
       const loaded = await loadImage(file, kind);
       selectedFile = file; sourceCanvas = loaded.canvas; sourceKind = kind; transparency = hasTransparency(loaded.canvas);
       drawPreview(loaded.canvas);
@@ -283,7 +255,7 @@ const m = getWorkbenchMessages(locale);
       format.value = transparency ? 'image/png' : kind === 'png' ? 'image/png' : 'image/jpeg';
       updateFormat(); empty.hidden = true; work.hidden = false;
     } catch (error) {
-      const detail = error instanceof Error ? error.message : '';
+      const detail = error instanceof ProcessingError ? converterMessages.invalidFile : error instanceof Error ? error.message : '';
       errorBox.textContent = localizedConverter ? (/50|32|memory|large/i.test(detail) ? converterMessages.tooLarge : converterMessages.invalidFile) : (detail || converterMessages.invalidFile);
       errorBox.hidden = false;
     }
@@ -313,6 +285,7 @@ const m = getWorkbenchMessages(locale);
         if (mime === 'image/jpeg') { context.fillStyle = '#ffffff'; context.fillRect(0, 0, outputCanvas.width, outputCanvas.height); }
         context.drawImage(sourceCanvas, 0, 0);
         const blob = await canvasToBlob(outputCanvas, mime, Number(quality.value) / 100);
+        await validateOutput(blob, mime === 'image/jpeg' ? 'jpeg' : mime === 'image/png' ? 'png' : 'webp');
         if (resultUrl) URL.revokeObjectURL(resultUrl);
         resultUrl = URL.createObjectURL(blob);
         const extension = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1];
@@ -322,7 +295,7 @@ const m = getWorkbenchMessages(locale);
         result.hidden = false; status.textContent = converterMessages.finished;
         result.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
       } catch (error) {
-        const detail = error instanceof Error ? error.message : '';
+        const detail = error instanceof ProcessingError ? converterMessages.failed : error instanceof Error ? error.message : '';
         status.textContent = localizedConverter ? converterMessages.failed : (detail || converterMessages.failed);
       } finally { submit.disabled = false; submit.textContent = submitLabel; }
     })();

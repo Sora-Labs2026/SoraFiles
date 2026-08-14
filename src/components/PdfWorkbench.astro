@@ -2,9 +2,11 @@
 import type { LocalizedToolCopy } from '../i18n/types';
 import type { LocalePath } from '../i18n/config';
 import { getWorkbenchMessages } from '../i18n/workbench';
+import { getOcrMessages } from '../i18n/ocr';
 interface Props { locale?: LocalePath; copy?: LocalizedToolCopy; }
 const { locale = 'en', copy = { title: 'Compress PDF', description: 'Compress a PDF locally in this browser.', note: 'Every page is rebuilt as an image. Selectable text, forms, links, bookmarks, signatures, layers, and accessibility structure are flattened.' } as LocalizedToolCopy } = Astro.props;
 const m = getWorkbenchMessages(locale);
+const cancelLabel = getOcrMessages(locale).cancel;
 ---
 <section data-workbench id="pdf-tool" aria-labelledby="pdf-tool-heading" class="mx-auto max-w-5xl px-5 sm:px-6" data-localized={locale !== 'en' ? 'true' : 'false'} data-copy-note={copy.note}>
   <div class="overflow-hidden rounded-card bg-surface shadow-card">
@@ -46,6 +48,7 @@ const m = getWorkbenchMessages(locale);
         <div class="mt-5 rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber">{copy.note}</div>
         <label class="mt-5 flex cursor-pointer items-start gap-3 text-sm leading-6"><input id="pdf-confirm" type="checkbox" name="pdfConfirm" class="mt-1.5 accent-blue"/><span>{m.confirmLimitation}</span></label>
         <button id="pdf-process" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-not-allowed disabled:opacity-50">{m.process}</button>
+        <button id="pdf-cancel" type="button" hidden class="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-control border border-line bg-canvas text-sm font-medium text-ink hover:bg-surface">{cancelLabel}</button>
         <p data-workbench-status id="pdf-status" class="mt-3 min-h-5 text-center text-xs text-muted" aria-live="polite"></p>
       </form>
     </div>
@@ -60,120 +63,102 @@ const m = getWorkbenchMessages(locale);
 <script type="application/json" id="pdf-workbench-messages" is:inline set:html={JSON.stringify(m).replace(/</g, '\\u003c')}></script>
 
 <script>
-  import type { PDFDocumentProxy } from 'pdfjs-dist';
   import type { WorkbenchMessages } from '../i18n/workbench';
   import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+  import { JobController } from '../lib/processing/controller';
+  import { pdfEngine } from '../lib/processing/engines/pdf';
+  import { ProcessingError } from '../lib/processing/errors';
+  import { validateOutput } from '../lib/processing/output-validation';
+  import { assertAcceptedInput } from '../lib/processing/signatures';
   import { setDisplayedFilename } from '../utils/filename';
-  const pdfMessages = JSON.parse(document.querySelector('#pdf-workbench-messages')?.textContent || '{}') as WorkbenchMessages;
-  const pdfEl = <T extends HTMLElement>(selector: string) => { const node = document.querySelector<T>(selector); if (!node) throw new Error(`Missing element: ${selector}`); return node; };
-  const pdfInput = pdfEl<HTMLInputElement>('#pdf-input');
-  const pdfEmpty = pdfEl('#pdf-empty');
-  const pdfWork = pdfEl('#pdf-work');
-  const pdfResult = pdfEl('#pdf-result');
-  const pdfError = pdfEl('#pdf-file-error');
-  const pdfStatus = pdfEl('#pdf-status');
-  const pdfButton = pdfEl<HTMLButtonElement>('#pdf-process');
-  const pdfForm = pdfEl<HTMLFormElement>('#pdf-form');
-  const pdfCanvas = pdfEl<HTMLCanvasElement>('#pdf-preview');
-  const localizedPdf = pdfEl('#pdf-tool').dataset.localized === 'true';
-  let pdfFile: File | null = null;
-  let pdfSource: PDFDocumentProxy | null = null;
-  let pdfResultUrl: string | null = null;
 
-  const pdfBytes = (bytes: number) => bytes < 1000 ? `${bytes} B` : bytes < 1_000_000 ? `${(bytes / 1000).toFixed(0)} KB` : `${(bytes / 1_000_000).toFixed(2)} MB`;
-  const validPdfSignature = async (file: File) => new TextDecoder('ascii').decode(await file.slice(0, 5).arrayBuffer()) === '%PDF-';
-  const clearPdfResult = () => { if (pdfResultUrl) URL.revokeObjectURL(pdfResultUrl); pdfResultUrl = null; pdfResult.hidden = true; };
-  const resetPdf = async () => { clearPdfResult(); await pdfSource?.cleanup(); pdfSource = null; pdfFile = null; pdfInput.value = ''; pdfEmpty.hidden = false; pdfWork.hidden = true; pdfError.hidden = true; pdfStatus.textContent = ''; };
+  const messages = JSON.parse(document.querySelector('#pdf-workbench-messages')?.textContent || '{}') as WorkbenchMessages;
+  const el = <T extends HTMLElement>(selector: string) => { const node = document.querySelector<T>(selector); if (!node) throw new Error(`Missing element: ${selector}`); return node; };
+  const root = el('#pdf-tool'); const input = el<HTMLInputElement>('#pdf-input'); const empty = el('#pdf-empty'); const work = el('#pdf-work'); const resultEl = el('#pdf-result'); const errorEl = el('#pdf-file-error'); const status = el('#pdf-status'); const processButton = el<HTMLButtonElement>('#pdf-process'); const cancelButton = el<HTMLButtonElement>('#pdf-cancel'); const form = el<HTMLFormElement>('#pdf-form'); const preview = el<HTMLCanvasElement>('#pdf-preview');
+  const localized = root.dataset.localized === 'true';
+  const jobs = new JobController();
+  const terminalJobs = new Set<string>();
+  let sourceFile: File | null = null;
+  let resultUrl: string | null = null;
+  let activeJobId: string | null = null;
 
-  const renderPreview = async () => {
-    if (!pdfSource) return;
-    const page = await pdfSource.getPage(1);
-    const base = page.getViewport({ scale: 1 });
-    const scale = Math.min(1.25, 760 / base.width);
-    const viewport = page.getViewport({ scale });
-    pdfCanvas.width = Math.ceil(viewport.width);
-    pdfCanvas.height = Math.ceil(viewport.height);
-    const context = pdfCanvas.getContext('2d');
-    if (!context) throw new Error('Canvas rendering is unavailable in this browser.');
-    await page.render({ canvas: pdfCanvas, canvasContext: context, viewport }).promise;
-    page.cleanup();
-  };
+  const readableSize = (bytes: number) => bytes < 1000 ? `${bytes} B` : bytes < 1_000_000 ? `${(bytes / 1000).toFixed(0)} KB` : `${(bytes / 1_000_000).toFixed(2)} MB`;
+  const setTerminal = (jobId: string, terminal: 'result' | 'error' | 'cancelled') => { if (!terminalJobs.has(jobId)) { terminalJobs.add(jobId); root.dataset.jobTerminal = terminal; } };
+  const clearResult = () => { if (resultUrl) URL.revokeObjectURL(resultUrl); resultUrl = null; resultEl.hidden = true; };
+  const cancelActive = async (visible: boolean) => { const jobId = activeJobId; activeJobId = null; await jobs.cancelAndDispose(); if (visible && jobId) { setTerminal(jobId, 'cancelled'); cancelButton.hidden = true; processButton.disabled = false; processButton.textContent = messages.process; } };
+  const reset = async () => { await cancelActive(Boolean(activeJobId)); clearResult(); sourceFile = null; input.value = ''; preview.width = 1; preview.height = 1; empty.hidden = false; work.hidden = true; errorEl.hidden = true; status.textContent = ''; cancelButton.hidden = true; };
 
-  const loadPdf = async (file: File) => {
-    await resetPdf();
-    pdfError.hidden = true;
+  const load = async (file: File) => {
+    await reset();
     try {
       if (file.size > 50_000_000) throw new Error('Choose a PDF smaller than 50 MB. Large documents can exhaust browser memory.');
-      if (!(await validPdfSignature(file))) throw new Error('This file does not have a valid PDF signature. Choose an actual PDF document.');
-      const data = new Uint8Array(await file.arrayBuffer());
+      const job = await jobs.start();
+      await assertAcceptedInput(file, ['pdf']);
+      jobs.transition('ready'); jobs.transition('processing');
       const pdfjs = await import('pdfjs-dist');
       pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-      pdfSource = await pdfjs.getDocument({ data, wasmUrl: '/pdfjs/wasm/' }).promise;
-      if (pdfSource.numPages > 40) throw new Error(`This PDF has ${pdfSource.numPages} pages. The local compressor currently supports up to 40 pages.`);
-      pdfFile = file;
-      setDisplayedFilename(pdfEl('#pdf-name'), file.name);
-      pdfEl('#pdf-meta').textContent = localizedPdf ? `${pdfBytes(file.size)} · ${pdfSource.numPages} PDF` : `${pdfBytes(file.size)} · ${pdfSource.numPages} ${pdfSource.numPages === 1 ? 'page' : 'pages'}`;
-      await renderPreview();
-      pdfEmpty.hidden = true;
-      pdfWork.hidden = false;
+      const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), wasmUrl: '/pdfjs/wasm/' });
+      let destroyed = false;
+      job.resources.defer(async () => { if (!destroyed) { destroyed = true; await loadingTask.destroy(); } });
+      const documentProxy = await loadingTask.promise;
+      if (documentProxy.numPages > 40) throw new Error(`This PDF has ${documentProxy.numPages} pages. The local compressor currently supports up to 40 pages.`);
+      const page = await documentProxy.getPage(1);
+      let pageCleaned = false;
+      job.resources.defer(() => { if (!pageCleaned) { pageCleaned = true; page.cleanup(); } });
+      const base = page.getViewport({ scale: 1 }); const viewport = page.getViewport({ scale: Math.min(1.25, 760 / base.width) });
+      preview.width = Math.ceil(viewport.width); preview.height = Math.ceil(viewport.height);
+      const context = preview.getContext('2d'); if (!context) throw new Error('Canvas rendering is unavailable in this browser.');
+      const render = page.render({ canvas: preview, canvasContext: context, viewport });
+      let rendering = true; job.resources.defer(() => { if (rendering) render.cancel(); });
+      await render.promise; rendering = false; page.cleanup(); pageCleaned = true;
+      if (job.signal.aborted) return;
+      sourceFile = file;
+      setDisplayedFilename(el('#pdf-name'), file.name);
+      el('#pdf-meta').textContent = localized ? `${readableSize(file.size)} · ${documentProxy.numPages} PDF` : `${readableSize(file.size)} · ${documentProxy.numPages} ${documentProxy.numPages === 1 ? 'page' : 'pages'}`;
+      jobs.transition('success'); jobs.transition('result');
+      await jobs.cancelAndDispose();
+      empty.hidden = true; work.hidden = false;
     } catch (error) {
-      await pdfSource?.cleanup(); pdfSource = null;
-      const detail = error instanceof Error ? error.message : '';
-      pdfError.textContent = error instanceof Error && error.name === 'PasswordException' ? pdfMessages.password : localizedPdf ? (/50 MB|40 pages|memory/i.test(detail) ? pdfMessages.tooLarge : pdfMessages.invalidFile) : (detail || pdfMessages.invalidFile);
-      pdfError.hidden = false; pdfError.focus();
+      await jobs.cancelAndDispose().catch(() => {});
+      const detail = error instanceof ProcessingError ? messages.invalidFile : error instanceof Error ? error.message : '';
+      errorEl.textContent = error instanceof Error && error.name === 'PasswordException' ? messages.password : localized ? (/50 MB|40 pages|memory/i.test(detail) ? messages.tooLarge : messages.invalidFile) : (detail || messages.invalidFile);
+      errorEl.hidden = false; errorEl.focus();
     }
   };
 
-  const canvasJpeg = (canvas: HTMLCanvasElement, quality: number) => new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('The browser could not encode a PDF page.')), 'image/jpeg', quality));
-
-  const compressPdf = async () => {
-    if (!pdfFile || !pdfSource) return;
-    if (!pdfEl<HTMLInputElement>('#pdf-confirm').checked) { pdfStatus.textContent = pdfMessages.confirmLimitation; pdfEl<HTMLInputElement>('#pdf-confirm').focus(); return; }
-    const level = new FormData(pdfForm).get('pdfLevel');
-    const setting = level === 'small' ? { scale: 1.2, quality: 0.58 } : level === 'quality' ? { scale: 2, quality: 0.82 } : { scale: 1.5, quality: 0.72 };
-    clearPdfResult(); pdfButton.disabled = true; pdfButton.textContent = pdfMessages.processing;
+  const compress = async () => {
+    if (!sourceFile) return;
+    if (!el<HTMLInputElement>('#pdf-confirm').checked) { status.textContent = messages.confirmLimitation; el<HTMLInputElement>('#pdf-confirm').focus(); return; }
+    const file = sourceFile;
+    clearResult(); processButton.disabled = true; processButton.textContent = messages.processing; cancelButton.hidden = false;
+    let jobId: string | null = null;
     try {
-      const { PDFDocument } = await import('pdf-lib');
-      const output = await PDFDocument.create();
-      output.setProducer('Sora Files local PDF compressor');
-      for (let index = 1; index <= pdfSource.numPages; index += 1) {
-        pdfStatus.textContent = `${pdfMessages.processing} ${index}/${pdfSource.numPages}`;
-        const sourcePage = await pdfSource.getPage(index);
-        const points = sourcePage.getViewport({ scale: 1 });
-        let scale = setting.scale;
-        const pixelCount = points.width * scale * points.height * scale;
-        if (pixelCount > 16_000_000) scale *= Math.sqrt(16_000_000 / pixelCount);
-        const viewport = sourcePage.getViewport({ scale });
-        const canvas = document.createElement('canvas'); canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
-        const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas rendering is unavailable.');
-        context.fillStyle = '#ffffff'; context.fillRect(0, 0, canvas.width, canvas.height);
-        await sourcePage.render({ canvas, canvasContext: context, viewport, background: '#ffffff' }).promise;
-        const jpegBlob = await canvasJpeg(canvas, setting.quality);
-        const image = await output.embedJpg(await jpegBlob.arrayBuffer());
-        const page = output.addPage([points.width, points.height]);
-        page.drawImage(image, { x: 0, y: 0, width: points.width, height: points.height });
-        sourcePage.cleanup(); canvas.width = 1; canvas.height = 1;
-      }
-      pdfStatus.textContent = pdfMessages.processing;
-      const bytes = await output.save({ useObjectStreams: true, addDefaultPage: false });
-      const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' });
-      pdfResultUrl = URL.createObjectURL(blob);
-      const link = pdfEl<HTMLAnchorElement>('#pdf-download'); link.href = pdfResultUrl; link.download = `${pdfFile.name.replace(/\.pdf$/i, '')}-smaller.pdf`;
-      const delta = Math.round((1 - blob.size / pdfFile.size) * 100);
-      pdfEl('#pdf-result-stats').textContent = localizedPdf ? `${pdfBytes(pdfFile.size)} → ${pdfBytes(blob.size)}${delta > 0 ? ` · −${delta}%` : ''}` : `${pdfBytes(pdfFile.size)} → ${pdfBytes(blob.size)}${delta > 0 ? ` · ${delta}% smaller` : ' · larger than the original'}`;
-      const warning = pdfEl('#pdf-result-warning'); warning.textContent = localizedPdf ? pdfMessages.review : blob.size >= pdfFile.size ? 'This document was already efficient. The image-based version is larger, so keep the original unless you specifically need flattened pages.' : 'Review the downloaded document before deleting or replacing the original.'; warning.hidden = false;
-      pdfResult.hidden = false; pdfStatus.textContent = pdfMessages.finished; pdfResult.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
-    } catch (error) { const detail = error instanceof Error ? error.message : ''; pdfStatus.textContent = localizedPdf ? pdfMessages.failed : (detail || pdfMessages.failed); }
-    finally { pdfButton.disabled = false; pdfButton.textContent = pdfMessages.process; }
+      const job = await jobs.start(); jobId = job.jobId; activeJobId = job.jobId; jobs.transition('ready'); jobs.transition('processing');
+      const level = new FormData(form).get('pdfLevel'); const preset = level === 'small' || level === 'quality' ? level : 'balanced';
+      const output = await pdfEngine.run({ operation: 'compress', bytes: await file.arrayBuffer(), preset }, { job, onEvent: (event) => { if (jobs.accept(event) && event.type === 'progress') status.textContent = `${messages.processing} ${event.completed}/${event.total}`; } });
+      if (job.signal.aborted || activeJobId !== job.jobId) return;
+      const blob = new Blob([output.bytes], { type: 'application/pdf' }); await validateOutput(blob, 'pdf');
+      if (job.signal.aborted || activeJobId !== job.jobId) return;
+      resultUrl = URL.createObjectURL(blob); const link = el<HTMLAnchorElement>('#pdf-download'); link.href = resultUrl; link.download = `${file.name.replace(/\.pdf$/i, '')}-smaller.pdf`;
+      const delta = Math.round((1 - blob.size / file.size) * 100);
+      el('#pdf-result-stats').textContent = localized ? `${readableSize(file.size)} → ${readableSize(blob.size)}${delta > 0 ? ` · −${delta}%` : ''}` : `${readableSize(file.size)} → ${readableSize(blob.size)}${delta > 0 ? ` · ${delta}% smaller` : ' · larger than the original'}`;
+      const warning = el('#pdf-result-warning'); warning.textContent = localized ? messages.review : blob.size >= file.size ? 'This document was already efficient. The image-based version is larger, so keep the original unless you specifically need flattened pages.' : 'Review the downloaded document before deleting or replacing the original.'; warning.hidden = false;
+      jobs.transition('success'); jobs.transition('result'); setTerminal(job.jobId, 'result');
+      resultEl.hidden = false; status.textContent = messages.finished; resultEl.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+    } catch (error) {
+      if (error instanceof ProcessingError && error.value.code === 'cancelled') { if (jobId) setTerminal(jobId, 'cancelled'); }
+      else { if (jobId) setTerminal(jobId, 'error'); const detail = error instanceof ProcessingError ? messages.failed : error instanceof Error ? error.message : ''; status.textContent = localized ? messages.failed : (detail || messages.failed); }
+    } finally { if (activeJobId === jobId) activeJobId = null; cancelButton.hidden = true; processButton.disabled = false; processButton.textContent = messages.process; }
   };
 
-  pdfEl<HTMLButtonElement>('#pdf-choose').addEventListener('click', () => pdfInput.click());
-  pdfInput.addEventListener('change', () => pdfInput.files?.[0] && void loadPdf(pdfInput.files[0]));
-  pdfEl<HTMLButtonElement>('#pdf-remove').addEventListener('click', () => void resetPdf());
-  pdfForm.addEventListener('submit', event => { event.preventDefault(); void compressPdf(); });
-  const pdfDrop = pdfEl('#pdf-drop-zone');
-  for (const eventName of ['dragenter', 'dragover']) pdfDrop.addEventListener(eventName, event => { event.preventDefault(); pdfDrop.classList.add('border-blue', 'bg-blue-soft', 'select-none'); });
-  for (const eventName of ['dragleave', 'drop']) pdfDrop.addEventListener(eventName, event => { event.preventDefault(); pdfDrop.classList.remove('border-blue', 'bg-blue-soft', 'select-none'); });
-  pdfDrop.addEventListener('drop', event => { const file = event.dataTransfer?.files[0]; if (file) void loadPdf(file); });
-  window.addEventListener('beforeunload', () => { if (pdfResultUrl) URL.revokeObjectURL(pdfResultUrl); void pdfSource?.cleanup(); });
+  el<HTMLButtonElement>('#pdf-choose').addEventListener('click', () => input.click());
+  input.addEventListener('change', () => input.files?.[0] && void load(input.files[0]));
+  el<HTMLButtonElement>('#pdf-remove').addEventListener('click', () => void reset());
+  cancelButton.addEventListener('click', () => void cancelActive(true));
+  form.addEventListener('submit', event => { event.preventDefault(); void compress(); });
+  const drop = el('#pdf-drop-zone');
+  for (const eventName of ['dragenter', 'dragover']) drop.addEventListener(eventName, event => { event.preventDefault(); drop.classList.add('border-blue', 'bg-blue-soft', 'select-none'); });
+  for (const eventName of ['dragleave', 'drop']) drop.addEventListener(eventName, event => { event.preventDefault(); drop.classList.remove('border-blue', 'bg-blue-soft', 'select-none'); });
+  drop.addEventListener('drop', event => { const file = event.dataTransfer?.files[0]; if (file) void load(file); });
+  window.addEventListener('beforeunload', () => { clearResult(); void jobs.cancelAndDispose(); });
 </script>

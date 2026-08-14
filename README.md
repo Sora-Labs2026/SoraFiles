@@ -6,7 +6,7 @@
 
 Free, privacy-first PDF and image tools that run locally in your browser.
 
-> **Active development:** this repository is an early public snapshot of SoraFiles after its verified homepage and design-system work. The application is usable today, but its processing architecture, documentation, and contributor experience are still being hardened in public.
+> **Active development:** SoraFiles is usable today, and a more dependable generation of its local PDF tools is now being developed in public. The latest source adds safer cancellation, stronger input/output checks, and better recovery without changing the no-upload privacy model.
 
 [Use SoraFiles](https://sorafiles.com) · [Source code](https://github.com/Sora-Labs2026/SoraFiles) · [Report a security issue](SECURITY.md) · [Contribute](CONTRIBUTING.md)
 
@@ -131,6 +131,8 @@ tests/           unit, browser, fixtures, and real-output validation
 Currently verified:
 
 - Eleven public file tools and real output fixtures
+- Cancellable PDF compression, merge, split, rotate, JPG-to-PDF, and PDF-to-JPG jobs with stale-result protection
+- Structured corrupt/encrypted-file recovery and tool-specific output validation before downloads appear
 - Local OCR assets for supported languages
 - 342 static pages and 323 localized canonical URLs
 - Responsive light/dark/system themes, keyboard access, reduced motion, RTL, and zoom/reflow coverage

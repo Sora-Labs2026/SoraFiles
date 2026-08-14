@@ -6,6 +6,7 @@ export type ToolStatus = 'stable' | 'basic';
 
 export interface ToolDefinition {
   slug: PublicToolSlug;
+  runtimeId: PublicToolSlug;
   title: string;
   short: string;
   description: string;
@@ -29,6 +30,7 @@ const localPrivacy = 'Runs locally in your browser. Your file stays on this devi
 export const tools: ToolDefinition[] = [
   {
     slug: 'image-converter',
+    runtimeId: 'image-converter',
     title: 'Image Converter',
     short: 'JPG, PNG, HEIC, TIFF & more',
     description: 'Convert everyday image formats to JPG, PNG, or WebP in one private workspace.',
@@ -47,6 +49,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'compress-image',
+    runtimeId: 'compress-image',
     title: 'Compress Images',
     short: 'JPG, PNG, WebP & HEIC',
     description: 'Shrink an image automatically, by percentage, or toward a target file size.',
@@ -65,6 +68,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'heic-to-jpg',
+    runtimeId: 'heic-to-jpg',
     title: 'HEIC to JPG',
     short: 'iPhone photos anywhere',
     description: 'Turn an HEIC or HEIF photo into a widely compatible JPG.',
@@ -82,6 +86,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'compress-pdf',
+    runtimeId: 'compress-pdf',
     title: 'Compress PDF',
     short: 'Smaller document',
     description: 'Create a smaller image-based PDF with clear rasterization warnings.',
@@ -100,6 +105,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'merge-pdf',
+    runtimeId: 'merge-pdf',
     title: 'Merge PDF',
     short: 'Combine documents',
     description: 'Join PDF files in the order you select and download one new document.',
@@ -117,6 +123,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'split-pdf',
+    runtimeId: 'split-pdf',
     title: 'Split PDF',
     short: 'One file per page',
     description: 'Separate every PDF page into its own file and download one ZIP.',
@@ -134,6 +141,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'rotate-pdf',
+    runtimeId: 'rotate-pdf',
     title: 'Rotate PDF',
     short: 'Fix page direction',
     description: 'Rotate every PDF page by 90°, 180°, or 270°.',
@@ -151,6 +159,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'jpg-to-pdf',
+    runtimeId: 'jpg-to-pdf',
     title: 'JPG to PDF',
     short: 'Images into one PDF',
     description: 'Turn one or more JPG or PNG images into a single PDF.',
@@ -168,6 +177,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'pdf-to-jpg',
+    runtimeId: 'pdf-to-jpg',
     title: 'PDF to JPG',
     short: 'Pages into images',
     description: 'Render every PDF page as a JPG and download multiple pages in a ZIP.',
@@ -185,6 +195,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'pdf-to-word',
+    runtimeId: 'pdf-to-word',
     title: 'PDF to Word',
     short: 'Extract editable text',
     description: 'Create a basic DOCX from readable text in a PDF.',
@@ -203,6 +214,7 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'word-to-pdf',
+    runtimeId: 'word-to-pdf',
     title: 'Word to PDF',
     short: 'Text-first conversion',
     description: 'Turn DOCX text into a clean, basic PDF.',
