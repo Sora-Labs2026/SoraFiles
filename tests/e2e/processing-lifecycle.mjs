@@ -33,10 +33,24 @@ async function installLifecycleRecorder(page) {
   });
 }
 
+async function evaluateAfterViteSettles(page, evaluator) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await page.evaluate(evaluator);
+    } catch (error) {
+      const contextReloaded = String(error).includes('Execution context was destroyed');
+      if (!contextReloaded || attempt === 1) throw error;
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(500);
+    }
+  }
+  throw new Error('Vite evaluation did not settle');
+}
+
 async function assertCorruptEngineErrorsAreSafe(page) {
   await page.goto(`${baseUrl}/pdf`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(500);
-  const results = await page.evaluate(async () => {
+  const results = await evaluateAfterViteSettles(page, async () => {
     const [{ pdfEngine }, { JobController }] = await Promise.all([
       import('/src/lib/processing/engines/pdf.ts'),
       import('/src/lib/processing/controller.ts'),
