@@ -10,6 +10,16 @@ This repository contains the source deployed at [sorafiles.com](https://sorafile
 
 [Use SoraFiles](https://sorafiles.com) · [Source code](https://github.com/Sora-Labs2026/SoraFiles) · [Report a security issue](SECURITY.md) · [Contribute](CONTRIBUTING.md)
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/media/sorafiles-desktop.png" alt="SoraFiles desktop homepage" width="760">
+</p>
+
+<p align="center">
+  <img src="docs/media/sorafiles-mobile.png" alt="SoraFiles mobile homepage" width="360">
+</p>
+
 ## Why SoraFiles exists
 
 Everyday file tasks should not require an account, a watermark, or an upload queue. SoraFiles performs its supported PDF, image, HEIC, OCR, and basic document operations in the browser using local JavaScript, Web Workers, WebAssembly, and browser APIs. The original file is never overwritten.
