@@ -8,7 +8,7 @@ Free, privacy-first PDF and image tools that run locally in your browser.
 
 This repository contains the source deployed at [sorafiles.com](https://sorafiles.com), including its local processing engines, multilingual Astro interface, tests, and Cloudflare Worker configuration.
 
-[Use SoraFiles](https://sorafiles.com) · [Source code](https://github.com/Sora-Labs2026/SoraFiles) · [Report a security issue](SECURITY.md) · [Contribute](CONTRIBUTING.md)
+[Use SoraFiles](https://sorafiles.com) · [Privacy](PRIVACY.md) · [Terms](TERMS.md) · [Source code](https://github.com/Sora-Labs2026/SoraFiles) · [Report a security issue](SECURITY.md) · [Contribute](CONTRIBUTING.md)
 
 ## Screenshots
 
@@ -35,6 +35,8 @@ Everyday file tasks should not require an account, a watermark, or an upload que
 - Remove supported metadata locally
 
 The interface is statically rendered with Astro, supports 19 languages, includes right-to-left Arabic layouts, and remains navigable when JavaScript is disabled wherever processing is not required.
+
+The current production build contains 23 public tools, 576 generated pages, and 570 localized canonical URLs. The repository is the public source for the live Cloudflare deployment.
 
 ## Privacy model
 

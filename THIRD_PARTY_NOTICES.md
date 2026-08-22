@@ -72,4 +72,4 @@ SoraFiles uses the following open-source libraries for local file processing. Co
 - Source: https://github.com/tesseract-ocr/tessdata_best
 - Use: self-hosted OCR trained-data language models for 19 locales
 
-No third-party library receives Sora Files user files over a network. These libraries execute as downloaded application code in the user's browser.
+No third-party processing library receives SoraFiles user files over a network. These libraries execute as downloaded application code in the user's browser.

@@ -16,11 +16,11 @@ Ordinary global users who need to make an image or PDF smaller, change its forma
 
 ## Product Purpose
 
-Sora Files provides free PDF and image utilities that run locally in the user's browser whenever the implemented operation supports it. Success means a visitor can find the right tool quickly, understand its limitations before processing, create a valid result, and download a new file while retaining the original.
+SoraFiles provides free PDF and image utilities that run locally in the user's browser whenever the implemented operation supports it. Success means a visitor can find the right tool quickly, understand its limitations before processing, create a valid result, and download a new file while retaining the original.
 
 ## Positioning
 
-Sora Files is private by architecture for its supported file tools: processing happens on the user's device, so file contents do not enter a Sora Files upload or server-processing queue. The product combines that local-first mechanism with free access, no mandatory account, no watermark, and clear control over relevant output settings.
+SoraFiles is private by architecture for its supported file tools: processing happens on the user's device, so file contents do not enter a SoraFiles upload or server-processing queue. The product combines that local-first mechanism with free access, no mandatory account, no watermark, and clear control over relevant output settings.
 
 ## Operating Context
 
@@ -28,16 +28,16 @@ People commonly arrive with an email attachment that is too large, an image in t
 
 ## Capabilities and Constraints
 
-- Current public tools: all-in-one image conversion; image compression; HEIC/HEIF to JPG; PDF compression; PDF merge, split, and rotate; JPG/PNG to PDF; PDF to JPG; basic text-focused PDF to Word and Word to PDF.
+- Current public tools: 23 PDF and image tools covering compression, merging, splitting, rotation, page removal, conversion, OCR, signing, watermarking, protection, unlocking, repair, image resizing/editing, HEIC conversion, and metadata removal.
 - Browser capabilities, file complexity, memory, and supported codecs can limit processing. The product never promises unlimited files or exact compression outcomes when the engine cannot guarantee them.
 - PDF compression rebuilds pages as images and therefore removes selectable text, links, form fields, signatures, bookmarks, and accessibility structure.
-- Basic Word/PDF conversions preserve useful text, not complex document layout. Scanned PDFs require OCR, which is not currently implemented.
+- Basic Word/PDF conversions preserve useful text, not complex document layout. PDF-to-Word includes local OCR for scan-like pages, with accuracy depending on the source and selected language.
 - Tools must validate actual file signatures where practical, produce independently valid output, release temporary resources, and never present unsupported formats or unfinished flows as working features.
 - File contents must not be sent to analytics, advertising, or other third-party services. The Contact form is a separate, disclosed network submission flow.
 
 ## Brand Commitments
 
-The public product name is Sora Files, presented as a standalone consumer brand. It must not be cross-branded with another Sora-named product or organization. The product voice is clear, calm, competent, direct, and truthful. The binding visual reference is `DESIGN.md`: a restrained Vercel-inspired neutral grid, compact Geist-like typography, crisp borders, modest radii, purposeful color, and excellent light/dark behavior without copying Vercel's layouts or UI.
+The public product name is exactly SoraFiles. The developer is Sora Labs; the two names must not be conflated. The product voice is clear, calm, competent, direct, and truthful. The binding visual reference is `DESIGN.md`.
 
 Core product promise: “Your files. Your rules.” Supporting truths include “Nothing leaves your device” only on genuinely local operations, “Free,” “No account,” “No watermark,” and “Original files are never overwritten.” “Instant” may describe immediate access and the absence of signup/upload queues; it must not guarantee processing time for every file or device.
 
