@@ -1,39 +1,6 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import FileWorkbench from '../components/FileWorkbench.astro';
-import ToolPageHero from '../components/ToolPageHero.astro';
-import ToolFaq from '../components/ToolFaq.astro';
-import RelatedTools from '../components/RelatedTools.astro';
-import { toolBySlug } from '../data/tools';
-
-const description = 'Compress JPG, PNG, WebP, HEIC, and HEIF without uploading. Free private image compressor with local browser processing, no account, and no watermark.';
-const keywords = 'compress image online free, resize image online free, compress image no upload, private image compressor, HEIC to JPG converter free, free HEIC to JPG converter no upload, convert iPhone photos HEIC to JPG';
-const tool = toolBySlug.get('compress-image')!;
-const faqItems = [
-  { question: 'Are images uploaded while compressing?', answer: 'No. Supported images are decoded, resized, and encoded in your browser. Sora Files does not receive the selected image or its download.' },
-  { question: 'How strong is automatic image compression?', answer: 'Auto mode looks for a meaningful reduction and can reduce pixel dimensions when necessary. Results depend on the source format, transparency, dimensions, and detail, so an already efficient image may shrink less.' },
-  { question: 'Can I target a specific KB or MB size?', answer: 'Yes. Target size searches for an output at or below the selected limit when the image can reach it. Always inspect the result because very small targets can reduce dimensions or quality.' },
-  { question: 'Can I compress HEIC and keep the original?', answer: 'Yes. HEIC and HEIF use the same local workspace. The output is a separate file and the iPhone photo is never overwritten.' },
-];
-const schema = {
-  '@context': 'https://schema.org',
-  '@graph': [
-    { '@type': 'WebApplication', name: 'Sora Files Image Compressor & Resizer', url: 'https://sorafiles.com/compress-image', applicationCategory: 'UtilitiesApplication', operatingSystem: 'Any operating system with a modern web browser', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, description },
-    { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Home', item: 'https://sorafiles.com/' }, { '@type': 'ListItem', position: 2, name: 'Compress Images', item: 'https://sorafiles.com/compress-image' }] },
-    { '@type': 'FAQPage', mainEntity: faqItems.map(({ question, answer }) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) },
-  ],
-};
+import LiveToolRoute from '../components/LiveToolRoute.astro';
+import { liveToolBySlug } from '../data/liveTools';
+const tool = liveToolBySlug.get('compress-image')!;
 ---
-<Layout title="Compress Images Without Uploading — Free | Sora Files" {description} {keywords} canonicalPath="/compress-image" {schema}>
-  <Header />
-  <main id="main">
-    <ToolPageHero tool={tool} h1="Compress & resize images without uploading them." intro="Reduce image size automatically or aim for a specific file limit. The same private workspace handles iPhone HEIC photos." limitations={['Exact width and height controls are not currently available.', 'Very small size targets may reduce image dimensions or quality.']} />
-    <div class="bg-canvas pb-20 pt-8 sm:pb-28 sm:pt-10"><FileWorkbench /></div>
-    <section class="border-t border-line px-5 py-20 sm:px-6"><div class="mx-auto max-w-5xl"><div class="max-w-3xl"><h2 class="text-balance text-3xl font-semibold tracking-[-0.035em]">Smaller images without a server upload</h2><p class="mt-5 text-sm leading-7 text-muted">Compress images online for forms, websites, email, and messaging while keeping the source file on your device. Auto mode looks for a useful reduction and can lower dimensions when necessary. Reduce by aims for an approximate percentage, while Target size is designed for a maximum KB or MB requirement. Exact width and height controls are not currently available.</p><p class="mt-4 text-sm leading-7 text-muted">HEIC and HEIF photos use the same local workflow as JPG, PNG, and WebP. To convert an iPhone photo privately, select the HEIC file and choose JPG. Sora Files creates a new download with no watermark; it never overwrites the original image.</p></div><div class="mt-12 grid gap-8 border-y border-line py-8 md:grid-cols-3"><article><h2 class="font-semibold">Choose the right format</h2><p class="mt-3 text-sm leading-6 text-muted">JPG is widely compatible, WebP is efficient for the web, and PNG preserves transparency.</p></article><article><h2 class="font-semibold">Set a useful target</h2><p class="mt-3 text-sm leading-6 text-muted">Use automatic compression, request an approximate reduction, or aim below a specific KB limit.</p></article><article><h2 class="font-semibold">Keep the original</h2><p class="mt-3 text-sm leading-6 text-muted">Sora Files creates a separate download. Your original image remains unchanged on this device.</p></article></div></div></section>
-    <ToolFaq items={faqItems} title="Image compression questions" />
-    <RelatedTools slugs={tool.related} />
-  </main>
-  <Footer />
-</Layout>
+<LiveToolRoute {tool} />

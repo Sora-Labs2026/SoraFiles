@@ -1,0 +1,52 @@
+---
+import type { LiveToolIcon } from '../data/liveTools';
+import ToolIcon from './ToolIcon.astro';
+
+interface Props {
+  size?: 'sm' | 'md' | 'lg';
+  tile?: string;
+  label?: string;
+  icon?: LiveToolIcon;
+  glow?: boolean;
+  class?: string;
+  style?: string;
+}
+
+const {
+  size = 'md',
+  tile = 'from-red-400 to-red-600',
+  label = '',
+  icon,
+  glow = false,
+  class: className = '',
+  style,
+} = Astro.props;
+
+const sizes = {
+  sm: 'h-14 w-12',
+  md: 'h-[4.5rem] w-16',
+  lg: 'h-24 w-20',
+};
+const iconSize = size === 'lg' ? 'h-7 w-7 [&_svg]:h-3.5 [&_svg]:w-3.5' : 'h-5 w-5 [&_svg]:h-2.5 [&_svg]:w-2.5';
+---
+
+<span
+  class:list={[
+    'sf-motion-chip flex flex-col items-center justify-center gap-1 rounded-xl border border-slate-100 bg-white/95 shadow-lg shadow-slate-900/10 backdrop-blur dark:border-white/10 dark:bg-slate-800/95',
+    sizes[size],
+    glow && 'shadow-xl shadow-sky-500/25 ring-1 ring-sky-200/80 dark:ring-sky-400/25',
+    className,
+  ]}
+  {style}
+>
+  <span class:list={['flex items-center justify-center rounded-md bg-gradient-to-br text-white shadow-sm', iconSize, tile]}>
+    {icon ? <ToolIcon {icon} /> : (
+      <svg aria-hidden="true" viewBox="0 0 24 24" class={size === 'lg' ? 'h-3.5 w-3.5' : 'h-2.5 w-2.5'} fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l4 4v14H5zM15 3v5h4"/><path d="M8 12h8M8 16h6"/></svg>
+    )}
+  </span>
+  {label && <span class="max-w-full truncate px-1 text-center text-[7px] font-extrabold uppercase leading-none tracking-wider text-slate-500 dark:text-slate-300">{label}</span>}
+  <span class="space-y-0.5">
+    <span class:list={['block h-0.5 rounded bg-slate-200 dark:bg-white/15', size === 'lg' ? 'w-9' : 'w-6']}></span>
+    <span class:list={['block h-0.5 rounded bg-slate-200/80 dark:bg-white/10', size === 'lg' ? 'w-7' : 'w-4']}></span>
+  </span>
+</span>

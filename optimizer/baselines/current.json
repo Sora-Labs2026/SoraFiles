@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "architectureFingerprint": "7d00ae4dbdef997542c378af871cb41a1d00d0e9e1907ab05669bf05d8f770ba",
+  "measuredAt": "2026-08-21T09:52:46.800Z",
+  "files": 834,
+  "htmlPages": 572,
+  "sitemapUrls": 570,
+  "canonicalCount": 572,
+  "trailingSlashCanonicals": 0,
+  "maxAssetBytes": 4697227,
+  "bytesByKind": {
+    "html": 47562363,
+    "javascript": 34184027,
+    "css": 146207,
+    "fonts": 27348,
+    "other": 36978701
+  }
+}

@@ -1,10 +1,11 @@
 ---
 import type { LocalizedToolCopy } from '../i18n/types';
 import type { LocalePath } from '../i18n/config';
-import { getWorkbenchMessages } from '../i18n/workbench';
+import { getHardReductionMessage, getWorkbenchMessages } from '../i18n/workbench';
 interface Props { locale?: LocalePath; copy?: LocalizedToolCopy; }
 const { locale = 'en', copy = { title: 'Compress Images', description: 'Compress and resize JPG, PNG, WebP, HEIC, or HEIF locally.', note: 'Auto targets a useful reduction while preserving acceptable quality. Metadata may not be preserved; the original is never changed.' } as LocalizedToolCopy } = Astro.props;
 const m = getWorkbenchMessages(locale);
+const hardReductionMessage = getHardReductionMessage(locale);
 ---
 <section data-workbench id="image-tool" aria-labelledby="tool-heading" class="relative mx-auto max-w-5xl scroll-mt-24 px-5 sm:px-6" data-localized={locale !== 'en' ? 'true' : 'false'} data-copy-description={copy.description} data-copy-note={copy.note}>
   <div class="overflow-hidden rounded-card bg-surface shadow-card">
@@ -35,9 +36,9 @@ const m = getWorkbenchMessages(locale);
           {m.chooseImage}
         </button>
         <p class="mt-3 hidden text-xs text-muted sm:block">{m.dragDrop}</p>
-        <input id="file-input" name="imageFile" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" aria-label={m.chooseImage} aria-describedby="file-help" />
+        <input id="file-input" name="imageFile" class="sr-only" tabindex="-1" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" aria-label={m.chooseImage} aria-describedby="file-help file-error" />
         <p id="file-help" class="sr-only">{copy.description}</p>
-        <p id="file-error" hidden role="alert" class="mt-4 max-w-md break-words rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
+        <p id="file-error" hidden role="alert" tabindex="-1" class="mt-4 max-w-md break-words rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
       </div>
     </div>
 
@@ -103,7 +104,8 @@ const m = getWorkbenchMessages(locale);
             <label for="reduction-percent" class="text-sm font-medium">{m.approximateReduction}</label>
             <output id="percent-output" for="reduction-percent" class="font-mono text-sm">50%</output>
           </div>
-          <input id="reduction-percent" name="reductionPercent" type="range" min="10" max="80" step="5" value="50" class="mt-3 w-full accent-ink" />
+          <input id="reduction-percent" name="reductionPercent" type="range" min="10" max="80" step="1" value="50" class="compression-range mt-3 w-full" />
+          <p class="mt-2 text-xs leading-5 text-muted">{hardReductionMessage}</p>
         </div>
 
         <div class="mt-5">
@@ -150,7 +152,7 @@ const m = getWorkbenchMessages(locale);
           <figcaption class="border-t border-line px-4 py-2 text-xs text-muted">{m.newFile}</figcaption>
         </figure>
       </div>
-      <p id="result-warning" hidden class="mt-4 rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
+      <p id="result-warning" hidden role="status" class="mt-4 rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
     </div>
   </div>
 
@@ -160,10 +162,9 @@ const m = getWorkbenchMessages(locale);
 <script type="application/json" id="file-workbench-messages" is:inline set:html={JSON.stringify(m).replace(/</g, '\\u003c')}></script>
 
 <script>
-  import { ProcessingError } from '../lib/processing/errors';
-  import { validateOutput } from '../lib/processing/output-validation';
-  import { assertAcceptedInput } from '../lib/processing/signatures';
-  import { setDisplayedFilename } from '../utils/filename';
+  import { safeOutputStem, setDisplayedFilename } from '../utils/filename';
+  import { assertCompressionTarget, compressionTargetBytes, reductionPercent } from '../lib/compression/targets';
+  import { bindPercentRange } from '../utils/percentRange';
   import type { WorkbenchMessages } from '../i18n/workbench';
 
   const fileMessages = JSON.parse(document.querySelector('#file-workbench-messages')?.textContent || '{}') as WorkbenchMessages;
@@ -192,6 +193,7 @@ const m = getWorkbenchMessages(locale);
   const targetInput = $('#target-kb') as HTMLInputElement;
   const percentInput = $('#reduction-percent') as HTMLInputElement;
   const percentOutput = $('#percent-output') as HTMLOutputElement;
+  bindPercentRange(percentInput, percentOutput);
   const formatWarning = $('#format-warning');
   const status = $('#process-status');
   const fileError = $('#file-error');
@@ -209,6 +211,19 @@ const m = getWorkbenchMessages(locale);
     if (bytes < 1000) return `${bytes} B`;
     if (bytes < 1_000_000) return `${(bytes / 1000).toFixed(bytes < 100_000 ? 1 : 0)} KB`;
     return `${(bytes / 1_000_000).toFixed(2)} MB`;
+  };
+
+  const detectMime = async (file: File): Promise<InputMime | null> => {
+    const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'image/png';
+    const riff = String.fromCharCode(...bytes.slice(0, 4));
+    const webp = String.fromCharCode(...bytes.slice(8, 12));
+    if (riff === 'RIFF' && webp === 'WEBP') return 'image/webp';
+    const ftyp = String.fromCharCode(...bytes.slice(4, 8));
+    const brand = String.fromCharCode(...bytes.slice(8, 12));
+    if (ftyp === 'ftyp' && ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'mif1', 'msf1'].includes(brand)) return 'image/heic';
+    return null;
   };
 
   const canvasToBlob = (canvas: HTMLCanvasElement, mime: OutputMime, quality?: number) => new Promise<Blob>((resolve, reject) => {
@@ -334,6 +349,7 @@ const m = getWorkbenchMessages(locale);
     status.textContent = '';
     fileError.textContent = '';
     fileError.hidden = true;
+    input.removeAttribute('aria-invalid');
   };
 
   const loadFile = async (file: File) => {
@@ -341,11 +357,8 @@ const m = getWorkbenchMessages(locale);
     status.textContent = fileMessages.processing;
     try {
       if (file.size > 50_000_000) throw new Error('Choose an image smaller than 50 MB to protect browser memory.');
-      const detected = await assertAcceptedInput(file, ['jpeg', 'png', 'webp', 'heif']);
-      const detectedMime: InputMime = detected.kind === 'jpeg' ? 'image/jpeg'
-        : detected.kind === 'png' ? 'image/png'
-          : detected.kind === 'webp' ? 'image/webp'
-            : 'image/heic';
+      const detectedMime = await detectMime(file);
+      if (!detectedMime) throw new Error('Choose a valid JPG, PNG, WebP, HEIC, or HEIF image. The file signature is not supported.');
       const { canvas } = await imageToCanvas(file, detectedMime);
       hasTransparency = detectedMime !== 'image/jpeg' && checkTransparency(canvas);
       selectedFile = file;
@@ -369,17 +382,20 @@ const m = getWorkbenchMessages(locale);
       updateWarning();
     } catch (error) {
       reset();
-      const detail = error instanceof ProcessingError ? fileMessages.invalidFile : error instanceof Error ? error.message : '';
+      const detail = error instanceof Error ? error.message : '';
       fileError.textContent = localizedWorkbench ? (/size|MB|megapixel/i.test(detail) ? fileMessages.tooLarge : fileMessages.invalidFile) : (detail || fileMessages.failed);
       fileError.hidden = false;
+      input.setAttribute('aria-invalid', 'true');
+      fileError.focus();
     }
   };
 
-  const encodeForTarget = async (canvas: HTMLCanvasElement, mime: 'image/jpeg' | 'image/webp', targetBytes: number) => {
-    let low = 0.24;
-    let high = 0.94;
-    let best = await canvasToBlob(canvas, mime, low);
-    for (let attempt = 0; attempt < 9; attempt += 1) {
+  const encodeLossyAtSize = async (canvas: HTMLCanvasElement, mime: 'image/jpeg' | 'image/webp', targetBytes: number) => {
+    let low = 0.04;
+    let high = 0.96;
+    let smallest = await canvasToBlob(canvas, mime, low);
+    let best: Blob | null = smallest.size <= targetBytes ? smallest : null;
+    for (let attempt = 0; attempt < 10; attempt += 1) {
       const quality = (low + high) / 2;
       const blob = await canvasToBlob(canvas, mime, quality);
       if (blob.size <= targetBytes) {
@@ -387,37 +403,53 @@ const m = getWorkbenchMessages(locale);
         low = quality;
       } else {
         high = quality;
+        if (blob.size < smallest.size) smallest = blob;
       }
     }
-    return best;
+    return best ?? smallest;
   };
 
-  const encodeAuto = async (sourceCanvas: HTMLCanvasElement, mime: OutputMime, sourceBytes: number) => {
-    const preferredBytes = Math.floor(sourceBytes * 0.7);
-    const minimumUsefulBytes = Math.floor(sourceBytes * 0.8);
+  const encodeForTarget = async (sourceCanvas: HTMLCanvasElement, mime: OutputMime, targetBytes: number, sourceBytes: number) => {
     let outputCanvas = sourceCanvas;
-    let blob = mime === 'image/png'
-      ? await encodeOptimizedPng(outputCanvas, sourceBytes)
-      : await encodeForTarget(outputCanvas, mime, preferredBytes);
     let resized = false;
-
-    for (let attempt = 0; blob.size > minimumUsefulBytes && attempt < 4; attempt += 1) {
-      status.textContent = fileMessages.processing;
-      const estimatedScale = Math.sqrt(preferredBytes / Math.max(blob.size, 1)) * 0.96;
-      const scale = Math.min(0.92, Math.max(0.72, estimatedScale));
-      outputCanvas = resizeCanvas(outputCanvas, scale);
-      resized = true;
+    let blob = new Blob();
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      status.textContent = `${fileMessages.processing} ${attempt + 1}/12`;
       blob = mime === 'image/png'
         ? await encodeOptimizedPng(outputCanvas, sourceBytes)
-        : await encodeForTarget(outputCanvas, mime, preferredBytes);
-    }
+        : await encodeLossyAtSize(outputCanvas, mime, targetBytes);
+      if (blob.size <= targetBytes) return { blob, outputCanvas, resized };
 
-    return { blob, outputCanvas, resized, preferredBytes };
+      const longestSide = Math.max(outputCanvas.width, outputCanvas.height);
+      if (longestSide <= 24) break;
+      const estimatedScale = Math.sqrt(targetBytes / Math.max(blob.size, 1)) * 0.92;
+      const scale = Math.min(0.86, Math.max(0.32, estimatedScale));
+      outputCanvas = resizeCanvas(outputCanvas, scale);
+      resized = true;
+    }
+    assertCompressionTarget(blob.size, targetBytes);
+    return { blob, outputCanvas, resized };
+  };
+
+  const validateEncodedImage = async (blob: Blob, mime: OutputMime) => {
+    const bytes = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
+    const ascii = new TextDecoder('ascii').decode(bytes);
+    const validSignature = mime === 'image/jpeg'
+      ? bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+      : mime === 'image/png'
+        ? bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47
+        : ascii.startsWith('RIFF') && ascii.slice(8, 12) === 'WEBP';
+    if (!validSignature) throw new Error('The browser produced an invalid image. No download was created.');
+    const decoded = await createImageBitmap(blob);
+    const validDimensions = decoded.width > 0 && decoded.height > 0;
+    decoded.close();
+    if (!validDimensions) throw new Error('The browser could not verify the compressed image. No download was created.');
   };
 
   const processImage = async () => {
     if (!selectedFile || !selectedMime) return;
     processButton.disabled = true;
+    imageToolRoot.setAttribute('aria-busy', 'true');
     processButton.textContent = fileMessages.processing;
     resultState.hidden = true;
     status.textContent = fileMessages.processing;
@@ -431,39 +463,29 @@ const m = getWorkbenchMessages(locale);
         context.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      let blob: Blob;
-      let targetBytes: number | null = null;
-      let optimizedPng = false;
-      let outputCanvas = canvas;
-      let autoResized = false;
+      let targetBytes: number;
       if (mode === 'auto') {
-        const autoResult = await encodeAuto(canvas, mime, selectedFile.size);
-        blob = autoResult.blob;
-        outputCanvas = autoResult.outputCanvas;
-        autoResized = autoResult.resized;
-        targetBytes = autoResult.preferredBytes;
-        optimizedPng = mime === 'image/png';
-      } else if (mime === 'image/png') {
-        blob = await encodeOptimizedPng(canvas, selectedFile.size);
-        optimizedPng = true;
+        targetBytes = compressionTargetBytes({ mode: 'auto', sourceBytes: selectedFile.size });
       } else if (mode === 'target') {
         const targetKb = Number(targetInput.value);
         if (!Number.isFinite(targetKb) || targetKb < 20) throw new Error('Enter a target of at least 20 KB.');
-        targetBytes = Math.floor(targetKb * 1000 * 0.97);
-        blob = await encodeForTarget(canvas, mime, targetBytes);
+        targetBytes = compressionTargetBytes({ mode: 'target', sourceBytes: selectedFile.size, targetKb });
       } else if (mode === 'percent') {
-        const reduction = Number(percentInput.value) / 100;
-        targetBytes = Math.floor(selectedFile.size * (1 - reduction));
-        blob = await encodeForTarget(canvas, mime, targetBytes);
+        targetBytes = compressionTargetBytes({ mode: 'percent', sourceBytes: selectedFile.size, reductionPercent: Number(percentInput.value) });
       } else {
         throw new Error('Choose a compression goal and try again.');
       }
 
-      await validateOutput(blob, mime === 'image/jpeg' ? 'jpeg' : mime === 'image/png' ? 'png' : 'webp');
+      const encoded = await encodeForTarget(canvas, mime, targetBytes, selectedFile.size);
+      const { blob, outputCanvas } = encoded;
+      const autoResized = encoded.resized;
+      assertCompressionTarget(blob.size, targetBytes);
+      await validateEncodedImage(blob, mime);
+
       if (resultUrl) URL.revokeObjectURL(resultUrl);
       resultUrl = URL.createObjectURL(blob);
       const extension = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1];
-      const base = selectedFile.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'image';
+      const base = safeOutputStem(selectedFile.name, 'image');
       const download = $('#download-result') as HTMLAnchorElement;
       download.href = resultUrl;
       download.download = `${base}-smaller.${extension}`;
@@ -471,35 +493,26 @@ const m = getWorkbenchMessages(locale);
       ($('#after-preview') as HTMLImageElement).src = resultUrl;
 
       const saved = selectedFile.size - blob.size;
-      const percent = Math.round((saved / selectedFile.size) * 100);
+      const percent = reductionPercent(selectedFile.size, blob.size);
       $('#result-stats').textContent = localizedWorkbench
         ? `${formatBytes(selectedFile.size)} → ${formatBytes(blob.size)}${saved > 0 ? ` · −${percent}%` : ''}${autoResized ? ` · ${outputCanvas.width} × ${outputCanvas.height}` : ''}`
         : `${formatBytes(selectedFile.size)} → ${formatBytes(blob.size)}${saved > 0 ? ` · ${percent}% smaller` : ' · output is larger than the original'}${autoResized ? ` · ${outputCanvas.width} × ${outputCanvas.height}` : ''}`;
 
       const resultWarning = $('#result-warning');
-      const missedTarget = mode !== 'auto' && targetBytes !== null && blob.size > targetBytes;
-      const missedAutoMinimum = mode === 'auto' && blob.size > selectedFile.size * 0.8;
-      resultWarning.textContent = localizedWorkbench && (missedAutoMinimum || autoResized || missedTarget || optimizedPng || blob.size >= selectedFile.size)
+      resultWarning.textContent = localizedWorkbench && autoResized
         ? fileMessages.review
-        : missedAutoMinimum
-        ? `Auto could not reach 20% savings without reducing the image further. The best local result is ${formatBytes(blob.size)}; try WebP or choose Reduce by for a more aggressive result.`
         : autoResized
-          ? `Auto preserved full resolution first, then reduced dimensions from ${canvas.width} × ${canvas.height} to ${outputCanvas.width} × ${outputCanvas.height} to achieve a useful reduction. Review the preview before replacing the original.`
-        : missedTarget
-        ? `This target could not be reached at a safe minimum quality without resizing. The best full-size result is ${formatBytes(blob.size)}.`
-        : optimizedPng
-          ? 'PNG dimensions and transparency were preserved. Colors were quantized to make the file substantially easier to compress; inspect the preview before replacing an original.'
-        : blob.size >= selectedFile.size
-          ? 'This format did not reduce the file. Try WebP or a smaller target.'
+          ? `The hard ${formatBytes(targetBytes)} limit was met by reducing dimensions from ${canvas.width} × ${canvas.height} to ${outputCanvas.width} × ${outputCanvas.height}. Review the preview before replacing the original.`
           : '';
       resultWarning.hidden = !resultWarning.textContent;
       resultState.hidden = false;
       status.textContent = fileMessages.finished;
       resultState.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
     } catch (error) {
-      const detail = error instanceof ProcessingError ? fileMessages.failed : error instanceof Error ? error.message : '';
+      const detail = error instanceof Error ? error.message : '';
       status.textContent = document.documentElement.lang === 'en' ? (detail || fileMessages.failed) : (/size|MB|megapixel|20 KB/i.test(detail) ? fileMessages.tooLarge : /valid|signature|decode|format/i.test(detail) ? fileMessages.invalidFile : fileMessages.failed);
     } finally {
+      imageToolRoot.removeAttribute('aria-busy');
       processButton.disabled = false;
       processButton.textContent = processButtonLabel;
     }
@@ -512,7 +525,6 @@ const m = getWorkbenchMessages(locale);
     if ((event.target as HTMLInputElement).name === 'mode') updateMode();
   });
   formatSelect.addEventListener('change', updateWarning);
-  percentInput.addEventListener('input', () => { percentOutput.value = `${percentInput.value}%`; });
   form.addEventListener('submit', event => { event.preventDefault(); void processImage(); });
   document.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
     button.addEventListener('click', () => { targetInput.value = button.dataset.target ?? '500'; });

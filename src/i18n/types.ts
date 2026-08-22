@@ -50,6 +50,14 @@ export interface LocaleContent {
     dark: string;
     light: string;
     allTools: string;
+    compress: string;
+    merge: string;
+    split: string;
+    convert: string;
+    edit: string;
+    more: string;
+    api: string;
+    changelog: string;
     images: string;
     pdf: string;
     about: string;
@@ -91,12 +99,6 @@ export interface LocaleContent {
     h1: string;
     intro: string;
     primaryAction: string;
-    popularTitle: string;
-    popularIntro: string;
-    searchExamplesLabel: string;
-    searchExamples: [string, string, string];
-    resultCount: string;
-    searchAliases: Record<PublicToolSlug, string[]>;
     privacyProof: HomePrivacyProof;
     proofTitle: string;
     proofItems: string[];

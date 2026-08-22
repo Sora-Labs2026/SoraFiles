@@ -1,46 +1,39 @@
 import { access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { tools } from '../src/data/tools.ts';
+import { liveTools, popularToolIds } from '../src/data/liveTools.ts';
 
 const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 const failures = [];
-const allowedCategories = new Set(['image', 'compress', 'convert', 'organize']);
-const slugs = new Set(tools.map((tool) => tool.slug));
+const slugs = new Set(liveTools.map((tool) => tool.slug));
+const ids = new Set(liveTools.map((tool) => tool.id));
+const featuredIds = new Set(popularToolIds);
 
-if (tools.length !== 11) {
-  failures.push(`Expected 11 public tools, found ${tools.length}.`);
-}
+if (liveTools.length !== 23) failures.push(`Expected 23 public tools, found ${liveTools.length}.`);
+if (slugs.size !== liveTools.length) failures.push('Every tool needs a unique public slug.');
+if (ids.size !== liveTools.length) failures.push('Every tool needs a unique engine id.');
+if (featuredIds.size !== popularToolIds.length) failures.push('Every featured tool ID must be unique.');
+for (const id of popularToolIds) if (!ids.has(id)) failures.push(`Featured tool “${id}” is not public.`);
 
-for (const tool of tools) {
-  if (!allowedCategories.has(tool.category)) failures.push(`${tool.slug}: missing or invalid category.`);
-  if (!Array.isArray(tool.formats) || tool.formats.length === 0) failures.push(`${tool.slug}: formats must be a non-empty list.`);
-  if (!Array.isArray(tool.keywords) || tool.keywords.length < 2) failures.push(`${tool.slug}: keywords must contain at least two useful search terms.`);
-  if (!tool.privacy || typeof tool.privacy !== 'string') failures.push(`${tool.slug}: privacy statement is required.`);
-  if (!['stable', 'basic'].includes(tool.status)) failures.push(`${tool.slug}: status must be stable or basic.`);
+for (const tool of liveTools) {
+  if (!tool.name || !tool.description || !tool.tagline) failures.push(`${tool.slug}: public copy is incomplete.`);
+  if (!tool.accept) failures.push(`${tool.slug}: accepted file types are required.`);
+  if (!tool.outputLabel) failures.push(`${tool.slug}: output label is required.`);
   if (!Array.isArray(tool.related) || tool.related.length < 2) failures.push(`${tool.slug}: add at least two related tools.`);
   for (const related of tool.related ?? []) {
-    if (!slugs.has(related)) failures.push(`${tool.slug}: related tool “${related}” is not public.`);
-    if (related === tool.slug) failures.push(`${tool.slug}: cannot relate to itself.`);
+    const exists = liveTools.some((candidate) => candidate.id === related || candidate.slug === related);
+    if (!exists) failures.push(`${tool.slug}: related tool “${related}” is not public.`);
+    if (related === tool.id || related === tool.slug) failures.push(`${tool.slug}: cannot relate to itself.`);
   }
-
-  const route = tool.href === '/pdf' ? 'pdf' : tool.href.replace(/^\//, '');
   try {
-    await access(`${projectRoot}src/pages/${route}.astro`);
+    await access(`${projectRoot}src/pages/${tool.slug}.astro`);
   } catch {
-    try {
-      await access(`${projectRoot}src/pages/[tool].astro`);
-      if (!['merge-pdf', 'split-pdf', 'rotate-pdf', 'jpg-to-pdf', 'pdf-to-jpg', 'pdf-to-word', 'word-to-pdf'].includes(tool.slug)) {
-        throw new Error('Not a generated document route.');
-      }
-    } catch {
-      failures.push(`${tool.slug}: route ${tool.href} has no Astro page.`);
-    }
+    try { await access(`${projectRoot}src/pages/[tool].astro`); }
+    catch { failures.push(`${tool.slug}: route /${tool.slug} has no Astro page.`); }
   }
 }
 
-if (failures.length > 0) {
+if (failures.length) {
   console.error(`Tool metadata validation failed:\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-
-console.log(`Tool metadata validation passed for ${tools.length} public tools.`);
+console.log(`Tool metadata validation passed for ${liveTools.length} public tools and ${popularToolIds.length} configured featured tools.`);

@@ -1,0 +1,282 @@
+import { getLocaleContent } from '../i18n';
+import { getWorkbenchMessages } from '../i18n/workbench';
+import { getOcrMessages } from '../i18n/ocr';
+import type { LocalePath } from '../i18n/config';
+
+type NonEnglishLocale = Exclude<LocalePath, 'en'>;
+type ToolWords = { n: string; d: string; t: string };
+type ToolRow = [ToolWords, ToolWords, ToolWords, ToolWords, ToolWords, ToolWords, ToolWords, ToolWords];
+
+const toolIds = ['edit-image', 'protect-pdf', 'unlock-pdf', 'repair-pdf', 'metadata-remover', 'pdf-to-excel', 'excel-to-pdf', 'pdf-ocr'] as const;
+
+const toolRows: Record<NonEnglishLocale, ToolRow> = {
+  es: [
+    { n: 'Editar imagen', d: 'Recorta, gira y exporta una imagen', t: 'Haz ajustes rápidos en tu dispositivo.' },
+    { n: 'Proteger PDF', d: 'Añade una contraseña a un PDF', t: 'Protege tu PDF con AES-256.' },
+    { n: 'Desbloquear PDF', d: 'Elimina una contraseña conocida o restricciones', t: 'Abre un PDF bloqueado que te pertenece.' },
+    { n: 'Reparar PDF', d: 'Reconstruye un PDF dañado o roto', t: 'Corrige archivos que otras aplicaciones no abren.' },
+    { n: 'Eliminar metadatos', d: 'Quita datos ocultos de PDF e imágenes', t: 'Elimina autor, EXIF y ubicación GPS.' },
+    { n: 'PDF a Excel', d: 'Extrae tablas PDF a una hoja de cálculo', t: 'Convierte datos PDF en XLSX.' },
+    { n: 'Excel a PDF', d: 'Convierte hojas de cálculo en PDF', t: 'Comparte hojas como un PDF limpio.' },
+    { n: 'OCR de PDF', d: 'Lee texto de escaneos e imágenes', t: 'Extrae texto de cualquier escaneo.' },
+  ],
+  fr: [
+    { n: 'Modifier une image', d: 'Recadrez, pivotez et exportez une image', t: 'Effectuez des retouches rapides sur votre appareil.' },
+    { n: 'Protéger un PDF', d: 'Ajoutez un mot de passe à un PDF', t: 'Protégez votre PDF avec AES-256.' },
+    { n: 'Déverrouiller un PDF', d: 'Retirez un mot de passe connu ou des restrictions', t: 'Ouvrez un PDF verrouillé qui vous appartient.' },
+    { n: 'Réparer un PDF', d: 'Reconstruisez un PDF endommagé', t: 'Réparez les fichiers que les autres applications refusent.' },
+    { n: 'Supprimer les métadonnées', d: 'Effacez les données cachées des PDF et images', t: 'Supprimez auteur, EXIF et position GPS.' },
+    { n: 'PDF vers Excel', d: 'Extrayez les tableaux PDF dans une feuille de calcul', t: 'Transformez les données PDF en XLSX.' },
+    { n: 'Excel vers PDF', d: 'Transformez des feuilles de calcul en PDF', t: 'Partagez vos feuilles dans un PDF propre.' },
+    { n: 'OCR de PDF', d: 'Lisez le texte des scans et images', t: 'Extrayez le texte de tout document numérisé.' },
+  ],
+  de: [
+    { n: 'Bild bearbeiten', d: 'Bild zuschneiden, drehen und exportieren', t: 'Nimm schnelle Bildänderungen auf deinem Gerät vor.' },
+    { n: 'PDF schützen', d: 'PDF mit einem Passwort versehen', t: 'Schütze dein PDF mit AES-256.' },
+    { n: 'PDF entsperren', d: 'Bekanntes Passwort oder Einschränkungen entfernen', t: 'Öffne ein gesperrtes PDF, das dir gehört.' },
+    { n: 'PDF reparieren', d: 'Beschädigte PDF neu aufbauen', t: 'Repariere Dateien, die andere Apps nicht öffnen.' },
+    { n: 'Metadaten entfernen', d: 'Verborgene Daten aus PDF und Bildern löschen', t: 'Entferne Autor, EXIF und GPS-Spuren.' },
+    { n: 'PDF zu Excel', d: 'PDF-Tabellen in eine Tabelle extrahieren', t: 'Wandle PDF-Daten in XLSX um.' },
+    { n: 'Excel zu PDF', d: 'Tabellenblätter in PDF umwandeln', t: 'Teile Tabellen als sauberes PDF.' },
+    { n: 'PDF-Texterkennung', d: 'Text aus Scans und Bildern lesen', t: 'Extrahiere Text aus jedem Scan.' },
+  ],
+  pt: [
+    { n: 'Editar imagem', d: 'Recorte, rode e exporte uma imagem', t: 'Faça ajustes rápidos no seu dispositivo.' },
+    { n: 'Proteger PDF', d: 'Adicione uma palavra-passe a um PDF', t: 'Proteja o PDF com AES-256.' },
+    { n: 'Desbloquear PDF', d: 'Remova uma palavra-passe conhecida ou restrições', t: 'Abra um PDF bloqueado que lhe pertence.' },
+    { n: 'Reparar PDF', d: 'Reconstrua um PDF danificado', t: 'Corrija ficheiros que outras aplicações não abrem.' },
+    { n: 'Remover metadados', d: 'Elimine dados ocultos de PDF e imagens', t: 'Remova autor, EXIF e localização GPS.' },
+    { n: 'PDF para Excel', d: 'Extraia tabelas PDF para uma folha de cálculo', t: 'Transforme dados PDF em XLSX.' },
+    { n: 'Excel para PDF', d: 'Transforme folhas de cálculo em PDF', t: 'Partilhe folhas num PDF limpo.' },
+    { n: 'OCR de PDF', d: 'Leia texto de digitalizações e imagens', t: 'Extraia texto de qualquer digitalização.' },
+  ],
+  it: [
+    { n: 'Modifica immagine', d: 'Ritaglia, ruota ed esporta un’immagine', t: 'Apporta modifiche rapide sul tuo dispositivo.' },
+    { n: 'Proteggi PDF', d: 'Aggiungi una parola d’accesso a un PDF', t: 'Proteggi il PDF con AES-256.' },
+    { n: 'Sblocca PDF', d: 'Rimuovi una parola d’accesso nota o le restrizioni', t: 'Apri un PDF bloccato di tua proprietà.' },
+    { n: 'Ripara PDF', d: 'Ricostruisci un PDF danneggiato', t: 'Ripara i file che altre applicazioni non aprono.' },
+    { n: 'Rimuovi metadati', d: 'Elimina i dati nascosti da PDF e immagini', t: 'Rimuovi autore, EXIF e posizione GPS.' },
+    { n: 'PDF in Excel', d: 'Estrai tabelle PDF in un foglio di calcolo', t: 'Trasforma i dati PDF in XLSX.' },
+    { n: 'Excel in PDF', d: 'Trasforma fogli di calcolo in PDF', t: 'Condividi i fogli come un PDF pulito.' },
+    { n: 'OCR PDF', d: 'Leggi testo da scansioni e immagini', t: 'Estrai testo da qualsiasi scansione.' },
+  ],
+  nl: [
+    { n: 'Afbeelding bewerken', d: 'Snijd bij, draai en exporteer een afbeelding', t: 'Bewerk een afbeelding snel op je apparaat.' },
+    { n: 'PDF beveiligen', d: 'Voeg een wachtwoord toe aan een PDF', t: 'Beveilig je PDF met AES-256.' },
+    { n: 'PDF ontgrendelen', d: 'Verwijder een bekend wachtwoord of beperkingen', t: 'Open een vergrendelde PDF die van jou is.' },
+    { n: 'PDF repareren', d: 'Bouw een beschadigde PDF opnieuw op', t: 'Herstel bestanden die andere apps niet openen.' },
+    { n: 'Metagegevens verwijderen', d: 'Wis verborgen gegevens uit PDF en afbeeldingen', t: 'Verwijder auteur-, EXIF- en GPS-gegevens.' },
+    { n: 'PDF naar Excel', d: 'Haal PDF-tabellen naar een werkblad', t: 'Zet PDF-gegevens om in XLSX.' },
+    { n: 'Excel naar PDF', d: 'Zet werkbladen om in PDF', t: 'Deel werkbladen als een nette PDF.' },
+    { n: 'PDF-tekstherkenning', d: 'Lees tekst uit scans en afbeeldingen', t: 'Haal tekst uit elke scan.' },
+  ],
+  pl: [
+    { n: 'Edytuj obraz', d: 'Przytnij, obróć i wyeksportuj obraz', t: 'Szybko popraw obraz na swoim urządzeniu.' },
+    { n: 'Zabezpiecz PDF', d: 'Dodaj hasło do pliku PDF', t: 'Zabezpiecz PDF szyfrowaniem AES-256.' },
+    { n: 'Odblokuj PDF', d: 'Usuń znane hasło lub ograniczenia', t: 'Otwórz zablokowany PDF, do którego masz prawa.' },
+    { n: 'Napraw PDF', d: 'Odbuduj uszkodzony plik PDF', t: 'Napraw pliki, których inne aplikacje nie otwierają.' },
+    { n: 'Usuń metadane', d: 'Usuń ukryte dane z PDF-ów i obrazów', t: 'Usuń autora, EXIF i ślady GPS.' },
+    { n: 'PDF do Excela', d: 'Wyodrębnij tabele PDF do arkusza', t: 'Zamień dane PDF na XLSX.' },
+    { n: 'Excel do PDF', d: 'Zamień arkusze kalkulacyjne na PDF', t: 'Udostępnij arkusze jako czytelny PDF.' },
+    { n: 'OCR PDF', d: 'Odczytaj tekst ze skanów i obrazów', t: 'Wyodrębnij tekst z dowolnego skanu.' },
+  ],
+  tr: [
+    { n: 'Görsel düzenle', d: 'Görseli kırpın, döndürün ve dışa aktarın', t: 'Görseli cihazınızda hızlıca düzenleyin.' },
+    { n: 'PDF koru', d: 'PDF’ye parola ekleyin', t: 'PDF’nizi AES-256 ile koruyun.' },
+    { n: 'PDF kilidini aç', d: 'Bilinen parolayı veya kısıtlamaları kaldırın', t: 'Size ait kilitli bir PDF’yi açın.' },
+    { n: 'PDF onar', d: 'Hasarlı PDF’yi yeniden oluşturun', t: 'Diğer uygulamaların açamadığı dosyaları düzeltin.' },
+    { n: 'Meta verileri kaldır', d: 'PDF ve görsellerdeki gizli verileri silin', t: 'Yazar, EXIF ve GPS izlerini kaldırın.' },
+    { n: 'PDF’den Excel’e', d: 'PDF tablolarını çalışma sayfasına çıkarın', t: 'PDF verilerini XLSX’e dönüştürün.' },
+    { n: 'Excel’den PDF’ye', d: 'Çalışma sayfalarını PDF’ye dönüştürün', t: 'Sayfaları temiz bir PDF olarak paylaşın.' },
+    { n: 'PDF metin tanıma', d: 'Tarama ve görsellerdeki metni okuyun', t: 'Herhangi bir taramadan metin çıkarın.' },
+  ],
+  id: [
+    { n: 'Edit gambar', d: 'Pangkas, putar, dan ekspor gambar', t: 'Lakukan edit cepat di perangkat Anda.' },
+    { n: 'Lindungi PDF', d: 'Tambahkan kata sandi ke PDF', t: 'Kunci PDF dengan AES-256.' },
+    { n: 'Buka kunci PDF', d: 'Hapus kata sandi yang diketahui atau pembatasan', t: 'Buka PDF terkunci yang Anda miliki.' },
+    { n: 'Perbaiki PDF', d: 'Bangun ulang PDF yang rusak', t: 'Perbaiki berkas yang tidak dapat dibuka aplikasi lain.' },
+    { n: 'Hapus metadata', d: 'Hapus data tersembunyi dari PDF dan gambar', t: 'Hapus penulis, EXIF, dan jejak GPS.' },
+    { n: 'PDF ke Excel', d: 'Ekstrak tabel PDF ke lembar kerja', t: 'Ubah data PDF menjadi XLSX.' },
+    { n: 'Excel ke PDF', d: 'Ubah lembar kerja menjadi PDF', t: 'Bagikan lembar sebagai PDF yang rapi.' },
+    { n: 'OCR PDF', d: 'Baca teks dari pindaian dan gambar', t: 'Ekstrak teks dari pindaian apa pun.' },
+  ],
+  vi: [
+    { n: 'Chỉnh sửa ảnh', d: 'Cắt, xoay và xuất ảnh', t: 'Chỉnh sửa nhanh ngay trên thiết bị.' },
+    { n: 'Bảo vệ PDF', d: 'Thêm mật khẩu vào PDF', t: 'Khóa PDF bằng AES-256.' },
+    { n: 'Mở khóa PDF', d: 'Gỡ mật khẩu đã biết hoặc giới hạn', t: 'Mở tệp PDF bị khóa mà bạn sở hữu.' },
+    { n: 'Sửa PDF', d: 'Tạo lại tệp PDF bị hỏng', t: 'Sửa tệp mà ứng dụng khác không mở được.' },
+    { n: 'Xóa siêu dữ liệu', d: 'Xóa dữ liệu ẩn khỏi PDF và ảnh', t: 'Xóa tác giả, EXIF và dấu vết GPS.' },
+    { n: 'PDF sang Excel', d: 'Trích bảng PDF vào bảng tính', t: 'Chuyển dữ liệu PDF thành XLSX.' },
+    { n: 'Excel sang PDF', d: 'Chuyển bảng tính thành PDF', t: 'Chia sẻ trang tính dưới dạng PDF gọn gàng.' },
+    { n: 'Nhận dạng chữ PDF', d: 'Đọc chữ từ bản quét và ảnh', t: 'Trích chữ từ mọi bản quét.' },
+  ],
+  ja: [
+    { n: '画像編集', d: '画像を切り抜き・回転して書き出す', t: 'デバイス上ですばやく画像を編集。' },
+    { n: 'PDF保護', d: 'PDFにパスワードを追加', t: 'AES-256でPDFを保護。' },
+    { n: 'PDFロック解除', d: '既知のパスワードや制限を解除', t: '権限のあるロック済みPDFを開く。' },
+    { n: 'PDF修復', d: '破損したPDFを再構築', t: '他のアプリで開けないファイルを修復。' },
+    { n: 'メタデータ削除', d: 'PDFや画像の隠しデータを削除', t: '作成者・EXIF・GPS情報を削除。' },
+    { n: 'PDFからExcel', d: 'PDFの表をスプレッドシートへ抽出', t: 'PDFデータをXLSXに変換。' },
+    { n: 'ExcelからPDF', d: 'スプレッドシートをPDFに変換', t: '表を見やすいPDFとして共有。' },
+    { n: 'PDF文字認識', d: 'スキャンや画像から文字を読み取る', t: 'スキャンから文字を抽出。' },
+  ],
+  ko: [
+    { n: '이미지 편집', d: '이미지를 자르고 회전해 내보내기', t: '기기에서 이미지를 빠르게 편집하세요.' },
+    { n: 'PDF 보호', d: 'PDF에 비밀번호 추가', t: 'AES-256으로 PDF를 보호하세요.' },
+    { n: 'PDF 잠금 해제', d: '알고 있는 비밀번호나 제한 제거', t: '권한이 있는 잠긴 PDF를 여세요.' },
+    { n: 'PDF 복구', d: '손상된 PDF 다시 만들기', t: '다른 앱에서 열리지 않는 파일을 고치세요.' },
+    { n: '메타데이터 삭제', d: 'PDF와 이미지의 숨은 데이터 제거', t: '작성자, EXIF, GPS 흔적을 지우세요.' },
+    { n: 'PDF에서 Excel로', d: 'PDF 표를 스프레드시트로 추출', t: 'PDF 데이터를 XLSX로 바꾸세요.' },
+    { n: 'Excel에서 PDF로', d: '스프레드시트를 PDF로 변환', t: '시트를 깔끔한 PDF로 공유하세요.' },
+    { n: 'PDF 문자 인식', d: '스캔과 이미지에서 글자 읽기', t: '모든 스캔에서 글자를 추출하세요.' },
+  ],
+  'zh-cn': [
+    { n: '编辑图片', d: '裁剪、旋转并导出图片', t: '在设备上快速编辑图片。' },
+    { n: '保护 PDF', d: '为 PDF 添加密码', t: '使用 AES-256 保护 PDF。' },
+    { n: '解锁 PDF', d: '移除已知密码或限制', t: '打开您有权处理的锁定 PDF。' },
+    { n: '修复 PDF', d: '重建损坏的 PDF', t: '修复其他应用无法打开的文件。' },
+    { n: '删除元数据', d: '清除 PDF 和图片中的隐藏数据', t: '移除作者、EXIF 和 GPS 痕迹。' },
+    { n: 'PDF 转 Excel', d: '将 PDF 表格提取到电子表格', t: '把 PDF 数据转换为 XLSX。' },
+    { n: 'Excel 转 PDF', d: '将电子表格转换为 PDF', t: '把工作表作为整洁的 PDF 分享。' },
+    { n: 'PDF 文字识别', d: '读取扫描件和图片中的文字', t: '从任意扫描件提取文字。' },
+  ],
+  'zh-tw': [
+    { n: '編輯圖片', d: '裁切、旋轉並匯出圖片', t: '在裝置上快速編輯圖片。' },
+    { n: '保護 PDF', d: '為 PDF 加入密碼', t: '使用 AES-256 保護 PDF。' },
+    { n: '解鎖 PDF', d: '移除已知密碼或限制', t: '開啟您有權處理的鎖定 PDF。' },
+    { n: '修復 PDF', d: '重建損壞的 PDF', t: '修復其他應用程式無法開啟的檔案。' },
+    { n: '刪除中繼資料', d: '清除 PDF 和圖片中的隱藏資料', t: '移除作者、EXIF 和 GPS 痕跡。' },
+    { n: 'PDF 轉 Excel', d: '將 PDF 表格擷取至試算表', t: '把 PDF 資料轉換為 XLSX。' },
+    { n: 'Excel 轉 PDF', d: '將試算表轉換為 PDF', t: '把工作表分享為整潔的 PDF。' },
+    { n: 'PDF 文字辨識', d: '讀取掃描檔和圖片中的文字', t: '從任何掃描檔擷取文字。' },
+  ],
+  hi: [
+    { n: 'इमेज संपादित करें', d: 'इमेज को काटें, घुमाएँ और निर्यात करें', t: 'अपने डिवाइस पर तुरंत इमेज संपादित करें।' },
+    { n: 'PDF सुरक्षित करें', d: 'PDF में पासवर्ड जोड़ें', t: 'PDF को AES-256 से सुरक्षित करें।' },
+    { n: 'PDF अनलॉक करें', d: 'ज्ञात पासवर्ड या प्रतिबंध हटाएँ', t: 'वह लॉक PDF खोलें जिस पर आपका अधिकार है।' },
+    { n: 'PDF सुधारें', d: 'खराब PDF को फिर से बनाएँ', t: 'वे फ़ाइलें सुधारें जो अन्य ऐप नहीं खोलते।' },
+    { n: 'मेटाडेटा हटाएँ', d: 'PDF और इमेज से छिपा डेटा हटाएँ', t: 'लेखक, EXIF और GPS जानकारी मिटाएँ।' },
+    { n: 'PDF से Excel', d: 'PDF तालिकाएँ स्प्रेडशीट में निकालें', t: 'PDF डेटा को XLSX में बदलें।' },
+    { n: 'Excel से PDF', d: 'स्प्रेडशीट को PDF में बदलें', t: 'शीट को साफ़ PDF के रूप में साझा करें।' },
+    { n: 'PDF अक्षर पहचान', d: 'स्कैन और इमेज से टेक्स्ट पढ़ें', t: 'किसी भी स्कैन से टेक्स्ट निकालें।' },
+  ],
+  th: [
+    { n: 'แก้ไขรูปภาพ', d: 'ครอบตัด หมุน และส่งออกรูปภาพ', t: 'แก้ไขรูปภาพอย่างรวดเร็วบนอุปกรณ์ของคุณ' },
+    { n: 'ป้องกัน PDF', d: 'เพิ่มรหัสผ่านให้ PDF', t: 'ป้องกัน PDF ด้วย AES-256' },
+    { n: 'ปลดล็อก PDF', d: 'ลบรหัสผ่านที่ทราบหรือข้อจำกัด', t: 'เปิด PDF ที่ล็อกซึ่งคุณมีสิทธิ์ใช้งาน' },
+    { n: 'ซ่อม PDF', d: 'สร้าง PDF ที่เสียหายขึ้นใหม่', t: 'แก้ไฟล์ที่แอปอื่นเปิดไม่ได้' },
+    { n: 'ลบข้อมูลกำกับ', d: 'ลบข้อมูลที่ซ่อนจาก PDF และรูปภาพ', t: 'ลบผู้สร้าง EXIF และตำแหน่ง GPS' },
+    { n: 'PDF เป็น Excel', d: 'ดึงตาราง PDF ไปยังสเปรดชีต', t: 'แปลงข้อมูล PDF เป็น XLSX' },
+    { n: 'Excel เป็น PDF', d: 'แปลงสเปรดชีตเป็น PDF', t: 'แชร์ชีตเป็น PDF ที่อ่านง่าย' },
+    { n: 'รู้จำข้อความ PDF', d: 'อ่านข้อความจากภาพสแกนและรูปภาพ', t: 'ดึงข้อความจากภาพสแกนทุกชนิด' },
+  ],
+  ar: [
+    { n: 'تحرير صورة', d: 'اقتصاص صورة وتدويرها وتصديرها', t: 'أجرِ تعديلات سريعة على جهازك.' },
+    { n: 'حماية PDF', d: 'أضف كلمة مرور إلى PDF', t: 'احمِ ملف PDF بتشفير AES-256.' },
+    { n: 'فتح قفل PDF', d: 'أزل كلمة مرور معروفة أو قيودًا', t: 'افتح ملف PDF مقفلًا تملك حق استخدامه.' },
+    { n: 'إصلاح PDF', d: 'أعد بناء ملف PDF تالف', t: 'أصلح الملفات التي لا تفتحها التطبيقات الأخرى.' },
+    { n: 'إزالة البيانات الوصفية', d: 'امسح البيانات المخفية من PDF والصور', t: 'أزل اسم المؤلف وبيانات EXIF وآثار GPS.' },
+    { n: 'PDF إلى Excel', d: 'استخرج جداول PDF إلى ورقة بيانات', t: 'حوّل بيانات PDF إلى XLSX.' },
+    { n: 'Excel إلى PDF', d: 'حوّل أوراق البيانات إلى PDF', t: 'شارك الأوراق كملف PDF مرتب.' },
+    { n: 'التعرف على نص PDF', d: 'اقرأ النص من المسح الضوئي والصور', t: 'استخرج النص من أي مسح ضوئي.' },
+  ],
+  ru: [
+    { n: 'Редактор изображений', d: 'Обрезайте, поворачивайте и сохраняйте изображение', t: 'Быстро редактируйте изображение на устройстве.' },
+    { n: 'Защитить PDF', d: 'Добавьте пароль к PDF', t: 'Защитите PDF шифрованием AES-256.' },
+    { n: 'Разблокировать PDF', d: 'Удалите известный пароль или ограничения', t: 'Откройте заблокированный PDF, на который у вас есть права.' },
+    { n: 'Восстановить PDF', d: 'Пересоберите повреждённый PDF', t: 'Исправьте файлы, которые не открывают другие приложения.' },
+    { n: 'Удалить метаданные', d: 'Сотрите скрытые данные из PDF и изображений', t: 'Удалите автора, EXIF и GPS-данные.' },
+    { n: 'PDF в Excel', d: 'Извлеките таблицы PDF в электронную таблицу', t: 'Преобразуйте данные PDF в XLSX.' },
+    { n: 'Excel в PDF', d: 'Преобразуйте таблицы в PDF', t: 'Поделитесь таблицей как аккуратным PDF.' },
+    { n: 'Распознавание PDF', d: 'Читайте текст со сканов и изображений', t: 'Извлеките текст из любого скана.' },
+  ],
+};
+
+const passwordLabels: Record<NonEnglishLocale, string> = {
+  es: 'Contraseña', fr: 'Mot de passe', de: 'Passwort', pt: 'Palavra-passe', it: 'Parola d’accesso', nl: 'Wachtwoord', pl: 'Hasło', tr: 'Parola', id: 'Kata sandi', vi: 'Mật khẩu',
+  ja: 'パスワード', ko: '비밀번호', 'zh-cn': '密码', 'zh-tw': '密碼', hi: 'पासवर्ड', th: 'รหัสผ่าน', ar: 'كلمة المرور', ru: 'Пароль',
+};
+
+const contactPrivacyBadges: Record<NonEnglishLocale, string> = {
+  es: 'Tu mensaje se envía de forma segura',
+  fr: 'Votre message est envoyé de façon sécurisée',
+  de: 'Deine Nachricht wird sicher gesendet',
+  pt: 'A sua mensagem é enviada com segurança',
+  it: 'Il messaggio viene inviato in modo sicuro',
+  nl: 'Je bericht wordt veilig verzonden',
+  pl: 'Twoja wiadomość jest wysyłana bezpiecznie',
+  tr: 'Mesajınız güvenli şekilde gönderilir',
+  id: 'Pesan Anda dikirim dengan aman',
+  vi: 'Tin nhắn của bạn được gửi an toàn',
+  ja: 'メッセージは安全に送信されます',
+  ko: '메시지는 안전하게 전송됩니다',
+  'zh-cn': '您的消息会安全发送',
+  'zh-tw': '您的訊息會安全傳送',
+  hi: 'आपका संदेश सुरक्षित रूप से भेजा जाता है',
+  th: 'ข้อความของคุณจะถูกส่งอย่างปลอดภัย',
+  ar: 'تُرسل رسالتك بأمان',
+  ru: 'Ваше сообщение отправляется безопасно',
+};
+
+export function liveSupplement(locale: LocalePath): Record<string, unknown> {
+  if (locale === 'en') return {};
+  const content = getLocaleContent(locale);
+  const workbench = getWorkbenchMessages(locale);
+  const ocr = getOcrMessages(locale);
+  const tools = Object.fromEntries(toolIds.map((id, index) => [id, toolRows[locale][index]]));
+  const form = content.pages.contact.form;
+  const password = passwordLabels[locale];
+
+  return {
+    contactForm: {
+      privacyBadge: contactPrivacyBadges[locale],
+      name: form.name,
+      namePh: form.name,
+      email: form.email,
+      emailPh: 'name@example.com',
+      subject: form.subject,
+      subjectPh: form.subject,
+      message: form.message,
+      messagePh: form.message,
+      attachment: `${form.attachment} (${form.optional})`,
+      chooseFile: workbench.chooseFile,
+      attachmentHint: form.attachmentHelp,
+      tooBig: workbench.tooLarge,
+      send: form.send,
+      sending: form.sending,
+      configuring: form.sending,
+      sentTitle: form.success,
+      sentBody: form.success,
+      sendAnother: form.send,
+    },
+    wb: {
+      err: {
+        wrongType: workbench.invalidFile,
+        noPassword: workbench.failed,
+        wrongPassword: workbench.failed,
+        needPassword: workbench.failed,
+        alreadyEncrypted: workbench.failed,
+        badExcel: workbench.invalidFile,
+        noText: workbench.noText,
+        ocrFailed: ocr.unavailable,
+      },
+    },
+    opt: {
+      password,
+      passwordHint: tools['protect-pdf'].t,
+      passwordUnlock: password,
+      passwordUnlockHint: tools['unlock-pdf'].t,
+      ocrLang: ocr.languageLabel,
+    },
+    lim: {
+      protect: tools['protect-pdf'].t,
+      unlock: tools['unlock-pdf'].t,
+      repair: tools['repair-pdf'].t,
+      metadata: tools['metadata-remover'].t,
+      pdfToExcel: tools['pdf-to-excel'].t,
+      excelToPdf: tools['excel-to-pdf'].t,
+      ocr: ocr.layoutWarning,
+    },
+    tool: tools,
+  };
+}

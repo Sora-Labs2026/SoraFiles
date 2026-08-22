@@ -1,39 +1,106 @@
 ---
 import type { LocaleContent } from '../i18n/types';
 import type { LocalePath } from '../i18n/config';
-import HomeHero from './HomeHero.astro';
-import PopularWorkflows from './PopularWorkflows.astro';
-import LocalizedToolExplorer from './LocalizedToolExplorer.astro';
-import PrivacyProofGrid from './PrivacyProofGrid.astro';
-import ToolFaq from './ToolFaq.astro';
+import { liveTools, popularToolIds } from '../data/liveTools';
+import { liveText, liveToolCopy } from '../data/liveI18n';
+import HeroVisualization from './HeroVisualization.astro';
+import LiveToolCard from './LiveToolCard.astro';
+import ToolPeekModal from './ToolPeekModal.astro';
+import AdsterraSlot from './AdsterraSlot.astro';
+import PreviewTrustIcon from './PreviewTrustIcon.astro';
+import FeatureIcon from './FeatureIcon.astro';
+import LocalProcessingPanel from './LocalProcessingPanel.astro';
 
 interface Props { locale: LocalePath; content: LocaleContent; }
-const { locale, content } = Astro.props;
+const { locale } = Astro.props;
+const t = (path: string, vars?: Record<string, string | number>) => liveText(locale, path, vars);
+const localizedTools = liveTools.map((tool) => ({ tool, words: liveToolCopy(locale, tool.id) }));
+const marqueeTools = [...localizedTools, ...localizedTools];
+const trustItems = [
+  ['local', t('trust.t1a'), t('trust.t1b'), t('trust.t1s'), 'lock-keyhole', 'bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300'],
+  ['tools', t('trust.t2a', { n: liveTools.length }), t('trust.t2b'), t('trust.t2s'), 'layout-grid', 'bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300'],
+  ['account', t('trust.t3a'), t('trust.t3b'), t('trust.t3s'), 'user-x', 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300'],
+  ['watermark', t('trust.t4a'), t('trust.t4b'), t('trust.t4s'), 'file-check', 'bg-fuchsia-100 text-fuchsia-600 dark:bg-fuchsia-500/15 dark:text-fuchsia-300'],
+  ['offline', t('trust.t5a'), t('trust.t5b'), t('trust.t5s'), 'wifi-off', 'bg-cyan-100 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-300'],
+] as const;
+const features = [
+  ['open-source', 'code-2', 'text-violet-500', t('feat.f1t'), t('feat.f1s')],
+  ['mobile-friendly', 'smartphone', 'text-indigo-500', t('feat.f2t'), t('feat.f2s')],
+  ['ad-light', 'volume-1', 'text-emerald-500', t('feat.f3t'), t('feat.f3s')],
+  ['offline-ready', 'wifi-off', 'text-blue-500', t('feat.f4t'), t('feat.f4s')],
+  ['always-improving', 'rocket', 'text-rose-500', t('feat.f5t'), t('feat.f5s')],
+] as const;
 ---
-<main id="main">
-  <div data-home-workspace class="border-b border-line bg-canvas">
-    <HomeHero {content} />
-    <PopularWorkflows {locale} {content} />
-    <LocalizedToolExplorer {locale} {content} />
-  </div>
-  <PrivacyProofGrid
-    title={content.home.privacyTitle}
-    intro={content.home.privacyIntro}
-    flowTitle={content.home.privacyProof.title}
-    steps={content.home.privacySteps}
-  />
-  <section data-home-content class="px-5 py-18 text-start sm:px-6 sm:py-24">
-    <div class="mx-auto max-w-5xl">
-      <h2 class="type-section max-w-3xl">{content.home.contentTitle}</h2>
-      <div class="mt-12 grid gap-10 lg:grid-cols-3">
-        {content.home.contentSections.map((section) => (
-          <article>
-            <h3 class="text-lg font-semibold">{section.heading}</h3>
-            {section.paragraphs.map((paragraph) => <p data-home-ocr-disclosure={paragraph.includes('OCR') ? '' : undefined} class="mt-4 text-sm leading-7 text-muted">{paragraph}</p>)}
-          </article>
-        ))}
+
+<main id="main" data-home-root data-tools-popular={t('toolsSec.popular')} data-tools-popular-sub={t('toolsSec.popularSub')} data-tools-results={t('toolsSec.resultsFor')} data-tools-found={t('toolsSec.found')} data-tools-none={t('toolsSec.none')}>
+  <section data-testid="hero-section" class="relative overflow-hidden">
+    <div class="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-12 px-4 pb-14 pt-12 sm:px-6 lg:grid-cols-12 lg:gap-6 lg:pb-20 lg:pt-20">
+      <div class="lg:col-span-5">
+        <div class="sf-enter [--sf-delay:.05s]"><div data-testid="privacy-badge" class="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-white/70 px-3.5 py-1.5 shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-white/5"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg><span class="text-xs font-semibold text-slate-600 dark:text-slate-300">{t('hero.badge')}</span></div></div>
+        <h1 class="mt-6 text-[clamp(2.3rem,4vw,3.4rem)] font-extrabold leading-[1.12] tracking-[-0.03em] text-slate-900 dark:text-white">
+          <span class="-mb-[.1em] block overflow-hidden pb-[.1em]"><span class="sf-line-reveal block [--sf-delay:.15s]">{t('hero.l1a')}<span class="text-gradient">{t('hero.l1b')}</span>{t('hero.l1c')}</span></span>
+          <span class="-mb-[.1em] block overflow-hidden pb-[.1em]"><span class="sf-line-reveal block [--sf-delay:.32s]">{t('hero.l2a')}<span class="text-gradient">{t('hero.l2b')}</span>{t('hero.l2c')}</span></span>
+        </h1>
+        <div data-hero-lcp class="sf-enter [--sf-delay:.5s]"><p class="mt-5 max-w-md text-[15px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">{t('hero.desc')}</p></div>
+        <div class="sf-enter mt-7 [--sf-delay:.62s]"><form role="search" data-home-search-form class="relative max-w-md"><svg aria-hidden="true" viewBox="0 0 24 24" class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="search" data-testid="hero-search-input" data-live-tool-search placeholder={t('hero.searchPh')} aria-label={t('hero.searchLabel')} aria-controls="tools-grid" enterkeyhint="search" autocomplete="off" spellcheck="false" class="h-12 w-full rounded-full border border-slate-200/80 bg-white/90 pl-11 pr-16 text-sm font-medium text-slate-800 shadow-lg shadow-indigo-500/10 outline-none backdrop-blur transition-[border-color,box-shadow] placeholder:font-normal placeholder:text-slate-500 focus:border-violet-300 focus:shadow-violet-500/20 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-400 dark:shadow-black/20 [&::-webkit-search-cancel-button]:hidden"/><button type="submit" data-testid="hero-search-submit" aria-label={t('hero.searchLabel')} class="group absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-violet-600 transition-transform duration-200 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-violet-400 active:scale-95 dark:text-violet-300"><span class="flex h-9 w-9 items-center justify-center rounded-full border border-violet-200/70 bg-gradient-to-br from-white/95 to-violet-50/90 shadow-sm shadow-violet-500/10 backdrop-blur transition-[border-color,background-color,box-shadow] duration-200 group-hover:border-violet-300 group-hover:shadow-md group-hover:shadow-violet-500/20 dark:border-violet-300/20 dark:from-white/10 dark:to-violet-500/15"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></button></form></div>
+        <div class="sf-enter mt-6 [--sf-delay:.74s]"><div class="flex flex-wrap items-center gap-3.5"><button type="button" data-explore-tools data-testid="explore-tools-button" class="group inline-flex h-12 items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-bold text-white shadow-xl shadow-slate-900/20 transition-shadow hover:shadow-2xl hover:shadow-slate-900/30 dark:bg-white dark:text-slate-900 dark:shadow-white/10">{t('hero.ctaTools')}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button><button type="button" data-live-tool-card="compress-pdf" data-testid="watch-demo-button" class="inline-flex h-12 items-center gap-2.5 rounded-full border border-slate-200/90 bg-white/80 px-6 text-sm font-bold text-slate-700 shadow-sm backdrop-blur transition-shadow hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:text-slate-200"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-300"><span class="ml-px text-[8px]">▶</span></span>{t('hero.ctaHow')}</button></div></div>
       </div>
+      <div class="lg:col-span-7"><HeroVisualization {locale} /></div>
     </div>
   </section>
-  <ToolFaq items={content.home.faqs} title={content.home.faqTitle} />
+
+  <div data-testid="editorial-marquee" data-motion-region aria-hidden="true" class="marquee relative overflow-hidden border-y border-slate-900/5 py-5 dark:border-white/5"><div class="marquee-track flex w-max items-center gap-14 pr-14 rtl:pl-14 rtl:pr-0">{marqueeTools.map(({ words }) => <span class="flex items-center gap-14 text-xs font-bold uppercase tracking-[.35em] text-slate-600 dark:text-slate-400">{words.n}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 text-violet-500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0l1.58 6.14a2 2 0 0 0 1.44 1.44l6.14 1.58a.5.5 0 0 1 0 .96l-6.14 1.58a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0Z"/><path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/></svg></span>)}</div><div class="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[var(--sf-bg)] to-transparent rtl:left-auto rtl:right-0 rtl:bg-gradient-to-l"></div><div class="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[var(--sf-bg)] to-transparent rtl:left-0 rtl:right-auto rtl:bg-gradient-to-r"></div></div>
+
+  <section data-privacy-proof class="relative" aria-label={t('trust.t1s')}><div class="mx-auto max-w-[1200px] px-4 pt-10 sm:px-6"><div data-reveal data-testid="trust-strip" class="sf-reveal grid grid-cols-2 gap-x-4 gap-y-6 rounded-3xl border border-white/70 bg-white/75 px-6 py-7 shadow-xl shadow-indigo-500/10 backdrop-blur-xl sm:grid-cols-3 lg:grid-cols-5 dark:border-white/10 dark:bg-white/[.04] dark:shadow-black/30">{trustItems.map(([id,a,b,s,icon,tile], index) => <div data-privacy-proof-card data-testid={`trust-item-${id}`} class:list={['flex items-center gap-3.5', index > 0 && 'lg:border-l lg:border-slate-200/70 lg:pl-7 rtl:lg:border-l-0 rtl:lg:border-r rtl:lg:pl-0 rtl:lg:pr-7 dark:lg:border-white/10']}><span class:list={['flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', tile]}><PreviewTrustIcon {icon}/></span><span><span class="block text-[15px] font-extrabold leading-tight tracking-tight text-slate-900 dark:text-white">{a} <span class="block sm:inline">{b}</span></span><span class="mt-0.5 block text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">{s}</span></span></div>)}</div></div></section>
+
+  <AdsterraSlot kind="responsive-horizontal" {locale} placement="home-primary" priority />
+
+  <section id="tools" data-testid="popular-tools-section" class="relative scroll-mt-20"><div class="mx-auto max-w-[1200px] px-4 py-14 sm:px-6 lg:py-20"><div data-reveal class="sf-reveal mb-8 flex items-end justify-between gap-6"><div><h2 data-tools-heading class="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{t('toolsSec.popular')}</h2><p data-tools-sub class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{t('toolsSec.popularSub')}</p><p data-tool-results-status class="sr-only" aria-live="polite">{t('toolsSec.popular')}: {popularToolIds.length}</p></div><button type="button" data-view-all-tools data-testid="view-all-tools-link" class="group hidden shrink-0 items-center gap-1.5 text-sm font-bold text-violet-600 transition-colors hover:text-violet-700 sm:inline-flex dark:text-violet-300">{t('toolsSec.viewAll')}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button></div><div id="tools-grid" data-testid="tools-grid" data-tools-grid class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">{localizedTools.map(({ tool, words }) => <div data-tool-search-item data-popular={String(popularToolIds.includes(tool.id))} data-search={`${words.n} ${words.d} ${tool.id} ${tool.slug}`.toLowerCase()} hidden={!popularToolIds.includes(tool.id)}><LiveToolCard {tool} {locale} modal /></div>)}</div><div data-tools-empty hidden data-testid="tools-empty-state" class="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-300 py-16 text-center dark:border-white/15"><span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-500 dark:bg-violet-500/15">⌕</span><p data-empty-copy class="text-sm font-bold text-slate-700 dark:text-slate-200"></p><button type="button" data-clear-search class="rounded-full bg-slate-900 px-5 py-2 text-xs font-bold text-white dark:bg-white dark:text-slate-900">{t('toolsSec.clear')}</button></div></div></section>
+
+  <AdsterraSlot kind="native" {locale} placement="home-secondary" />
+
+  <LocalProcessingPanel {locale} />
+
+  <section class="relative" aria-label={t('feat.f1t')}><div class="mx-auto max-w-[1200px] px-4 py-14 sm:px-6"><div data-reveal data-testid="feature-strip" class="sf-reveal grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">{features.map(([id,icon,tint,title,sub], index) => <div data-testid={`feature-${id}`} class:list={['flex items-center gap-3', index > 0 && 'lg:border-l lg:border-slate-200/80 lg:pl-7 rtl:lg:border-l-0 rtl:lg:border-r rtl:lg:pl-0 rtl:lg:pr-7 dark:lg:border-white/10']}><span class:list={['h-6 w-6 shrink-0', tint]}><FeatureIcon {icon}/></span><span><span class="block text-[13px] font-extrabold tracking-tight text-slate-900 dark:text-white">{title}</span><span class="block text-[11px] font-medium text-slate-500 dark:text-slate-400">{sub}</span></span></div>)}</div></div></section>
+  <AdsterraSlot kind="rectangle" {locale} placement="home-lower-desktop" />
+  <ToolPeekModal {locale} />
 </main>
+
+<script>
+  const homeRoot = document.querySelector<HTMLElement>('[data-home-root]');
+  const copy = homeRoot?.dataset;
+  const fill = (template: string | undefined, vars: Record<string, string | number>) => (template || '').replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(vars[key] ?? `{{${key}}}`));
+  const searchInput = document.querySelector<HTMLInputElement>('[data-live-tool-search]');
+  const searchForm = document.querySelector<HTMLFormElement>('[data-home-search-form]');
+  const resultsSection = document.querySelector<HTMLElement>('#tools');
+  const searchItems = [...document.querySelectorAll<HTMLElement>('[data-tool-search-item]')];
+  const heading = document.querySelector<HTMLElement>('[data-tools-heading]');
+  const sub = document.querySelector<HTMLElement>('[data-tools-sub]');
+  const status = document.querySelector<HTMLElement>('[data-tool-results-status]');
+  const empty = document.querySelector<HTMLElement>('[data-tools-empty]');
+  const emptyCopy = document.querySelector<HTMLElement>('[data-empty-copy]');
+  const applySearch = (value: string) => {
+    const q = value.trim().toLowerCase();
+    let found = 0;
+    searchItems.forEach((item) => { const show = q ? (item.dataset.search || '').includes(q) : item.dataset.popular === 'true'; item.hidden = !show; if (show) found += 1; });
+    if (heading) heading.textContent = q ? fill(copy?.toolsResults, { q: value.trim() }) : copy?.toolsPopular || '';
+    if (sub) sub.textContent = q ? fill(copy?.toolsFound, { n: found }) : copy?.toolsPopularSub || '';
+    if (status) status.textContent = q ? fill(copy?.toolsFound, { n: found }) : `${copy?.toolsPopular || ''}: ${found}`;
+    if (empty) empty.hidden = found > 0;
+    if (emptyCopy) emptyCopy.textContent = fill(copy?.toolsNone, { q: value.trim() });
+  };
+  const scrollToResults = () => resultsSection?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  searchInput?.addEventListener('input', () => applySearch(searchInput.value));
+  searchForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!searchInput) return;
+    applySearch(searchInput.value);
+    if (matchMedia('(pointer: coarse)').matches) searchInput.blur();
+    requestAnimationFrame(scrollToResults);
+  });
+  document.querySelector('[data-explore-tools]')?.addEventListener('click', () => document.querySelector('#tools')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }));
+  const clear = () => { if (!searchInput) return; searchInput.value = ''; applySearch(''); };
+  document.querySelector('[data-view-all-tools]')?.addEventListener('click', clear);
+  document.querySelector('[data-clear-search]')?.addEventListener('click', clear);
+  addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); searchInput?.focus(); } });
+</script>

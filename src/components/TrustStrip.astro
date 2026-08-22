@@ -1,0 +1,30 @@
+---
+import type { HomePrivacyProof } from '../i18n/types';
+
+interface Props { proof: HomePrivacyProof; }
+const { proof } = Astro.props;
+const tones = ['bg-emerald-100 text-emerald-600', 'bg-violet-100 text-violet-600', 'bg-blue-100 text-blue-600', 'bg-amber-100 text-amber-600', 'bg-pink-100 text-pink-600'];
+const items = [
+  { value: '100%', title: 'Local processing' },
+  { value: '15', title: 'Free tools' },
+  { value: proof.items[1].value, title: proof.items[1].title },
+  { value: proof.items[2].value, title: proof.items[2].title },
+  { value: proof.items[3].value, title: proof.items[3].title },
+];
+---
+
+<section data-trust-strip data-privacy-proof aria-label={proof.title} class="relative px-4 pt-8 sm:px-6 sm:pt-10">
+  <div class="sf-glass mx-auto grid max-w-[1200px] grid-cols-2 gap-x-4 gap-y-5 rounded-lg border border-white/70 px-5 py-10 shadow-xl shadow-indigo-500/10 sm:px-6 lg:grid-cols-5">
+    {items.map((item, index) => (
+      <div data-privacy-proof-card class:list={['flex min-w-0 items-center gap-3.5', index > 0 && 'lg:border-l lg:border-line lg:pl-7']}>
+        <span class:list={['flex h-11 w-11 shrink-0 items-center justify-center rounded-lg', tones[index % tones.length]]}>
+          <svg viewBox="0 0 20 20" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d={index === 0 ? 'M10 2.5 16 5v4.5c0 3.7-2.5 6.2-6 8-3.5-1.8-6-4.3-6-8V5z' : index === 1 ? 'M10 3v14M5 8h10M5 13h10' : index === 2 ? 'M4 4h12v12H4zM7 7h6M7 10h6M7 13h4' : 'M10 2.5v15M5.5 7l4.5-4.5L14.5 7'} stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="min-w-0">
+          <span class="block truncate text-sm font-extrabold leading-tight text-ink">{item.value}</span>
+          <span class="mt-1 block text-[11px] font-medium leading-snug text-muted">{item.title}</span>
+        </span>
+      </div>
+    ))}
+  </div>
+</section>

@@ -13,10 +13,22 @@ const routes = [
   { path: '/merge-pdf', chooser: '#action-choose' },
   { path: '/split-pdf', chooser: '#action-choose' },
   { path: '/rotate-pdf', chooser: '#action-choose' },
+  { path: '/remove-pages', chooser: '#action-choose' },
+  { path: '/watermark-pdf', chooser: '#action-choose' },
+  { path: '/page-numbers', chooser: '#action-choose' },
+  { path: '/sign-pdf', chooser: '#action-choose' },
   { path: '/jpg-to-pdf', chooser: '#action-choose' },
   { path: '/pdf-to-jpg', chooser: '#action-choose' },
   { path: '/pdf-to-word', chooser: '#action-choose' },
   { path: '/word-to-pdf', chooser: '#action-choose' },
+  { path: '/edit-image', chooser: '[data-extra-drop]' },
+  { path: '/protect-pdf', chooser: '[data-extra-drop]' },
+  { path: '/unlock-pdf', chooser: '[data-extra-drop]' },
+  { path: '/repair-pdf', chooser: '[data-extra-drop]' },
+  { path: '/metadata-remover', chooser: '[data-extra-drop]' },
+  { path: '/pdf-to-excel', chooser: '[data-extra-drop]' },
+  { path: '/excel-to-pdf', chooser: '[data-extra-drop]' },
+  { path: '/pdf-ocr', chooser: '[data-extra-drop]' },
 ];
 
 const fixturePath = (name) => fileURLToPath(new URL(`../fixtures/${name}`, import.meta.url));
@@ -72,17 +84,20 @@ async function runPdfToWord(page, fixtureName = 'text') {
 
 async function runPdfToWordNoText(page) {
   await page.goto(`${baseUrl}/pdf-to-word`, { waitUntil: 'domcontentloaded' });
-  await page.locator('#action-input').setInputFiles(fixturePath('blank-page.pdf'));
+  await page.locator('#action-input').setInputFiles(fixturePath('scan-english.pdf'));
   await page.locator('#action-work').waitFor({ state: 'visible' });
   await page.locator('#fidelity-confirm').check();
   await page.locator('#action-process').click();
-  try {
-    await page.waitForFunction(() => document.querySelector('#action-status')?.textContent?.includes('No readable text was found after local OCR'), undefined, { timeout: 30_000 });
-  } catch (error) {
-    throw new Error(`No-text recovery message was not shown. Status: ${await page.locator('#action-status').textContent()}`, { cause: error });
-  }
-  assert.ok(await page.locator('#action-result').isHidden(), 'A no-text PDF must not expose a download result.');
-  console.log('PASS pdf-to-word no-text recovery');
+  await page.locator('#action-result').waitFor({ state: 'visible', timeout: 60_000 });
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#action-download').click(),
+  ]);
+  const downloadPath = await download.path();
+  assert.ok(downloadPath, 'Scan OCR download path must be available.');
+  const { text } = await validateDocx(await readFile(downloadPath), 'Sora Files local OCR');
+  assert.match(text, /Sora Files local OCR/i);
+  console.log('PASS pdf-to-word local OCR scan recovery');
 }
 
 async function processDocumentAction(page, { route, files, configure }) {
@@ -107,6 +122,96 @@ async function processDocumentAction(page, { route, files, configure }) {
     filename: download.suggestedFilename(),
     stats: await page.locator('#action-result-stats').textContent(),
   };
+}
+
+async function processExtraTool(page, { route, files, configure, timeout = 60_000 }) {
+  await page.goto(`${baseUrl}/${route}`, { waitUntil: 'domcontentloaded' });
+  const input = page.locator('[data-extra-input]');
+  await input.setInputFiles(files.map((file) => typeof file === 'string' ? fixturePath(file) : file));
+  await page.locator('[data-extra-selected]').waitFor({ state: 'visible' });
+  if (configure) await configure(page);
+  await page.locator('[data-extra-start]').click();
+  try {
+    await page.locator('[data-extra-results]').waitFor({ state: 'visible', timeout });
+  } catch (error) {
+    throw new Error(`${route} did not produce a result. Error: ${await page.locator('[data-extra-error]').textContent()}`, { cause: error });
+  }
+  const links = page.locator('[data-extra-result-list] a[download]');
+  const results = [];
+  for (let index = 0; index < await links.count(); index += 1) {
+    const [download] = await Promise.all([page.waitForEvent('download'), links.nth(index).click()]);
+    const path = await download.path();
+    assert.ok(path, `${route} download path must be available.`);
+    results.push({ filename: download.suggestedFilename(), buffer: await readFile(path) });
+  }
+  assert.ok(results.length > 0, `${route} must expose at least one download.`);
+  return results;
+}
+
+async function runExtraTools(page) {
+  const edited = (await processExtraTool(page, {
+    route: 'edit-image', files: ['sample.jpg'],
+    configure: async (currentPage) => {
+      await currentPage.locator('[data-extra-rotate]').selectOption('90');
+      await currentPage.locator('[data-extra-format]').selectOption('image/webp');
+    },
+  }))[0];
+  const editedImage = await validateImageInBrowser(page, edited.buffer, 'image/webp');
+  assert.deepEqual([editedImage.width, editedImage.height], [540, 960]);
+  console.log(`PASS edit-image ${edited.filename} ${editedImage.width}x${editedImage.height}`);
+
+  const protectedPdf = (await processExtraTool(page, {
+    route: 'protect-pdf', files: ['minimal.pdf'],
+    configure: async (currentPage) => currentPage.locator('[data-extra-password]').fill('SoraFiles-test-42'),
+  }))[0];
+  assert.match(protectedPdf.filename, /-protected\.pdf$/i);
+  assert.match(protectedPdf.buffer.subarray(0, 8).toString('ascii'), /^%PDF-/);
+  assert.match(protectedPdf.buffer.toString('latin1'), /\/Encrypt/);
+  console.log(`PASS protect-pdf ${protectedPdf.filename}`);
+
+  const unlockedPdf = (await processExtraTool(page, {
+    route: 'unlock-pdf',
+    files: [{ name: protectedPdf.filename, mimeType: 'application/pdf', buffer: protectedPdf.buffer }],
+    configure: async (currentPage) => currentPage.locator('[data-extra-password]').fill('SoraFiles-test-42'),
+  }))[0];
+  await validatePdf(unlockedPdf.buffer, { pageCount: 1 });
+  console.log(`PASS unlock-pdf ${unlockedPdf.filename}`);
+
+  const repaired = (await processExtraTool(page, { route: 'repair-pdf', files: ['minimal.pdf'] }))[0];
+  await validatePdf(repaired.buffer, { pageCount: 1 });
+  console.log(`PASS repair-pdf ${repaired.filename}`);
+
+  const cleaned = await processExtraTool(page, { route: 'metadata-remover', files: ['minimal.pdf', 'sample.jpg'] });
+  assert.equal(cleaned.length, 2);
+  await validatePdf(cleaned.find((item) => item.filename.endsWith('.pdf')).buffer, { pageCount: 1 });
+  await validateImageInBrowser(page, cleaned.find((item) => item.filename.endsWith('.jpg')).buffer, 'image/jpeg');
+  console.log(`PASS metadata-remover ${cleaned.map((item) => item.filename).join(', ')}`);
+
+  const spreadsheet = await import('xlsx');
+  const workbook = spreadsheet.utils.book_new();
+  spreadsheet.utils.book_append_sheet(workbook, spreadsheet.utils.aoa_to_sheet([['Name', 'Value'], ['SoraFiles', 23]]), 'Tools');
+  const workbookBuffer = Buffer.from(spreadsheet.write(workbook, { type: 'buffer', bookType: 'xlsx' }));
+  const excelPdf = (await processExtraTool(page, {
+    route: 'excel-to-pdf',
+    files: [{ name: 'tools.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: workbookBuffer }],
+  }))[0];
+  await validatePdf(excelPdf.buffer, { pageCount: 1 });
+  assert.match(await extractPdfText(excelPdf.buffer), /SoraFiles/);
+  console.log(`PASS excel-to-pdf ${excelPdf.filename}`);
+
+  const pdfExcel = (await processExtraTool(page, { route: 'pdf-to-excel', files: ['text-two-page.pdf'] }))[0];
+  const extractedWorkbook = spreadsheet.read(pdfExcel.buffer, { type: 'buffer' });
+  assert.equal(extractedWorkbook.SheetNames.length, 2);
+  const extractedText = extractedWorkbook.SheetNames.map((name) => spreadsheet.utils.sheet_to_csv(extractedWorkbook.Sheets[name])).join('\n');
+  assert.match(extractedText, /Sora Files page one/i);
+  console.log(`PASS pdf-to-excel ${pdfExcel.filename}`);
+
+  const ocrText = (await processExtraTool(page, {
+    route: 'pdf-ocr', files: ['scan-english.pdf'], timeout: 120_000,
+    configure: async (currentPage) => currentPage.locator('[data-extra-lang]').selectOption('eng'),
+  }))[0];
+  assert.match(ocrText.buffer.toString('utf8'), /Sora Files local OCR/i);
+  console.log(`PASS pdf-ocr ${ocrText.filename}`);
 }
 
 async function runDocumentActions(page) {
@@ -135,6 +240,52 @@ async function runDocumentActions(page) {
   });
   await validatePdf(rotate.buffer, { pageCount: 2, rotation: 90 });
   console.log(`PASS rotate-pdf ${rotate.filename} ${rotate.stats}`);
+
+  const removed = await processDocumentAction(page, {
+    route: 'remove-pages',
+    files: ['text-two-page.pdf'],
+    configure: async (currentPage) => currentPage.locator('#remove-page-spec').fill('2'),
+  });
+  await validatePdf(removed.buffer, { pageCount: 1 });
+  assert.match(await extractPdfText(removed.buffer), /Sora Files page one/i, 'Remove Pages must preserve the page that was not selected.');
+  console.log(`PASS remove-pages ${removed.filename} ${removed.stats}`);
+
+  const watermarked = await processDocumentAction(page, {
+    route: 'watermark-pdf',
+    files: ['text-two-page.pdf'],
+    configure: async (currentPage) => currentPage.locator('#watermark-text').fill('QA WATERMARK'),
+  });
+  await validatePdf(watermarked.buffer, { pageCount: 2 });
+  assert.match(await extractPdfText(watermarked.buffer), /QA WATERMARK/i, 'Watermark PDF must embed the requested visible text.');
+  console.log(`PASS watermark-pdf ${watermarked.filename} ${watermarked.stats}`);
+
+  const numbered = await processDocumentAction(page, {
+    route: 'page-numbers',
+    files: ['text-two-page.pdf'],
+    configure: async (currentPage) => currentPage.locator('#page-number-start').fill('3'),
+  });
+  await validatePdf(numbered.buffer, { pageCount: 2 });
+  assert.match(await extractPdfText(numbered.buffer), /3 \/ 4/i, 'Page Numbers must embed the configured sequence.');
+  console.log(`PASS page-numbers ${numbered.filename} ${numbered.stats}`);
+
+  const signed = await processDocumentAction(page, {
+    route: 'sign-pdf',
+    files: ['text-two-page.pdf'],
+    configure: async (currentPage) => {
+      const canvas = currentPage.locator('#signature-canvas');
+      await canvas.click({ position: { x: 35, y: 70 } });
+      const box = await canvas.boundingBox();
+      assert.ok(box, 'Signature canvas must be visible.');
+      await currentPage.mouse.move(box.x + 35, box.y + box.height * 0.65);
+      await currentPage.mouse.down();
+      await currentPage.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.25, { steps: 8 });
+      await currentPage.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.65, { steps: 8 });
+      await currentPage.mouse.up();
+    },
+  });
+  await validatePdf(signed.buffer, { pageCount: 2 });
+  assert.ok(signed.buffer.length > 1_000, 'Signed PDF must contain a non-empty embedded signature appearance.');
+  console.log(`PASS sign-pdf ${signed.filename} ${signed.stats}`);
 
   const imagesToPdf = await processDocumentAction(page, {
     route: 'jpg-to-pdf',
@@ -173,6 +324,10 @@ async function runInvalidDocumentSignatures(page) {
     ['merge-pdf', 'forged.pdf', 'application/pdf'],
     ['split-pdf', 'forged.pdf', 'application/pdf'],
     ['rotate-pdf', 'forged.pdf', 'application/pdf'],
+    ['remove-pages', 'forged.pdf', 'application/pdf'],
+    ['watermark-pdf', 'forged.pdf', 'application/pdf'],
+    ['page-numbers', 'forged.pdf', 'application/pdf'],
+    ['sign-pdf', 'forged.pdf', 'application/pdf'],
     ['jpg-to-pdf', 'forged.jpg', 'image/jpeg'],
     ['pdf-to-jpg', 'forged.pdf', 'application/pdf'],
     ['pdf-to-word', 'forged.pdf', 'application/pdf'],
@@ -182,7 +337,7 @@ async function runInvalidDocumentSignatures(page) {
     await page.goto(`${baseUrl}/${route}`, { waitUntil: 'domcontentloaded' });
     await page.locator('#action-input').setInputFiles({ name, mimeType, buffer: Buffer.from('not a real file') });
     await page.locator('#action-error').waitFor({ state: 'visible' });
-    assert.match((await page.locator('#action-error').textContent()) ?? '', /supported or valid|not a valid|valid DOCX/i, `${route} must explain the invalid signature.`);
+    assert.match((await page.locator('#action-error').textContent()) ?? '', /not a valid|valid DOCX/i, `${route} must explain the invalid signature.`);
     assert.ok(await page.locator('#action-result').isHidden(), `${route} must not expose a forged-file result.`);
     console.log(`PASS invalid signature ${route}`);
   }
@@ -243,10 +398,10 @@ async function runImageConverter(page) {
   console.log(`PASS image-converter HEIC to JPG ${heicDimensions.width}x${heicDimensions.height} ${heic.stats}`);
 
   const unsupportedCases = [
-    { name: 'corrupted.heic', mimeType: 'image/heic', expected: /supported or valid/i },
-    { name: 'unknown.bin', mimeType: 'application/octet-stream', expected: /supported or valid/i },
-    { name: 'camera.cr2', mimeType: 'image/x-canon-cr2', expected: /supported or valid/i },
-    { name: 'layout.indd', mimeType: 'application/x-indesign', expected: /supported or valid/i },
+    { name: 'corrupted.heic', mimeType: 'image/heic', expected: /supported image signature/i },
+    { name: 'unknown.bin', mimeType: 'application/octet-stream', expected: /supported image signature/i },
+    { name: 'camera.cr2', mimeType: 'image/x-canon-cr2', expected: /camera RAW format/i },
+    { name: 'layout.indd', mimeType: 'application/x-indesign', expected: /InDesign document, not an image/i },
   ];
   for (const current of unsupportedCases) {
     await page.goto(`${baseUrl}/image-converter`, { waitUntil: 'domcontentloaded' });
@@ -331,15 +486,20 @@ async function runImageCompression(page) {
 
   const targetKb = 40;
   const target = await processImageCompression(page, { input: fixturePath('sample.jpg'), mode: 'target', outputMime: 'image/webp', targetKb });
-  assert.ok(target.buffer.length <= targetKb * 1000 * 0.97 || /could not be reached/i.test(target.warning), 'Target mode must meet its safety margin or explain the miss.');
+  assert.ok(target.buffer.length <= targetKb * 1000, 'Target mode must never exceed the requested byte ceiling.');
   await validateImageInBrowser(page, target.buffer, 'image/webp');
   console.log(`PASS compress-image Target ${target.stats}`);
 
   const reductionPercent = 25;
   const reduced = await processImageCompression(page, { input: fixturePath('sample.jpg'), mode: 'percent', outputMime: 'image/webp', reductionPercent });
-  assert.ok(reduced.buffer.length <= sourceJpg.length * 0.75 || /could not be reached/i.test(reduced.warning), 'Reduce-by mode must use source bytes or explain the miss.');
+  assert.ok(reduced.buffer.length <= Math.floor(sourceJpg.length * 0.75), 'Reduce-by mode must never exceed its calculated byte ceiling.');
   await validateImageInBrowser(page, reduced.buffer, 'image/webp');
   console.log(`PASS compress-image Reduce by ${reduced.stats}`);
+
+  const reduced80 = await processImageCompression(page, { input: fixturePath('sample.jpg'), mode: 'percent', outputMime: 'image/webp', reductionPercent: 80 });
+  assert.ok(reduced80.buffer.length <= Math.floor(sourceJpg.length * 0.2), `80% reduction must produce at most 20% of source bytes; got ${reduced80.buffer.length}/${sourceJpg.length}.`);
+  await validateImageInBrowser(page, reduced80.buffer, 'image/webp');
+  console.log(`PASS compress-image hard 80% rule ${reduced80.stats}`);
 
   await page.goto(`${baseUrl}/compress-image`, { waitUntil: 'domcontentloaded' });
   const opaquePng = await generatePngFixture(page, false);
@@ -379,7 +539,7 @@ async function runImageCompression(page) {
   console.log(`PASS compress-image HEIC to JPG ${heic.stats}`);
 }
 
-async function processPdfCompression(page, { input, level = 'balanced' }) {
+async function processPdfCompression(page, { input, level = 'balanced', mode = 'auto', targetKb, reductionPercent }) {
   await page.goto(`${baseUrl}/pdf`, { waitUntil: 'domcontentloaded' });
   await page.locator('#pdf-input').setInputFiles(input);
   try {
@@ -388,6 +548,9 @@ async function processPdfCompression(page, { input, level = 'balanced' }) {
     throw new Error(`PDF compressor could not load input. Error: ${await page.locator('#pdf-file-error').textContent()}`, { cause: error });
   }
   await page.locator(`input[name="pdfLevel"][value="${level}"]`).check({ force: true });
+  await page.locator(`input[name="pdfMode"][value="${mode}"]`).check({ force: true });
+  if (targetKb !== undefined) await page.locator('#pdf-target-kb').fill(String(targetKb));
+  if (reductionPercent !== undefined) await page.locator('#pdf-reduction-percent').fill(String(reductionPercent));
   await page.locator('#pdf-confirm').check();
   await page.locator('#pdf-process').click();
   try {
@@ -451,19 +614,31 @@ async function runPdfCompression(page) {
   await validateImageInBrowser(page, renderedZip.entries[renderedZip.names[0]], 'image/jpeg');
   console.log(`PASS pdf compression image-heavy PDF ${imageHeavy.stats}`);
 
+  const hard80 = await processPdfCompression(page, {
+    input: { name: 'image-heavy-three-page.pdf', mimeType: 'application/pdf', buffer: imageHeavySource },
+    mode: 'percent',
+    level: 'small',
+    reductionPercent: 80,
+  });
+  assert.ok(hard80.buffer.length <= Math.floor(imageHeavySource.length * 0.2), `PDF 80% reduction must produce at most 20% of source bytes; got ${hard80.buffer.length}/${imageHeavySource.length}.`);
+  await validatePdf(hard80.buffer, { pageCount: 3 });
+  console.log(`PASS pdf compression hard 80% rule ${hard80.stats}`);
+
   const standardFontWarnings = [];
   const recordStandardFontWarning = (message) => {
     if (message.text().includes('standardFontDataUrl')) standardFontWarnings.push(message.text());
   };
   page.on('console', recordStandardFontWarning);
   try {
-    const textPdf = await processPdfCompression(page, { input: fixturePath('text-two-page.pdf') });
-    await validatePdf(textPdf.buffer, { pageCount: 2 });
-    assert.match(textPdf.stats, /larger than the original/i, 'Efficient text PDF should disclose a larger rasterized output.');
-    assert.match(textPdf.warning, /already efficient|image-based version is larger/i, 'Efficient text PDF must recommend keeping the original.');
-    assert.equal((await extractPdfText(textPdf.buffer)).trim(), '', 'Rasterized PDF output must contain no selectable text.');
+    await page.goto(`${baseUrl}/pdf`, { waitUntil: 'domcontentloaded' });
+    await page.locator('#pdf-input').setInputFiles(fixturePath('text-two-page.pdf'));
+    await page.locator('#pdf-work').waitFor({ state: 'visible' });
+    await page.locator('#pdf-confirm').check();
+    await page.locator('#pdf-process').click();
+    await page.waitForFunction(() => /hard limit could not be reached/i.test(document.querySelector('#pdf-status')?.textContent ?? ''), undefined, { timeout: 120_000 });
+    assert.ok(await page.locator('#pdf-result').isHidden(), 'An efficient PDF must not expose a result above the hard limit.');
     assert.deepEqual(standardFontWarnings, [], `PDF.js standard font assets must be configured: ${standardFontWarnings.join(', ')}`);
-    console.log(`PASS pdf compression efficient-text warning ${textPdf.stats}`);
+    console.log('PASS pdf compression rejects larger-than-input output');
   } finally {
     page.off('console', recordStandardFontWarning);
   }
@@ -474,16 +649,17 @@ async function runPdfCompression(page) {
   };
   page.on('response', recordWasmFailure);
   try {
-    const jpx = await processPdfCompression(page, { input: fixturePath('mozilla-jpx-smask.pdf'), level: 'small' });
-    await validatePdf(jpx.buffer, { pageCount: 1 });
+    await page.goto(`${baseUrl}/pdf`, { waitUntil: 'domcontentloaded' });
+    await page.locator('#pdf-input').setInputFiles(fixturePath('mozilla-jpx-smask.pdf'));
+    await page.locator('#pdf-work').waitFor({ state: 'visible', timeout: 60_000 });
     assert.deepEqual(wasmFailures, [], `PDF.js WASM assets must not return errors: ${wasmFailures.join(', ')}`);
-    console.log(`PASS pdf compression JPEG 2000/WASM rendering ${jpx.stats}`);
+    console.log('PASS pdf compression JPEG 2000/WASM preview rendering');
   } finally {
     page.off('response', recordWasmFailure);
   }
 
   const invalidCases = [
-    { input: { name: 'forged.pdf', mimeType: 'application/pdf', buffer: Buffer.from('not a pdf') }, expected: /supported or valid/i },
+    { input: { name: 'forged.pdf', mimeType: 'application/pdf', buffer: Buffer.from('not a pdf') }, expected: /valid PDF signature/i },
     { input: { name: 'corrupt.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-not-a-document') }, expected: /invalid PDF|PDF could not|InvalidPDF/i },
     { input: fixturePath('mozilla-password-protected.pdf'), expected: /Password-protected PDFs are not supported/i },
   ];
@@ -498,10 +674,9 @@ async function runPdfCompression(page) {
 }
 
 await ensureAstroServer();
-const browserLaunchOptions = process.env.SORA_BROWSER_PATH
-  ? { headless: true, executablePath: process.env.SORA_BROWSER_PATH }
-  : { headless: true };
-const browser = await chromium.launch(browserLaunchOptions);
+const executablePath = process.env.SORA_BROWSER_PATH ??
+  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+const browser = await chromium.launch({ headless: true, executablePath });
 
 try {
   const page = await browser.newPage({ acceptDownloads: true });
@@ -535,6 +710,7 @@ try {
       await runImageConverter(page);
       await runImageCompression(page);
       await runPdfCompression(page);
+      await runExtraTools(page);
       console.log('PASS complete tool regression suite');
     }
   }

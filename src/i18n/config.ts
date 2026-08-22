@@ -26,24 +26,19 @@ export type PublishedLocalePath = Extract<(typeof localeDefinitions)[number], { 
 export const publishedLocales = localeDefinitions.filter((locale) => locale.published);
 export const localeByPath = new Map(localeDefinitions.map((locale) => [locale.path, locale]));
 
-export const localizedRoutePaths = [
+const sharedRoutePaths = [
   '/',
   '/about',
   '/contact',
   '/privacy',
   '/terms',
   '/open-source',
-  '/image-converter',
-  '/compress-image',
-  '/heic-to-jpg',
-  '/pdf',
-  '/merge-pdf',
-  '/split-pdf',
-  '/rotate-pdf',
-  '/jpg-to-pdf',
-  '/pdf-to-jpg',
-  '/pdf-to-word',
-  '/word-to-pdf',
+  '/preview',
+] as const;
+
+export const localizedRoutePaths = [
+  ...sharedRoutePaths,
+  ...liveTools.map((tool) => `/${tool.slug}` as const),
 ] as const;
 
 export type LocalizedRoutePath = (typeof localizedRoutePaths)[number];
@@ -64,7 +59,7 @@ export function normalizeRoutePath(pathname: string): string {
 export function localizedPath(locale: LocalePath, pathname = '/'): string {
   const clean = normalizeRoutePath(pathname);
   if (locale === 'en') return clean;
-  return clean === '/' ? `/${locale}/` : `/${locale}${clean}`;
+  return clean === '/' ? `/${locale}` : `/${locale}${clean}`;
 }
 
 export function basePathFromLocalized(pathname: string): string {
@@ -89,3 +84,4 @@ export function publishedAlternates(pathname: string) {
     href: new URL(localizedPath(locale.path, basePath), 'https://sorafiles.com').toString(),
   }));
 }
+import { liveTools } from '../data/liveTools.ts';

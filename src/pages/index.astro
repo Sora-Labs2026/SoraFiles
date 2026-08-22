@@ -3,64 +3,57 @@ import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import LocalizedHome from '../components/LocalizedHome.astro';
-import { tools } from '../data/tools';
+import { liveTools } from '../data/liveTools';
+import liveCopy from '../data/liveCopy';
 import { getLocaleContent } from '../i18n';
 
-const content = getLocaleContent('en');
-
-const description = 'Use instant, free PDF and image tools in your browser. Compress, convert, merge, split, and resize files locally with no account or watermark.';
+const locale = 'en' as const;
+const content = getLocaleContent(locale);
+const description = liveCopy.hero.desc;
 const keywords = 'compress PDF no upload, private PDF compressor, merge PDF local, split PDF without uploading, image converter, compress image online free, HEIC to JPG, PDF to image, image to PDF';
 
 const schema = {
   '@context': 'https://schema.org',
   '@graph': [
     {
-      '@type': 'WebSite',
-      '@id': 'https://sorafiles.com/#website',
-      name: 'Sora Files',
-      alternateName: ['SoraFiles'],
+      '@type': 'Organization',
+      '@id': 'https://sorafiles.com/#organization',
+      name: 'Sora Labs',
       url: 'https://sorafiles.com/',
-      description,
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://sorafiles.com/favicon.png',
+        width: 512,
+        height: 512,
+      },
     },
     {
-      '@type': 'WebApplication',
-      '@id': 'https://sorafiles.com/#application',
-      name: 'Sora Files',
+      '@type': 'WebSite',
+      '@id': 'https://sorafiles.com/#website',
+      name: 'SoraFiles',
+      alternateName: ['sorafiles.com'],
       url: 'https://sorafiles.com/',
-      applicationCategory: 'UtilitiesApplication',
-      operatingSystem: 'Any operating system with a modern web browser',
-      isAccessibleForFree: true,
-      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       description,
-      featureList: tools.map((tool) => tool.title),
+      publisher: { '@id': 'https://sorafiles.com/#organization' },
     },
     {
       '@type': 'ItemList',
       '@id': 'https://sorafiles.com/#tools',
-      name: 'Sora Files PDF and image tools',
-      numberOfItems: tools.length,
-      itemListElement: tools.map((tool, index) => ({
+      name: 'Featured Tools',
+      numberOfItems: liveTools.length,
+      itemListElement: liveTools.map((tool, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        name: tool.title,
-        url: new URL(tool.href, 'https://sorafiles.com').href,
-      })),
-    },
-    {
-      '@type': 'FAQPage',
-      '@id': 'https://sorafiles.com/#faq',
-      mainEntity: content.home.faqs.map(({ question, answer }) => ({
-        '@type': 'Question',
-        name: question,
-        acceptedAnswer: { '@type': 'Answer', text: answer },
+        name: tool.name,
+        url: new URL(`/${tool.slug}`, 'https://sorafiles.com').href,
       })),
     },
   ],
 };
 ---
 
-<Layout title={content.home.title} description={content.home.description} {keywords} {schema}>
-  <Header locale="en" />
-  <LocalizedHome locale="en" {content} />
-  <Footer locale="en" />
+<Layout title="SoraFiles — Free File Tools. Zero Uploads." {description} {keywords} canonicalPath="/" alternatePath="/" {schema} {locale} monetized>
+  <Header {locale} />
+  <LocalizedHome {locale} {content} />
+  <Footer {locale} />
 </Layout>

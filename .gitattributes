@@ -13,7 +13,3 @@
 *.wasm binary
 *.webp binary
 *.zip binary
-
-# Self-hosted OCR runtime and license files are integrity-pinned byte-for-byte.
-public/ocr/licenses/*.txt binary
-public/ocr/runtime/*.js binary

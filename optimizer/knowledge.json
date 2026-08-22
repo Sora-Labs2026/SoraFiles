@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {
+      "id": "kb_3bbeefbac029f48e",
+      "recordedAt": "2026-08-21T09:04:29.524Z",
+      "scope": "resilience",
+      "recipeId": "storage-denial-safety",
+      "architectureFingerprint": "e3c6eee8bad90aa248ca1f3dcc5f981a91aec3dfb8d5fcbeb7851423bcecae13",
+      "outcome": "rollback",
+      "baseConfidence": 0.99,
+      "evidence": {
+        "gate": "full-gate",
+        "before": 1,
+        "after": 1,
+        "unit": "boolean",
+        "noteCode": "rollback-complete"
+      }
+    },
+    {
+      "id": "kb_0db3e0b02e4caf8f",
+      "recordedAt": "2026-08-21T09:07:14.301Z",
+      "scope": "resilience",
+      "recipeId": "storage-denial-safety",
+      "architectureFingerprint": "e3c6eee8bad90aa248ca1f3dcc5f981a91aec3dfb8d5fcbeb7851423bcecae13",
+      "outcome": "rollback",
+      "baseConfidence": 0.99,
+      "evidence": {
+        "gate": "full-gate",
+        "before": 1,
+        "after": 1,
+        "unit": "boolean",
+        "noteCode": "rollback-complete"
+      }
+    },
+    {
+      "id": "kb_3f4efea80db81e5d",
+      "recordedAt": "2026-08-21T09:12:23.813Z",
+      "scope": "resilience",
+      "recipeId": "storage-denial-safety",
+      "architectureFingerprint": "69e9496b5e122611f9562ed1007cf1d075c915b49fd31f17fb7b27f9acb28fd0",
+      "outcome": "rollback",
+      "baseConfidence": 0.99,
+      "evidence": {
+        "gate": "full-gate",
+        "before": 1,
+        "after": 1,
+        "unit": "boolean",
+        "noteCode": "rollback-complete"
+      }
+    },
+    {
+      "id": "kb_f1f9c1b71576825b",
+      "recordedAt": "2026-08-21T09:18:34.085Z",
+      "scope": "resilience",
+      "recipeId": "storage-denial-safety",
+      "architectureFingerprint": "69e9496b5e122611f9562ed1007cf1d075c915b49fd31f17fb7b27f9acb28fd0",
+      "outcome": "rollback",
+      "baseConfidence": 0.99,
+      "evidence": {
+        "gate": "full-gate",
+        "before": 1,
+        "after": 1,
+        "unit": "boolean",
+        "noteCode": "rollback-complete"
+      }
+    },
+    {
+      "id": "kb_9f3cdaafd394e8d4",
+      "recordedAt": "2026-08-21T09:23:50.909Z",
+      "scope": "resilience",
+      "recipeId": "workbench-overflow-containment",
+      "architectureFingerprint": "69e9496b5e122611f9562ed1007cf1d075c915b49fd31f17fb7b27f9acb28fd0",
+      "outcome": "success",
+      "baseConfidence": 0.98,
+      "evidence": {
+        "gate": "input-stress",
+        "before": 0,
+        "after": 1,
+        "unit": "boolean",
+        "noteCode": "workbench-overflow-contained"
+      }
+    },
+    {
+      "id": "kb_2a9b0be1c1c87191",
+      "recordedAt": "2026-08-21T09:28:48.603Z",
+      "scope": "resilience",
+      "recipeId": "storage-denial-safety",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "outcome": "success",
+      "baseConfidence": 0.98,
+      "evidence": {
+        "gate": "storage-stress",
+        "before": 0,
+        "after": 1,
+        "unit": "boolean",
+        "noteCode": "storage-denial-contained"
+      }
+    },
+    {
+      "id": "kb_18aa73c36de9ce1f",
+      "recordedAt": "2026-08-21T09:32:58.580Z",
+      "scope": "resilience",
+      "recipeId": "bounded-service-worker-cache",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "outcome": "rollback",
+      "baseConfidence": 0.99,
+      "evidence": {
+        "gate": "full-gate",
+        "before": 1,
+        "after": 1,
+        "unit": "boolean",
+        "noteCode": "rollback-complete"
+      }
+    },
+    {
+      "id": "kb_43b65c578c37909c",
+      "recordedAt": "2026-08-21T09:39:29.769Z",
+      "scope": "resilience",
+      "recipeId": "bounded-service-worker-cache",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "outcome": "success",
+      "baseConfidence": 0.98,
+      "evidence": {
+        "gate": "service-worker-contract",
+        "before": 0,
+        "after": 1,
+        "unit": "boolean",
+        "noteCode": "runtime-cache-bounded"
+      }
+    },
+    {
+      "id": "kb_124a04ff9411ab65",
+      "recordedAt": "2026-08-21T09:42:15.590Z",
+      "scope": "technical-seo",
+      "recipeId": "canonical-locale-root",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "outcome": "rollback",
+      "baseConfidence": 0.99,
+      "evidence": {
+        "gate": "full-gate",
+        "before": 1,
+        "after": 1,
+        "unit": "boolean",
+        "noteCode": "rollback-complete"
+      }
+    },
+    {
+      "id": "kb_f9092f5bf14fc24c",
+      "recordedAt": "2026-08-21T09:45:59.473Z",
+      "scope": "technical-seo",
+      "recipeId": "canonical-locale-root",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "outcome": "rollback",
+      "baseConfidence": 0.99,
+      "evidence": {
+        "gate": "full-gate",
+        "before": 1,
+        "after": 0,
+        "unit": "boolean",
+        "noteCode": "rollback-complete"
+      }
+    },
+    {
+      "id": "kb_cd4ee3a23ffaada2",
+      "recordedAt": "2026-08-21T09:50:09.368Z",
+      "scope": "technical-seo",
+      "recipeId": "canonical-locale-root",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "outcome": "success",
+      "baseConfidence": 0.98,
+      "evidence": {
+        "gate": "seo-validator",
+        "before": 18,
+        "after": 0,
+        "unit": "count",
+        "noteCode": "canonical-redirects-eliminated"
+      }
+    },
+    {
+      "id": "kb_8b98ee1710edabed",
+      "recordedAt": "2026-08-21T09:52:46.805Z",
+      "scope": "performance",
+      "recipeId": "immutable-astro-cache",
+      "architectureFingerprint": "7d00ae4dbdef997542c378af871cb41a1d00d0e9e1907ab05669bf05d8f770ba",
+      "outcome": "success",
+      "baseConfidence": 0.98,
+      "evidence": {
+        "gate": "worker-contract",
+        "before": 0,
+        "after": 1,
+        "unit": "boolean",
+        "noteCode": "hashed-assets-immutable"
+      }
+    }
+  ]
+}

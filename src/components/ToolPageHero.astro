@@ -22,17 +22,20 @@ const supportLabels = localizedContent ? { heading: common.verifiedScope, stable
 
 <section class="relative overflow-hidden border-b border-line bg-surface px-5 pb-14 pt-8 sm:px-6 sm:pb-18 sm:pt-10">
   <div class="grid-surface pointer-events-none absolute inset-0 opacity-60" aria-hidden="true"></div>
+  <div aria-hidden="true" class="sora-drift pointer-events-none absolute -end-20 -top-20 h-64 w-64 rounded-full bg-blue/10 blur-3xl sm:h-80 sm:w-80"></div>
   <div class="relative mx-auto max-w-6xl">
     <Breadcrumbs label={common.home} items={[{ label: common.home, href: locale === 'en' ? '/' : `/${locale}/` }, { label: categoryLabels[tool.category], href: `${locale === 'en' ? '/' : `/${locale}/`}#all-tools` }, { label: toolTitle }]} />
     <div class="mt-10 grid gap-9 lg:grid-cols-[1fr_22rem] lg:items-end">
-      <div class="max-w-3xl">
+      <div class="max-w-3xl" data-reveal style="--reveal-delay: 0">
         <h1 class="text-balance text-[clamp(2.5rem,6vw,4.4rem)] font-semibold leading-[1] tracking-[-0.04em] text-ink">{h1}</h1>
         <p class="mt-5 max-w-2xl text-pretty text-base leading-7 text-muted sm:text-lg sm:leading-8">{intro}</p>
         <ul class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted" aria-label={common.verifiedScope}>
           {[common.instantAccess, common.noAccount, common.noWatermark, common.localProcessing].map((item) => <li class="inline-flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-green" aria-hidden="true"></span>{item}</li>)}
         </ul>
       </div>
-      <ToolSupportPanel formats={tool.formats} status={tool.status} {limitations} labels={supportLabels} />
+      <div data-reveal style="--reveal-delay: 1">
+        <ToolSupportPanel formats={tool.formats} status={tool.status} {limitations} labels={supportLabels} />
+      </div>
     </div>
   </div>
 </section>

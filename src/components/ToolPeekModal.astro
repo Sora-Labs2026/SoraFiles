@@ -1,0 +1,159 @@
+---
+import { liveTools } from '../data/liveTools';
+import { localizedPath, type LocalePath } from '../i18n/config';
+import { liveText, liveToolCopy } from '../data/liveI18n';
+import ToolIcon from './ToolIcon.astro';
+import ToolMotion from './ToolMotion.astro';
+
+interface Props { locale?: LocalePath; }
+const { locale = 'en' } = Astro.props;
+const payload = liveTools.map((tool) => ({
+  id: tool.id,
+  n: liveToolCopy(locale, tool.id).n,
+  t: liveToolCopy(locale, tool.id).t,
+  accept: tool.accept,
+  outputLabel: tool.outputLabel,
+  href: localizedPath(locale, `/${tool.slug}`),
+  limitation: tool.limitationKey ? liveText(locale, tool.limitationKey) : '',
+}));
+const steps = [liveText(locale, 'steps.s1t'), liveText(locale, 'steps.s2t'), liveText(locale, 'steps.s3t')];
+---
+
+<div data-peek-root hidden class="fixed inset-0 z-[80] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="peek-title" aria-describedby="peek-tagline">
+  <button type="button" tabindex="-1" data-peek-overlay aria-label={liveText(locale, 'common.close')} class="sf-fade-enter absolute inset-0 bg-slate-950/45 backdrop-blur-sm"></button>
+  <div data-peek-card class="sf-pop-enter relative w-full max-w-md overflow-hidden rounded-3xl border border-white/60 bg-white/95 shadow-2xl shadow-violet-500/25 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/95">
+    <div aria-hidden="true" class="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-violet-400/20 blur-3xl"></div>
+    <button type="button" data-peek-close aria-label={liveText(locale, 'common.close')} class="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700 rtl:right-auto rtl:left-4 dark:bg-white/10 dark:text-slate-400 dark:hover:text-white"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+    <div class="max-h-[82vh] overflow-y-auto p-6">
+      <div class="flex items-center gap-3">
+        <span data-peek-icon aria-hidden="true"></span>
+        <div><h3 id="peek-title" data-peek-title class="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white"></h3><span class="mt-0.5 inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-2.5 w-2.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4.5 6v5.5c0 4.5 3 7.5 7.5 9.5 4.5-2 7.5-5 7.5-9.5V6L12 3Z"/><path d="m9 12 2 2 4-4"/></svg>{liveText(locale, 'peek.localCue')}</span></div>
+      </div>
+      <p id="peek-tagline" data-peek-tagline class="mt-4 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300"></p>
+      <div data-testid="peek-motion" class="mt-4 min-h-28 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/70 sm:min-h-32 dark:border-white/10 dark:bg-white/[0.04]"><div data-peek-motion></div></div>
+      <div class="mt-4 grid grid-cols-2 gap-3"><div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5"><div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{liveText(locale, 'peek.worksWith')}</div><div data-peek-input class="mt-1 text-sm font-extrabold text-slate-800 dark:text-slate-100"></div></div><div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3 dark:border-emerald-400/20 dark:bg-emerald-500/10"><div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">{liveText(locale, 'peek.youGet')}</div><div data-peek-output class="mt-1 text-sm font-extrabold text-emerald-700 dark:text-emerald-300"></div></div></div>
+      <ol class="mt-4 space-y-2">{steps.map((step, index) => <li class="flex items-center gap-2.5 text-xs font-bold text-slate-600 dark:text-slate-300"><span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[10px] font-extrabold text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">{index + 1}</span>{step}</li>)}</ol>
+      <p data-peek-limitation hidden class="mt-4 items-start gap-2 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400"><svg aria-hidden="true" viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h10l4 4v14H5zM15 3v5h4M8 13h8M8 17h6"/></svg><span data-peek-limitation-copy></span></p>
+      <a data-peek-open class="group mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-slate-900 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition-shadow hover:shadow-xl dark:bg-white dark:text-slate-900"><span data-peek-open-label></span><svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
+    </div>
+  </div>
+</div>
+<template data-peek-options-template>
+  {liveTools.map((tool) => <span data-peek-icon-option={tool.id} class:list={['flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md [&_svg]:h-6 [&_svg]:w-6', tool.tile]}><ToolIcon icon={tool.icon}/></span>)}
+  <div data-peek-motion-style-carrier><ToolMotion tool={liveTools[0]} compact /></div>
+</template>
+<script type="application/json" data-live-tools-json is:inline set:html={JSON.stringify(payload).replace(/</g, '\\u003c')}></script>
+
+<script is:inline define:vars={{ openToolLabel: liveText(locale, 'peek.openTool') }}>
+  const peekRoot = document.querySelector('[data-peek-root]');
+  const peekOptionsTemplate = document.querySelector('[data-peek-options-template]');
+  const toolsPayload = JSON.parse(document.querySelector('[data-live-tools-json]')?.textContent || '[]');
+  const byId = new Map(toolsPayload.map((tool) => [String(tool.id), tool]));
+  const motionCache = new Map();
+  let activeTrigger = null;
+  let previousBodyOverflow = '';
+  const peekFocusable = () => [...peekRoot.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter((element) => !element.hidden && element.getAttribute('aria-hidden') !== 'true');
+  const closePeek = () => {
+    if (!peekRoot || peekRoot.hidden) return;
+    peekRoot.hidden = true;
+    document.body.style.overflow = previousBodyOverflow;
+    activeTrigger?.focus();
+  };
+  const inputSummary = (accept) => {
+    const value = accept.toLowerCase();
+    if (value.includes('heic')) return 'HEIC · HEIF';
+    if (value.includes('wordprocessingml')) return 'DOCX';
+    if (value.includes('excel') || value.includes('spreadsheet') || value.includes('csv')) return 'XLSX · XLS · CSV';
+    if (value.includes('image/')) return 'JPG · PNG · WebP';
+    return 'PDF';
+  };
+  const loadMotion = async (tool) => {
+    const id = String(tool.id);
+    if (motionCache.has(id)) return motionCache.get(id);
+    const request = fetch(String(tool.href), { credentials: 'same-origin', headers: { 'X-SoraFiles-Fragment': 'tool-motion' } }).then(async (response) => {
+      if (!response.ok) throw new Error(`Motion source unavailable: ${response.status}`);
+      const sourceDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
+      const source = sourceDocument.querySelector('[data-tool-motion]');
+      if (!source) throw new Error('Motion source is missing.');
+      return source.outerHTML;
+    });
+    motionCache.set(id, request);
+    try { return await request; }
+    catch (error) { motionCache.delete(id); throw error; }
+  };
+  const mountMotion = async (tool) => {
+    const slot = peekRoot?.querySelector('[data-peek-motion]');
+    if (!slot) return;
+    const id = String(tool.id);
+    peekRoot.dataset.peekTool = id;
+    slot.replaceChildren();
+    slot.setAttribute('aria-busy', 'true');
+    try {
+      const markup = await loadMotion(tool);
+      if (peekRoot.dataset.peekTool !== id) return;
+      const holder = document.createElement('template');
+      holder.innerHTML = markup;
+      slot.replaceChildren(holder.content.cloneNode(true));
+    } catch {
+      if (peekRoot.dataset.peekTool === id) slot.replaceChildren();
+    } finally {
+      if (peekRoot.dataset.peekTool === id) slot.removeAttribute('aria-busy');
+    }
+  };
+  document.querySelectorAll('[data-live-tool-card]').forEach((button) => {
+    const primeMotion = () => {
+      const tool = byId.get(button.dataset.liveToolCard || '');
+      if (tool) loadMotion(tool).catch(() => {});
+    };
+    button.addEventListener('pointerenter', primeMotion, { once: true });
+    button.addEventListener('focus', primeMotion, { once: true });
+    button.addEventListener('click', (event) => {
+    if (!peekRoot) return;
+    const tool = byId.get(button.dataset.liveToolCard || '');
+    if (!tool) return;
+    event.preventDefault();
+    activeTrigger = button;
+    const set = (selector, value) => { const element = peekRoot.querySelector(selector); if (element) element.textContent = value; };
+    set('[data-peek-title]', String(tool.n));
+    set('[data-peek-tagline]', String(tool.t));
+    set('[data-peek-input]', inputSummary(String(tool.accept)));
+    set('[data-peek-output]', String(tool.outputLabel));
+    set('[data-peek-open-label]', `${openToolLabel} — ${String(tool.n)}`);
+    const link = peekRoot.querySelector('[data-peek-open]');
+    if (link) link.href = String(tool.href);
+    const templateContent = peekOptionsTemplate?.content;
+    const iconSource = [...(templateContent?.querySelectorAll('[data-peek-icon-option]') || [])].find((option) => option.dataset.peekIconOption === String(tool.id));
+    peekRoot.querySelector('[data-peek-icon]')?.replaceChildren(...(iconSource ? [iconSource.cloneNode(true)] : []));
+    mountMotion(tool);
+    const limitation = peekRoot.querySelector('[data-peek-limitation]');
+    const limitationCopy = peekRoot.querySelector('[data-peek-limitation-copy]');
+    if (limitation && limitationCopy) {
+      const copy = String(tool.limitation || '');
+      limitation.hidden = !copy;
+      limitation.classList.toggle('flex', Boolean(copy));
+      limitationCopy.textContent = copy;
+    }
+    peekRoot.hidden = false;
+    previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    peekRoot.querySelector('[data-peek-close]')?.focus();
+    });
+  });
+  peekRoot?.querySelector('[data-peek-close]')?.addEventListener('click', closePeek);
+  peekRoot?.querySelector('[data-peek-overlay]')?.addEventListener('click', closePeek);
+  addEventListener('keydown', (event) => {
+    if (!peekRoot || peekRoot.hidden) return;
+    if (event.key === 'Escape') { event.preventDefault(); closePeek(); return; }
+    if (event.key !== 'Tab') return;
+    const focusable = peekFocusable();
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (!first || !last) { event.preventDefault(); return; }
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+</script>
+
+<style>
+  .sf-fade-enter { animation:sf-fade-enter .2s ease both; }
+  @keyframes sf-fade-enter { from{opacity:0} to{opacity:1} }
+</style>

@@ -1,7 +1,10 @@
 import { tools } from '../data/tools';
+import { liveTools } from '../data/liveTools';
 import type { LocaleContent, LocalizedInfoPage, LocalizedToolCopy } from './types';
 
-type ToolSeed = Record<(typeof tools)[number]['slug'], { title: string; short: string; description: string; note?: string }>;
+type ToolNameSeed = { title: string; short: string; description: string; note?: string };
+type LegacyToolSlug = Exclude<(typeof tools)[number]['slug'], 'remove-pages' | 'watermark-pdf' | 'page-numbers' | 'sign-pdf'>;
+type ToolSeed = Record<LegacyToolSlug, ToolNameSeed> & Partial<Record<(typeof tools)[number]['slug'], ToolNameSeed>>;
 
 interface ToolTemplateSeed {
   h1: string;
@@ -15,14 +18,7 @@ interface ToolTemplateSeed {
 
 export interface LocaleSeed {
   common: LocaleContent['common'];
-  home: LocaleContent['home'] & {
-    popularTitle: string;
-    popularIntro: string;
-    searchExamplesLabel: string;
-    searchExamples: [string, string, string];
-    resultCount: string;
-    searchAliases: LocaleContent['home']['searchAliases'];
-  };
+  home: LocaleContent['home'];
   toolNames: ToolSeed;
   toolTemplate: ToolTemplateSeed;
   pages: LocaleContent['pages'];
@@ -34,7 +30,7 @@ function interpolate(template: string, values: Record<string, string>) {
 
 export function createLocaleContent(seed: LocaleSeed): LocaleContent {
   const localizedTools = Object.fromEntries(tools.map((tool) => {
-    const names = seed.toolNames[tool.slug];
+    const names = seed.toolNames[tool.slug] ?? { title: tool.title, short: tool.short, description: tool.description, note: tool.caution };
     const values = {
       tool: names.title,
       short: names.short,
@@ -59,7 +55,8 @@ export function createLocaleContent(seed: LocaleSeed): LocaleContent {
     return [tool.slug, copy];
   })) as LocaleContent['tools'];
 
-  return { common: seed.common, home: seed.home, tools: localizedTools, pages: seed.pages };
+  const home = { ...seed.home, primaryAction: seed.home.primaryAction.replace(/\{\{n\}\}/g, String(liveTools.length)) };
+  return { common: seed.common, home, tools: localizedTools, pages: seed.pages };
 }
 
 export type { LocalizedInfoPage };

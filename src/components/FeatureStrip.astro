@@ -1,0 +1,25 @@
+---
+import type { LocaleContent } from '../i18n/types';
+
+interface Props { home: LocaleContent['home']; }
+const { home } = Astro.props;
+const items = [
+  ...home.privacyProof.items.map((item) => ({ title: item.value, sub: item.title })),
+  { title: home.contentSections[0]?.heading ?? home.contentTitle, sub: home.contentSections[0]?.paragraphs[0] ?? home.intro },
+].slice(0, 5);
+const tones = ['text-emerald-500', 'text-violet-500', 'text-blue-500', 'text-amber-500', 'text-fuchsia-500'];
+---
+
+<section data-feature-strip aria-label={home.contentTitle} class="px-4 py-12 sm:px-6">
+  <div class="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
+    {items.map((item, index) => (
+      <div class:list={['flex min-w-0 items-center gap-3', index > 0 && 'lg:border-l lg:border-line lg:pl-7']}>
+        <svg aria-hidden="true" viewBox="0 0 20 20" class:list={['h-6 w-6 shrink-0', tones[index]]} fill="none" stroke="currentColor" stroke-width="1.8"><path d={index === 0 ? 'M10 2.5 16 5v4.5c0 3.7-2.5 6.2-6 8-3.5-1.8-6-4.3-6-8V5z' : index === 1 ? 'M3 10h14M10 3v14' : index === 2 ? 'M4 4h12v12H4zM7 8h6M7 12h4' : index === 3 ? 'M10 2.5v15M5.5 7l4.5-4.5L14.5 7' : 'm10 2 1.4 4.1L16 7.5l-4.1 1.4L10.5 13l-1.4-4.1L5 7.5l4.1-1.4L10 2Z'} stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="min-w-0">
+          <span class="block truncate text-[13px] font-extrabold text-ink">{item.title}</span>
+          <span class="mt-1 block max-h-8 overflow-hidden text-[11px] font-medium leading-4 text-muted">{item.sub}</span>
+        </span>
+      </div>
+    ))}
+  </div>
+</section>

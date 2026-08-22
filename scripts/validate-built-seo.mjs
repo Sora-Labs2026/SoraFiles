@@ -1,88 +1,46 @@
 import { readFile, readdir } from 'node:fs/promises';
-import { tools } from '../src/data/tools.ts';
-import { publishedLocales } from '../src/i18n/config.ts';
-import {
-  attribute,
-  descendants,
-  discoveryVisibilityFailures,
-  elementsWithData,
-  hasAttribute,
-  identifiedDisclosureContract,
-  parseHtml,
-  textContent,
-  toolCardLinkContract,
-  visibleTextContent,
-} from './lib/built-html-contract.mjs';
-import { missingTextRequirements, spanishHomepageOcrRequirements } from './lib/ocr-disclosure-contract.mjs';
+import path from 'node:path';
+import { liveTools } from '../src/data/liveTools.ts';
+import { localeDefinitions, localizedPath, localizedRoutePaths, publishedLocales } from '../src/i18n/config.ts';
 
 const allPages = process.argv.includes('--all');
 const failures = [];
-const origin = 'https://sorafiles.com';
-const popularWorkflows = [
-  { slug: 'compress-pdf', path: '/pdf' },
-  { slug: 'compress-image', path: '/compress-image' },
-  { slug: 'image-converter', path: '/image-converter' },
-  { slug: 'merge-pdf', path: '/merge-pdf' },
-  { slug: 'pdf-to-jpg', path: '/pdf-to-jpg' },
-  { slug: 'jpg-to-pdf', path: '/jpg-to-pdf' },
-];
-const representativeHomes = [
-  {
-    label: 'home', locale: 'en', prefix: '', path: 'dist/index.html', expectedFaqCount: 11,
-    ocrTruth: [/scanned pages can (?:use|be recognized with) local OCR/iu, /scan (?:clarity|quality)/iu, /language/iu, /handwriting/iu, /tables/iu, /columns/iu, /layout (?:reconstruction|reproduction)/iu],
-  },
-  {
-    label: 'es home', locale: 'es', prefix: '/es', path: 'dist/es/index.html', expectedFaqCount: 4,
-    ocrTruth: spanishHomepageOcrRequirements,
-  },
-  {
-    label: 'ja home', locale: 'ja', prefix: '/ja', path: 'dist/ja/index.html', expectedFaqCount: 6,
-    ocrTruth: [/スキャンPDF.*(?:端末内|ローカル)OCR.*使用/iu, /鮮明/iu, /言語/iu, /手書き/iu, /表/iu, /段組み/iu, /(?:レイアウト|ページ配置).*(?:再現|復元)/iu],
-  },
-  {
-    label: 'ar home', locale: 'ar', prefix: '/ar', path: 'dist/ar/index.html', expectedFaqCount: 3,
-    ocrTruth: [/للصفحات الممسوحة.*OCR محل/iu, /وضوح المسح/iu, /اللغة/iu, /الكتابة اليدوية/iu, /الجداول/iu, /الأعمدة/iu, /إعادة بناء (?:دقيقة )?للتخطيط/iu],
-  },
-];
+const siteUrl = 'https://sorafiles.com';
+const localePaths = new Set(publishedLocales.map((locale) => locale.path));
+const hreflangs = new Set([...publishedLocales.map((locale) => locale.code), 'x-default']);
+const toolBasePaths = new Set(liveTools.map((tool) => `/${tool.slug}`));
+const titleIndex = new Map();
+const descriptionIndex = new Map();
 
-const pdfToWordContracts = {
-  en: { forbidden: /\bno OCR\b/iu, required: [/scanned pages.*(?:local OCR|recognized locally with OCR)/iu, /scan clarity/iu, /language/iu, /handwriting/iu, /tables/iu, /columns/iu, /exact (?:page )?layout/iu] },
-  ja: { forbidden: /OCRは含まれず|OCRが必要/iu, required: [/スキャン.*(?:端末内|ローカル)OCR/iu, /鮮明/iu, /言語/iu, /手書き/iu, /表/iu, /段組み/iu, /正確な(?:ページ)?(?:配置|レイアウト).*再現/iu] },
-  ko: { forbidden: /OCR.*제공하지/iu, required: [/스캔.*로컬 OCR/iu, /선명도/iu, /언어/iu, /필기/iu, /표/iu, /단/iu, /정확한 레이아웃.*재현/iu] },
-  es: { forbidden: /No incluye OCR/iu, required: [/páginas escaneadas.*OCR local/iu, /claridad/iu, /idioma/iu, /(?:escritura a mano|manuscrit)/iu, /tablas/iu, /columnas/iu, /diseño exacto.*(?:reconstru|reproduc)/iu] },
-  fr: { forbidden: /Aucun OCR/iu, required: [/pages numérisées.*OCR local/iu, /netteté/iu, /langue/iu, /écriture manuscrite/iu, /tableaux/iu, /colonnes/iu, /mise en page exacte.*(?:reconstru|reprodu)/iu] },
-  de: { forbidden: /Kein OCR/iu, required: [/gescannte Seiten.*lokal(?:e|en|er|es)? OCR/iu, /Scanqualität/iu, /Sprache/iu, /Handschrift/iu, /Tabellen/iu, /Spalten/iu, /exakte.*Layout.*(?:rekonstruiert|wiederhergestellt)/iu] },
-  pt: { forbidden: /Sem OCR/iu, required: [/páginas digitalizadas.*OCR local/iu, /nitidez/iu, /idioma/iu, /escrita (?:manual|à mão)/iu, /tabelas/iu, /colunas/iu, /layout exato.*reconstru/iu] },
-  'zh-cn': { forbidden: /不含\s*OCR/iu, required: [/扫描页.*本地\s*OCR/iu, /清晰度/iu, /语言/iu, /手写/iu, /表格/iu, /分栏/iu, /不会.*精确.*重建.*版式/iu] },
-  'zh-tw': { forbidden: /不含\s*OCR/iu, required: [/掃描頁.*本機\s*OCR/iu, /清晰度/iu, /語言/iu, /手寫/iu, /表格/iu, /分欄/iu, /不會.*精確.*重建.*版面/iu] },
-  hi: { forbidden: /OCR.*शामिल नहीं/iu, required: [/स्कैन.*लोकल OCR/iu, /स्पष्टता/iu, /भाषा/iu, /लिखावट/iu, /तालिक/iu, /कॉलम/iu, /सटीक लेआउट.*पुनर्निर्म/iu] },
-  ar: { forbidden: /لا يتضمن\s*OCR/iu, required: [/الصفحات الممسوحة.*OCR محلي/iu, /وضوح المسح/iu, /اللغة/iu, /الكتابة اليدوية/iu, /الجداول/iu, /الأعمدة/iu, /إعادة بناء دقيقة للتخطيط/iu] },
-  ru: { forbidden: /Без OCR/iu, required: [/сканированн.*локальн.*OCR/iu, /качества скана/iu, /языка/iu, /почерка/iu, /таблиц/iu, /колонок/iu, /точн.*макет.*восстан/iu] },
-  id: { forbidden: /Tanpa OCR/iu, required: [/halaman (?:hasil )?pindai.*OCR lokal/iu, /kejernihan/iu, /bahasa/iu, /tulisan tangan/iu, /tabel/iu, /kolom/iu, /tata letak tepat.*direkonstruksi/iu] },
-  it: { forbidden: /Senza OCR/iu, required: [/pagine scansionate.*OCR locale/iu, /nitidezza/iu, /lingua/iu, /scrittura a mano/iu, /tabelle/iu, /colonne/iu, /layout esatto.*ricostru/iu] },
-  nl: { forbidden: /Geen OCR/iu, required: [/gescande pagina.*lokale OCR/iu, /scherpte/iu, /taal/iu, /handschrift/iu, /tabellen/iu, /kolommen/iu, /exacte lay-out.*gereconstrueerd/iu] },
-  tr: { forbidden: /\bOCR (?:desteği )?yok(?:tur)?\b/iu, required: [/taranmış sayfa.*yerel OCR/iu, /tarama netliği/iu, /dil/iu, /el yazısı/iu, /tablolar/iu, /sütunlar/iu, /tam düzen.*yeniden oluştur/iu] },
-  vi: { forbidden: /Không có OCR/iu, required: [/trang quét.*OCR cục bộ/iu, /độ rõ/iu, /ngôn ngữ/iu, /chữ viết tay/iu, /bảng/iu, /cột/iu, /bố cục chính xác.*tái tạo/iu] },
-  th: { forbidden: /ไม่มี OCR/iu, required: [/หน้าที่สแกน.*OCR ในเครื่อง/iu, /ความชัด/iu, /ภาษา/iu, /ลายมือ/iu, /ตาราง/iu, /คอลัมน์/iu, /ไม่มี.*สร้าง.*เลย์เอาต์ที่แม่นยำ/iu] },
-  pl: { forbidden: /Bez OCR/iu, required: [/zeskanowane strony.*lokaln.*OCR/iu, /czytelności skanu/iu, /języka/iu, /pisma odręcznego/iu, /tabel/iu, /kolumn/iu, /dokładn.*układ.*odtwarz/iu] },
-};
+const decodeHtml = (value = '') => value
+  .replace(/&amp;/g, '&')
+  .replace(/&quot;/g, '"')
+  .replace(/&#(?:x27|39);/gi, "'")
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>');
 
-const elementsByTag = (document, tagName) => descendants(document, (node) => node.tagName === tagName);
-const localizedHref = (prefix, path) => `${prefix}${path}` || '/';
+const plainText = (html) => decodeHtml(html
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim());
 
-function ancestor(node, tagName) {
-  let candidate = node?.parentNode;
-  while (candidate) {
-    if (candidate.tagName === tagName) return candidate;
-    candidate = candidate.parentNode;
-  }
+function attributes(tag) {
+  const result = {};
+  for (const match of tag.matchAll(/([:\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) result[match[1].toLowerCase()] = decodeHtml(match[2] ?? match[3] ?? '');
+  return result;
 }
 
-function schemasFrom(document, pageLabel) {
+function tags(html, name) {
+  return Array.from(html.matchAll(new RegExp(`<${name}\\b[^>]*>`, 'gi')), (match) => ({ tag: match[0], attributes: attributes(match[0]) }));
+}
+
+function schemasFrom(html, pageLabel) {
   const schemas = [];
-  for (const script of elementsByTag(document, 'script').filter((node) => attribute(node, 'type') === 'application/ld+json')) {
+  for (const match of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
     try {
-      const parsed = JSON.parse(textContent(script));
+      const parsed = JSON.parse(decodeHtml(match[1]));
       schemas.push(...(Array.isArray(parsed) ? parsed : [parsed]));
     } catch (error) {
       failures.push(`${pageLabel}: invalid JSON-LD (${error.message}).`);
@@ -91,137 +49,261 @@ function schemasFrom(document, pageLabel) {
   return schemas.flatMap((schema) => Array.isArray(schema?.['@graph']) ? schema['@graph'] : [schema]);
 }
 
-async function validateHomepage(home) {
-  const html = await readFile(home.path, 'utf8');
-  const document = parseHtml(html);
-  const text = visibleTextContent(document);
-  const schemas = schemasFrom(document, home.label);
-  const h1Count = elementsByTag(document, 'h1').length;
-  if (h1Count !== 1) failures.push(`${home.label}: expected one H1, found ${h1Count}.`);
+function routeFromFile(file) {
+  const relative = path.relative('dist', file).replaceAll('\\', '/');
+  if (relative === 'index.html') return '/';
+  if (relative === '404.html') return '/404';
+  return `/${relative.replace(/\/index\.html$/, '').replace(/\.html$/, '')}`;
+}
 
-  const expectedCanonical = `${origin}${home.prefix}/`;
-  const canonical = elementsByTag(document, 'link').find((node) => attribute(node, 'rel') === 'canonical');
-  if (attribute(canonical, 'href') !== expectedCanonical) failures.push(`${home.label}: expected canonical ${expectedCanonical}, found ${attribute(canonical, 'href') ?? 'none'}.`);
+function routeContext(route) {
+  const segments = route.split('/').filter(Boolean);
+  const locale = segments.length && localePaths.has(segments[0]) && segments[0] !== 'en' ? segments.shift() : 'en';
+  const base = segments.length ? `/${segments.join('/')}` : '/';
+  return { locale, base };
+}
 
-  const alternates = new Map(elementsByTag(document, 'link')
-    .filter((node) => attribute(node, 'rel') === 'alternate' && hasAttribute(node, 'hreflang'))
-    .map((node) => [attribute(node, 'hreflang'), attribute(node, 'href')]));
-  const expectedAlternates = new Map([
-    ...publishedLocales.map((locale) => [locale.code, `${origin}${locale.path === 'en' ? '/' : `/${locale.path}/`}`]),
-    ['x-default', `${origin}/`],
-  ]);
-  if (alternates.size !== expectedAlternates.size) failures.push(`${home.label}: expected ${expectedAlternates.size} reciprocal hreflang links, found ${alternates.size}.`);
-  for (const [hreflang, href] of expectedAlternates) if (alternates.get(hreflang) !== href) failures.push(`${home.label}: hreflang ${hreflang} must point to ${href}.`);
+function indexMetadata(index, locale, value, route) {
+  if (!value) return;
+  const key = `${locale}\0${value.trim().toLocaleLowerCase(locale === 'zh-cn' || locale === 'zh-tw' ? 'zh' : locale)}`;
+  const matches = index.get(key) ?? [];
+  matches.push(route);
+  index.set(key, matches);
+}
 
-  const anchors = elementsByTag(document, 'a');
-  const hrefs = new Set(anchors.map((node) => attribute(node, 'href')?.replace(/\/$/, '')).filter(Boolean));
-  for (const tool of tools) {
-    const expectedHref = localizedHref(home.prefix, tool.href);
-    if (!hrefs.has(expectedHref)) failures.push(`${home.label}: missing crawlable ${expectedHref} tool link.`);
-  }
-
-  const renderedWorkflows = elementsWithData(document, 'data-popular-workflow').map((node) => ({
-    slug: attribute(node, 'data-tool-slug'), href: attribute(node, 'href'),
-  }));
-  const expectedWorkflows = popularWorkflows.map((workflow) => ({ slug: workflow.slug, href: localizedHref(home.prefix, workflow.path) }));
-  if (JSON.stringify(renderedWorkflows) !== JSON.stringify(expectedWorkflows)) failures.push(`${home.label}: popular workflows must contain the six locale-prefixed routes in catalog order.`);
-
-  const toolCardLinks = toolCardLinkContract(document);
-  if (toolCardLinks.cardCount !== tools.length) failures.push(`${home.label}: expected ${tools.length} descriptive tool-card anchors, found ${toolCardLinks.cardCount}.`);
-  for (const failure of toolCardLinks.failures) failures.push(`${home.label}: ${failure}.`);
-
-  const itemList = schemas.find((item) => item?.['@type'] === 'ItemList');
-  if (!itemList || itemList.itemListElement?.length !== tools.length) failures.push(`${home.label}: ItemList must contain all ${tools.length} tools.`);
-  else itemList.itemListElement.forEach((item, index) => {
-    const expectedUrl = `${origin}${localizedHref(home.prefix, tools[index].href)}`;
-    if (item.url !== expectedUrl) failures.push(`${home.label}: ItemList item ${index + 1} must use ${expectedUrl}.`);
-  });
-
-  const faq = schemas.find((item) => item?.['@type'] === 'FAQPage');
-  const faqHeading = elementsByTag(document, 'h2').find((node) => attribute(node, 'id') === 'tool-faq-heading');
-  const faqSection = ancestor(faqHeading, 'section');
-  const visibleFaqs = faqSection ? descendants(faqSection, (node) => node.tagName === 'details').map((details) => ({
-    question: textContent(descendants(details, (node) => node.tagName === 'summary')[0]),
-    answer: textContent(descendants(details, (node) => node.tagName === 'p')[0]),
-  })) : [];
-  if (!faq?.mainEntity?.length) failures.push(`${home.label}: FAQPage schema is missing or empty.`);
-  if (visibleFaqs.length !== home.expectedFaqCount) failures.push(`${home.label}: visible FAQ count must match the locale catalog count ${home.expectedFaqCount}.`);
-  if (visibleFaqs.length !== faq?.mainEntity?.length) failures.push(`${home.label}: visible FAQ count must match FAQPage schema.`);
-  for (const [index, question] of (faq?.mainEntity ?? []).entries()) {
-    if (visibleFaqs[index]?.question !== question.name || visibleFaqs[index]?.answer !== question.acceptedAnswer?.text) failures.push(`${home.label}: visible FAQ ${index + 1} must match its JSON-LD entity.`);
-  }
-  if (home.locale === 'en') {
-    for (const requirement of ['Contact form', 'name, email address, subject, message, and any optional attachment', 'FormSubmit', 'Sora Labs', 'not part of the local file-tool flow']) {
-      if (!visibleFaqs[0]?.answer.includes(requirement)) failures.push(`home: homepage privacy FAQ must disclose ${requirement}.`);
+function validateSchemas(text, label, locale, baseRoute, schemas) {
+  for (const schema of schemas) {
+    if (!schema || typeof schema !== 'object') continue;
+    if (schema['@type'] === 'Organization' && schema.name !== 'Sora Labs') failures.push(`${label}: Organization schema must name Sora Labs.`);
+    if (schema['@type'] === 'WebSite' && schema.name !== 'SoraFiles') failures.push(`${label}: WebSite schema must name SoraFiles.`);
+    if (['WebApplication', 'SoftwareApplication'].includes(schema['@type'])) failures.push(`${label}: review-gated SoftwareApplication markup must not be published without genuine reviews.`);
+    if (schema['@type'] === 'FAQPage') {
+      for (const question of schema.mainEntity ?? []) if (question?.name && !text.includes(decodeHtml(question.name))) failures.push(`${label}: FAQ schema question is not visible: ${question.name}`);
     }
   }
 
-  const hero = elementsWithData(document, 'data-home-hero')[0];
-  if (hero && descendants(hero, (node) => node.tagName === 'input' && attribute(node, 'type')?.toLowerCase() === 'file').length) failures.push(`${home.label}: hero must not contain a file input.`);
-
-  const ocrDisclosure = identifiedDisclosureContract(document, 'data-home-ocr-disclosure');
-  if (ocrDisclosure.count !== 1) failures.push(`${home.label}: expected one identified static OCR disclosure, found ${ocrDisclosure.count}.`);
-  if (ocrDisclosure.count === 1 && !ocrDisclosure.visible) failures.push(`${home.label}: identified static OCR disclosure must be effectively visible.`);
-  for (const requirement of missingTextRequirements(ocrDisclosure.text, home.ocrTruth)) failures.push(`${home.label}: incomplete identified OCR disclosure (${requirement}).`);
-
-  for (const failure of discoveryVisibilityFailures(document)) failures.push(`${home.label}: ${failure}.`);
-}
-
-async function validatePdfToWordPages() {
-  for (const locale of publishedLocales) {
-    const prefix = locale.path === 'en' ? '' : `/${locale.path}`;
-    const path = `dist${prefix}/pdf-to-word/index.html`;
-    const label = `${locale.path} PDF-to-Word`;
-    const document = parseHtml(await readFile(path, 'utf8'));
-    const pageText = visibleTextContent(document);
-    const contract = pdfToWordContracts[locale.path];
-    if (contract.forbidden.test(pageText)) failures.push(`${label}: stale negative OCR copy remains on the built page.`);
-    const disclosure = identifiedDisclosureContract(document, 'data-pdf-to-word-ocr-disclosure');
-    if (disclosure.count !== 1) failures.push(`${label}: expected one visible OCR disclosure, found ${disclosure.count}.`);
-    if (disclosure.count === 1 && !disclosure.visible) failures.push(`${label}: identified OCR disclosure must be effectively visible.`);
-    for (const requirement of missingTextRequirements(disclosure.text, contract.required)) failures.push(`${label}: incomplete OCR capability or limitation disclosure (${requirement}).`);
+  if (baseRoute === '/') {
+    const website = schemas.find((item) => item?.['@type'] === 'WebSite');
+    const organization = schemas.find((item) => item?.['@type'] === 'Organization');
+    const itemList = schemas.find((item) => item?.['@type'] === 'ItemList');
+    const collection = schemas.find((item) => item?.['@type'] === 'CollectionPage');
+    if (locale === 'en' && (!website || website.name !== 'SoraFiles')) failures.push(`${label}: canonical homepage WebSite schema is missing.`);
+    if (locale === 'en' && JSON.stringify(website?.alternateName) !== JSON.stringify(['sorafiles.com'])) failures.push(`${label}: canonical homepage WebSite alternateName is incomplete.`);
+    if (locale === 'en' && (!organization || organization.name !== 'Sora Labs')) failures.push(`${label}: canonical homepage Organization schema is missing.`);
+    if (locale !== 'en' && (!collection || collection.inLanguage !== localeDefinitions.find((item) => item.path === locale)?.code)) failures.push(`${label}: localized homepage CollectionPage schema is missing or has the wrong language.`);
+    if (!itemList || itemList.itemListElement?.length !== liveTools.length) failures.push(`${label}: homepage ItemList must contain all ${liveTools.length} tools.`);
+    for (const item of itemList?.itemListElement ?? []) if (item?.name && !text.includes(decodeHtml(item.name))) failures.push(`${label}: ItemList fact is not visible: ${item.name}`);
+  } else if (toolBasePaths.has(baseRoute)) {
+    if (!schemas.some((item) => item?.['@type'] === 'WebPage')) failures.push(`${label}: tool page is missing WebPage schema.`);
+    if (!schemas.some((item) => item?.['@type'] === 'BreadcrumbList')) failures.push(`${label}: tool page is missing BreadcrumbList schema.`);
   }
 }
 
-async function validateRepresentativeHomes() {
-  for (const home of representativeHomes) await validateHomepage(home);
-  const rootDocument = parseHtml(await readFile('dist/index.html', 'utf8'));
-  const rootText = visibleTextContent(rootDocument);
-  if (!rootText.includes('Instant, free PDF & image tools.')) failures.push('home: missing the exact instant-access value statement.');
-  if (!rootText.includes('Your browser is the processing room.')) failures.push('home: missing visible local-processing proof.');
-  const website = schemasFrom(rootDocument, 'home').find((item) => item?.['@type'] === 'WebSite');
-  if (website?.name !== 'Sora Files') failures.push('home: WebSite schema must name Sora Files.');
-}
-
-async function validateAllPages() {
+async function htmlFiles() {
   const walk = async (directory) => {
-    const entries = await readdir(directory, { withFileTypes: true });
     const files = [];
-    for (const entry of entries) {
-      const path = `${directory}/${entry.name}`;
-      if (entry.isDirectory()) files.push(...await walk(path));
-      else if (entry.name === 'index.html') files.push(path);
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const file = path.join(directory, entry.name);
+      if (entry.isDirectory()) files.push(...await walk(file));
+      else if (entry.isFile() && entry.name.endsWith('.html')) files.push(file);
     }
     return files;
   };
-  for (const path of await walk('dist')) {
-    const document = parseHtml(await readFile(path, 'utf8'));
-    const label = path.replace(/^dist\//, '');
-    const h1Count = elementsByTag(document, 'h1').length;
-    if (h1Count !== 1) failures.push(`${label}: expected one H1, found ${h1Count}.`);
-    if (!elementsByTag(document, 'title').some((node) => textContent(node))) failures.push(`${label}: missing title.`);
-    if (!elementsByTag(document, 'meta').some((node) => attribute(node, 'name') === 'description' && attribute(node, 'content'))) failures.push(`${label}: missing meta description.`);
-    if (!elementsByTag(document, 'link').some((node) => attribute(node, 'rel') === 'canonical')) failures.push(`${label}: missing canonical.`);
+  return walk('dist');
+}
+
+async function validatePage(file) {
+  const html = await readFile(file, 'utf8');
+  const route = routeFromFile(file);
+  const label = route;
+  if (html.includes('Sora Files') || html.includes('Sora-Files')) failures.push(`${label}: public brand text must use SoraFiles without spaces or hyphens.`);
+  const charset = /<meta\s+charset=["']utf-8["'][^>]*>/i.exec(html);
+  if (!charset) failures.push(`${label}: missing UTF-8 character encoding declaration.`);
+  else if (Buffer.byteLength(html.slice(0, charset.index + charset[0].length), 'utf8') > 1024) failures.push(`${label}: UTF-8 character encoding declaration must be completely within the first 1024 bytes.`);
+  if (route.startsWith('/ad-frame/')) {
+    const robots = tags(html, 'meta').find(({ attributes: attrs }) => attrs.name === 'robots')?.attributes.content ?? '';
+    if (!/\bnoindex\b/i.test(robots) || !/\bnofollow\b/i.test(robots)) failures.push(`${label}: isolated ad document must be noindex and nofollow.`);
+    if ((html.match(/<title\b/gi) ?? []).length !== 1 || !/<title>Advertisement<\/title>/i.test(html)) failures.push(`${label}: isolated ad document must have its reserved title.`);
+    if (/<link\b[^>]*rel=["']canonical["']/i.test(html)) failures.push(`${label}: isolated ad document must not publish a canonical application URL.`);
+    return;
+  }
+  const text = plainText(html);
+  const { locale, base } = routeContext(route);
+  const h1Count = (html.match(/<h1\b/gi) ?? []).length;
+  if (route === '/404' ? h1Count !== 0 : h1Count !== 1) failures.push(`${label}: unexpected H1 count ${h1Count}.`);
+  if ((html.match(/<title\b/gi) ?? []).length !== 1 || !/<title>[^<]+<\/title>/i.test(html)) failures.push(`${label}: expected one non-empty title.`);
+
+  const metas = tags(html, 'meta');
+  const descriptions = metas.filter(({ attributes: attrs }) => attrs.name === 'description' && attrs.content?.trim());
+  if (descriptions.length !== 1) failures.push(`${label}: expected one non-empty meta description.`);
+  const robots = metas.find(({ attributes: attrs }) => attrs.name === 'robots')?.attributes.content ?? '';
+  const noIndex = /\bnoindex\b/i.test(robots);
+  if (!noIndex && !/\bindex\b/i.test(robots)) failures.push(`${label}: indexable page is missing an explicit index directive.`);
+  if (metas.find(({ attributes: attrs }) => attrs.property === 'og:site_name')?.attributes.content !== 'SoraFiles') failures.push(`${label}: og:site_name must be SoraFiles.`);
+  const socialTitle = metas.find(({ attributes: attrs }) => attrs.property === 'og:title')?.attributes.content ?? '';
+  if (!socialTitle) failures.push(`${label}: OpenGraph title is missing.`);
+  if (/[–—]/.test(socialTitle)) failures.push(`${label}: OpenGraph title must use parser-safe ASCII punctuation.`);
+
+  const links = tags(html, 'link');
+  const canonicals = links.filter(({ attributes: attrs }) => attrs.rel === 'canonical');
+  if (canonicals.length !== 1) failures.push(`${label}: expected exactly one canonical link.`);
+  const canonical = canonicals[0]?.attributes.href;
+  if (canonical) {
+    try {
+      const parsed = new URL(canonical);
+      if (parsed.protocol !== 'https:' || parsed.host !== 'sorafiles.com' || parsed.search || parsed.hash) failures.push(`${label}: canonical is not a clean HTTPS sorafiles.com URL.`);
+    } catch {
+      failures.push(`${label}: canonical URL is invalid.`);
+    }
+  }
+
+  if (!noIndex) {
+    const title = decodeHtml(html.match(/<title>([^<]+)<\/title>/i)?.[1] ?? '');
+    indexMetadata(titleIndex, locale, title, route);
+    indexMetadata(descriptionIndex, locale, descriptions[0]?.attributes.content ?? '', route);
+    const expectedCanonical = new URL(localizedPath(locale, base), siteUrl).toString();
+    if (canonical !== expectedCanonical) failures.push(`${label}: canonical ${canonical} does not match ${expectedCanonical}.`);
+    const alternates = links.filter(({ attributes: attrs }) => attrs.rel === 'alternate' && attrs.hreflang);
+    const actualHreflangs = new Set(alternates.map(({ attributes: attrs }) => attrs.hreflang));
+    if (alternates.length !== hreflangs.size || actualHreflangs.size !== hreflangs.size || [...hreflangs].some((code) => !actualHreflangs.has(code))) failures.push(`${label}: hreflang cluster must contain all ${hreflangs.size} unique languages including x-default.`);
+    for (const alternate of alternates) {
+      const code = alternate.attributes.hreflang;
+      const localeDefinition = publishedLocales.find((item) => item.code === code);
+      const expected = code === 'x-default' ? new URL(base, siteUrl).toString() : new URL(localizedPath(localeDefinition.path, base), siteUrl).toString();
+      if (alternate.attributes.href !== expected) failures.push(`${label}: hreflang ${code} points to ${alternate.attributes.href}, expected ${expected}.`);
+    }
+    const htmlTag = tags(html, 'html')[0]?.attributes ?? {};
+    const localeDefinition = localeDefinitions.find((item) => item.path === locale);
+    if (htmlTag.lang !== localeDefinition?.code || (htmlTag.dir || 'ltr') !== localeDefinition?.direction) failures.push(`${label}: html lang/dir does not match locale ${locale}.`);
+    validateSchemas(text, label, locale, base, schemasFrom(html, label));
+  } else if (!['/404', '/heic'].includes(route)) {
+    failures.push(`${label}: unexpected noindex page.`);
   }
 }
 
-await validateRepresentativeHomes();
-await validatePdfToWordPages();
-if (allPages) await validateAllPages();
+async function validateInternalLinks(files) {
+  const publicRoutes = new Set(files
+    .map(routeFromFile)
+    .filter((route) => !route.startsWith('/ad-frame/')));
+  const html = await readFile('dist/index.html', 'utf8');
+  const hrefs = new Set(tags(html, 'a').map(({ attributes: attrs }) => attrs.href?.replace(/\/$/, '')).filter(Boolean));
+  for (const tool of liveTools) {
+    const href = `/${tool.slug}`;
+    if (!hrefs.has(href)) failures.push(`/: missing crawlable ${href} tool link.`);
+  }
+
+  for (const file of files) {
+    const route = routeFromFile(file);
+    if (route.startsWith('/ad-frame/')) continue;
+    const page = await readFile(file, 'utf8');
+    for (const { attributes: attrs } of tags(page, 'a')) {
+      const href = attrs.href?.trim();
+      if (!href || href.startsWith('#') || /^(?:mailto:|tel:|data:|javascript:)/i.test(href)) continue;
+      let target;
+      try {
+        target = new URL(href, `${siteUrl}${route === '/' ? '/' : `${route}/`}`);
+      } catch {
+        failures.push(`${route}: invalid link ${href}.`);
+        continue;
+      }
+      if (target.origin !== siteUrl) continue;
+      const pathname = decodeURIComponent(target.pathname).replace(/\/$/, '') || '/';
+      if (!publicRoutes.has(pathname)) failures.push(`${route}: broken internal link ${href} -> ${pathname}.`);
+    }
+  }
+}
+
+function validateMetadataUniqueness() {
+  for (const [key, routes] of titleIndex) {
+    if (routes.length > 1) failures.push(`duplicate title within ${key.split('\0')[0]}: ${routes.join(', ')}.`);
+  }
+  for (const [key, routes] of descriptionIndex) {
+    if (routes.length > 1) failures.push(`duplicate description within ${key.split('\0')[0]}: ${routes.join(', ')}.`);
+  }
+}
+
+async function validateSitemapAndRobots() {
+  const sitemap = await readFile('dist/sitemap.xml', 'utf8');
+  const entries = Array.from(sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g), (match) => {
+    const block = match[1];
+    return {
+      loc: decodeHtml(block.match(/<loc>([^<]+)<\/loc>/)?.[1] ?? ''),
+      lastmod: block.match(/<lastmod>([^<]+)<\/lastmod>/)?.[1] ?? '',
+      alternates: tags(block, 'xhtml:link').map(({ attributes: attrs }) => ({
+        rel: attrs.rel,
+        hreflang: attrs.hreflang,
+        href: attrs.href,
+      })),
+    };
+  });
+  const expectedByUrl = new Map();
+  for (const route of localizedRoutePaths) {
+    const alternates = new Map(publishedLocales.map((locale) => [
+      locale.code,
+      new URL(localizedPath(locale.path, route), siteUrl).toString(),
+    ]));
+    alternates.set('x-default', new URL(localizedPath('en', route), siteUrl).toString());
+    for (const locale of publishedLocales) {
+      expectedByUrl.set(new URL(localizedPath(locale.path, route), siteUrl).toString(), alternates);
+    }
+  }
+  const expectedUrls = [...expectedByUrl.keys()];
+  const expectedSet = new Set(expectedUrls);
+  const actualSet = new Set(entries.map((entry) => entry.loc));
+  if (!sitemap.includes('xmlns:xhtml="http://www.w3.org/1999/xhtml"')) failures.push('sitemap: xhtml namespace for hreflang alternates is missing.');
+  if (entries.length !== expectedUrls.length || actualSet.size !== expectedSet.size) failures.push(`sitemap: expected ${expectedUrls.length} unique URLs, found ${entries.length}/${actualSet.size}.`);
+  for (const url of expectedSet) if (!actualSet.has(url)) failures.push(`sitemap: missing ${url}.`);
+  for (const url of actualSet) if (!expectedSet.has(url)) failures.push(`sitemap: unexpected ${url}.`);
+  for (const entry of entries) {
+    if (entry.lastmod) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.lastmod) || entry.lastmod > today) failures.push(`sitemap: invalid or future lastmod for ${entry.loc}.`);
+    }
+    const expectedAlternates = expectedByUrl.get(entry.loc);
+    if (!expectedAlternates) continue;
+    const actualHreflangs = new Set(entry.alternates.map((alternate) => alternate.hreflang));
+    if (entry.alternates.length !== hreflangs.size || actualHreflangs.size !== hreflangs.size || [...hreflangs].some((code) => !actualHreflangs.has(code))) {
+      failures.push(`sitemap: ${entry.loc} must contain all ${hreflangs.size} unique reciprocal hreflang links.`);
+      continue;
+    }
+    for (const alternate of entry.alternates) {
+      if (alternate.rel !== 'alternate' || alternate.href !== expectedAlternates.get(alternate.hreflang)) {
+        failures.push(`sitemap: ${entry.loc} has an invalid ${alternate.hreflang || 'missing'} alternate ${alternate.href || 'missing'}.`);
+      }
+    }
+    if (!entry.alternates.some((alternate) => alternate.hreflang !== 'x-default' && alternate.href === entry.loc)) failures.push(`sitemap: ${entry.loc} is missing its self-referential hreflang link.`);
+  }
+
+  const robots = await readFile('dist/robots.txt', 'utf8');
+  const groups = new Map(robots.replaceAll('\r\n', '\n').trim().split(/\n\s*\n/).flatMap((block) => {
+    const agent = block.match(/^User-agent:\s*(.+)$/im)?.[1]?.trim();
+    return agent ? [[agent, block]] : [];
+  }));
+  for (const agent of ['*', 'Googlebot-Image', 'OAI-SearchBot', 'PerplexityBot']) {
+    const group = groups.get(agent) ?? '';
+    if (!group) failures.push(`robots: missing ${agent} user-agent group.`);
+    if (!/^Allow:\s*\/$/im.test(group)) failures.push(`robots: ${agent} is missing the explicit public root allow rule.`);
+    if (!/^Disallow:\s*\/__locale$/im.test(group)) failures.push(`robots: ${agent} does not exclude the internal locale endpoint.`);
+    if (!/^Disallow:\s*\/ad-frame\/$/im.test(group)) failures.push(`robots: ${agent} does not exclude isolated advertising documents.`);
+  }
+  if ((robots.match(/^Sitemap:\s*https:\/\/sorafiles\.com\/sitemap\.xml$/gim) ?? []).length !== 1) failures.push('robots: expected exactly one canonical sitemap declaration.');
+  if (/^Disallow:\s*\/$/im.test(robots)) failures.push('robots: site-wide crawling is blocked.');
+  if (/^(?:Crawl-delay|Host):/im.test(robots)) failures.push('robots: nonportable crawl-delay or Host directive must not be used.');
+}
+
+const generatedHtmlFiles = await htmlFiles();
+await validateInternalLinks(generatedHtmlFiles);
+await validateSitemapAndRobots();
+if (allPages) {
+  for (const file of generatedHtmlFiles) await validatePage(file);
+  validateMetadataUniqueness();
+} else {
+  await validatePage('dist/index.html');
+}
 
 if (failures.length > 0) {
-  console.error(`Built SEO validation failed:\n- ${failures.join('\n- ')}`);
+  console.error(`Built SEO/GEO validation failed:\n- ${failures.slice(0, 200).join('\n- ')}${failures.length > 200 ? `\n- …and ${failures.length - 200} more` : ''}`);
   process.exit(1);
 }
 
-console.log(`Built SEO validation passed${allPages ? ' for all generated pages' : ' for representative homepages and all localized PDF-to-Word pages'}.`);
+console.log(`Built SEO/GEO validation passed${allPages ? ' for all generated pages, canonicals, HTML and sitemap hreflang clusters, sitemap URLs, robots, and visible structured-data facts' : ' for the homepage'}.`);

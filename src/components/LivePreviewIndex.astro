@@ -1,0 +1,38 @@
+---
+import copy from '../data/liveCopy';
+import { liveRaw, liveText } from '../data/liveI18n';
+import { liveTools } from '../data/liveTools';
+import type { LocalePath } from '../i18n/config';
+import { localizedPath, localizedRoutePaths } from '../i18n/config';
+import LiveToolCard from './LiveToolCard.astro';
+
+interface Props { locale?: LocalePath; }
+const { locale = 'en' } = Astro.props;
+const infoSlugs = ['about', 'contact', 'privacy', 'terms', 'open-source'] as const;
+const total = localizedRoutePaths.length - 1;
+const preview = liveRaw<typeof copy.preview>(locale, 'preview');
+const intro = preview.intro.replace('{{n}}', String(total));
+const infoPages = infoSlugs.map((slug) => ({ slug, ...liveRaw<typeof copy.page[typeof slug]>(locale, `page.${slug}`) }));
+const hrefFor = (path: string) => localizedPath(locale, path);
+---
+
+<main id="main" data-testid="preview-index" data-copied-label={liveText(locale, 'common.copied')} class="mx-auto max-w-[1200px] px-4 py-14 sm:px-6 lg:py-20">
+  <div class="sf-enter max-w-2xl"><span class="text-xs font-extrabold uppercase tracking-[0.25em] text-violet-500">{preview.overline}</span><h1 class="mt-3 text-4xl font-extrabold tracking-[-0.03em] text-slate-900 sm:text-5xl dark:text-white">{preview.title}</h1><p class="mt-4 text-base font-medium leading-relaxed text-slate-500 dark:text-slate-400">{intro}</p></div>
+
+  <section class="mt-14"><h2 class="flex items-center gap-3 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">{preview.core}<span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-extrabold text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">1</span><span class="hidden h-px flex-1 bg-slate-200/80 sm:block dark:bg-white/10"></span></h2><div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"><article data-reveal class="sf-reveal flex h-full flex-col rounded-2xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur transition-shadow hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]"><a href={hrefFor('/')} class="group block"><div class="flex items-center gap-3"><span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 via-violet-500 to-fuchsia-500 text-white shadow-md shadow-violet-500/30">⌂</span><span class="min-w-0 flex-1"><span class="block text-[13px] font-extrabold tracking-tight text-slate-800 dark:text-slate-100">{liveText(locale, 'nav.home')}</span><span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">/</span></span><span class="text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-violet-500 dark:text-slate-500">›</span></div><p class="mt-2.5 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">{liveText(locale, 'hero.desc')}</p></a><button type="button" data-copy-path="/" class="mt-2 flex min-h-10 w-full items-center gap-1.5 rounded-lg bg-slate-100/80 px-2 text-left font-mono text-[10px] font-semibold text-slate-600 transition-colors hover:bg-violet-100/70 hover:text-violet-700 dark:bg-white/5 dark:text-slate-300">▣ <span data-copy-label>/</span></button></article></div></section>
+
+  <section class="mt-14"><h2 class="flex items-center gap-3 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">{preview.toolPages}<span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-extrabold text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">{liveTools.length}</span><span class="hidden h-px flex-1 bg-slate-200/80 sm:block dark:bg-white/10"></span></h2><div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{liveTools.map((tool) => <div data-reveal class="sf-reveal"><LiveToolCard {tool} {locale} href={hrefFor(`/${tool.slug}`)} /></div>)}</div></section>
+
+  <section class="mt-14"><h2 class="flex items-center gap-3 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">{preview.infoPages}<span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-extrabold text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">{infoPages.length}</span><span class="hidden h-px flex-1 bg-slate-200/80 sm:block dark:bg-white/10"></span></h2><div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{infoPages.map((page) => <article data-reveal class="sf-reveal flex h-full flex-col rounded-2xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur transition-shadow hover:shadow-lg dark:border-white/10 dark:bg-white/[0.04]"><a href={hrefFor(`/${page.slug}`)} class="group block"><div class="flex items-center gap-3"><span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 text-white shadow-md">ⓘ</span><span class="min-w-0 flex-1"><span class="block truncate text-[13px] font-extrabold tracking-tight text-slate-800 dark:text-slate-100">{page.overline}</span><span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">/{page.slug}</span></span><span class="text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-violet-500 dark:text-slate-500">›</span></div><p class="mt-2.5 line-clamp-2 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">{page.title}</p></a><button type="button" data-copy-path={hrefFor(`/${page.slug}`)} class="mt-2 flex min-h-10 w-full items-center gap-1.5 rounded-lg bg-slate-100/80 px-2 text-left font-mono text-[10px] font-semibold text-slate-600 transition-colors hover:bg-violet-100/70 hover:text-violet-700 dark:bg-white/5 dark:text-slate-300"><span>▣</span><span data-copy-label class="truncate">{hrefFor(`/${page.slug}`)}</span></button></article>)}</div></section>
+  <p class="mt-16 flex items-start gap-2 rounded-2xl border border-dashed border-slate-300 px-4 py-3 text-[11px] font-medium leading-snug text-slate-400 dark:border-white/15">▤ {preview.note}</p>
+</main>
+
+<script>
+  const copiedLabel = document.querySelector<HTMLElement>('[data-copied-label]')?.dataset.copiedLabel || '';
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-path]').forEach((button) => button.addEventListener('click', async (event) => {
+    event.preventDefault(); event.stopPropagation();
+    const path = button.dataset.copyPath || '/';
+    const url = new URL(path, location.origin).toString();
+    try { await navigator.clipboard.writeText(url); const label = button.querySelector<HTMLElement>('[data-copy-label]'); if (label) { const old = label.textContent; label.textContent = copiedLabel; setTimeout(() => { label.textContent = old; }, 1600); } } catch {}
+  }));
+</script>

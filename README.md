@@ -6,7 +6,7 @@
 
 Free, privacy-first PDF and image tools that run locally in your browser.
 
-> **Active development:** SoraFiles is usable today, and a more dependable generation of its local PDF tools is now being developed in public. The latest source adds safer cancellation, stronger input/output checks, and better recovery without changing the no-upload privacy model.
+This repository contains the source deployed at [sorafiles.com](https://sorafiles.com), including its local processing engines, multilingual Astro interface, tests, and Cloudflare Worker configuration.
 
 [Use SoraFiles](https://sorafiles.com) · [Source code](https://github.com/Sora-Labs2026/SoraFiles) · [Report a security issue](SECURITY.md) · [Contribute](CONTRIBUTING.md)
 
@@ -16,15 +16,13 @@ Everyday file tasks should not require an account, a watermark, or an upload que
 
 ## Available tools
 
-- Convert images between common formats
-- Compress and resize JPG, PNG, WebP, HEIC, and HEIF images
+- Compress, merge, split, rotate, protect, unlock, and repair PDFs
+- Remove pages, add page numbers, watermarks, and signatures
+- Convert between PDF, JPG, DOCX, and XLSX where the documented tool supports it
+- Extract PDF text to DOCX with local OCR for scan-like pages
+- Convert, compress, resize, and edit common image formats
 - Convert HEIC/HEIF photos to JPG
-- Compress PDFs using explicit rasterization presets
-- Merge, split, and rotate PDFs
-- Convert JPG/PNG images to PDF
-- Render PDF pages as JPG images
-- Convert PDF text to a basic DOCX, with opt-in local OCR for scan-like pages
-- Convert DOCX text to a basic PDF
+- Remove supported metadata locally
 
 The interface is statically rendered with Astro, supports 19 languages, includes right-to-left Arabic layouts, and remains navigable when JavaScript is disabled wherever processing is not required.
 
@@ -35,7 +33,7 @@ SoraFiles has no file-upload or server-processing endpoint for its file tools. F
 Some page-level services are separate from file processing:
 
 - The Contact form sends the fields and optional attachment a user explicitly submits to FormSubmit for delivery to Sora Labs.
-- Production builds may include ordinary analytics or advertising scripts. First-party tool code does not intentionally send file contents to those services; stronger third-party isolation on processing routes remains active development.
+- Production pages use separately disclosed analytics and dimensionally reserved Adsterra advertising. Advertising runs in isolated cross-origin frames, and first-party tool code does not send selected file contents to these services.
 
 Do not use this software as a substitute for your organization’s document-handling, legal, or security requirements.
 
@@ -71,38 +69,40 @@ npm run verify:ocr
 npm run dev
 ```
 
-No environment variables are required for ordinary development or file processing. Copy `.env.example` only when you need its documented optional Astro build flag; browser-test overrides are set in your shell. Never put credentials or private files in `.env`.
+No environment variables are required for ordinary development, builds, or file processing. Copy `.env.example` to `.env.search.local` only when running optional owner-authorized search-console automation. Never commit credentials or private files.
 
 Optional configuration:
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
-| `PUBLIC_ADSENSE_ENABLED` | Include the existing AdSense loader in a manual Astro build | `false` |
-| `SORA_BASE_URL` | Point browser tests at an already-running preview; set in your shell | `http://localhost:4321` |
-| `SORA_BROWSER_PATH` | Use an explicit Chromium-compatible executable in browser tests; set in your shell | Playwright Chromium |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Optional path to a Google Search Console service-account JSON file | unset |
+| `GOOGLE_SEARCH_CONSOLE_PROPERTY` | Optional verified-property override | auto-detected |
+| `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` | Optional Google Search Console OAuth credentials | unset |
+| `BING_WEBMASTER_API_KEY` | Optional Bing Webmaster API key | unset |
 
 Astro will print the local development URL. To create and preview a production build:
 
 ```bash
-npm run build
+npm run build:production
 npm run preview
 ```
 
-Run the complete non-browser validation baseline with:
+Run the primary validation baseline with:
 
 ```bash
-npm run check
+npx astro check
+npm run test:unit
+npm run build:production
 ```
 
 The underlying focused commands are:
 
 ```bash
-npm run typecheck
 npm run verify:brand
-npm run build
-npm run test:unit
+npm run verify:monetization
+npm run verify:ocr
 npm run validate:i18n
-npm run validate:seo
+npm run validate:truth
 npm run test:tools:smoke
 ```
 
@@ -130,23 +130,15 @@ tests/           unit, browser, fixtures, and real-output validation
 
 Currently verified:
 
-- Eleven public file tools and real output fixtures
+- 23 public file tools and real output fixtures
 - Cancellable PDF compression, merge, split, rotate, JPG-to-PDF, and PDF-to-JPG jobs with stale-result protection
 - Structured corrupt/encrypted-file recovery and tool-specific output validation before downloads appear
 - Local OCR assets for supported languages
-- 342 static pages and 323 localized canonical URLs
+- 576 static pages and 570 localized canonical URLs
 - Responsive light/dark/system themes, keyboard access, reduced motion, RTL, and zoom/reflow coverage
 - No account requirement, no watermark, and no overwrite of the original file
 
-Actively being improved:
-
-- Faster, more dependable PDF tools for larger and more complex files
-- Clear progress, cancellation, and helpful recovery when a device reaches its limits
-- Higher-quality PDF compression and conversion with honest output tradeoffs
-- Stronger privacy protection across file-tool pages
-- Broader accessibility, language, and browser-compatibility coverage
-
-This roadmap describes user-facing outcomes only. Internal architecture, implementation plans, security-sensitive details, development prompts, and operational planning are not published.
+Ongoing work focuses on performance, browser compatibility, accessibility, language quality, and honest capability limits without weakening the local-first privacy model.
 
 ## Contributing and security
 

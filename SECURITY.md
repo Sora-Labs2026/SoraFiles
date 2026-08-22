@@ -4,7 +4,7 @@
 
 Please do not open a public issue for a suspected vulnerability or privacy leak.
 
-Email **soralabs2026@gmail.com** with:
+Email **contact@sorafiles.com** with:
 
 - a concise description of the issue;
 - the affected route, browser, and version;

@@ -1,0 +1,19 @@
+---
+import { tools } from '../data/tools';
+import { getLocaleContent } from '../i18n';
+import type { LocalePath } from '../i18n/config';
+
+interface Props { locale?: LocalePath; }
+const { locale = 'en' } = Astro.props;
+const content = getLocaleContent(locale);
+const hrefFor = (href: string) => locale === 'en' ? href : `/${locale}${href}`;
+---
+
+<nav aria-label={content.common.allTools} class="sf-marquee border-y border-line/70 bg-surface/65 py-3 backdrop-blur">
+  <div class="sf-marquee-track flex w-max items-center gap-2 px-2">
+    {tools.map((tool) => <a href={hrefFor(tool.href)} class="inline-flex min-h-9 items-center gap-2 rounded-full border border-line bg-surface px-4 text-xs font-bold text-muted shadow-small transition-colors hover:border-violet/40 hover:text-ink"><span class="h-1.5 w-1.5 rounded-full bg-violet" aria-hidden="true"></span>{content.tools[tool.slug].title}</a>)}
+    <div aria-hidden="true" class="flex items-center gap-2">
+      {tools.map((tool) => <span class="inline-flex min-h-9 items-center gap-2 rounded-full border border-line bg-surface px-4 text-xs font-bold text-muted shadow-small"><span class="h-1.5 w-1.5 rounded-full bg-blue"></span>{content.tools[tool.slug].title}</span>)}
+    </div>
+  </div>
+</nav>

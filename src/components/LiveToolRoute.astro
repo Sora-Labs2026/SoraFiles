@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import LocalizedToolPage from './LocalizedToolPage.astro';
+import { getLocaleContent } from '../i18n';
+import type { LocalePath } from '../i18n/config';
+import { localizedPath } from '../i18n/config';
+import type { LiveTool } from '../data/liveTools';
+import { liveText, liveToolCopy } from '../data/liveI18n';
+
+interface Props { tool: LiveTool; locale?: LocalePath; }
+const { tool, locale = 'en' } = Astro.props;
+const content = getLocaleContent(locale);
+const canonicalPath = localizedPath(locale, `/${tool.slug}`);
+const words = liveToolCopy(locale, tool.id);
+const title = `${words.n} — ${liveText(locale, 'common.free')} · ${liveText(locale, 'common.onDevice')} | SoraFiles`;
+const description = `${words.t} ${words.d} ${liveText(locale, 'hero.badge')}.`;
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebPage', name: `${words.n} — SoraFiles`, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: 'en', description, isPartOf: { '@id': 'https://sorafiles.com/#website' } },
+    { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: liveText(locale, 'nav.home'), item: new URL(localizedPath(locale, '/'), 'https://sorafiles.com').toString() }, { '@type': 'ListItem', position: 2, name: words.n, item: new URL(canonicalPath, 'https://sorafiles.com').toString() }] },
+  ],
+};
+---
+
+<Layout {title} {description} {canonicalPath} alternatePath={`/${tool.slug}`} {schema} {locale} monetized>
+  <Header {locale} />
+  <LocalizedToolPage {locale} {content} {tool} />
+  <Footer {locale} />
+</Layout>

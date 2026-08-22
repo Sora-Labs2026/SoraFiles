@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {
+      "id": "audit_498d4ad98c22275b",
+      "timestamp": "2026-08-21T09:02:24.570Z",
+      "action": "baseline",
+      "candidate": "baseline",
+      "decision": "observed",
+      "reasonCode": "baseline-captured",
+      "policyHash": "cba5ca1dd843dc00c9682cd5f4bf16f8e4e673c16864d2f4950323375a7e8612",
+      "architectureFingerprint": "e3c6eee8bad90aa248ca1f3dcc5f981a91aec3dfb8d5fcbeb7851423bcecae13",
+      "evidenceIds": []
+    },
+    {
+      "id": "audit_1ce330a160e98313",
+      "timestamp": "2026-08-21T09:02:36.718Z",
+      "action": "decision",
+      "candidate": "storage-denial-safety",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "cba5ca1dd843dc00c9682cd5f4bf16f8e4e673c16864d2f4950323375a7e8612",
+      "architectureFingerprint": "e3c6eee8bad90aa248ca1f3dcc5f981a91aec3dfb8d5fcbeb7851423bcecae13",
+      "evidenceIds": []
+    },
+    {
+      "id": "audit_ea155c4cb067dac6",
+      "timestamp": "2026-08-21T09:04:29.528Z",
+      "action": "rollback",
+      "candidate": "storage-denial-safety",
+      "decision": "rolled-back",
+      "reasonCode": "rollback-complete",
+      "policyHash": "cba5ca1dd843dc00c9682cd5f4bf16f8e4e673c16864d2f4950323375a7e8612",
+      "architectureFingerprint": "e3c6eee8bad90aa248ca1f3dcc5f981a91aec3dfb8d5fcbeb7851423bcecae13",
+      "evidenceIds": [
+        "kb_3bbeefbac029f48e"
+      ]
+    },
+    {
+      "id": "audit_5624b85cf57428e2",
+      "timestamp": "2026-08-21T09:05:21.600Z",
+      "action": "decision",
+      "candidate": "storage-denial-safety",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "cba5ca1dd843dc00c9682cd5f4bf16f8e4e673c16864d2f4950323375a7e8612",
+      "architectureFingerprint": "e3c6eee8bad90aa248ca1f3dcc5f981a91aec3dfb8d5fcbeb7851423bcecae13",
+      "evidenceIds": [
+        "kb_3bbeefbac029f48e"
+      ]
+    },
+    {
+      "id": "audit_31987d22311f21f5",
+      "timestamp": "2026-08-21T09:07:14.307Z",
+      "action": "rollback",
+      "candidate": "storage-denial-safety",
+      "decision": "rolled-back",
+      "reasonCode": "rollback-complete",
+      "policyHash": "cba5ca1dd843dc00c9682cd5f4bf16f8e4e673c16864d2f4950323375a7e8612",
+      "architectureFingerprint": "e3c6eee8bad90aa248ca1f3dcc5f981a91aec3dfb8d5fcbeb7851423bcecae13",
+      "evidenceIds": [
+        "kb_0db3e0b02e4caf8f"
+      ]
+    },
+    {
+      "id": "audit_fdf51d1be857cab8",
+      "timestamp": "2026-08-21T09:09:51.762Z",
+      "action": "decision",
+      "candidate": "storage-denial-safety",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "cba5ca1dd843dc00c9682cd5f4bf16f8e4e673c16864d2f4950323375a7e8612",
+      "architectureFingerprint": "69e9496b5e122611f9562ed1007cf1d075c915b49fd31f17fb7b27f9acb28fd0",
+      "evidenceIds": [
+        "kb_0db3e0b02e4caf8f",
+        "kb_3bbeefbac029f48e"
+      ]
+    },
+    {
+      "id": "audit_aa4680b091bfe36d",
+      "timestamp": "2026-08-21T09:12:23.818Z",
+      "action": "rollback",
+      "candidate": "storage-denial-safety",
+      "decision": "rolled-back",
+      "reasonCode": "rollback-complete",
+      "policyHash": "cba5ca1dd843dc00c9682cd5f4bf16f8e4e673c16864d2f4950323375a7e8612",
+      "architectureFingerprint": "69e9496b5e122611f9562ed1007cf1d075c915b49fd31f17fb7b27f9acb28fd0",
+      "evidenceIds": [
+        "kb_3f4efea80db81e5d"
+      ]
+    },
+    {
+      "id": "audit_f1bdf57b6bc6d3cb",
+      "timestamp": "2026-08-21T09:15:38.477Z",
+      "action": "decision",
+      "candidate": "storage-denial-safety",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "cba5ca1dd843dc00c9682cd5f4bf16f8e4e673c16864d2f4950323375a7e8612",
+      "architectureFingerprint": "69e9496b5e122611f9562ed1007cf1d075c915b49fd31f17fb7b27f9acb28fd0",
+      "evidenceIds": [
+        "kb_3f4efea80db81e5d",
+        "kb_0db3e0b02e4caf8f",
+        "kb_3bbeefbac029f48e"
+      ]
+    },
+    {
+      "id": "audit_9d8d7851dc3f1be2",
+      "timestamp": "2026-08-21T09:18:34.101Z",
+      "action": "rollback",
+      "candidate": "storage-denial-safety",
+      "decision": "rolled-back",
+      "reasonCode": "rollback-complete",
+      "policyHash": "cba5ca1dd843dc00c9682cd5f4bf16f8e4e673c16864d2f4950323375a7e8612",
+      "architectureFingerprint": "69e9496b5e122611f9562ed1007cf1d075c915b49fd31f17fb7b27f9acb28fd0",
+      "evidenceIds": [
+        "kb_f1f9c1b71576825b"
+      ]
+    },
+    {
+      "id": "audit_d725a25a969fadd7",
+      "timestamp": "2026-08-21T09:21:09.613Z",
+      "action": "decision",
+      "candidate": "workbench-overflow-containment",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "69e9496b5e122611f9562ed1007cf1d075c915b49fd31f17fb7b27f9acb28fd0",
+      "evidenceIds": []
+    },
+    {
+      "id": "audit_878b3c7b7df65cd6",
+      "timestamp": "2026-08-21T09:23:50.915Z",
+      "action": "apply",
+      "candidate": "workbench-overflow-containment",
+      "decision": "applied",
+      "reasonCode": "gates-passed",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "69e9496b5e122611f9562ed1007cf1d075c915b49fd31f17fb7b27f9acb28fd0",
+      "evidenceIds": [
+        "kb_9f3cdaafd394e8d4"
+      ]
+    },
+    {
+      "id": "audit_40bc37d37a3a33de",
+      "timestamp": "2026-08-21T09:25:08.099Z",
+      "action": "decision",
+      "candidate": "storage-denial-safety",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "69e9496b5e122611f9562ed1007cf1d075c915b49fd31f17fb7b27f9acb28fd0",
+      "evidenceIds": [
+        "kb_f1f9c1b71576825b",
+        "kb_3f4efea80db81e5d",
+        "kb_0db3e0b02e4caf8f"
+      ]
+    },
+    {
+      "id": "audit_8f89e6c2a1b7f8e3",
+      "timestamp": "2026-08-21T09:28:48.616Z",
+      "action": "apply",
+      "candidate": "storage-denial-safety",
+      "decision": "applied",
+      "reasonCode": "gates-passed",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": [
+        "kb_2a9b0be1c1c87191"
+      ]
+    },
+    {
+      "id": "audit_f898624621c870cb",
+      "timestamp": "2026-08-21T09:28:58.506Z",
+      "action": "decision",
+      "candidate": "bounded-service-worker-cache",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": []
+    },
+    {
+      "id": "audit_821c1d293075411d",
+      "timestamp": "2026-08-21T09:32:58.596Z",
+      "action": "rollback",
+      "candidate": "bounded-service-worker-cache",
+      "decision": "rolled-back",
+      "reasonCode": "rollback-complete",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": [
+        "kb_18aa73c36de9ce1f"
+      ]
+    },
+    {
+      "id": "audit_7b998f8037d020e6",
+      "timestamp": "2026-08-21T09:35:03.423Z",
+      "action": "decision",
+      "candidate": "bounded-service-worker-cache",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": [
+        "kb_18aa73c36de9ce1f"
+      ]
+    },
+    {
+      "id": "audit_9b21b0018b1e8ad0",
+      "timestamp": "2026-08-21T09:39:29.783Z",
+      "action": "apply",
+      "candidate": "bounded-service-worker-cache",
+      "decision": "applied",
+      "reasonCode": "gates-passed",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": [
+        "kb_43b65c578c37909c"
+      ]
+    },
+    {
+      "id": "audit_04752daf5e1bdc2a",
+      "timestamp": "2026-08-21T09:40:14.041Z",
+      "action": "decision",
+      "candidate": "canonical-locale-root",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": []
+    },
+    {
+      "id": "audit_1d132f88b88e9b43",
+      "timestamp": "2026-08-21T09:42:15.606Z",
+      "action": "rollback",
+      "candidate": "canonical-locale-root",
+      "decision": "rolled-back",
+      "reasonCode": "rollback-complete",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": [
+        "kb_124a04ff9411ab65"
+      ]
+    },
+    {
+      "id": "audit_cce65d22b2a97d60",
+      "timestamp": "2026-08-21T09:43:28.047Z",
+      "action": "decision",
+      "candidate": "canonical-locale-root",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": [
+        "kb_124a04ff9411ab65"
+      ]
+    },
+    {
+      "id": "audit_4ec165c5b1f4cbbe",
+      "timestamp": "2026-08-21T09:45:59.524Z",
+      "action": "rollback",
+      "candidate": "canonical-locale-root",
+      "decision": "rolled-back",
+      "reasonCode": "rollback-complete",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": [
+        "kb_f9092f5bf14fc24c"
+      ]
+    },
+    {
+      "id": "audit_53d48e2ad0a57e41",
+      "timestamp": "2026-08-21T09:47:33.942Z",
+      "action": "decision",
+      "candidate": "canonical-locale-root",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": [
+        "kb_f9092f5bf14fc24c",
+        "kb_124a04ff9411ab65"
+      ]
+    },
+    {
+      "id": "audit_d904fd11f2f9a1c0",
+      "timestamp": "2026-08-21T09:50:09.372Z",
+      "action": "apply",
+      "candidate": "canonical-locale-root",
+      "decision": "applied",
+      "reasonCode": "gates-passed",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": [
+        "kb_cd4ee3a23ffaada2"
+      ]
+    },
+    {
+      "id": "audit_48735754af6e08f3",
+      "timestamp": "2026-08-21T09:50:20.520Z",
+      "action": "decision",
+      "candidate": "immutable-astro-cache",
+      "decision": "approved",
+      "reasonCode": "policy-approved",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "783971470d1ea285df987acc4394a6e530f12bc4c77cf7ab60ac51096c3b0aff",
+      "evidenceIds": []
+    },
+    {
+      "id": "audit_31ab55719d159cd9",
+      "timestamp": "2026-08-21T09:52:46.819Z",
+      "action": "apply",
+      "candidate": "immutable-astro-cache",
+      "decision": "applied",
+      "reasonCode": "gates-passed",
+      "policyHash": "a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706",
+      "architectureFingerprint": "7d00ae4dbdef997542c378af871cb41a1d00d0e9e1907ab05669bf05d8f770ba",
+      "evidenceIds": [
+        "kb_8b98ee1710edabed"
+      ]
+    }
+  ]
+}

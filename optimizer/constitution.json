@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "policyId": "sorafiles-optimizer-policy-v1",
+  "priorities": [
+    "security-privacy",
+    "correctness-file-integrity",
+    "accessibility-localization",
+    "user-perceived-performance",
+    "technical-seo-geo",
+    "maintainability-reversibility"
+  ],
+  "allowedChangeClasses": [
+    {
+      "id": "technical-seo-canonical",
+      "recipeId": "canonical-locale-root",
+      "paths": ["src/i18n/config.ts", "src/pages/sitemap.xml.ts", "worker.js"]
+    },
+    {
+      "id": "performance-cache-policy",
+      "recipeId": "immutable-astro-cache",
+      "paths": ["worker.js"]
+    },
+    {
+      "id": "resilience-offline-cache",
+      "recipeId": "bounded-service-worker-cache",
+      "paths": ["public/sw.js"]
+    },
+    {
+      "id": "resilience-storage-denial",
+      "recipeId": "storage-denial-safety",
+      "paths": ["src/layouts/Layout.astro", "src/components/Header.astro"]
+    },
+    {
+      "id": "resilience-extreme-input-layout",
+      "recipeId": "workbench-overflow-containment",
+      "paths": ["src/components/DocumentActionWorkbench.astro"]
+    }
+  ],
+  "protectedPathPrefixes": [
+    "src/components/AdsterraSlot.astro",
+    "src/data/",
+    "src/engines/",
+    "src/lib/compression/",
+    "src/lib/ocr/",
+    "src/lib/pdf-to-word/",
+    "src/styles/"
+  ],
+  "forbiddenChangeClasses": [
+    "visible-ui",
+    "copy-content",
+    "ad-unit-placement-density",
+    "tool-engine-algorithm-quality",
+    "privacy-model",
+    "framework-hosting-migration",
+    "visitor-profiling",
+    "per-request-llm",
+    "external-user-file-transmission"
+  ],
+  "limits": {
+    "knowledgeRecords": 250,
+    "auditRecords": 500,
+    "rollbackTransactions": 10,
+    "confidenceHalfLifeDays": 90,
+    "maxRecipeFiles": 3
+  }
+}

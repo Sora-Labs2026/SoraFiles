@@ -1,30 +1,88 @@
 ---
-import type { ToolDefinition, ToolSlug } from '../data/tools';
 import type { LocaleContent, LocalizedToolCopy } from '../i18n/types';
 import type { LocalePath } from '../i18n/config';
-import ToolPageHero from './ToolPageHero.astro';
-import ToolFaq from './ToolFaq.astro';
-import RelatedTools from './RelatedTools.astro';
+import { localizedPath } from '../i18n/config';
+import type { LiveTool } from '../data/liveTools';
+import { dedicatedWorkbenchToolIds, documentActionToolIds, liveToolById } from '../data/liveTools';
+import { liveText, liveToolCopy } from '../data/liveI18n';
+import ToolIcon from './ToolIcon.astro';
+import LiveToolCard from './LiveToolCard.astro';
 import DocumentActionWorkbench from './DocumentActionWorkbench.astro';
 import FileWorkbench from './FileWorkbench.astro';
 import ImageConverterWorkbench from './ImageConverterWorkbench.astro';
 import PdfWorkbench from './PdfWorkbench.astro';
+import ExtraToolWorkbench from './ExtraToolWorkbench.astro';
+import AdsterraSlot from './AdsterraSlot.astro';
+import ToolProcessMotion from './ToolProcessMotion.astro';
 
-interface Props { locale: LocalePath; content: LocaleContent; tool: ToolDefinition; copy: LocalizedToolCopy; }
-const { locale, content, tool, copy } = Astro.props;
-const actionSlugs = new Set(['merge-pdf', 'split-pdf', 'rotate-pdf', 'jpg-to-pdf', 'pdf-to-jpg', 'pdf-to-word', 'word-to-pdf']);
+interface Props { locale: LocalePath; content: LocaleContent; tool: LiveTool; copy?: LocalizedToolCopy; }
+const { locale, tool } = Astro.props;
+const hrefFor = (path: string) => localizedPath(locale, path);
+const t = (path: string) => liveText(locale, path);
+const words = liveToolCopy(locale, tool.id);
+const exactCopy = {
+  title: words.n,
+  short: words.t,
+  description: words.d,
+  note: words.d,
+  h1: words.n,
+  intro: words.t,
+  sectionTitle: words.n,
+  paragraphs: [words.d],
+  steps: [t('steps.s1t'), t('steps.s2t'), t('steps.s3t')],
+  faqs: [],
+} as unknown as LocalizedToolCopy;
+const related = tool.related.map((id) => liveToolById.get(id)).filter((item) => item !== undefined);
+const features = [
+  ['✓', `${t('trust.t1a')} ${t('trust.t1b')}`, t('trust.t1s')],
+  ['♙', `${t('trust.t3a')} ${t('trust.t3b')}`, t('trust.t3s')],
+  ['▣', `${t('trust.t4a')} ${t('trust.t4b')}`, t('trust.t4s')],
+  ['⌁', `${t('trust.t5a')} ${t('trust.t5b')}`, t('trust.t5s')],
+];
+const steps = [
+  [t('steps.s1t'), t('steps.s1d')],
+  [t('steps.s2t'), t('steps.s2d')],
+  [t('steps.s3t'), t('steps.s3d')],
+];
 ---
-<main id="main">
-  <ToolPageHero {tool} h1={copy.h1} intro={copy.intro} limitations={[copy.note]} {locale} toolTitle={copy.title} />
-  <section class="bg-canvas pb-20 pt-8 sm:pb-28 sm:pt-10">
-    <div>
-      {tool.slug === 'compress-pdf' && <PdfWorkbench {locale} {copy} />}
-      {tool.slug === 'image-converter' && <ImageConverterWorkbench {locale} {copy} />}
-      {(tool.slug === 'compress-image' || tool.slug === 'heic-to-jpg') && <FileWorkbench {locale} {copy} />}
-      {actionSlugs.has(tool.slug) && <DocumentActionWorkbench tool={tool as ToolDefinition & { slug: ToolSlug }} {locale} {copy} />}
+
+<main id="main" data-testid={`tool-page-${tool.slug}`}>
+  <section class="mx-auto max-w-[1200px] px-4 pb-6 pt-8 sm:px-6 lg:pt-12">
+    <nav aria-label={t('nav.home')} class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400"><a href={hrefFor('/')} class="transition-colors hover:text-violet-700 dark:hover:text-violet-300"><span class="sr-only">SoraFiles — </span>{t('nav.home')}</a><span aria-hidden="true">›</span><a href={hrefFor('/preview')} class="transition-colors hover:text-violet-700 dark:hover:text-violet-300">{t('nav.allTools')}</a><span aria-hidden="true">›</span><span aria-current="page" class="text-slate-700 dark:text-slate-300">{words.n}</span></nav>
+    <div class="mt-8 grid items-center gap-10 lg:grid-cols-[1fr_1.2fr]">
+      <div>
+        <div class="sf-enter flex items-center gap-4"><span class:list={['flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg', tool.tile]}><ToolIcon icon={tool.icon}/></span><span class="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm backdrop-blur dark:border-emerald-400/20 dark:bg-white/5 dark:text-slate-300"><span class="text-emerald-500">✓</span> {t('common.free')} • {t('common.onDevice')}</span></div>
+        <h1 class="sf-enter mt-6 text-4xl font-extrabold leading-[1.06] tracking-[-.03em] text-slate-900 sm:text-5xl dark:text-white [--sf-delay:.08s]">{words.n}<span class="text-gradient">.</span></h1>
+        <p class="sf-enter mt-4 text-lg font-bold tracking-tight text-slate-700 dark:text-slate-200 [--sf-delay:.16s]">{words.t}</p>
+        <p class="sf-enter mt-3 max-w-lg text-[15px] font-medium leading-relaxed text-slate-500 dark:text-slate-400 [--sf-delay:.22s]">{words.d}</p>
+        <ul class="sf-enter mt-5 space-y-2 [--sf-delay:.3s]">{[t('panel.check1'),t('panel.check2'),t('panel.check3')].map((item) => <li class="flex items-center gap-2 text-[13px] font-bold text-slate-600 dark:text-slate-300"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">✓</span>{item}</li>)}</ul>
+      </div>
+
+      <div id="workbench" class="live-workbench sf-enter scroll-mt-24 [--sf-delay:.15s]">
+        <ToolProcessMotion {tool} {locale} />
+        {tool.id === 'compress-pdf' && <PdfWorkbench {locale} copy={exactCopy}/>}
+        {tool.id === 'image-converter' && <ImageConverterWorkbench {locale} copy={exactCopy}/>}
+        {(tool.id === 'compress-image' || tool.id === 'heic-to-jpg') && <FileWorkbench {locale} copy={exactCopy}/>}
+        {documentActionToolIds.has(tool.id) && <DocumentActionWorkbench {tool} {locale} copy={exactCopy}/>}
+        {!dedicatedWorkbenchToolIds.has(tool.id) && <ExtraToolWorkbench {tool} {locale}/>}
+      </div>
     </div>
   </section>
-  <section class="border-t border-line px-5 py-18 sm:px-6 sm:py-24"><div class="mx-auto grid max-w-5xl gap-12 lg:grid-cols-[1.1fr_0.9fr]"><article><h2 class="text-balance text-3xl font-semibold tracking-[-0.04em]">{copy.sectionTitle}</h2>{copy.paragraphs.map((paragraph) => <p class="mt-5 text-sm leading-7 text-muted">{paragraph}</p>)}</article><div><h2 class="text-xl font-semibold">{content.home.privacySteps[1].title}</h2><ol class="mt-5 space-y-4">{copy.steps.map((step, index) => <li class="flex gap-4 text-sm leading-6 text-muted"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue text-xs font-semibold text-white">{index + 1}</span><span>{step}</span></li>)}</ol><p data-pdf-to-word-ocr-disclosure={tool.slug === 'pdf-to-word' ? '' : undefined} class="mt-8 border-y border-line py-5 text-sm leading-7 text-muted"><strong class="font-medium text-ink">{content.common.limitations}:</strong> {copy.note}</p></div></div></section>
-  <ToolFaq items={copy.faqs} title={`${copy.title} · ${content.home.faqTitle}`} />
-  <RelatedTools slugs={tool.related} {locale} />
+
+  <AdsterraSlot kind="responsive-horizontal" {locale} placement="tool-after-workbench" priority />
+
+  <section class="mx-auto max-w-[1200px] px-4 py-12 sm:px-6"><div data-reveal class="sf-reveal"><span class="text-xs font-extrabold uppercase tracking-[.25em] text-violet-500">{t('peek.howTitle')}</span><h2 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl dark:text-white">{t('panel.title1')} {t('panel.title2')}</h2></div><div class="mt-8 grid gap-4 sm:grid-cols-3">{steps.map(([title,description], index) => <div data-reveal style={`--reveal-delay:${index}`} class="sf-reveal rounded-3xl border border-white/70 bg-white/75 p-6 shadow-lg shadow-indigo-500/5 backdrop-blur dark:border-white/10 dark:bg-white/[.04]"><span class="text-gradient text-4xl font-extrabold tracking-tight">0{index + 1}</span><h3 class="mt-3 text-base font-extrabold tracking-tight text-slate-900 dark:text-white">{title}</h3><p class="mt-2 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-400">{description}</p></div>)}</div></section>
+  <section class="mx-auto max-w-[1200px] px-4 pb-4 sm:px-6"><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{features.map(([icon,title,sub], index) => <div data-reveal style={`--reveal-delay:${index}`} class="sf-reveal flex items-start gap-3 rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[.04]"><span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">{icon}</span><span><span class="block text-[13px] font-extrabold tracking-tight text-slate-900 dark:text-white">{title}</span><span class="mt-0.5 block text-xs font-medium leading-snug text-slate-500 dark:text-slate-400">{sub}</span></span></div>)}</div></section>
+  <AdsterraSlot kind="native" {locale} placement="tool-before-related" />
+  <section class="mx-auto max-w-[1200px] px-4 py-12 sm:px-6"><div class="mb-6 flex items-end justify-between"><h2 class="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{t('nav.allTools')}</h2><a href={hrefFor('/preview')} class="group flex items-center gap-1.5 text-sm font-bold text-violet-600 transition-colors hover:text-violet-700 dark:text-violet-300">{t('nav.allPages')} <span class="transition-transform group-hover:translate-x-0.5">›</span></a></div><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{related.map((item) => <LiveToolCard tool={item} href={hrefFor(`/${item.slug}`)} {locale}/>)}</div></section>
 </main>
+
+<style>
+  .live-workbench :global(section[data-workbench]) { max-width: none; padding: 0; }
+  .live-workbench :global(section[data-workbench] > div) { border-radius: 1.75rem; background: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.7); box-shadow: 0 25px 50px -12px rgb(99 102 241 / 10%); backdrop-filter: blur(20px) saturate(1.5); }
+  :global(.dark) .live-workbench :global(section[data-workbench] > div) { background: rgba(15,19,40,.62); border-color: rgba(255,255,255,.09); }
+  .live-workbench :global(section[data-workbench] > div > div:first-child) { display: none; }
+  .live-workbench :global(#pdf-empty), .live-workbench :global(#action-empty), .live-workbench :global(#empty-state), .live-workbench :global(#converter-empty) { padding: 1rem; }
+  .live-workbench :global(#pdf-drop-zone), .live-workbench :global(#action-drop), .live-workbench :global(#drop-zone), .live-workbench :global(#converter-drop-zone) { min-height: 0; border-width: 2px; border-radius: 1rem; padding: 2.5rem 1.5rem; background: rgba(255,255,255,.5); }
+  .live-workbench :global(button[type='submit']), .live-workbench :global(#pdf-choose), .live-workbench :global(#action-choose), .live-workbench :global(#choose-file), .live-workbench :global(#converter-choose) { border-radius: 999px; font-weight: 700; }
+</style>

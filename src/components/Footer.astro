@@ -1,152 +1,28 @@
 ---
-import BrandMark from './BrandMark.astro';
-import { basePathFromLocalized, localeDefinitions, localizedPath, localizedRoutePaths, type LocalePath } from '../i18n/config';
-import { getCommonMessages } from '../i18n';
-
+import { localizedPath, type LocalePath } from '../i18n/config';
+import { liveText } from '../data/liveI18n';
+import ShareMenu from './ShareMenu.astro';
 interface Props { locale?: LocalePath; }
 const { locale = 'en' } = Astro.props;
-const messages = getCommonMessages(locale);
 const hrefFor = (path: string) => localizedPath(locale, path);
-const currentBasePath = basePathFromLocalized(Astro.url.pathname);
-const localeTargetPath = localizedRoutePaths.includes(currentBasePath as never) ? currentBasePath : '/';
-const localeOptions = localeDefinitions.map(({ path, code, nativeName }) => ({
-  path,
-  code,
-  nativeName,
-  href: localizedPath(path, localeTargetPath),
-}));
+const links = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 'nav.openSource'), '/open-source'], [liveText(locale, 'nav.contact'), '/contact'], [liveText(locale, 'nav.privacy'), '/privacy'], [liveText(locale, 'nav.terms'), '/terms'], [liveText(locale, 'nav.allPages'), '/preview']] as const;
+const tagline = liveText(locale, 'footer.tagline');
 ---
 
-<footer class="border-t border-line bg-canvas">
-  <div class="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
-    <div>
-      <a href={hrefFor('/')} class="inline-flex items-center gap-2.5 rounded-sm text-sm font-semibold" aria-label={`Sora Files — ${messages.home}`}>
-        <BrandMark />
-        <span translate="no"><span class="text-ink">Sora</span> <span class="text-blue">Files</span></span>
-      </a>
-      <p class="mt-4 max-w-sm text-sm leading-6 text-muted">{messages.footerPromise}</p>
-      <p class="mt-4 max-w-sm text-xs leading-5 text-muted">{messages.footerTagline}</p>
+<footer data-testid="site-footer" class="sf-deferred-section relative">
+  <div class="mx-auto flex max-w-[1200px] flex-col items-start justify-between gap-5 border-t border-slate-200/70 px-4 py-10 sm:flex-row sm:items-center sm:px-6 dark:border-white/10">
+    <a href={hrefFor('/')} data-testid="footer-logo-link" class="flex items-center gap-2.5">
+      <img src="/favicon-48x48.png" alt="" class="h-7 w-7 rounded-lg" width="28" height="28" />
+      <span><span translate="no" class="block text-sm font-extrabold tracking-tight text-slate-900 dark:text-white">SoraFiles</span><span class="block text-[11px] font-medium text-slate-600 dark:text-slate-400">{tagline}</span></span>
+    </a>
+    <div class="flex w-full flex-col gap-4 sm:w-auto sm:items-end">
+      <nav aria-label={liveText(locale, 'nav.allPages')} class="flex flex-wrap items-center gap-x-6 gap-y-2">
+        {links.map(([label, path]) => <a href={hrefFor(path)} data-testid={`footer-link-${path.slice(1)}`} class="text-xs font-bold text-slate-600 transition-colors hover:text-violet-600 dark:text-slate-400 dark:hover:text-violet-300">{label}</a>)}
+      </nav>
+      <div class="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <ShareMenu {locale} />
+        <span class="text-center text-[11px] font-medium text-slate-600 sm:text-start dark:text-slate-400">© {new Date().getFullYear()} <span translate="no">Sora Labs · SoraFiles</span></span>
+      </div>
     </div>
-
-    <nav aria-label={messages.tools}>
-      <h2 class="text-sm font-semibold text-ink">{messages.tools}</h2>
-      <div class="mt-4 grid gap-3 text-sm text-muted">
-        <a class="w-fit rounded-sm hover:text-ink" href={`${hrefFor('/')}#all-tools`}>{messages.allTools}</a>
-        <a class="w-fit rounded-sm hover:text-ink" href={hrefFor('/image-converter')}>{messages.imageConverter}</a>
-        <a class="w-fit rounded-sm hover:text-ink" href={hrefFor('/compress-image')}>{messages.compressImages}</a>
-        <a class="w-fit rounded-sm hover:text-ink" href={hrefFor('/pdf')}>{messages.compressPdf}</a>
-        <a class="w-fit rounded-sm hover:text-ink" href={hrefFor('/merge-pdf')}>{messages.mergePdf}</a>
-      </div>
-    </nav>
-
-    <nav aria-label={messages.information}>
-      <h2 class="text-sm font-semibold text-ink">{messages.information}</h2>
-      <div class="mt-4 grid gap-3 text-sm text-muted">
-        <a class="w-fit rounded-sm hover:text-ink" href={hrefFor('/about')}>{messages.about}</a>
-        <a class="w-fit rounded-sm hover:text-ink" href={hrefFor('/contact')}>{messages.contact}</a>
-        <a class="w-fit rounded-sm hover:text-ink" href={hrefFor('/privacy')}>{messages.privacy}</a>
-        <a class="w-fit rounded-sm hover:text-ink" href={hrefFor('/terms')}>{messages.terms}</a>
-        <a class="w-fit rounded-sm hover:text-ink" href={hrefFor('/open-source')}>{messages.openSource}</a>
-        <a class="w-fit rounded-sm hover:text-ink" href="https://github.com/Sora-Labs2026/SoraFiles">GitHub</a>
-      </div>
-    </nav>
   </div>
-  <div class="border-t border-line px-5 py-6 sm:px-6">
-    <details class="group mx-auto max-w-7xl">
-      <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-ink marker:content-none">
-        <span>{messages.language}</span>
-        <span class="inline-flex items-center gap-2 text-xs font-normal text-muted"><span>{localeDefinitions.find((item) => item.path === locale)?.nativeName}</span><svg aria-hidden="true" viewBox="0 0 16 16" class="h-4 w-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m4 6 4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-      </summary>
-      <ul class="mt-5 grid gap-x-6 gap-y-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {localeDefinitions.map((item) => <li>{item.published ? <a href={localizedPath(item.path, localeTargetPath)} data-locale-choice={item.path} hreflang={item.code} lang={item.code} class:list={['inline-flex min-h-9 items-center gap-2 rounded-sm text-sm hover:text-blue', item.path === locale ? 'font-semibold text-ink' : 'text-muted']} aria-current={item.path === locale ? 'page' : undefined}>{item.nativeName}<span class="text-xs text-muted">{item.englishName}</span></a> : <span class="inline-flex min-h-9 items-center gap-2 text-sm text-muted/70" lang={item.code}>{item.nativeName}<span class="text-xs">{messages.planned}</span></span>}</li>)}
-      </ul>
-    </details>
-  </div>
-  <div class="border-t border-line px-5 py-5 text-center text-xs text-muted sm:px-6">© {new Date().getFullYear()} <span translate="no">Sora Files · sorafiles.com</span></div>
 </footer>
-
-<aside data-locale-suggestion hidden class="locale-suggestion fixed inset-x-3 z-40 mx-auto max-w-xl rounded-card border border-line-strong bg-canvas-raised p-3 shadow-lift sm:p-4" aria-live="polite">
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <p class="text-sm font-medium leading-6 text-ink">{messages.language}</p>
-    <div class="flex shrink-0 items-center gap-2">
-      <a data-locale-suggestion-link href={hrefFor('/')} class="inline-flex min-h-10 items-center justify-center rounded-control bg-action px-3 text-sm font-medium text-action-contrast hover:bg-action-hover"></a>
-      <button data-locale-suggestion-dismiss type="button" class="inline-flex min-h-10 items-center justify-center rounded-control border border-line-strong px-3 text-sm font-medium text-ink hover:bg-canvas-subtle">{messages.stayHere}</button>
-    </div>
-  </div>
-</aside>
-
-<script type="application/json" data-locale-options is:inline set:html={JSON.stringify(localeOptions).replace(/</g, '\\u003c')}></script>
-
-<script is:inline>
-  const localeOptions = JSON.parse(document.querySelector('[data-locale-options]')?.textContent || '[]');
-  const currentLocale = document.documentElement.dataset.locale || 'en';
-
-  const rememberLocale = (locale) => {
-    try { localStorage.setItem('sora-locale', locale); } catch {}
-    document.cookie = `sora-locale=${encodeURIComponent(locale)}; Max-Age=31536000; Path=/; SameSite=Lax; Secure`;
-  };
-
-  document.querySelectorAll('[data-locale-choice]').forEach((link) => {
-    link.addEventListener('click', () => {
-      const locale = link.getAttribute('data-locale-choice');
-      if (!locale) return;
-      rememberLocale(locale);
-    });
-  });
-
-  const localeAliases = {
-    'zh-hans': 'zh-cn', 'zh-cn': 'zh-cn', 'zh-sg': 'zh-cn', zh: 'zh-cn',
-    'zh-hant': 'zh-tw', 'zh-tw': 'zh-tw', 'zh-hk': 'zh-tw', 'zh-mo': 'zh-tw',
-  };
-  const supportedLocales = new Set(localeOptions.map((item) => item.path));
-  const normalizeLocale = (value) => {
-    const normalized = String(value || '').toLowerCase().replace('_', '-');
-    if (localeAliases[normalized]) return localeAliases[normalized];
-    const base = normalized.split('-')[0];
-    return localeAliases[base] || (supportedLocales.has(base) ? base : null);
-  };
-  const readCookieLocale = () => {
-    const item = document.cookie.split('; ').find((cookie) => cookie.startsWith('sora-locale='));
-    return item ? normalizeLocale(decodeURIComponent(item.split('=').slice(1).join('='))) : null;
-  };
-  const showLocaleSuggestion = (suggestedLocale) => {
-    if (!suggestedLocale || suggestedLocale === currentLocale) return false;
-    const target = localeOptions.find((item) => item.path === suggestedLocale);
-    const panel = document.querySelector('[data-locale-suggestion]');
-    const link = document.querySelector('[data-locale-suggestion-link]');
-    if (!target || !(panel instanceof HTMLElement) || !(link instanceof HTMLAnchorElement)) return false;
-    link.href = target.href;
-    link.lang = target.code;
-    link.hreflang = target.code;
-    link.textContent = target.nativeName;
-    link.addEventListener('click', () => rememberLocale(target.path), { once: true });
-    panel.hidden = false;
-    return true;
-  };
-
-  const savedLocale = (() => {
-    try { return normalizeLocale(localStorage.getItem('sora-locale')) || readCookieLocale(); }
-    catch { return readCookieLocale(); }
-  })();
-  const browserLocale = (navigator.languages || [navigator.language]).map(normalizeLocale).find(Boolean);
-
-  const preferredLocale = savedLocale || browserLocale;
-  if (preferredLocale) {
-    showLocaleSuggestion(preferredLocale);
-  } else {
-    fetch('/__locale', { headers: { accept: 'application/json' }, credentials: 'same-origin' })
-      .then((response) => response.ok ? response.json() : null)
-      .then((data) => showLocaleSuggestion(normalizeLocale(data?.suggestedLocale)))
-      .catch(() => {});
-  }
-
-  document.querySelector('[data-locale-suggestion-dismiss]')?.addEventListener('click', () => {
-    rememberLocale(currentLocale);
-    const panel = document.querySelector('[data-locale-suggestion]');
-    if (panel instanceof HTMLElement) panel.hidden = true;
-  });
-</script>
-
-<style>
-  .locale-suggestion { bottom: max(0.75rem, env(safe-area-inset-bottom)); }
-</style>

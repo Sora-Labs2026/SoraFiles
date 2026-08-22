@@ -7,9 +7,6 @@ export interface CompactLocaleSeed {
   common: LocaleContent['common'];
   home: {
     title: string; description: string; h1: string; intro: string; action: string;
-    popularTitle: string; popularIntro: string; searchExamplesLabel: string;
-    searchExamples: [string, string, string]; resultCount: string;
-    searchAliases: LocaleContent['home']['searchAliases'];
     privacyProof: LocaleContent['home']['privacyProof'];
     proofTitle: string; proof: [string, string, string];
     explorerTitle: string; explorerIntro: string; searchLabel: string; searchPlaceholder: string;
@@ -34,12 +31,6 @@ export function createCompactLocale(seed: CompactLocaleSeed): LocaleContent {
       h1: seed.home.h1,
       intro: seed.home.intro,
       primaryAction: seed.home.action,
-      popularTitle: seed.home.popularTitle,
-      popularIntro: seed.home.popularIntro,
-      searchExamplesLabel: seed.home.searchExamplesLabel,
-      searchExamples: seed.home.searchExamples,
-      resultCount: seed.home.resultCount,
-      searchAliases: seed.home.searchAliases,
       privacyProof: seed.home.privacyProof,
       proofTitle: seed.home.proofTitle,
       proofItems: seed.home.proof,

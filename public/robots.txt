@@ -1,7 +1,22 @@
-User-agent: *
+# Public search and answer engines may crawl every canonical page.
+User-agent: OAI-SearchBot
 Allow: /
+Disallow: /__locale
+Disallow: /ad-frame/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /__locale
+Disallow: /ad-frame/
 
 User-agent: Googlebot-Image
 Allow: /
+Disallow: /__locale
+Disallow: /ad-frame/
 
-Sitemap: https://sorafiles.com/sitemap-index.xml
+User-agent: *
+Allow: /
+Disallow: /__locale
+Disallow: /ad-frame/
+
+Sitemap: https://sorafiles.com/sitemap.xml

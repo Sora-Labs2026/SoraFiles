@@ -1,0 +1,135 @@
+---
+import type { LiveTool } from '../data/liveTools';
+import type { LocalePath } from '../i18n/config';
+import { liveText } from '../data/liveI18n';
+import ToolIcon from './ToolIcon.astro';
+import { OCR_LANGUAGE_BY_LOCALE, OCR_LANGUAGE_OPTIONS } from '../lib/ocr/languages';
+interface Props { tool: LiveTool; locale?: LocalePath; }
+const { tool, locale = 'en' } = Astro.props;
+const t = (path: string) => liveText(locale, path);
+const defaultOcrCode = OCR_LANGUAGE_BY_LOCALE[locale] ?? 'eng';
+const clientMessages = JSON.stringify({
+  wrongType: t('wb.err.wrongType'),
+  generic: t('wb.err.generic'),
+  processing: t('wb.processing'),
+  download: t('wb.download'),
+  cancelled: t('wb.cancel'),
+  noPassword: t('wb.err.noPassword'),
+  wrongPassword: t('wb.err.wrongPassword'),
+  needPassword: t('wb.err.needPassword'),
+  alreadyEncrypted: t('wb.err.alreadyEncrypted'),
+  badExcel: t('wb.err.badExcel'),
+  noText: t('wb.err.noText'),
+  ocrFailed: t('wb.err.ocrFailed'),
+}).replace(/</g, '\\u003c');
+---
+
+<div data-extra-workbench data-testid={`workbench-${tool.slug}`} data-tool={tool.id} data-accept={tool.accept} data-multiple={String(tool.multiple)} class="glass rounded-[1.75rem] p-4 shadow-2xl shadow-indigo-500/10 sm:p-6">
+  <script type="application/json" data-extra-messages is:inline set:html={clientMessages}></script>
+  <button type="button" data-extra-drop aria-controls="extra-file-input" aria-describedby="extra-drop-help" class="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-300/80 bg-white/50 px-6 py-10 text-center transition-colors hover:border-violet-300 dark:border-white/15 dark:bg-white/[.03]">
+    <span class:list={['flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg', tool.tile]}><ToolIcon icon={tool.icon}/></span>
+    <span class="text-sm font-extrabold tracking-tight text-slate-800 dark:text-slate-100">{tool.multiple ? t('wb.dropMany') : t('wb.dropOne')}</span>
+    <span id="extra-drop-help" class="text-xs font-medium text-slate-500 dark:text-slate-400">{t('wb.orClick')}</span>
+  </button>
+  <input id="extra-file-input" data-extra-input type="file" tabindex="-1" class="sr-only" accept={tool.accept} multiple={tool.multiple} aria-label={tool.multiple ? t('wb.dropMany') : t('wb.dropOne')} aria-describedby="extra-drop-help extra-error" />
+
+  <div data-extra-selected hidden class="mt-4">
+    <div class="mb-2 flex items-center justify-between"><span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">{t('wb.files')}</span><button type="button" data-extra-clear class="min-h-10 rounded-lg px-2 text-xs font-bold text-slate-500 transition-colors hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-300">{t('wb.clearAll')}</button></div>
+    <ul data-extra-list class="space-y-2"></ul>
+  </div>
+
+  {(tool.id === 'protect-pdf' || tool.id === 'unlock-pdf') && <label class="mt-4 block rounded-2xl border border-slate-100 bg-white/60 p-4 dark:border-white/10 dark:bg-white/[.03]"><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{tool.id === 'protect-pdf' ? t('opt.password') : t('opt.passwordUnlock')}</span><input data-extra-password type="password" autocomplete="new-password" placeholder={tool.id === 'protect-pdf' ? t('opt.password') : t('opt.passwordUnlock')} class="h-10 w-full rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold text-slate-700 outline-none focus:border-violet-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"/><span class="mt-1 block text-[10px] font-medium text-slate-500 dark:text-slate-400">{tool.id === 'protect-pdf' ? t('opt.passwordHint') : t('opt.passwordUnlockHint')}</span></label>}
+  {tool.id === 'pdf-ocr' && <label class="mt-4 block rounded-2xl border border-slate-100 bg-white/60 p-4 dark:border-white/10 dark:bg-white/[.03]"><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{t('opt.ocrLang')}</span><select data-extra-lang class="h-10 w-full rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">{OCR_LANGUAGE_OPTIONS.map((option) => <option value={option.code} selected={option.code === defaultOcrCode} dir={option.direction}>{option.nativeName}</option>)}</select></label>}
+  {tool.id === 'edit-image' && <div class="mt-4 grid gap-3 rounded-2xl border border-slate-100 bg-white/60 p-4 sm:grid-cols-2 dark:border-white/10 dark:bg-white/[.03]"><label><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{t('opt.angle')}</span><select data-extra-rotate class="h-10 w-full rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold dark:border-white/10 dark:bg-white/5"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label><label><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{t('opt.format')}</span><select data-extra-format class="h-10 w-full rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold dark:border-white/10 dark:bg-white/5"><option value="image/png">PNG</option><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option></select></label></div>}
+
+  {tool.limitationKey && <p class="mt-4 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/70 px-3 py-2.5 text-[11px] font-medium leading-snug text-blue-700/80 dark:border-blue-400/20 dark:bg-blue-500/10 dark:text-blue-300/80"><span class="font-extrabold">ⓘ</span><span><strong class="font-extrabold">{t('wb.limitation')}:</strong> {t(tool.limitationKey)}</span></p>}
+
+  <div class="mt-5 flex flex-wrap items-center gap-3"><button type="button" data-extra-start disabled class="inline-flex h-11 items-center gap-2 rounded-full bg-slate-900 px-7 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition-shadow hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-slate-900">{t('wb.start')}</button><button type="button" data-extra-cancel hidden class="inline-flex h-11 items-center rounded-full border border-slate-300 bg-white px-6 text-sm font-bold text-slate-600 dark:border-white/15 dark:bg-white/5 dark:text-slate-200">{t('wb.cancel')}</button><span class="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">✓ {t('panel.check4')}</span></div>
+  <div data-extra-progress hidden role="progressbar" aria-labelledby="extra-progress-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="4" class="mt-4 overflow-hidden rounded-2xl border border-violet-100/80 bg-gradient-to-b from-violet-50/70 via-white/60 to-white/40 p-4 dark:border-violet-400/15 dark:from-violet-500/[.08] dark:via-transparent"><div class="flex items-center justify-between text-[11px] font-bold"><span id="extra-progress-label" data-extra-status class="text-slate-500 dark:text-slate-400">{t('wb.processing')}</span><span data-extra-percent class="text-violet-600 dark:text-violet-300">4%</span></div><div aria-hidden="true" class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10"><div data-extra-bar class="h-full w-[4%] rounded-full bg-gradient-to-r from-blue-500 via-violet-500 to-fuchsia-500 transition-[width] duration-200"></div></div></div>
+  <div id="extra-error" data-extra-error hidden role="alert" tabindex="-1" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-sm font-bold text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-300"></div>
+  <div data-extra-results hidden role="status" tabindex="-1" class="sf-pop-enter mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-400/20 dark:bg-emerald-500/10"><div class="mb-3 flex items-center gap-2 text-sm font-extrabold text-emerald-700 dark:text-emerald-300">✓ {t('wb.done')}</div><ul data-extra-result-list class="space-y-2"></ul><div class="mt-3 flex items-center justify-between gap-3"><span class="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">{t('wb.original')}</span><button type="button" data-extra-new class="text-xs font-bold text-slate-500 hover:text-violet-600">{t('wb.newTask')}</button></div></div>
+</div>
+
+<script>
+  import { protectPdf, unlockPdf, repairPdf, removeMetadata, excelToPdf, pdfToExcel, ocr } from '../engines/liveExtra.js';
+  import { safeOutputStem } from '../utils/filename';
+  const root = document.querySelector<HTMLElement>('[data-extra-workbench]');
+  if (root) {
+    const messages = JSON.parse(root.querySelector<HTMLElement>('[data-extra-messages]')?.textContent || '{}') as Record<string, string>;
+    const input = root.querySelector<HTMLInputElement>('[data-extra-input]')!;
+    const drop = root.querySelector<HTMLElement>('[data-extra-drop]')!;
+    const selected = root.querySelector<HTMLElement>('[data-extra-selected]')!;
+    const list = root.querySelector<HTMLUListElement>('[data-extra-list]')!;
+    const start = root.querySelector<HTMLButtonElement>('[data-extra-start]')!;
+    const cancel = root.querySelector<HTMLButtonElement>('[data-extra-cancel]')!;
+    const progress = root.querySelector<HTMLElement>('[data-extra-progress]')!;
+    const status = root.querySelector<HTMLElement>('[data-extra-status]')!;
+    const percent = root.querySelector<HTMLElement>('[data-extra-percent]')!;
+    const bar = root.querySelector<HTMLElement>('[data-extra-bar]')!;
+    const errorBox = root.querySelector<HTMLElement>('[data-extra-error]')!;
+    const resultsBox = root.querySelector<HTMLElement>('[data-extra-results]')!;
+    const resultList = root.querySelector<HTMLUListElement>('[data-extra-result-list]')!;
+    const toolId = root.dataset.tool || '';
+    let files: File[] = [];
+    let objectUrls: string[] = [];
+    let control: { cancelled: boolean; abortController: AbortController } | null = null;
+    const formatBytes = (bytes: number) => bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1048576).toFixed(1)} MB`;
+    const cleanUrls = () => { objectUrls.forEach((url) => URL.revokeObjectURL(url)); objectUrls = []; };
+    const validateFiles = async (incoming: File[]) => {
+      const accepted = incoming.slice(0, root.dataset.multiple === 'true' ? 20 : 1);
+      const total = accepted.reduce((sum, file) => sum + file.size, 0);
+      if (!accepted.length) throw new Error('wrongType');
+      if (total > 100_000_000) throw new Error('generic');
+      for (const file of accepted) {
+        if (file.size <= 0) throw new Error('wrongType');
+        if (toolId.includes('pdf') || ['repair-pdf','metadata-remover'].includes(toolId)) {
+          const wantsPdf = file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
+          if (wantsPdf && new TextDecoder('ascii').decode(await file.slice(0, 5).arrayBuffer()) !== '%PDF-') throw new Error('wrongType');
+        }
+      }
+      return accepted;
+    };
+    const renderFiles = () => {
+      list.textContent = '';
+      files.forEach((file) => { const item = document.createElement('li'); item.className = 'flex items-center gap-3 rounded-xl border border-slate-100 bg-white/90 p-2.5 shadow-sm dark:border-white/10 dark:bg-white/5'; const icon = document.createElement('span'); icon.className = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[9px] font-bold text-slate-500 dark:bg-white/10'; icon.textContent = file.name.split('.').pop()?.toUpperCase() || '—'; const text = document.createElement('span'); text.className = 'min-w-0 flex-1'; const name = document.createElement('span'); name.className = 'block truncate text-xs font-bold text-slate-800 dark:text-slate-100'; name.textContent = file.name; const size = document.createElement('span'); size.className = 'block text-[10px] font-semibold text-slate-500 dark:text-slate-400'; size.textContent = formatBytes(file.size); text.append(name, size); item.append(icon, text); list.append(item); });
+      selected.hidden = files.length === 0; start.disabled = files.length === 0;
+    };
+    const load = async (incoming: File[]) => { errorBox.hidden = true; input.removeAttribute('aria-invalid'); resultsBox.hidden = true; try { files = await validateFiles(incoming); renderFiles(); } catch (error) { files = []; renderFiles(); const code = error instanceof Error ? error.message : 'generic'; errorBox.textContent = messages[code] || messages.generic; errorBox.hidden = false; input.setAttribute('aria-invalid', 'true'); errorBox.focus(); } };
+    const reset = () => { cleanUrls(); files = []; input.value = ''; input.removeAttribute('aria-invalid'); root.removeAttribute('aria-busy'); renderFiles(); progress.hidden = true; resultsBox.hidden = true; errorBox.hidden = true; };
+    const editImage = async (source: File) => {
+      const bitmap = await createImageBitmap(source, { imageOrientation: 'from-image' });
+      const angle = Number(root.querySelector<HTMLSelectElement>('[data-extra-rotate]')?.value || 0);
+      const swap = angle === 90 || angle === 270;
+      const canvas = document.createElement('canvas'); canvas.width = swap ? bitmap.height : bitmap.width; canvas.height = swap ? bitmap.width : bitmap.height;
+      if (canvas.width * canvas.height > 40_000_000) { bitmap.close(); throw new Error('generic'); }
+      const context = canvas.getContext('2d'); if (!context) throw new Error('generic');
+      context.translate(canvas.width / 2, canvas.height / 2); context.rotate(angle * Math.PI / 180); context.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2); bitmap.close();
+      const mime = root.querySelector<HTMLSelectElement>('[data-extra-format]')?.value || 'image/png';
+      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error('generic')), mime, .9));
+      const ext = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1];
+      return [{ name: `${safeOutputStem(source.name, 'image')}-edited.${ext}`, blob }];
+    };
+    const run = async () => {
+      if (!files.length) return;
+      control = { cancelled: false, abortController: new AbortController() }; errorBox.hidden = true; resultsBox.hidden = true; progress.hidden = false; root.setAttribute('aria-busy', 'true'); start.hidden = true; cancel.hidden = false;
+      const update = (done: number, total: number) => { const value = Math.max(4, Math.round((done / Math.max(1, total)) * 100)); percent.textContent = `${value}%`; bar.style.width = `${value}%`; progress.setAttribute('aria-valuenow', String(value)); status.textContent = messages.processing; };
+      try {
+        const opts = { password: root.querySelector<HTMLInputElement>('[data-extra-password]')?.value || '', lang: root.querySelector<HTMLSelectElement>('[data-extra-lang]')?.value || 'eng' };
+        const engines: Record<string, Function> = { 'protect-pdf': protectPdf, 'unlock-pdf': unlockPdf, 'repair-pdf': repairPdf, 'metadata-remover': removeMetadata, 'excel-to-pdf': excelToPdf, 'pdf-to-excel': pdfToExcel, 'pdf-ocr': ocr };
+        const output = toolId === 'edit-image' ? await editImage(files[0]) : await engines[toolId](files, opts, update, control);
+        if (control.cancelled) throw new Error('cancelled');
+        resultList.textContent = ''; cleanUrls();
+        for (const result of output) { const url = URL.createObjectURL(result.blob); objectUrls.push(url); const item = document.createElement('li'); item.className = 'flex items-center gap-3 rounded-xl bg-white/90 p-2.5 shadow-sm dark:bg-white/5'; const text = document.createElement('span'); text.className = 'min-w-0 flex-1'; const name = document.createElement('span'); name.className = 'block truncate text-xs font-bold text-slate-800 dark:text-slate-100'; name.textContent = result.name; const size = document.createElement('span'); size.className = 'block text-[10px] font-semibold text-slate-500 dark:text-slate-400'; size.textContent = formatBytes(result.blob.size); text.append(name, size); const link = document.createElement('a'); link.href = url; link.download = result.name; link.className = 'inline-flex h-9 items-center rounded-full bg-slate-900 px-4 text-xs font-bold text-white dark:bg-white dark:text-slate-900'; link.textContent = messages.download; item.append(text, link); resultList.append(item); }
+        progress.hidden = true; resultsBox.hidden = false; resultsBox.focus();
+      } catch (error) { progress.hidden = true; const code = error instanceof Error ? error.message : 'generic'; errorBox.textContent = code === 'cancelled' ? messages.cancelled : messages[code] || messages.generic; errorBox.hidden = false; errorBox.focus(); }
+      finally { root.removeAttribute('aria-busy'); start.hidden = false; cancel.hidden = true; control = null; }
+    };
+    drop.addEventListener('click', () => input.click());
+    input.addEventListener('change', () => void load([...input.files || []]));
+    for (const eventName of ['dragenter','dragover']) drop.addEventListener(eventName, (event) => { event.preventDefault(); drop.classList.add('border-violet-400','bg-violet-50/70'); });
+    for (const eventName of ['dragleave','drop']) drop.addEventListener(eventName, (event) => { event.preventDefault(); drop.classList.remove('border-violet-400','bg-violet-50/70'); });
+    drop.addEventListener('drop', (event) => void load([...event.dataTransfer?.files || []]));
+    root.querySelector('[data-extra-clear]')?.addEventListener('click', reset); root.querySelector('[data-extra-new]')?.addEventListener('click', reset); start.addEventListener('click', () => void run()); cancel.addEventListener('click', () => { if (control) { control.cancelled = true; control.abortController.abort(); } });
+    addEventListener('beforeunload', cleanUrls);
+  }
+</script>

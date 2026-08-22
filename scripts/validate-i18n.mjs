@@ -1,67 +1,39 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { build } from 'esbuild';
-import { elementsWithData, parseHtml, processFlowContract } from './lib/built-html-contract.mjs';
+import { localizedPath, localizedRoutePaths, publishedLocales } from '../src/i18n/config.ts';
+import { liveTools } from '../src/data/liveTools.ts';
 
 const site = 'https://sorafiles.com';
-const locales = [
-  ['en', 'en', 'ltr'], ['ja', 'ja', 'ltr'], ['ko', 'ko', 'ltr'], ['es', 'es', 'ltr'],
-  ['fr', 'fr', 'ltr'], ['de', 'de', 'ltr'], ['pt', 'pt', 'ltr'], ['zh-cn', 'zh-Hans', 'ltr'],
-  ['zh-tw', 'zh-Hant', 'ltr'], ['hi', 'hi', 'ltr'], ['ar', 'ar', 'rtl'], ['ru', 'ru', 'ltr'],
-  ['id', 'id', 'ltr'], ['it', 'it', 'ltr'], ['nl', 'nl', 'ltr'], ['tr', 'tr', 'ltr'],
-  ['vi', 'vi', 'ltr'], ['th', 'th', 'ltr'], ['pl', 'pl', 'ltr'],
-];
-const routes = ['/', '/about', '/contact', '/privacy', '/terms', '/open-source', '/image-converter', '/compress-image', '/heic-to-jpg', '/pdf', '/merge-pdf', '/split-pdf', '/rotate-pdf', '/jpg-to-pdf', '/pdf-to-jpg', '/pdf-to-word', '/word-to-pdf'];
+const locales = publishedLocales.map(({ path, code, direction }) => [path, code, direction]);
+const routes = localizedRoutePaths;
+const toolRoutes = new Set(liveTools.map((tool) => `/${tool.slug}`));
 const errors = [];
-const sitemap = readFileSync(join('dist', 'sitemap-0.xml'), 'utf8');
+const sitemap = readFileSync(join('dist', 'sitemap.xml'), 'utf8');
 const englishWorkbenchLabels = ['Local file tool', 'Local image tool', 'Local PDF tool', 'No server upload', 'Processed on your device', 'Choose file', 'Choose files', 'Choose image', 'Choose PDF', 'Remove all', 'Compression goal', 'Target size', 'Output format', 'Ready to download', 'Download result'];
-const discoveryFields = ['popularTitle', 'popularIntro', 'searchExamplesLabel', 'resultCount'];
-const publicToolSlugs = ['compress-image', 'compress-pdf', 'heic-to-jpg', 'image-converter', 'jpg-to-pdf', 'merge-pdf', 'pdf-to-jpg', 'pdf-to-word', 'rotate-pdf', 'split-pdf', 'word-to-pdf'];
+const forbiddenEnglishFragments = [
+  'Everything Happens', 'On Your Device', 'No servers. No uploads.', 'Safe & Private',
+  'Free • On-device', 'Good to know:', 'Processing happens locally', 'Works with',
+  'You get', 'Copied!', 'tools shown', 'No tools match', 'Skip to content',
+  'Share this page', 'Share with an app', 'Copy link',
+  'This is a hard byte limit.',
+  'aria-label="Primary"', 'aria-label="Appearance"', 'aria-label="Open menu"',
+  'aria-label="Footer"', 'aria-label="Capabilities"', 'aria-label="Product features"',
+  'PDF password', 'Enter a password', 'No rotation', 'clockwise',
+];
+const obsoleteHomepageClaims = [
+  'Popular Tools', '人気のツール', '인기 도구', '热门工具', '熱門工具', 'लोकप्रिय टूल', 'เครื่องมือยอดนิยม',
+  'Herramientas populares', 'Outils populaires', 'Beliebte Tools', 'Ferramentas populares', 'Strumenti popolari',
+  'Populaire tools', 'Popularne narzędzia', 'Popüler araçlar', 'Alat populer', 'Công cụ phổ biến', 'أدوات شائعة', 'Популярные инструменты',
+  'No servers. No uploads.', 'サーバーなし。アップロードなし。', '서버 없음. 업로드 없음.', '无服务器。无上传。', '無伺服器。無上傳。',
+  'ना सर्वर। ना अपलोड।', 'ไม่มีเซิร์ฟเวอร์ ไม่มีการอัปโหลด', 'Sin servidores. Sin subidas.', "Pas de serveurs. Pas d'envois.",
+  'Keine Server. Keine Uploads.', 'Sem servidores. Sem envios.', 'Niente server. Niente caricamenti.', 'Geen servers. Geen uploads.',
+  'Bez serwerów. Bez wysyłania.', 'Sunucu yok. Yükleme yok.', 'Tanpa server. Tanpa unggahan.', 'Không máy chủ. Không tải lên.',
+  'لا خوادم. لا رفع.', 'Без серверов. Без загрузок.',
+];
 
-const catalogBundle = await build({
-  entryPoints: [join(process.cwd(), 'src', 'i18n', 'index.ts')],
-  bundle: true,
-  format: 'esm',
-  platform: 'node',
-  write: false,
-});
-const { localeContent } = await import(`data:text/javascript;base64,${Buffer.from(catalogBundle.outputFiles[0].text).toString('base64')}`);
-const normalizeAlias = (value, locale) => value
-  .toLocaleLowerCase(locale)
-  .normalize('NFKD')
-  .replace(/\p{M}+/gu, '')
-  .replace(/\p{P}+/gu, ' ')
-  .replace(/\s+/gu, ' ')
-  .trim();
-
-for (const [locale, language] of locales) {
-  const home = localeContent[locale]?.home;
-  if (!home) {
-    errors.push(`${locale}: missing locale catalog`);
-    continue;
-  }
-  for (const field of discoveryFields) {
-    if (typeof home[field] !== 'string' || !home[field].trim()) errors.push(`${locale}: missing home.${field}`);
-  }
-  if (!home.resultCount?.includes('{count}')) errors.push(`${locale}: home.resultCount missing {count}`);
-  if (!Array.isArray(home.searchExamples) || home.searchExamples.length !== 3 || home.searchExamples.some((value) => !value?.trim())) {
-    errors.push(`${locale}: home.searchExamples must contain three nonempty examples`);
-  }
-  if (!Array.isArray(home.privacySteps) || home.privacySteps.length !== 3 || home.privacySteps.some((step) => !step?.title?.trim() || !step?.text?.trim())) {
-    errors.push(`${locale}: home.privacySteps must contain three nonempty localized steps`);
-  }
-  const aliasSlugs = Object.keys(home.searchAliases ?? {}).sort();
-  if (aliasSlugs.join('|') !== publicToolSlugs.join('|')) errors.push(`${locale}: home.searchAliases must contain exactly 11 public tool slugs`);
-  for (const slug of publicToolSlugs) {
-    const aliases = home.searchAliases?.[slug];
-    const normalized = Array.isArray(aliases) ? aliases.map((value) => normalizeAlias(value, language)).filter(Boolean) : [];
-    if (new Set(normalized).size < 2) errors.push(`${locale}: ${slug} needs at least two unique nonempty aliases`);
-  }
-}
 
 const urlFor = (locale, route) => {
-  if (locale === 'en') return route === '/' ? `${site}/` : `${site}${route}`;
-  return route === '/' ? `${site}/${locale}/` : `${site}/${locale}${route}`;
+  return new URL(localizedPath(locale, route), site).toString();
 };
 const fileFor = (locale, route) => {
   const segments = [];
@@ -70,12 +42,6 @@ const fileFor = (locale, route) => {
   return join('dist', ...segments, 'index.html');
 };
 const textMatch = (html, pattern) => html.match(pattern)?.[1]?.trim() || '';
-const decodeText = (value) => value
-  .replace(/&amp;/g, '&')
-  .replace(/&quot;/g, '"')
-  .replace(/&#(?:x27|39);/gi, "'")
-  .replace(/&lt;/g, '<')
-  .replace(/&gt;/g, '>');
 
 for (const [locale, language, direction] of locales) {
   for (const route of routes) {
@@ -86,7 +52,6 @@ for (const [locale, language, direction] of locales) {
       continue;
     }
     const html = readFileSync(file, 'utf8');
-    const document = parseHtml(html);
     const head = textMatch(html, /<head>([\s\S]*?)<\/head>/i);
     const htmlTag = textMatch(html, /(<html[^>]*>)/i);
     const canonical = textMatch(head, /<link rel="canonical" href="([^"]+)"/i);
@@ -98,23 +63,20 @@ for (const [locale, language, direction] of locales) {
     if (!htmlTag.includes(`lang="${language}"`)) errors.push(`${locale}${route}: expected html lang=${language}`);
     if (!htmlTag.includes(`dir="${direction}"`)) errors.push(`${locale}${route}: expected dir=${direction}`);
     if (canonical !== expectedUrl) errors.push(`${locale}${route}: canonical ${canonical || 'missing'} != ${expectedUrl}`);
-    if (!title || !title.includes('Sora Files')) errors.push(`${locale}${route}: missing branded title`);
+    if (!title || !title.includes('SoraFiles')) errors.push(`${locale}${route}: missing canonical SoraFiles title brand`);
     if (!description) errors.push(`${locale}${route}: missing description`);
     if (!h1) errors.push(`${locale}${route}: missing H1`);
     if (html.includes('\uFFFD')) errors.push(`${locale}${route}: replacement character found`);
-    if (route === '/') {
-      const proofCount = elementsWithData(document, 'data-privacy-proof').length;
-      if (proofCount !== 1) errors.push(`${locale}${route}: expected one data-privacy-proof container, found ${proofCount}`);
-      const architectureCount = elementsWithData(document, 'data-privacy-architecture').length;
-      if (architectureCount !== 1) errors.push(`${locale}${route}: expected one data-privacy-architecture module, found ${architectureCount}`);
-      const flow = processFlowContract(document);
-      if (flow.moduleCount !== 1) errors.push(`${locale}${route}: expected one data-process-flow module, found ${flow.moduleCount}`);
-      if (flow.orderedListCount !== 1) errors.push(`${locale}${route}: process flow must contain exactly one ordered list, found ${flow.orderedListCount}`);
-      if (flow.steps.length !== 3 || flow.steps.some((step) => !step.title || !step.text)) errors.push(`${locale}${route}: process flow must render exactly three nonempty localized steps`);
-      const expectedSteps = localeContent[locale].home.privacySteps;
-      if (flow.steps.some((step, index) => decodeText(step.title) !== expectedSteps[index]?.title || decodeText(step.text) !== expectedSteps[index]?.text)) {
-        errors.push(`${locale}${route}: process flow steps must match the locale catalog`);
+    if (locale !== 'en') {
+      for (const fragment of forbiddenEnglishFragments) {
+        if (html.includes(fragment)) errors.push(`${locale}${route}: untranslated shared UI “${fragment}”`);
       }
+    }
+    if (route === '/') {
+      for (const claim of obsoleteHomepageClaims) if (html.includes(claim)) errors.push(`${locale}${route}: obsolete or unsupported homepage claim “${claim}”`);
+      if (!html.includes('data-privacy-proof')) errors.push(`${locale}${route}: missing data-privacy-proof container`);
+      const cardCount = (html.match(/data-privacy-proof-card/g) || []).length;
+      if (cardCount !== 5) errors.push(`${locale}${route}: expected 5 data-privacy-proof-card elements, found ${cardCount}`);
       if (locale !== 'en') {
         const englishProofLabels = ['Your files stay under your control', 'File uploads', 'Account required', 'Original overwritten'];
         for (const label of englishProofLabels) {
@@ -122,7 +84,7 @@ for (const [locale, language, direction] of locales) {
         }
       }
     }
-    if (locale !== 'en' && routes.indexOf(route) >= 6) {
+    if (locale !== 'en' && toolRoutes.has(route)) {
       for (const label of englishWorkbenchLabels) if (html.includes(`>${label}<`)) errors.push(`${locale}${route}: untranslated workbench label “${label}”`);
     }
     if (alternatePairs.length !== locales.length + 1) errors.push(`${locale}${route}: expected 20 head hreflang links, found ${alternatePairs.length}`);

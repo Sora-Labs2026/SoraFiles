@@ -1,0 +1,53 @@
+---
+import type { LiveTool } from '../data/liveTools';
+import type { LocalePath } from '../i18n/config';
+import ToolMotion from './ToolMotion.astro';
+
+interface Props { tool: LiveTool; locale?: LocalePath; }
+const { tool } = Astro.props;
+---
+
+<div data-process-motion hidden class="mt-4 overflow-hidden rounded-2xl border border-violet-100/80 bg-gradient-to-b from-violet-50/70 via-white/60 to-white/40 p-4 shadow-lg shadow-indigo-500/5 dark:border-violet-400/15 dark:from-violet-500/[.08] dark:via-transparent dark:to-transparent" aria-hidden="true">
+  <ToolMotion {tool} />
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-process-motion]').forEach((motion) => {
+    const workbench = motion.closest<HTMLElement>('#workbench');
+    if (!workbench) return;
+    const extraProgress = workbench.querySelector<HTMLElement>('[data-extra-progress]');
+    if (extraProgress) {
+      extraProgress.prepend(motion);
+      motion.dataset.embedded = 'true';
+    } else {
+      const status = workbench.querySelector<HTMLElement>('[data-workbench-status]');
+      status?.before(motion);
+    }
+
+    let submitted = false;
+    const isShown = (node: Element) => !node.closest('[hidden]');
+    const sync = () => {
+      const extraBusy = Boolean(extraProgress && !extraProgress.hidden);
+      const formBusy = submitted && [...workbench.querySelectorAll<HTMLButtonElement>('button[type="submit"]')]
+        .some((button) => button.disabled && isShown(button));
+      if (submitted && !formBusy && !extraBusy) submitted = false;
+      const shouldHide = !(extraBusy || formBusy);
+      if (motion.hidden !== shouldHide) motion.hidden = shouldHide;
+    };
+
+    workbench.querySelectorAll('form').forEach((form) => form.addEventListener('submit', () => {
+      submitted = true;
+      queueMicrotask(sync);
+    }));
+    workbench.addEventListener('click', (event) => {
+      if ((event.target as Element).closest('[data-extra-start], [data-extra-cancel], [data-extra-new]')) queueMicrotask(sync);
+    });
+    const observer = new MutationObserver(sync);
+    observer.observe(workbench, { subtree: true, attributes: true, attributeFilter: ['disabled', 'hidden'] });
+    sync();
+  });
+</script>
+
+<style>
+  [data-process-motion][data-embedded="true"] { margin-top:0; border:0; background:transparent; padding:0 0 .5rem; box-shadow:none; }
+</style>

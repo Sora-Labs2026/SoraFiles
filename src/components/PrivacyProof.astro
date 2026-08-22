@@ -1,13 +1,16 @@
 ---
 import PrivacyProofGrid from './PrivacyProofGrid.astro';
+import ProcessFlow from './ProcessFlow.astro';
 import { getLocaleContent } from '../i18n';
+import type { LocalePath } from '../i18n/config';
 
-const content = getLocaleContent('en');
+interface Props {
+  locale?: LocalePath;
+}
+
+const { locale = 'en' } = Astro.props;
+const content = getLocaleContent(locale);
 ---
 
-<PrivacyProofGrid
-  title={content.home.privacyTitle}
-  intro={content.home.privacyIntro}
-  flowTitle={content.home.privacyProof.title}
-  steps={content.home.privacySteps}
-/>
+<PrivacyProofGrid proof={content.home.privacyProof} />
+<ProcessFlow title={content.home.privacyTitle} steps={content.home.privacySteps} />

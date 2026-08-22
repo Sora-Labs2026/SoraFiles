@@ -1,91 +1,126 @@
 ---
-import BrandMark from './BrandMark.astro';
-import { localizedPath, type LocalePath } from '../i18n/config';
-import { getCommonMessages } from '../i18n';
-import { themeMessages } from '../i18n/theme';
+import { localeDefinitions, localizedPath, type LocalePath } from '../i18n/config';
+import { liveTools } from '../data/liveTools';
+import { liveText, liveToolCopy } from '../data/liveI18n';
+import ToolIcon from './ToolIcon.astro';
 
 interface Props { locale?: LocalePath; }
 const { locale = 'en' } = Astro.props;
-const messages = getCommonMessages(locale);
-const themes = themeMessages[locale];
 const hrefFor = (path: string) => localizedPath(locale, path);
-const companyLinks = [
-  { href: hrefFor('/about'), label: messages.about },
-  { href: hrefFor('/contact'), label: messages.contact },
-  { href: hrefFor('/privacy'), label: messages.privacy },
-  { href: hrefFor('/terms'), label: messages.terms },
-];
-const pathname = Astro.url.pathname;
-const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href.split('#')[0]);
+const activeLocale = localeDefinitions.find((item) => item.path === locale) ?? localeDefinitions[0];
+const navLinks = [['compress-pdf', '/pdf'], ['merge-pdf', '/merge-pdf'], ['split-pdf', '/split-pdf'], ['pdf-to-word', '/pdf-to-word'], ['rotate-pdf', '/rotate-pdf']].map(([id, path]) => [liveToolCopy(locale, id).n, path] as const);
+const moreLinks = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 'nav.openSource'), '/open-source'], [liveText(locale, 'nav.contact'), '/contact'], [liveText(locale, 'nav.allPages'), '/preview']] as const;
 ---
 
-<header data-glass-surface="header" class="glass-surface sticky top-0 z-40">
-  <div class="page-gutter mx-auto flex h-16 max-w-7xl items-center justify-between">
-    <a href={hrefFor('/')} class="flex items-center gap-2.5 rounded-md text-[15px] font-semibold tracking-tight" aria-label={`Sora Files — ${messages.home}`}>
-      <BrandMark />
-      <span translate="no"><span class="text-ink">Sora</span> <span class="text-blue">Files</span></span>
+<header data-testid="site-header" class="sticky top-0 z-50 border-b border-slate-900/5 bg-white/70 backdrop-blur-xl dark:border-white/5 dark:bg-[#0a0e22]/70">
+  <div class="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-3 px-4 sm:px-6">
+    <a href={hrefFor('/')} data-testid="logo-link" aria-label={['SoraFiles', liveText(locale, 'nav.home')].join(' — ')} class="flex shrink-0 items-center gap-2">
+      <img src="/favicon-48x48.png" alt="" class="h-8 w-8 rounded-[10px] shadow-md shadow-violet-500/30" width="32" height="32" />
+      <span translate="no" class="text-[17px] font-extrabold tracking-tight text-slate-900 dark:text-white">SoraFiles</span>
     </a>
 
-    <div class="flex items-center gap-1.5">
-      <nav aria-label={messages.menu} class="mr-2 hidden h-16 items-center gap-1 text-sm text-muted lg:flex">
-        <a class:list={['inline-flex h-full items-center border-b-2 px-3 font-medium transition-colors duration-200 hover:text-ink', pathname === hrefFor('/') ? 'border-ink text-ink' : 'border-transparent']} href={`${hrefFor('/')}#all-tools`} aria-current={pathname === hrefFor('/') ? 'page' : undefined}>{messages.allTools}</a>
-        <a class:list={['inline-flex h-full items-center border-b-2 px-3 transition-colors duration-200 hover:text-ink', isActive(hrefFor('/image-converter')) ? 'border-ink text-ink' : 'border-transparent']} href={hrefFor('/image-converter')} aria-current={isActive(hrefFor('/image-converter')) ? 'page' : undefined}>{messages.images}</a>
-        <a class:list={['inline-flex h-full items-center border-b-2 px-3 transition-colors duration-200 hover:text-ink', isActive(hrefFor('/pdf')) ? 'border-ink text-ink' : 'border-transparent']} href={hrefFor('/pdf')} aria-current={isActive(hrefFor('/pdf')) ? 'page' : undefined}>{messages.pdf}</a>
-        {companyLinks.slice(0, 2).map((link) => <a class:list={['inline-flex h-full items-center border-b-2 px-3 transition-colors duration-200 hover:text-ink', isActive(link.href) ? 'border-ink text-ink' : 'border-transparent']} href={link.href} aria-current={isActive(link.href) ? 'page' : undefined}>{link.label}</a>)}
-      </nav>
-
-      <details data-theme-menu class="group relative">
-        <summary data-theme-name={themes.theme} data-theme-label-system={themes.system} data-theme-label-dark={themes.dark} data-theme-label-light={themes.light} aria-label={`${themes.theme}: ${themes.system}`} title={`${themes.theme}: ${themes.system}`} class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-control text-muted transition-colors marker:content-none hover:bg-canvas hover:text-ink">
-          <span data-theme-icon="system" aria-hidden="true"><svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" stroke-linecap="round" /></svg></span>
-          <span data-theme-icon="dark" hidden aria-hidden="true"><svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
-          <span data-theme-icon="light" hidden aria-hidden="true"><svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.5" /><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" stroke-linecap="round" /></svg></span>
+    <nav aria-label={liveText(locale, 'nav.allTools')} class="hidden items-center lg:flex">
+      <details data-sf-menu class="relative">
+        <summary data-testid="nav-all-tools" class="flex min-h-11 list-none items-center gap-1 rounded-full px-2.5 py-2 text-[13px] font-semibold text-slate-600 transition-colors marker:content-none hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
+          {liveText(locale, 'nav.allTools')}
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
         </summary>
-        <div role="menu" class="absolute end-0 top-12 z-50 w-[min(14rem,calc(100vw-40px))] max-[30rem]:fixed max-[30rem]:inset-x-5 max-[30rem]:top-[calc(4rem+1px)] max-[30rem]:max-h-[calc(100dvh-5.25rem)] max-[30rem]:w-auto max-[30rem]:overflow-y-auto max-[30rem]:overscroll-contain rounded-xl border border-line bg-surface p-1.5 shadow-card">
-          <button type="button" role="menuitemradio" data-theme-option="system" aria-checked="true" class="flex min-h-11 w-full items-center gap-2.5 rounded-control px-3 py-2 text-sm text-ink transition-colors hover:bg-canvas aria-checked:bg-canvas aria-checked:font-semibold">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" stroke-linecap="round" /></svg>
-            <span>{themes.system}</span>
-          </button>
-          <button type="button" role="menuitemradio" data-theme-option="dark" aria-checked="false" class="flex min-h-11 w-full items-center gap-2.5 rounded-control px-3 py-2 text-sm text-ink transition-colors hover:bg-canvas aria-checked:bg-canvas aria-checked:font-semibold">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.2 15.2A8.5 8.5 0 0 1 8.8 3.8 8.5 8.5 0 1 0 20.2 15.2Z" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            <span>{themes.dark}</span>
-          </button>
-          <button type="button" role="menuitemradio" data-theme-option="light" aria-checked="false" class="flex min-h-11 w-full items-center gap-2.5 rounded-control px-3 py-2 text-sm text-ink transition-colors hover:bg-canvas aria-checked:bg-canvas aria-checked:font-semibold">
-            <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.5" /><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" stroke-linecap="round" /></svg>
-            <span>{themes.light}</span>
-          </button>
-          <div role="separator" class="my-1 border-t border-line"></div>
-          <button type="button" role="menuitemcheckbox" data-ambient-preference data-ambient-label-on={themes.ambientOn} data-ambient-label-off={themes.ambientOff} data-ambient-label-suppressed={themes.ambientSystemSuppressed} aria-checked="true" class="flex min-h-11 w-full items-center gap-2.5 rounded-control px-3 py-2 text-sm text-ink transition-colors hover:bg-canvas aria-checked:bg-canvas">
-            <svg data-ambient-glyph aria-hidden="true" viewBox="0 0 24 24" class="ambient-preference-glyph h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.6">
-              <circle cx="9" cy="14" r="5" />
-              <circle cx="15.5" cy="8.5" r="3.5" />
-              <circle data-ambient-glyph-fill cx="9" cy="14" r="3.25" fill="currentColor" stroke="none" />
-            </svg>
-            <span data-ambient-label>{themes.ambientBubbles}</span>
-            <span data-ambient-state-label class="ms-auto text-xs text-muted">{themes.ambientOn}</span>
-          </button>
+        <div class="sf-menu-panel absolute left-0 top-full z-50 mt-2 max-h-[70vh] w-64 overflow-y-auto rounded-2xl border border-slate-200/70 bg-white/95 p-2 shadow-xl shadow-indigo-500/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95">
+          {liveTools.slice(0, 8).map((tool) => {
+            const words = liveToolCopy(locale, tool.id);
+            return (
+            <a href={hrefFor(`/${tool.slug}`)} data-testid={`nav-tool-${tool.id}`} class="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-slate-100/80 dark:hover:bg-white/5">
+              <span class:list={['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm', tool.tile]}><ToolIcon icon={tool.icon} /></span>
+              <span class="min-w-0"><span class="block truncate text-[13px] font-bold text-slate-800 dark:text-slate-100">{words.n}</span><span class="block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">{words.d}</span></span>
+            </a>
+          )})}
+          <a href={hrefFor('/preview')} data-testid="nav-view-all" class="mt-1 flex w-full items-center justify-between rounded-xl border-t border-slate-100 px-2.5 pb-1 pt-2.5 text-[12px] font-bold text-violet-600 transition-colors hover:text-violet-700 dark:border-white/10 dark:text-violet-300">
+            {liveText(locale, 'nav.viewAllPages')} <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
         </div>
       </details>
-
-      <details class="group relative lg:hidden">
-      <summary aria-label={messages.menu} class="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-2 rounded-control px-3 text-sm font-medium text-muted marker:content-none hover:bg-canvas hover:text-ink">
-        <span class="hidden min-[30rem]:inline">{messages.menu}</span>
-        <svg aria-hidden="true" viewBox="0 0 16 16" class="h-4 w-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m4 6 4 4 4-4" stroke-linecap="round" stroke-linejoin="round" /></svg>
-      </summary>
-      <nav aria-label={messages.menu} class="absolute end-0 top-12 w-[min(16rem,calc(100vw-40px))] max-[30rem]:fixed max-[30rem]:inset-x-5 max-[30rem]:top-[calc(4rem+1px)] max-[30rem]:max-h-[calc(100dvh-5.25rem)] max-[30rem]:w-auto max-[30rem]:overflow-y-auto max-[30rem]:overscroll-contain rounded-xl border border-line bg-surface p-2 shadow-card">
-        <a class="block rounded-control px-3 py-2.5 text-sm font-medium hover:bg-canvas" href={`${hrefFor('/')}#all-tools`}>{messages.allTools}</a>
-        <a class="block rounded-control px-3 py-2.5 text-sm font-medium hover:bg-canvas" href={hrefFor('/image-converter')}>{messages.imageConverter}</a>
-        <a class="block rounded-control px-3 py-2.5 text-sm font-medium hover:bg-canvas" href={hrefFor('/compress-image')}>{messages.compressImages}</a>
-        <a class="block rounded-control px-3 py-2.5 text-sm font-medium hover:bg-canvas" href={hrefFor('/pdf')}>{messages.compressPdf}</a>
-        <div class="my-2 border-t border-line"></div>
-        {companyLinks.map((link) => <a class="block rounded-control px-3 py-2.5 text-sm text-muted hover:bg-canvas hover:text-ink" href={link.href}>{link.label}</a>)}
-      </nav>
+      {navLinks.map(([label, href]) => <a href={hrefFor(href)} data-testid={`nav-${href.slice(1)}`} class="whitespace-nowrap rounded-full px-2.5 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">{label}</a>)}
+      <details data-sf-menu class="relative">
+        <summary data-testid="nav-more" class="flex min-h-11 list-none items-center gap-1 rounded-full px-2.5 py-2 text-[13px] font-semibold text-slate-600 transition-colors marker:content-none hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">{liveText(locale, 'nav.more')}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-slate-500 transition-transform duration-200 dark:text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="sf-menu-panel absolute left-0 top-full z-50 mt-2 w-64 rounded-2xl border border-slate-200/70 bg-white/95 p-2 shadow-xl shadow-indigo-500/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95">
+          {moreLinks.map(([label, href]) => <a href={hrefFor(href)} data-testid={`nav-more-${href.slice(1)}`} class="block w-full rounded-xl px-3 py-2 text-left text-[13px] font-semibold text-slate-600 transition-colors hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white">{label}</a>)}
+        </div>
       </details>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <div class="hidden items-center gap-0.5 rounded-full border border-slate-200/80 p-1 dark:border-white/10 sm:flex" role="group" aria-label={liveText(locale, 'nav.appearance')}>
+        <button type="button" data-theme-choice="dark" data-testid="theme-dark-button" aria-label={liveText(locale, 'nav.dark')} aria-pressed="false" class="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 dark:bg-white/15 dark:text-white"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button>
+        <button type="button" data-theme-choice="light" data-testid="theme-light-button" aria-label={liveText(locale, 'nav.light')} aria-pressed="true" class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white transition-colors dark:bg-transparent dark:text-slate-400"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg></button>
+      </div>
+      <details data-sf-menu class="relative hidden sm:block">
+        <summary data-testid="language-selector" aria-label={`${liveText(locale, 'nav.language')}: ${activeLocale.nativeName}`} class="flex min-h-11 list-none items-center gap-1 rounded-full px-2.5 py-2 text-[13px] font-semibold text-slate-600 marker:content-none dark:text-slate-300"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/></svg>{activeLocale.code.toUpperCase()}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="sf-menu-panel absolute right-0 top-full z-50 mt-2 max-h-[70vh] w-56 overflow-y-auto rounded-2xl border border-slate-200/70 bg-white/95 p-2 shadow-xl shadow-indigo-500/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95">
+          {localeDefinitions.map((item) => item.published && <a href={localizedPath(item.path, '/')} hreflang={item.code} lang={item.code} aria-current={item.path === locale ? 'page' : undefined} data-locale-choice={item.path} data-testid={`language-option-${item.path}`} class:list={['flex min-h-11 w-full items-center justify-between rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors hover:bg-slate-100/80 dark:hover:bg-white/5', item.path === locale ? 'text-violet-600 dark:text-violet-300' : 'text-slate-600 dark:text-slate-300']}><span>{item.nativeName}</span>{item.path === locale && <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m20 6-11 11-5-5"/></svg>}</a>)}
+        </div>
+      </details>
+      <details data-sf-menu class="relative sm:hidden">
+        <summary data-testid="mobile-language-selector" aria-label={`${liveText(locale, 'nav.language')}: ${activeLocale.nativeName}`} class="flex h-11 w-11 list-none items-center justify-center rounded-full border border-slate-200/80 text-slate-500 marker:content-none dark:border-white/10 dark:text-slate-300">
+          <svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/></svg>
+        </summary>
+        <div class="sf-menu-panel absolute right-0 top-full z-50 mt-2 max-h-[70vh] w-56 overflow-y-auto rounded-2xl border border-slate-200/70 bg-white/95 p-2 shadow-xl shadow-indigo-500/10 backdrop-blur-xl rtl:left-0 rtl:right-auto dark:border-white/10 dark:bg-slate-900/95">
+          {localeDefinitions.map((item) => item.published && <a href={localizedPath(item.path, '/')} hreflang={item.code} lang={item.code} aria-current={item.path === locale ? 'page' : undefined} data-locale-choice={item.path} data-testid={`mobile-language-option-${item.path}`} class:list={['flex min-h-11 w-full items-center justify-between rounded-xl px-3 py-2 text-[13px] font-semibold transition-colors hover:bg-slate-100/80 dark:hover:bg-white/5', item.path === locale ? 'text-violet-600 dark:text-violet-300' : 'text-slate-600 dark:text-slate-300']}><span>{item.nativeName}</span>{item.path === locale && <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m20 6-11 11-5-5"/></svg>}</a>)}
+        </div>
+      </details>
+      <button type="button" data-mobile-menu-button data-testid="mobile-menu-button" data-open-label={liveText(locale, 'nav.openMenu')} data-close-label={liveText(locale, 'nav.closeMenu')} aria-label={liveText(locale, 'nav.openMenu')} aria-controls="mobile-navigation" aria-expanded="false" class="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 text-slate-600 lg:hidden dark:border-white/10 dark:text-slate-300"><svg data-menu-open-icon aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg><svg data-menu-close-icon aria-hidden="true" viewBox="0 0 24 24" class="hidden h-4 w-4" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+    </div>
+  </div>
+
+  <div id="mobile-navigation" data-mobile-menu hidden data-testid="mobile-menu" class="max-h-[75vh] overflow-y-auto border-t border-slate-900/5 bg-white/90 backdrop-blur-xl lg:hidden dark:border-white/5 dark:bg-[#0a0e22]/95">
+    <div class="space-y-1 px-4 py-4 sm:px-6">
+      {[[liveText(locale, 'nav.home'), '/'], ...navLinks, ...moreLinks].map(([label, href]) => <a href={hrefFor(href)} data-testid={`mobile-nav-${href.slice(1) || 'home'}`} class="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-white/5">{label}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 text-slate-300" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>)}
+      <div class="flex items-center gap-2 pt-3"><button type="button" data-theme-choice="dark" data-testid="mobile-theme-dark" aria-pressed="false" class="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 dark:border-violet-400/30 dark:bg-violet-500/10 dark:text-violet-300">{liveText(locale, 'nav.dark')}</button><button type="button" data-theme-choice="light" data-testid="mobile-theme-light" aria-pressed="true" class="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-violet-300 bg-violet-50 text-xs font-bold text-violet-600 dark:border-white/10 dark:bg-transparent dark:text-slate-400">{liveText(locale, 'nav.light')}</button></div>
     </div>
   </div>
 </header>
 
 <script>
-  import { initializeAmbientPreferenceControls } from '../scripts/ambient-bubbles';
-
-  initializeAmbientPreferenceControls(document);
+  const applySfTheme = (theme: 'dark' | 'light') => {
+    try { localStorage.setItem('sora-theme', theme); } catch {}
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.themePreference = theme;
+    document.querySelector('[data-theme-color]')?.setAttribute('content', theme === 'dark' ? '#070a18' : '#f3f5fb');
+    document.querySelectorAll<HTMLElement>('[data-theme-choice]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
+  };
+  document.querySelectorAll<HTMLElement>('[data-theme-choice]').forEach((button) => button.addEventListener('click', () => applySfTheme(button.dataset.themeChoice === 'dark' ? 'dark' : 'light')));
+  document.querySelectorAll<HTMLElement>('[data-locale-choice]').forEach((link) => link.addEventListener('click', () => { try { localStorage.setItem('sora-locale', link.dataset.localeChoice || 'en'); } catch {} }));
+  const mobileButton = document.querySelector<HTMLButtonElement>('[data-mobile-menu-button]');
+  const mobileMenu = document.querySelector<HTMLElement>('[data-mobile-menu]');
+  const setMobileMenu = (open: boolean, restoreFocus = false) => {
+    if (!mobileMenu) return;
+    mobileMenu.hidden = !open;
+    mobileMenu.classList.toggle('sf-pop-enter', open);
+    mobileButton?.setAttribute('aria-expanded', String(open));
+    mobileButton?.setAttribute('aria-label', open ? mobileButton.dataset.closeLabel || '' : mobileButton.dataset.openLabel || '');
+    const openIcon = mobileButton?.querySelector<HTMLElement>('[data-menu-open-icon]');
+    const closeIcon = mobileButton?.querySelector<HTMLElement>('[data-menu-close-icon]');
+    openIcon?.classList.toggle('hidden', open);
+    closeIcon?.classList.toggle('hidden', !open);
+    if (!open && restoreFocus) mobileButton?.focus();
+  };
+  mobileButton?.addEventListener('click', () => {
+    setMobileMenu(mobileMenu?.hidden === true);
+  });
+  document.addEventListener('pointerdown', (event) => document.querySelectorAll<HTMLDetailsElement>('details[data-sf-menu][open]').forEach((menu) => { if (!menu.contains(event.target as Node)) menu.removeAttribute('open'); }));
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    document.querySelectorAll<HTMLDetailsElement>('details[data-sf-menu][open]').forEach((menu) => {
+      menu.removeAttribute('open');
+      menu.querySelector<HTMLElement>(':scope > summary')?.focus();
+    });
+    if (mobileMenu && !mobileMenu.hidden) setMobileMenu(false, true);
+  });
 </script>
+
+<style>
+  details[data-sf-menu]:not([open]) > .sf-menu-panel { display: none; }
+  details[data-sf-menu][open] > .sf-menu-panel { animation: sf-menu-in .18s ease-out both; }
+  details[data-sf-menu][open] > summary svg:last-child { transform: rotate(180deg); }
+  @keyframes sf-menu-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+</style>

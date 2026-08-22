@@ -1,0 +1,109 @@
+---
+import copy from '../data/liveCopy';
+import { liveRaw } from '../data/liveI18n';
+import { liveTools } from '../data/liveTools';
+import type { LocalePath } from '../i18n/config';
+import { getLocaleContent } from '../i18n';
+
+type InfoSlug = 'about' | 'contact' | 'privacy' | 'terms' | 'open-source';
+interface InfoCard { t: string; d: string; }
+interface InfoSection { h: string; p: string; }
+interface InfoCopy { overline: string; title: string; intro: string; cards: InfoCard[]; sections: InfoSection[]; }
+interface Props { slug: InfoSlug; locale?: LocalePath; }
+const { slug, locale = 'en' } = Astro.props;
+const compactPage = liveRaw<InfoCopy>(locale, `page.${slug}`);
+const reviewedPages = getLocaleContent(locale).pages;
+const contact = liveRaw<typeof copy.contactForm>(locale, 'contactForm');
+const reviewedPage = slug === 'privacy'
+  ? reviewedPages.privacy
+  : slug === 'open-source'
+    ? reviewedPages.openSource
+    : slug === 'contact'
+      ? reviewedPages.contact
+      : undefined;
+const page: InfoCopy = reviewedPage ? {
+  ...compactPage,
+  ...(slug === 'contact' ? {
+    intro: reviewedPage.intro,
+    cards: compactPage.cards.map((card, index) => index === 0 ? { ...card, d: 'contact@sorafiles.com' } : card),
+  } : {}),
+  sections: reviewedPage.sections.map((section) => {
+    const text = section.paragraphs.join(' ');
+    return {
+      h: section.heading,
+      p: text.includes('Ahrefs Web Analytics')
+        ? text
+        : text.replace('Adsterra', 'Ahrefs Web Analytics / Adsterra'),
+    };
+  }),
+} : compactPage;
+const intro = page.intro.replace('{{n}}', String(liveTools.length));
+const nextPath = locale === 'en' ? '/contact?sent=1' : `/${locale}/contact?sent=1`;
+const iconPaths: Record<InfoSlug, string[]> = {
+  about: ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z M9 12l2 2 4-4', 'M13 2 3 14h9l-1 8 10-12h-9l1-8Z', 'm18 16 4-4-4-4 M6 8l-4 4 4 4 M14.5 4l-5 16'],
+  contact: ['M4 4h16v16H4z M22 6l-10 7L2 6', 'M12 8v4l3 2 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z M9 12l2 2 4-4'],
+  privacy: [], terms: [], 'open-source': [],
+};
+---
+
+<main id="main" data-testid={`info-page-${slug}`} class="mx-auto max-w-3xl px-4 py-14 sm:px-6 lg:py-20">
+  <div class="sf-enter">
+    <span class="text-xs font-extrabold uppercase tracking-[0.25em] text-violet-500">{page.overline}</span>
+    <h1 class="mt-3 text-4xl font-extrabold leading-[1.12] tracking-[-0.03em] text-slate-900 sm:text-5xl dark:text-white">{page.title}</h1>
+    <p class="mt-5 text-base font-medium leading-relaxed text-slate-500 dark:text-slate-400">{intro}</p>
+  </div>
+
+  {page.cards?.length > 0 && <div class:list={['mt-10 grid gap-4', page.cards.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2']}>
+    {page.cards.map((card, index) => <article data-testid={`info-card-${slug}-${index}`} data-reveal style={`--reveal-delay:${index}`} class="sf-reveal rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.04]">
+      <svg aria-hidden="true" viewBox="0 0 24 24" class:list={['h-6 w-6', ['text-blue-500','text-amber-500','text-violet-500'][index % 3]]} fill="none" stroke="currentColor" stroke-width="2"><path d={iconPaths[slug][index] ?? iconPaths.about[0]} /></svg>
+      <h2 class="mt-3 text-sm font-extrabold tracking-tight text-slate-900 dark:text-white">{card.t}</h2>
+      <p class="mt-1 text-xs font-medium leading-snug text-slate-500 dark:text-slate-400">{card.d}</p>
+    </article>)}
+  </div>}
+
+  {slug === 'contact' && <section data-testid="contact-form-card" class="sf-enter sf-glass mt-10 rounded-3xl p-6 shadow-2xl shadow-indigo-500/10 sm:p-8 [--sf-delay:.1s]">
+    <div class="mb-6 flex w-fit items-center gap-2 rounded-full bg-emerald-100/80 px-3 py-1.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"><span aria-hidden="true">✓</span>{contact.privacyBadge}</div>
+    <div data-contact-success hidden data-testid="contact-success" role="status" class="mb-5 rounded-2xl border border-emerald-200/70 bg-emerald-50/70 p-5 text-center dark:border-emerald-400/20 dark:bg-emerald-500/10"><h2 class="text-lg font-extrabold text-slate-900 dark:text-white">{contact.sentTitle}</h2><p class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{contact.sentBody}</p></div>
+    <form data-contact-form data-testid="contact-form" action="https://formsubmit.co/soralabs2026@gmail.com" method="POST" enctype="multipart/form-data" class="space-y-4">
+      <input type="hidden" name="_subject" value={`SoraFiles — ${contact.subject}`} />
+      <input type="hidden" name="_next" value={`https://sorafiles.com${nextPath}`} />
+      <input type="hidden" name="_template" value="table" />
+      <input type="hidden" name="_captcha" value="true" />
+      <input type="hidden" name="_autoresponse" value={contact.sentBody} />
+      <label class="absolute -left-[9999px]" aria-hidden="true">{contact.message}<input type="text" name="_honey" tabindex="-1" autocomplete="off" /></label>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="block"><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{contact.name}</span><input data-testid="cf-name" name="name" type="text" required maxlength="120" autocomplete="name" placeholder={contact.namePh} class="h-11 w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:font-medium placeholder:text-slate-500 focus:border-violet-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-400" /></label>
+        <label class="block"><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{contact.email}</span><input data-testid="cf-email" name="email" type="email" required maxlength="254" autocomplete="email" placeholder={contact.emailPh} class="h-11 w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:font-medium placeholder:text-slate-500 focus:border-violet-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-400" /></label>
+      </div>
+      <label class="block"><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{contact.subject}</span><input data-testid="cf-subject" name="subject" type="text" required maxlength="200" autocomplete="off" placeholder={contact.subjectPh} class="h-11 w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:font-medium placeholder:text-slate-500 focus:border-violet-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-400" /></label>
+      <label class="block"><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{contact.message}</span><textarea data-testid="cf-message" name="message" required maxlength="5000" rows="6" autocomplete="off" placeholder={contact.messagePh} class="w-full rounded-xl border border-slate-200 bg-white/90 px-3.5 py-3 text-sm font-semibold text-slate-700 outline-none transition-colors placeholder:font-medium placeholder:text-slate-500 focus:border-violet-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-400"></textarea></label>
+      <div><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{contact.attachment}</span><input data-contact-file data-testid="cf-attachment" id="cf-attachment" name="attachment" type="file" tabindex="-1" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt,.xlsx,.csv" class="sr-only" aria-label={contact.attachment} aria-describedby="contact-attachment-hint contact-file-error" /><div class="flex flex-wrap items-center gap-3"><button type="button" data-contact-attach aria-controls="cf-attachment" class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-4 text-xs font-bold text-slate-600 transition-colors hover:border-violet-300 hover:text-violet-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">⌕ {contact.chooseFile}</button><span data-contact-file-name aria-live="polite" class="text-[11px] font-bold text-violet-600 dark:text-violet-300"></span></div><span id="contact-attachment-hint" class="mt-1.5 block text-[10px] font-medium text-slate-500 dark:text-slate-400">{contact.attachmentHint}</span><span id="contact-file-error" data-contact-file-error hidden role="alert" tabindex="-1" class="mt-1 block text-[11px] font-bold text-rose-600 dark:text-rose-300">{contact.tooBig}</span></div>
+      <button type="submit" data-testid="cf-submit" class="group inline-flex h-12 items-center gap-2.5 rounded-full bg-slate-900 px-7 text-sm font-bold text-white shadow-xl shadow-slate-900/20 transition-shadow hover:shadow-2xl disabled:opacity-60 dark:bg-white dark:text-slate-900">↗ <span>{contact.send}</span></button>
+    </form>
+  </section>}
+
+  {page.sections?.map((section, index) => <section data-reveal class="sf-reveal mt-12"><h2 class="flex items-baseline gap-3 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white"><span class="text-gradient text-sm font-extrabold">{String(index + 1).padStart(2, '0')}</span>{section.h}</h2><p class="mt-3 text-[15px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">{section.p}</p></section>)}
+</main>
+
+<script is:inline define:vars={{ sending: contact.sending }}>
+  const form = document.querySelector('[data-contact-form]');
+  const file = document.querySelector('[data-contact-file]');
+  const fileName = document.querySelector('[data-contact-file-name]');
+  const fileError = document.querySelector('[data-contact-file-error]');
+  form?.querySelectorAll('input, textarea, select').forEach((control) => {
+    control.addEventListener('invalid', () => control.setAttribute('aria-invalid', 'true'));
+    control.addEventListener('input', () => { if (control.checkValidity()) control.removeAttribute('aria-invalid'); });
+  });
+  document.querySelector('[data-contact-attach]')?.addEventListener('click', () => file?.click());
+  file?.addEventListener('change', () => {
+    const selected = file.files?.[0];
+    const tooBig = Boolean(selected && selected.size > 10 * 1024 * 1024);
+    fileError?.toggleAttribute('hidden', !tooBig);
+    if (tooBig) file?.setAttribute('aria-invalid', 'true'); else file?.removeAttribute('aria-invalid');
+    if (tooBig) file.value = '';
+    if (fileName) fileName.textContent = tooBig ? '' : selected?.name || '';
+    if (tooBig) fileError?.focus();
+  });
+  if (new URLSearchParams(location.search).get('sent') === '1') document.querySelector('[data-contact-success]')?.removeAttribute('hidden');
+  form?.addEventListener('submit', () => { const button = form.querySelector('button[type="submit"]'); if (button) { button.disabled = true; button.querySelector('span').textContent = sending; } });
+</script>

@@ -4,14 +4,19 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import LocalizedHome from '../../components/LocalizedHome.astro';
 import LocalizedToolPage from '../../components/LocalizedToolPage.astro';
-import LocalizedInfoPage from '../../components/LocalizedInfoPage.astro';
-import LocalizedContactPage from '../../components/LocalizedContactPage.astro';
-import { tools } from '../../data/tools';
+import LiveInfoPage from '../../components/LiveInfoPage.astro';
+import LivePreviewIndex from '../../components/LivePreviewIndex.astro';
+import { liveTools, liveToolBySlug } from '../../data/liveTools';
+import liveCopy from '../../data/liveCopy';
+import { liveRaw, liveText, liveToolCopy } from '../../data/liveI18n';
 import { localeContent, getLocaleContent } from '../../i18n';
 import { localeByPath, localizedPath, localizedRoutePaths, type LocalePath, type LocalizedRoutePath } from '../../i18n/config';
 
+type InfoSlug = 'about' | 'contact' | 'privacy' | 'terms' | 'open-source';
+const infoSlugs = new Set<InfoSlug>(['about', 'contact', 'privacy', 'terms', 'open-source']);
+
 export function getStaticPaths() {
-  return Object.keys(localeContent).flatMap((locale) => localizedRoutePaths.map((route) => ({
+  return Object.keys(localeContent).filter((locale) => locale !== 'en').flatMap((locale) => localizedRoutePaths.map((route) => ({
     params: { locale, path: route === '/' ? undefined : route.slice(1) },
     props: { locale, basePath: route },
   })));
@@ -21,34 +26,44 @@ interface Props { locale: LocalePath; basePath: LocalizedRoutePath; }
 const { locale, basePath } = Astro.props as Props;
 const content = getLocaleContent(locale);
 const localeMeta = localeByPath.get(locale)!;
-const tool = tools.find((item) => item.href === basePath);
-const pageKey = (basePath === '/open-source' ? 'openSource' : basePath.slice(1)) as keyof typeof content.pages;
-const infoPage = pageKey in content.pages ? content.pages[pageKey] : undefined;
+const routeSlug = basePath.slice(1);
+const tool = liveToolBySlug.get(routeSlug);
+const infoSlug = infoSlugs.has(routeSlug as InfoSlug) ? routeSlug as InfoSlug : undefined;
+const infoPage = infoSlug ? liveRaw<typeof liveCopy.page[InfoSlug]>(locale, `page.${infoSlug}`) : undefined;
+const reviewedInfoPage = infoSlug === 'about'
+  ? content.pages.about
+  : infoSlug === 'contact'
+    ? content.pages.contact
+    : infoSlug === 'privacy'
+      ? content.pages.privacy
+      : infoSlug === 'terms'
+        ? content.pages.terms
+        : infoSlug === 'open-source'
+          ? content.pages.openSource
+          : undefined;
+const toolWords = tool ? liveToolCopy(locale, tool.id) : undefined;
 const isHome = basePath === '/';
+const isPreview = basePath === '/preview';
 const canonicalPath = localizedPath(locale, basePath);
-const title = isHome ? content.home.title : tool ? `${content.tools[tool.slug].title} | Sora Files` : infoPage?.title ?? 'Sora Files';
-const description = isHome ? content.home.description : tool ? content.tools[tool.slug].description : infoPage?.description ?? content.home.description;
+const title = isHome ? `SoraFiles — ${liveText(locale, 'hero.l1b')} ${liveText(locale, 'hero.l2b')}` : toolWords ? `${toolWords.n} | SoraFiles` : isPreview ? `${liveText(locale, 'preview.title')} | SoraFiles` : infoPage ? `${infoPage.title} | SoraFiles` : 'SoraFiles';
+const description = isHome ? liveText(locale, 'hero.desc') : toolWords ? `${toolWords.t} ${toolWords.d}` : isPreview ? liveText(locale, 'preview.intro', { n: localizedRoutePaths.length - 1 }) : reviewedInfoPage?.intro || infoPage?.intro.replace('{{n}}', String(liveTools.length)) || liveText(locale, 'hero.desc');
 const schema = isHome ? {
-  '@context': 'https://schema.org',
-  '@graph': [
-    { '@type': 'CollectionPage', name: content.home.h1, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description },
-    { '@type': 'ItemList', itemListElement: tools.map((item, index) => ({ '@type': 'ListItem', position: index + 1, name: content.tools[item.slug].title, url: new URL(localizedPath(locale, item.href), 'https://sorafiles.com').toString() })) },
-    { '@type': 'FAQPage', mainEntity: content.home.faqs.map(({ question, answer }) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) },
+  '@context': 'https://schema.org', '@graph': [
+    { '@type': 'CollectionPage', name: title, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description },
+    { '@type': 'ItemList', itemListElement: liveTools.map((item, index) => ({ '@type': 'ListItem', position: index + 1, name: liveToolCopy(locale, item.id).n, url: new URL(localizedPath(locale, `/${item.slug}`), 'https://sorafiles.com').toString() })) },
   ],
 } : tool ? {
-  '@context': 'https://schema.org',
-  '@graph': [
-    { '@type': 'WebApplication', name: `${content.tools[tool.slug].title} - Sora Files`, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, applicationCategory: 'UtilitiesApplication', operatingSystem: 'Any modern web browser', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, description },
-    { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: content.common.home, item: new URL(localizedPath(locale, '/'), 'https://sorafiles.com').toString() }, { '@type': 'ListItem', position: 2, name: content.tools[tool.slug].title, item: new URL(canonicalPath, 'https://sorafiles.com').toString() }] },
-    { '@type': 'FAQPage', mainEntity: content.tools[tool.slug].faqs.map(({ question, answer }) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) },
+  '@context': 'https://schema.org', '@graph': [
+    { '@type': 'WebPage', name: `${toolWords?.n} — SoraFiles`, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description, isPartOf: { '@id': 'https://sorafiles.com/#website' } },
+    { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: liveText(locale, 'nav.home'), item: new URL(localizedPath(locale, '/'), 'https://sorafiles.com').toString() }, { '@type': 'ListItem', position: 2, name: toolWords?.n, item: new URL(canonicalPath, 'https://sorafiles.com').toString() }] },
   ],
-} : { '@context': 'https://schema.org', '@type': pageKey === 'contact' ? 'ContactPage' : pageKey === 'about' ? 'AboutPage' : 'WebPage', name: infoPage?.h1, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description };
+} : { '@context': 'https://schema.org', '@type': infoSlug === 'contact' ? 'ContactPage' : infoSlug === 'about' ? 'AboutPage' : 'WebPage', name: infoPage?.title ?? title, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description };
 ---
-<Layout {title} {description} {canonicalPath} alternatePath={basePath} {schema} {locale}>
+<Layout {title} {description} {canonicalPath} alternatePath={basePath} {schema} {locale} monetized={isHome || Boolean(tool)}>
   <Header {locale} />
   {isHome && <LocalizedHome {locale} {content} />}
-  {tool && <LocalizedToolPage {locale} {content} {tool} copy={content.tools[tool.slug]} />}
-  {infoPage && pageKey !== 'contact' && <LocalizedInfoPage page={infoPage} />}
-  {infoPage && pageKey === 'contact' && <LocalizedContactPage {locale} page={content.pages.contact} />}
+  {tool && <LocalizedToolPage {locale} {content} {tool} />}
+  {isPreview && <LivePreviewIndex {locale} />}
+  {infoSlug && <LiveInfoPage slug={infoSlug} {locale} />}
   <Footer {locale} />
 </Layout>

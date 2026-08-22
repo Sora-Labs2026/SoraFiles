@@ -13,6 +13,10 @@
     {
       "pattern": "www.sorafiles.com",
       "custom_domain": true
+    },
+    {
+      "pattern": "ads.sorafiles.com",
+      "custom_domain": true
     }
   ],
   "assets": {

@@ -1,0 +1,231 @@
+---
+import type { LocalePath } from '../i18n/config';
+import { liveText } from '../data/liveI18n';
+
+interface Props {
+  kind: 'responsive-horizontal' | 'native' | 'rectangle';
+  locale?: LocalePath;
+  placement?: string;
+  frameOnly?: boolean;
+  frameUnit?: 'desktop' | 'mobile';
+  priority?: boolean;
+}
+
+const { kind, locale = 'en', placement = '', frameOnly = false, frameUnit, priority = false } = Astro.props;
+const label = liveText(locale, 'common.advertisement');
+
+const nativeSnippet = `<script async="async" data-cfasync="false" src="https://pl30950304.effectivecpmnetwork.com/e64ba76560a59a8652ea3c5504009c7c/invoke.js"><\/script>
+<div id="container-e64ba76560a59a8652ea3c5504009c7c"></div>`;
+
+const desktopSnippet = `<script>
+  atOptions = {
+    'key' : '70a4fb276bf6ae0d7991a271ba576aae',
+    'format' : 'iframe',
+    'height' : 90,
+    'width' : 728,
+    'params' : {}
+  };
+<\/script>
+<script src="https://www.highperformanceformat.com/70a4fb276bf6ae0d7991a271ba576aae/invoke.js"><\/script>`;
+
+const mobileSnippet = `<script>
+  atOptions = {
+    'key' : '75b5c758697745d4fa0f23560ae6d3d2',
+    'format' : 'iframe',
+    'height' : 50,
+    'width' : 320,
+    'params' : {}
+  };
+<\/script>
+<script src="https://www.highperformanceformat.com/75b5c758697745d4fa0f23560ae6d3d2/invoke.js"><\/script>`;
+
+const rectangleSnippet = `<script>
+  atOptions = {
+    'key' : '620aced0385b8490a1344af907d1d151',
+    'format' : 'iframe',
+    'height' : 250,
+    'width' : 300,
+    'params' : {}
+  };
+<\/script>
+<script src="https://www.highperformanceformat.com/620aced0385b8490a1344af907d1d151/invoke.js"><\/script>`;
+
+const frameSnippet = kind === 'native'
+  ? nativeSnippet
+  : kind === 'rectangle'
+    ? rectangleSnippet
+    : frameUnit === 'desktop'
+      ? desktopSnippet
+      : mobileSnippet;
+
+const frameOrigin = 'https://ads.sorafiles.com';
+const source = kind === 'native'
+  ? `${frameOrigin}/ad-frame/native`
+  : kind === 'rectangle'
+    ? `${frameOrigin}/ad-frame/rectangle`
+    : undefined;
+const desktopSource = kind === 'responsive-horizontal' ? `${frameOrigin}/ad-frame/desktop` : undefined;
+const mobileSource = kind === 'responsive-horizontal' ? `${frameOrigin}/ad-frame/mobile` : undefined;
+---
+
+{frameOnly ? (
+  <Fragment set:html={frameSnippet} />
+) : (
+  <section
+    aria-label={label}
+    class:list={[
+      'relative mx-auto w-full overflow-x-clip py-10',
+      kind === 'rectangle' && 'hidden lg:block',
+    ]}
+    data-sf-ad-slot
+    data-ad-kind={kind}
+    data-ad-placement={placement}
+    data-ad-label={label}
+    data-ad-source={source}
+    data-ad-desktop-source={desktopSource}
+    data-ad-mobile-source={mobileSource}
+    data-ad-priority={priority ? 'true' : 'false'}
+  >
+    <span class="mb-2 block text-center text-[10px] font-bold uppercase tracking-[0.25em] text-slate-600 dark:text-slate-400">{label}</span>
+    <div
+      class:list={[
+        'mx-auto flex items-center justify-center overflow-hidden bg-transparent',
+        kind === 'responsive-horizontal' && 'h-[50px] w-[320px] max-w-full md:h-[90px] md:w-[728px]',
+        kind === 'native' && 'aspect-[4/1] w-full max-w-[960px]',
+        kind === 'rectangle' && 'h-[250px] w-[300px]',
+      ]}
+      data-ad-frame-host
+    ></div>
+  </section>
+)}
+
+<script>
+  const adFrameOrigin = 'https://ads.sorafiles.com';
+
+  const collapseAdSlot = (slot: HTMLElement) => {
+    if (slot.dataset.adState === 'rendered' || slot.dataset.adState === 'test') return;
+    const timeoutId = Number(slot.dataset.adTimeout || 0);
+    if (timeoutId) window.clearTimeout(timeoutId);
+    slot.dataset.adState = 'empty';
+    slot.hidden = true;
+    slot.querySelector('iframe[data-ad-frame]')?.remove();
+  };
+
+  const mountAdSlot = (slot: HTMLElement) => {
+    if (slot.dataset.adReady === 'true') return;
+
+    const kind = slot.dataset.adKind;
+    if (kind === 'rectangle' && !matchMedia('(min-width: 1024px)').matches) {
+      slot.dataset.adSelected = 'none';
+      slot.dataset.adReady = 'true';
+      return;
+    }
+
+    let source = slot.dataset.adSource;
+    if (kind === 'responsive-horizontal') {
+      const desktop = matchMedia('(min-width: 768px)').matches;
+      source = desktop ? slot.dataset.adDesktopSource : slot.dataset.adMobileSource;
+      slot.dataset.adSelected = desktop ? 'desktop' : 'mobile';
+    } else {
+      slot.dataset.adSelected = kind ?? 'unknown';
+    }
+
+    const host = slot.querySelector<HTMLElement>('[data-ad-frame-host]');
+    if (!host || !source) return;
+
+    const frame = document.createElement('iframe');
+    frame.dataset.adFrame = kind ?? 'unknown';
+    frame.dataset.adUnit = slot.dataset.adSelected ?? kind ?? 'unknown';
+    frame.title = slot.dataset.adLabel || 'Advertisement';
+    const priority = slot.dataset.adPriority === 'true';
+    frame.loading = priority ? 'eager' : 'lazy';
+    if (priority) frame.setAttribute('fetchpriority', 'high');
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation');
+    frame.setAttribute('allow', 'attribution-reporting');
+    frame.setAttribute('scrolling', 'no');
+    frame.style.width = '100%';
+    frame.style.height = '100%';
+    frame.style.border = '0';
+    frame.style.display = 'block';
+    // Automated verification must never request, view, or click a live ad.
+    const adTestMode = navigator.webdriver || new URLSearchParams(location.search).has('ad-test');
+    if (adTestMode) {
+      frame.srcdoc = '<!doctype html><html><body style="margin:0"></body></html>';
+      slot.dataset.adState = 'test';
+    } else {
+      frame.src = source;
+      slot.dataset.adState = 'loading';
+      frame.addEventListener('load', () => {
+        if (slot.dataset.adState !== 'loading') return;
+        const timeoutId = window.setTimeout(() => collapseAdSlot(slot), 15_000);
+        slot.dataset.adTimeout = String(timeoutId);
+      }, { once: true });
+      frame.addEventListener('error', () => collapseAdSlot(slot), { once: true });
+    }
+    host.replaceChildren(frame);
+    slot.dataset.adReady = 'true';
+  };
+
+  let adObserver: IntersectionObserver | null = null;
+  let adDiscoveryStarted = false;
+
+  const startAdDiscovery = () => {
+    if (adDiscoveryStarted) return;
+    adDiscoveryStarted = true;
+    const slots = [...document.querySelectorAll<HTMLElement>('[data-sf-ad-slot]')];
+    if (typeof IntersectionObserver !== 'function') {
+      slots.forEach(mountAdSlot);
+      return;
+    }
+    adObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const slot = entry.target as HTMLElement;
+        adObserver?.unobserve(slot);
+        mountAdSlot(slot);
+      });
+    }, { rootMargin: '400px 0px' });
+    slots.forEach((slot) => {
+      if (slot.dataset.adKind === 'rectangle' && !matchMedia('(min-width: 1024px)').matches) {
+        mountAdSlot(slot);
+        return;
+      }
+      adObserver?.observe(slot);
+    });
+  };
+
+  const scheduleAdDiscovery = () => {
+    const timeoutId = window.setTimeout(startAdDiscovery, 15_000);
+    const startAfterInteraction = () => {
+      window.clearTimeout(timeoutId);
+      startAdDiscovery();
+    };
+    for (const eventName of ['scroll', 'pointerdown', 'touchstart', 'keydown']) {
+      window.addEventListener(eventName, startAfterInteraction, { once: true, passive: true });
+    }
+  };
+
+  if (document.readyState === 'complete') scheduleAdDiscovery();
+  else window.addEventListener('load', scheduleAdDiscovery, { once: true });
+  document.addEventListener('astro:page-load', scheduleAdDiscovery);
+
+  if (!document.documentElement.dataset.soraFilesAdFrameMessages) {
+    document.documentElement.dataset.soraFilesAdFrameMessages = 'true';
+    window.addEventListener('message', (event) => {
+      if (event.origin !== adFrameOrigin || !event.data || event.data.source !== 'sorafiles-ad-frame') return;
+      const frame = [...document.querySelectorAll<HTMLIFrameElement>('iframe[data-ad-frame]')]
+        .find((candidate) => candidate.contentWindow === event.source && candidate.dataset.adUnit === event.data.unit);
+      const slot = frame?.closest<HTMLElement>('[data-sf-ad-slot]');
+      if (!slot) return;
+      if (event.data.state !== 'rendered') {
+        collapseAdSlot(slot);
+        return;
+      }
+      const timeoutId = Number(slot.dataset.adTimeout || 0);
+      if (timeoutId) window.clearTimeout(timeoutId);
+      delete slot.dataset.adTimeout;
+      slot.dataset.adState = 'rendered';
+    });
+  }
+</script>

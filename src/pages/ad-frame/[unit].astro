@@ -1,0 +1,109 @@
+---
+import AdsterraSlot from '../../components/AdsterraSlot.astro';
+
+type FrameProps = {
+  kind: 'responsive-horizontal' | 'native' | 'rectangle';
+  frameUnit?: 'desktop' | 'mobile';
+};
+
+export function getStaticPaths() {
+  return [
+    { params: { unit: 'desktop' }, props: { kind: 'responsive-horizontal', frameUnit: 'desktop' } },
+    { params: { unit: 'mobile' }, props: { kind: 'responsive-horizontal', frameUnit: 'mobile' } },
+    { params: { unit: 'native' }, props: { kind: 'native' } },
+    { params: { unit: 'rectangle' }, props: { kind: 'rectangle' } },
+  ];
+}
+
+const { kind, frameUnit } = Astro.props as FrameProps;
+const unit = Astro.params.unit;
+const providerOrigin = kind === 'native'
+  ? 'https://pl30950304.effectivecpmnetwork.com'
+  : 'https://www.highperformanceformat.com';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <link rel="dns-prefetch" href={providerOrigin.replace('https:', '')} />
+    <link rel="preconnect" href={providerOrigin} crossorigin="anonymous" />
+    <title>Advertisement</title>
+    <style is:global>
+      :root,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: transparent;
+      }
+
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      iframe,
+      img,
+      [id^='container-'] {
+        max-width: 100%;
+      }
+
+      [id^='container-'] {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <AdsterraSlot {kind} {frameUnit} frameOnly />
+    <script is:inline define:vars={{ unit }}>
+      const parentOrigin = 'https://sorafiles.com';
+      const nativeContainer = '#container-e64ba76560a59a8652ea3c5504009c7c';
+      const expectedSize = {
+        desktop: [728, 90],
+        mobile: [320, 50],
+        rectangle: [300, 250],
+      }[unit];
+      let settled = false;
+
+      const notify = (state) => {
+        if (settled) return;
+        settled = true;
+        window.parent.postMessage({ source: 'sorafiles-ad-frame', unit, state }, parentOrigin);
+      };
+
+      const hasCreative = () => {
+        if (unit === 'native') {
+          const container = document.querySelector(nativeContainer);
+          return Boolean(container && (container.querySelector('a, iframe, img') || container.childElementCount));
+        }
+
+        if (!expectedSize) return false;
+        return [...document.querySelectorAll('body > iframe')].some((frame) => {
+          const width = Number(frame.getAttribute('width'));
+          const height = Number(frame.getAttribute('height'));
+          return width === expectedSize[0] && height === expectedSize[1];
+        });
+      };
+
+      const inspect = () => {
+        if (hasCreative()) notify('rendered');
+      };
+
+      inspect();
+      if (!settled) {
+        const observer = new MutationObserver(inspect);
+        observer.observe(document.body, { childList: true, subtree: true });
+        window.setTimeout(() => {
+          observer.disconnect();
+          if (!settled) notify('empty');
+        }, 12_000);
+      }
+    </script>
+  </body>
+</html>

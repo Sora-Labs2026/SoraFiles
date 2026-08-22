@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-21T09:02:11.292Z",
+  "cases": [
+    {
+      "id": "home-320",
+      "route": "/",
+      "width": 320,
+      "height": 900,
+      "lang": "en",
+      "dir": "ltr",
+      "documentWidth": 320,
+      "viewportWidth": 320,
+      "h1Count": 1,
+      "mobileLanguageVisible": true,
+      "sha256": "ef2ed6fe2c46359832c3aae1463a4ccd9bc3f74cb32414f211be9ae416f23111"
+    },
+    {
+      "id": "home-390",
+      "route": "/",
+      "width": 390,
+      "height": 900,
+      "lang": "en",
+      "dir": "ltr",
+      "documentWidth": 390,
+      "viewportWidth": 390,
+      "h1Count": 1,
+      "mobileLanguageVisible": true,
+      "sha256": "3766eb0fddccea7078b6a2f205d26cb96d5ce4cacdac23aa33cf40b427f8b3ef"
+    },
+    {
+      "id": "home-768",
+      "route": "/",
+      "width": 768,
+      "height": 960,
+      "lang": "en",
+      "dir": "ltr",
+      "documentWidth": 768,
+      "viewportWidth": 768,
+      "h1Count": 1,
+      "mobileLanguageVisible": false,
+      "sha256": "f6f3233ec93e5015143b3c1bac39415726edef640ca0a8dd89ff5273e756450a"
+    },
+    {
+      "id": "home-1440",
+      "route": "/",
+      "width": 1440,
+      "height": 1000,
+      "lang": "en",
+      "dir": "ltr",
+      "documentWidth": 1440,
+      "viewportWidth": 1440,
+      "h1Count": 1,
+      "mobileLanguageVisible": false,
+      "sha256": "186859b92bee92a43effd31779cb77bc5c5cb4bfacaf0fd8a2e8a435f6b6bd48"
+    },
+    {
+      "id": "home-1920",
+      "route": "/",
+      "width": 1920,
+      "height": 1080,
+      "lang": "en",
+      "dir": "ltr",
+      "documentWidth": 1920,
+      "viewportWidth": 1920,
+      "h1Count": 1,
+      "mobileLanguageVisible": false,
+      "sha256": "445fd66f764b47fb0ed10bd349b418a48d4e21a343585a5192d28e2392da1d77"
+    },
+    {
+      "id": "rtl-390",
+      "route": "/ar",
+      "width": 390,
+      "height": 900,
+      "lang": "ar",
+      "dir": "rtl",
+      "documentWidth": 390,
+      "viewportWidth": 390,
+      "h1Count": 1,
+      "mobileLanguageVisible": true,
+      "sha256": "fb9ac1ec1517c59f711e52c5f3366521d2c8213067eb0594f47bbf96c7816430"
+    },
+    {
+      "id": "merge-320",
+      "route": "/merge-pdf",
+      "width": 320,
+      "height": 900,
+      "lang": "en",
+      "dir": "ltr",
+      "documentWidth": 320,
+      "viewportWidth": 320,
+      "h1Count": 1,
+      "mobileLanguageVisible": true,
+      "sha256": "9da59176cb9ae5e757833cd422567a98ec2dd01db6001971926c6caa7fa14020"
+    },
+    {
+      "id": "merge-1440",
+      "route": "/merge-pdf",
+      "width": 1440,
+      "height": 1000,
+      "lang": "en",
+      "dir": "ltr",
+      "documentWidth": 1440,
+      "viewportWidth": 1440,
+      "h1Count": 1,
+      "mobileLanguageVisible": false,
+      "sha256": "673dee21fed113bf5dbd11d41d4327d7bd11c0655b59c39e4d6d30dd7edf1271"
+    }
+  ]
+}

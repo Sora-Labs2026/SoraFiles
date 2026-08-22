@@ -4,7 +4,6 @@ import ToolCard from './ToolCard.astro';
 import { getLocaleContent } from '../i18n';
 import type { LocalePath } from '../i18n/config';
 import type { LocaleContent } from '../i18n/types';
-import { formatResultCount } from '../lib/tool-discovery';
 
 interface Props {
   locale?: LocalePath;
@@ -12,7 +11,6 @@ interface Props {
 }
 
 const { locale = 'en', content = getLocaleContent(locale) } = Astro.props;
-
 const categoriesMap = content.home.categories;
 const categories: Array<{ value: 'all' | ToolCategory; label: string }> = [
   { value: 'all', label: categoriesMap.all },
@@ -21,7 +19,6 @@ const categories: Array<{ value: 'all' | ToolCategory; label: string }> = [
   { value: 'organize', label: categoriesMap.organize },
   { value: 'image', label: categoriesMap.image },
 ];
-
 const prioritySlugs = new Set(['image-converter', 'compress-pdf', 'compress-image', 'merge-pdf']);
 const labels = {
   open: content.common.openTool ?? 'Open',
@@ -30,136 +27,91 @@ const labels = {
 };
 ---
 
-<section id="all-tools" aria-labelledby="tools-heading" class="scroll-mt-24 px-4 pb-20 sm:px-6 sm:pb-28">
-  <div
-    class="mx-auto max-w-6xl"
-    data-tool-explorer
-    data-tool-locale={locale}
-    data-tool-result-template={content.home.resultCount}
-  >
-    <div class="grid gap-5 border-x border-t border-line bg-surface p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,42%)] lg:items-end xl:grid-cols-[minmax(0,1fr)_24rem]">
-      <div class="min-w-0 max-w-3xl">
-        <h2 id="tools-heading" class="text-balance text-[clamp(1.75rem,4vw,2.5rem)] font-semibold leading-tight tracking-[-0.04em] text-ink">{content.home.explorerTitle}</h2>
-        <p class="mt-3 max-w-2xl text-sm leading-6 text-muted sm:text-base">{content.home.explorerIntro}</p>
+<section id="all-tools" aria-labelledby="tools-heading" class="scroll-mt-24 px-4 py-14 sm:px-6 lg:py-16">
+  <div class="mx-auto max-w-[1200px]" data-tool-explorer>
+    <input data-tool-search-input type="hidden" value="" />
+    <div class="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      <div class="max-w-2xl">
+        <h2 id="tools-heading" class="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">{content.home.explorerTitle}</h2>
+        <p class="mt-2 text-sm font-medium leading-6 text-muted">{content.home.explorerIntro}</p>
       </div>
-      <div class="min-w-0 w-full">
-        <label class="block">
-          <span class="sr-only">{content.home.searchLabel}</span>
-          <span class="relative block">
-            <svg aria-hidden="true" viewBox="0 0 20 20" class="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4" stroke-linecap="round"/></svg>
-            <input data-tool-search-input name="tool-search" type="search" autocomplete="off" placeholder={content.home.searchPlaceholder} class="h-12 w-full rounded-control border border-line-strong bg-canvas ps-10 pe-4 text-base text-ink placeholder:text-muted focus-visible:border-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue/20" />
-          </span>
-        </label>
-        <div class="mt-2 flex items-center gap-2 overflow-x-auto" role="group" aria-label={content.home.searchExamplesLabel}>
-          {content.home.searchExamples.map((example) => (
-            <button
-              type="button"
-              data-tool-search-example
-              class="inline-flex min-h-11 shrink-0 items-center rounded-full border border-line bg-canvas px-3 text-xs font-medium text-muted transition-[border-color,color] duration-200 hover:border-line-strong hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-            >
-              {example}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-
-    <div class="border-x border-t border-line bg-canvas px-4 py-3 sm:px-6">
-      <div data-tool-category-row class="flex gap-2 overflow-x-auto pb-1" role="group" aria-label={content.home.searchLabel}>
+      <div class="flex max-w-full gap-2 overflow-x-auto pb-1" aria-label={content.home.searchLabel}>
+        <button type="button" data-tool-show-all aria-pressed="false" class="min-h-10 shrink-0 rounded-full bg-ink px-4 text-xs font-bold text-surface shadow-small">{content.home.primaryAction}</button>
         {categories.map((category) => (
-          <button type="button" data-tool-filter={category.value} aria-pressed={category.value === 'all' ? 'true' : 'false'} class="min-h-11 shrink-0 rounded-full border border-line bg-surface px-4 text-sm font-medium text-muted transition-[border-color,background-color,color] duration-200 hover:border-line-strong hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-surface">
+          <button type="button" data-tool-filter={category.value} aria-pressed={category.value === 'all' ? 'true' : 'false'} class="min-h-10 shrink-0 rounded-full border border-white/80 bg-surface/75 px-4 text-xs font-bold text-muted shadow-small backdrop-blur transition-colors hover:text-ink aria-pressed:border-violet aria-pressed:bg-violet aria-pressed:text-white">
             {category.label}
           </button>
         ))}
       </div>
     </div>
 
-    <p data-tool-results-status class="sr-only text-start" aria-live="polite">{formatResultCount(content.home.resultCount, tools.length)}</p>
+    <p data-tool-results-status data-status-suffix={content.common.tools} class="sr-only" aria-live="polite">{tools.length} {content.common.tools}</p>
 
-    <div data-tool-grid class="grid border-l border-t border-line sm:grid-cols-2 lg:grid-cols-3">
-      {tools.map((tool) => {
+    <div data-tool-grid class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {tools.map((tool, index) => {
         const toolCopy = content.tools[tool.slug];
         return (
-          <div class="-ml-px -mt-px min-w-0" data-tool-wrapper>
-            <ToolCard
-              tool={tool}
-              locale={locale}
-              copy={toolCopy}
-              labels={labels}
-              searchAliases={content.home.searchAliases[tool.slug]}
-              priority={prioritySlugs.has(tool.slug)}
-            />
+          <div class="min-w-0" data-tool-wrapper data-extra-tool={index >= 10 ? true : undefined} hidden={index >= 10} data-reveal style={'--reveal-delay: ' + (index % 6)}>
+            <ToolCard tool={tool} locale={locale} copy={toolCopy} labels={labels} priority={prioritySlugs.has(tool.slug)} />
           </div>
         );
       })}
     </div>
 
-    <div data-tool-empty hidden class="border-x border-b border-line bg-surface px-6 py-12 text-center">
-      <h3 class="text-lg font-semibold text-ink">{content.home.noResults}</h3>
-      <button type="button" data-tool-clear class="mt-5 min-h-11 rounded-control border border-line-strong bg-surface px-4 text-sm font-medium text-ink transition-colors duration-200 hover:bg-canvas">{content.home.clearSearch}</button>
+    <div data-tool-empty hidden class="sf-glass rounded-lg border border-dashed border-line-strong px-6 py-14 text-center">
+      <h3 class="text-lg font-bold text-ink">{content.home.noResults}</h3>
+      <button type="button" data-tool-clear class="mt-5 min-h-11 rounded-full bg-ink px-5 text-sm font-bold text-surface">{content.home.clearSearch}</button>
     </div>
   </div>
 </section>
 
 <script>
-  import { formatResultCount, matchesDiscoveryFilter } from '../lib/tool-discovery';
-  import type { DiscoveryCategory } from '../lib/tool-discovery';
-  import type { PublicToolSlug, ToolCategory } from '../data/tools';
-
   document.querySelectorAll<HTMLElement>('[data-tool-explorer]').forEach((explorer) => {
     const input = explorer.querySelector<HTMLInputElement>('[data-tool-search-input]');
     const buttons = Array.from(explorer.querySelectorAll<HTMLButtonElement>('[data-tool-filter]'));
-    const examples = Array.from(explorer.querySelectorAll<HTMLButtonElement>('[data-tool-search-example]'));
     const wrappers = Array.from(explorer.querySelectorAll<HTMLElement>('[data-tool-wrapper]'));
     const status = explorer.querySelector<HTMLElement>('[data-tool-results-status]');
     const empty = explorer.querySelector<HTMLElement>('[data-tool-empty]');
     const clear = explorer.querySelector<HTMLButtonElement>('[data-tool-clear]');
-    const locale = explorer.dataset.toolLocale ?? document.documentElement.lang ?? 'en';
-    const resultTemplate = explorer.dataset.toolResultTemplate ?? '{count}';
-    let category: DiscoveryCategory = 'all';
-
-    const resetCategory = () => {
-      category = 'all';
-      buttons.forEach((button) => {
-        button.setAttribute('aria-pressed', String(button.dataset.toolFilter === 'all'));
-      });
-    };
+    const showAllButton = explorer.querySelector<HTMLButtonElement>('[data-tool-show-all]');
+    let category = 'all';
+    let showAll = false;
 
     const update = () => {
-      const query = input?.value ?? '';
+      const query = input?.value.trim().toLocaleLowerCase() ?? '';
       let count = 0;
       wrappers.forEach((wrapper) => {
         const card = wrapper.querySelector<HTMLElement>('[data-tool-card]');
-        const visible = Boolean(card && matchesDiscoveryFilter({
-          slug: card.dataset.toolSlug as PublicToolSlug,
-          category: card.dataset.toolCategory as ToolCategory,
-          searchText: card.dataset.toolSearch ?? '',
-        }, query, category, locale));
+        const categoryMatch = category === 'all' || card?.dataset.toolCategory === category;
+        const queryMatch = !query || card?.dataset.toolSearch?.includes(query);
+        const isExtra = wrapper.hasAttribute('data-extra-tool');
+        const visible = Boolean(categoryMatch && queryMatch && (!isExtra || showAll || query));
         wrapper.hidden = !visible;
         if (visible) count += 1;
       });
-      if (status) status.textContent = formatResultCount(resultTemplate, count);
+      if (status) status.textContent = (count + ' ' + (status.dataset.statusSuffix ?? '')).trim();
       if (empty) empty.hidden = count !== 0;
     };
 
     input?.addEventListener('input', update);
+    showAllButton?.addEventListener('click', () => {
+      showAll = !showAll;
+      showAllButton.setAttribute('aria-pressed', String(showAll));
+      update();
+    });
     buttons.forEach((button) => button.addEventListener('click', () => {
-      category = (button.dataset.toolFilter ?? 'all') as DiscoveryCategory;
+      category = button.dataset.toolFilter ?? 'all';
       buttons.forEach((candidate) => candidate.setAttribute('aria-pressed', String(candidate === button)));
       update();
     }));
-    examples.forEach((example) => example.addEventListener('click', () => {
-      if (!input) return;
-      input.value = example.textContent?.trim() ?? '';
-      resetCategory();
-      update();
-      input.focus();
-    }));
     clear?.addEventListener('click', () => {
       if (input) input.value = '';
-      resetCategory();
+      category = 'all';
+      showAll = false;
+      showAllButton?.setAttribute('aria-pressed', 'false');
+      buttons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.toolFilter === 'all')));
       update();
-      input?.focus();
+      document.querySelector<HTMLInputElement>('[data-hero-tool-search]')?.focus();
     });
   });
 </script>

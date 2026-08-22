@@ -1,12 +1,11 @@
-export type ToolSlug = 'merge-pdf' | 'split-pdf' | 'rotate-pdf' | 'jpg-to-pdf' | 'pdf-to-jpg' | 'pdf-to-word' | 'word-to-pdf';
+export type ToolSlug = 'merge-pdf' | 'split-pdf' | 'rotate-pdf' | 'remove-pages' | 'watermark-pdf' | 'page-numbers' | 'sign-pdf' | 'jpg-to-pdf' | 'pdf-to-jpg' | 'pdf-to-word' | 'word-to-pdf';
 export type PublicToolSlug = ToolSlug | 'image-converter' | 'compress-image' | 'compress-pdf' | 'heic-to-jpg';
-export type ToolIcon = 'compress' | 'merge' | 'split' | 'rotate' | 'image-in' | 'image-out' | 'word-in' | 'word-out' | 'spark';
+export type ToolIcon = 'compress' | 'merge' | 'split' | 'rotate' | 'remove' | 'watermark' | 'numbers' | 'sign' | 'image-in' | 'image-out' | 'word-in' | 'word-out' | 'spark';
 export type ToolCategory = 'image' | 'compress' | 'convert' | 'organize';
 export type ToolStatus = 'stable' | 'basic';
 
 export interface ToolDefinition {
   slug: PublicToolSlug;
-  runtimeId: PublicToolSlug;
   title: string;
   short: string;
   description: string;
@@ -30,7 +29,6 @@ const localPrivacy = 'Runs locally in your browser. Your file stays on this devi
 export const tools: ToolDefinition[] = [
   {
     slug: 'image-converter',
-    runtimeId: 'image-converter',
     title: 'Image Converter',
     short: 'JPG, PNG, HEIC, TIFF & more',
     description: 'Convert everyday image formats to JPG, PNG, or WebP in one private workspace.',
@@ -49,7 +47,6 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'compress-image',
-    runtimeId: 'compress-image',
     title: 'Compress Images',
     short: 'JPG, PNG, WebP & HEIC',
     description: 'Shrink an image automatically, by percentage, or toward a target file size.',
@@ -68,7 +65,6 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'heic-to-jpg',
-    runtimeId: 'heic-to-jpg',
     title: 'HEIC to JPG',
     short: 'iPhone photos anywhere',
     description: 'Turn an HEIC or HEIF photo into a widely compatible JPG.',
@@ -86,7 +82,6 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'compress-pdf',
-    runtimeId: 'compress-pdf',
     title: 'Compress PDF',
     short: 'Smaller document',
     description: 'Create a smaller image-based PDF with clear rasterization warnings.',
@@ -105,7 +100,6 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'merge-pdf',
-    runtimeId: 'merge-pdf',
     title: 'Merge PDF',
     short: 'Combine documents',
     description: 'Join PDF files in the order you select and download one new document.',
@@ -123,7 +117,6 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'split-pdf',
-    runtimeId: 'split-pdf',
     title: 'Split PDF',
     short: 'One file per page',
     description: 'Separate every PDF page into its own file and download one ZIP.',
@@ -141,7 +134,6 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'rotate-pdf',
-    runtimeId: 'rotate-pdf',
     title: 'Rotate PDF',
     short: 'Fix page direction',
     description: 'Rotate every PDF page by 90°, 180°, or 270°.',
@@ -158,8 +150,80 @@ export const tools: ToolDefinition[] = [
     status: 'stable',
   },
   {
+    slug: 'remove-pages',
+    title: 'Remove PDF Pages',
+    short: 'Delete selected pages',
+    description: 'Remove specific pages from a PDF and verify that the remaining document is valid.',
+    href: '/remove-pages',
+    icon: 'remove',
+    tone: 'coral',
+    badge: 'New',
+    accept: 'application/pdf,.pdf',
+    multiple: false,
+    category: 'organize',
+    formats: ['PDF'],
+    keywords: ['remove PDF pages', 'delete PDF pages', 'PDF page remover', 'remove pages locally'],
+    privacy: localPrivacy,
+    related: ['split-pdf', 'page-numbers', 'rotate-pdf'],
+    status: 'stable',
+  },
+  {
+    slug: 'watermark-pdf',
+    title: 'Watermark PDF',
+    short: 'Add text to every page',
+    description: 'Add a visible text watermark to every PDF page without uploading the document.',
+    href: '/watermark-pdf',
+    icon: 'watermark',
+    tone: 'violet',
+    badge: 'New',
+    accept: 'application/pdf,.pdf',
+    multiple: false,
+    category: 'organize',
+    formats: ['PDF'],
+    keywords: ['watermark PDF', 'add PDF watermark', 'text watermark', 'watermark locally'],
+    privacy: localPrivacy,
+    related: ['sign-pdf', 'page-numbers', 'remove-pages'],
+    status: 'stable',
+  },
+  {
+    slug: 'page-numbers',
+    title: 'Add Page Numbers',
+    short: 'Number every PDF page',
+    description: 'Add clear page numbers in your chosen position and starting sequence.',
+    href: '/page-numbers',
+    icon: 'numbers',
+    tone: 'cyan',
+    badge: 'New',
+    accept: 'application/pdf,.pdf',
+    multiple: false,
+    category: 'organize',
+    formats: ['PDF'],
+    keywords: ['add PDF page numbers', 'number PDF pages', 'PDF pagination', 'page numbers locally'],
+    privacy: localPrivacy,
+    related: ['watermark-pdf', 'remove-pages', 'merge-pdf'],
+    status: 'stable',
+  },
+  {
+    slug: 'sign-pdf',
+    title: 'Sign PDF',
+    short: 'Draw a visible signature',
+    description: 'Draw a signature and place its visible appearance on selected PDF pages locally.',
+    href: '/sign-pdf',
+    icon: 'sign',
+    tone: 'pink',
+    badge: 'New',
+    accept: 'application/pdf,.pdf',
+    multiple: false,
+    caution: 'This adds a visible signature image. It is not a certificate-backed digital signature and does not verify identity.',
+    category: 'organize',
+    formats: ['PDF'],
+    keywords: ['sign PDF', 'draw signature PDF', 'add signature to PDF', 'sign PDF locally'],
+    privacy: localPrivacy,
+    related: ['watermark-pdf', 'page-numbers', 'rotate-pdf'],
+    status: 'basic',
+  },
+  {
     slug: 'jpg-to-pdf',
-    runtimeId: 'jpg-to-pdf',
     title: 'JPG to PDF',
     short: 'Images into one PDF',
     description: 'Turn one or more JPG or PNG images into a single PDF.',
@@ -177,7 +241,6 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'pdf-to-jpg',
-    runtimeId: 'pdf-to-jpg',
     title: 'PDF to JPG',
     short: 'Pages into images',
     description: 'Render every PDF page as a JPG and download multiple pages in a ZIP.',
@@ -195,7 +258,6 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'pdf-to-word',
-    runtimeId: 'pdf-to-word',
     title: 'PDF to Word',
     short: 'Extract editable text',
     description: 'Create a basic DOCX from readable text in a PDF.',
@@ -214,7 +276,6 @@ export const tools: ToolDefinition[] = [
   },
   {
     slug: 'word-to-pdf',
-    runtimeId: 'word-to-pdf',
     title: 'Word to PDF',
     short: 'Text-first conversion',
     description: 'Turn DOCX text into a clean, basic PDF.',
@@ -233,7 +294,7 @@ export const tools: ToolDefinition[] = [
   },
 ];
 
-const actionSlugs = new Set<ToolSlug>(['merge-pdf', 'split-pdf', 'rotate-pdf', 'jpg-to-pdf', 'pdf-to-jpg', 'pdf-to-word', 'word-to-pdf']);
+const actionSlugs = new Set<ToolSlug>(['merge-pdf', 'split-pdf', 'rotate-pdf', 'remove-pages', 'watermark-pdf', 'page-numbers', 'sign-pdf', 'jpg-to-pdf', 'pdf-to-jpg', 'pdf-to-word', 'word-to-pdf']);
 export const actionTools = tools.filter((tool): tool is ToolDefinition & { slug: ToolSlug } => actionSlugs.has(tool.slug as ToolSlug));
 
 export const toolBySlug = new Map(tools.map((tool) => [tool.slug, tool]));

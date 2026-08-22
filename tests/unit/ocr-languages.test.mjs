@@ -24,3 +24,13 @@ test('local OCR engine uses strictly same-origin paths and zero external calls',
   assert.doesNotMatch(code, /jsdelivr|unpkg|githubusercontent|fetch\(file/i);
 });
 
+test('the standalone OCR tool uses the same local engine and all locale models', async () => {
+  const [engine, workbench] = await Promise.all([
+    readFile('src/engines/liveExtra.js', 'utf8'),
+    readFile('src/components/ExtraToolWorkbench.astro', 'utf8'),
+  ]);
+  assert.match(engine, /createLocalOcrEngine/);
+  assert.doesNotMatch(engine, /createWorker|jsdelivr|unpkg|githubusercontent/);
+  assert.match(workbench, /OCR_LANGUAGE_OPTIONS\.map/);
+  assert.match(workbench, /OCR_LANGUAGE_BY_LOCALE/);
+});

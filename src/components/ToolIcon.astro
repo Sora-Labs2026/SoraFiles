@@ -1,6 +1,7 @@
 ---
 import type { ToolIcon } from '../data/tools';
-interface Props { icon: ToolIcon; }
+import type { LiveToolIcon } from '../data/liveTools';
+interface Props { icon: ToolIcon | LiveToolIcon; }
 const { icon } = Astro.props;
 ---
 <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -8,9 +9,22 @@ const { icon } = Astro.props;
   {icon === 'merge' && <><rect x="3" y="4" width="8" height="12" rx="2"/><rect x="13" y="8" width="8" height="12" rx="2"/><path d="M8 20h3M9.5 18.5V21.5"/></>}
   {icon === 'split' && <><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v18M8 12H4M20 12h-4"/></>}
   {icon === 'rotate' && <><path d="M20 7v5h-5M4 17v-5h5M18.5 12A7 7 0 0 0 6 7.5M5.5 12A7 7 0 0 0 18 16.5"/></>}
+  {icon === 'remove' && <><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 12h8"/></>}
+  {icon === 'watermark' && <><path d="M5 3h10l4 4v14H5zM15 3v5h4"/><path d="m8 16 2-6 2 6 2-6 2 6"/></>}
+  {icon === 'numbers' && <><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h1v4M8 16h3l-3 3h3M14 9h2M14 13h2M14 17h2"/></>}
+  {icon === 'sign' && <><path d="M4 18c3-4 4-9 6-9 1.5 0 .2 6 2 6 1.2 0 2-3 3-3 .8 0 .2 3 1.5 3 .7 0 1.3-1 3.5-1"/><path d="M4 21h16M15 4l2-2 3 3-2 2-3-3Zm0 0-6 6-1 4 4-1 6-6"/></>}
   {icon === 'image-in' && <><rect x="3" y="4" width="12" height="12" rx="2"/><circle cx="7" cy="8" r="1"/><path d="m5 14 3-3 2.5 2 2-1.5L15 14M18 9v11M15 17l3 3 3-3"/></>}
   {icon === 'image-out' && <><rect x="9" y="8" width="12" height="12" rx="2"/><circle cx="13" cy="12" r="1"/><path d="m11 18 3-3 2 2 1.5-1.5L20 18M6 15V4M3 7l3-3 3 3"/></>}
   {icon === 'word-in' && <><path d="M5 3h10l4 4v14H5zM15 3v5h4"/><path d="m8 12 1.3 5 1.7-3 1.7 3 1.3-5"/></>}
   {icon === 'word-out' && <><path d="M5 3h10l4 4v14H5zM15 3v5h4"/><path d="M8 12h8M8 16h6"/></>}
   {icon === 'spark' && <><path d="m12 3 1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3ZM18.5 15l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7.7-2.3Z"/></>}
+  {icon === 'minimize' && <><path d="m8 3 4 4 4-4M12 7V2M8 21l4-4 4 4M12 17v5M3 8l4 4-4 4M7 12H2M21 8l-4 4 4 4M17 12h5"/></>}
+  {icon === 'crop' && <><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></>}
+  {icon === 'lock' && <><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></>}
+  {icon === 'unlock' && <><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2M12 14v3"/></>}
+  {icon === 'repair' && <><path d="M14.7 6.3a4 4 0 0 0-5-5l2.2 2.2-3 3-2.2-2.2a4 4 0 0 0 5 5L20 17.6a2 2 0 0 1-2.8 2.8l-8.3-8.3"/><path d="m5 15-3 3 4 4 3-3"/></>}
+  {icon === 'eraser' && <><path d="m7 21-4-4a2 2 0 0 1 0-2.8L13.2 4a2 2 0 0 1 2.8 0l4 4a2 2 0 0 1 0 2.8L9.8 21H7Z"/><path d="m6.5 10.5 7 7M13 21h8"/></>}
+  {icon === 'table' && <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></>}
+  {icon === 'spreadsheet' && <><path d="M6 2h9l5 5v15H6zM15 2v5h5"/><path d="M9 11h8M9 15h8M9 19h8M13 9v12"/></>}
+  {icon === 'scan' && <><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8h10M7 12h10M7 16h6"/></>}
 </svg>

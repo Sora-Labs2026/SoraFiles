@@ -1,0 +1,14 @@
+# SoraFiles
+
+SoraFiles provides free PDF and image utilities that process supported files locally in the user's browser. Files are not uploaded to a SoraFiles processing server.
+
+Canonical site: https://sorafiles.com/
+Sitemap: https://sorafiles.com/sitemap.xml
+All tools: https://sorafiles.com/preview
+About: https://sorafiles.com/about
+Privacy: https://sorafiles.com/privacy
+
+Published tool categories include PDF compression and organization, PDF conversion, image conversion and compression, OCR, document protection, and metadata removal. Individual capabilities and limitations are stated on each tool page.
+
+Product: SoraFiles
+Developer: Sora Labs

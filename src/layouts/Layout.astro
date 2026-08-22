@@ -1,9 +1,9 @@
 ---
 import '../styles/global.css';
 import GoogleServices from '../components/GoogleServices.astro';
-import AmbientBubbles from '../components/AmbientBubbles.astro';
 import { localeByPath, localeDefinitions, publishedAlternates, type LocalePath } from '../i18n/config';
-import { ambientModeForRoute } from '../lib/ambient';
+import { getLocaleContent } from '../i18n';
+import { liveText } from '../data/liveI18n';
 
 interface Props {
   title: string;
@@ -16,68 +16,97 @@ interface Props {
   schema?: Record<string, unknown> | Record<string, unknown>[];
   locale?: LocalePath;
   alternatePath?: string;
+  monetized?: boolean;
 }
 
 const {
   title,
-  description = 'Use free private PDF and image tools locally in your browser. No account, no watermark, and clear output controls.',
+  description: providedDescription,
   canonicalPath = '/',
   keywords,
   imagePath = '/og-image.png',
-  imageAlt = 'Sora Files free private PDF and image tools',
+  imageAlt: providedImageAlt,
   noIndex = false,
   schema,
   locale = 'en',
   alternatePath = canonicalPath,
+  monetized = false,
 } = Astro.props;
 
+const description = providedDescription ?? liveText(locale, 'hero.desc');
+const imageAlt = providedImageAlt ?? ['SoraFiles', description].join(' — ');
+const legacyContent = getLocaleContent(locale);
 const canonical = new URL(canonicalPath, 'https://sorafiles.com');
 const socialImage = new URL(imagePath, 'https://sorafiles.com');
 const serializedSchema = schema ? JSON.stringify(schema).replace(/</g, '\\u003c') : undefined;
 const localeMeta = localeByPath.get(locale) ?? localeByPath.get('en')!;
 const alternates = noIndex ? [] : publishedAlternates(alternatePath);
-const ambientMode = ambientModeForRoute(alternatePath);
+// PERMANENT SORAFILES SEARCH BRANDING INVARIANT: SoraFiles is the site/product name; Sora Labs is the company; the gradient S keeps transparent negative space.
+const siteName = 'SoraFiles';
+const documentTitle = title;
+// Some social/search markup parsers still misdecode typographic dashes even
+// when the transport is valid UTF-8. Keep machine-consumed titles compatible
+// without changing the user-visible browser title.
+const socialTitle = documentTitle.replace(/[–—]/g, '-');
 ---
 
 <!doctype html>
 <html lang={localeMeta.code} dir={localeMeta.direction} data-locale={locale}>
   <head>
-    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin="anonymous" />
-    <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin="anonymous" />
-    <GoogleServices />
     <meta charset="utf-8" />
+    <link rel="preload" href="/fonts/plus-jakarta-sans-vf.woff2" as="font" type="font/woff2" crossorigin />
+    {monetized && (
+      <>
+        <link rel="dns-prefetch" href="//ads.sorafiles.com" />
+        <link rel="preconnect" href="https://ads.sorafiles.com" crossorigin="anonymous" />
+        <link rel="dns-prefetch" href="//www.highperformanceformat.com" />
+        <link rel="preconnect" href="https://www.highperformanceformat.com" crossorigin="anonymous" />
+        <link rel="dns-prefetch" href="//pl30950304.effectivecpmnetwork.com" />
+        <link rel="preconnect" href="https://pl30950304.effectivecpmnetwork.com" crossorigin="anonymous" />
+      </>
+    )}
+    <GoogleServices />
+    <script
+      is:inline
+      src="https://analytics.ahrefs.com/analytics.js"
+      data-key="YJO4kDicTtFqaLaxSZH09Q"
+      async
+      fetchpriority="low"
+    ></script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     {keywords && <meta name="keywords" content={keywords} />}
     <meta name="robots" content={noIndex ? 'noindex,follow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'} />
-    <meta name="application-name" content="Sora Files" />
-    <meta name="apple-mobile-web-app-title" content="Sora Files" />
-    <meta name="theme-color" content="#fafafa" data-theme-color />
+    <meta name="application-name" content={siteName} />
+    <meta name="apple-mobile-web-app-title" content={siteName} />
+    <meta name="theme-color" content="#f3f5fb" data-theme-color />
     <script is:inline>
       (() => {
+        document.documentElement.classList.add('js');
         try {
           const savedTheme = localStorage.getItem('sora-theme');
-          const preference = ['system', 'dark', 'light'].includes(savedTheme) ? savedTheme : 'system';
-          const useDark = preference === 'dark' || (preference === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+          const preference = ['dark', 'light'].includes(savedTheme) ? savedTheme : 'light';
+          const useDark = preference === 'dark';
           document.documentElement.classList.toggle('dark', useDark);
           document.documentElement.dataset.theme = useDark ? 'dark' : 'light';
           document.documentElement.dataset.themePreference = preference;
-          document.querySelector('[data-theme-color]')?.setAttribute('content', useDark ? '#0a0a0a' : '#fafafa');
+          document.querySelector('[data-theme-color]')?.setAttribute('content', useDark ? '#070a18' : '#f3f5fb');
         } catch {}
       })();
     </script>
     <link rel="canonical" href={canonical} />
     {alternates.map((alternate) => <link rel="alternate" hreflang={alternate.hreflang} href={alternate.href} />)}
     {alternates.length > 0 && <link rel="alternate" hreflang="x-default" href={new URL(alternatePath, 'https://sorafiles.com')} />}
-    <link rel="sitemap" href="/sitemap-index.xml" />
-    <link rel="icon" href="/favicon.ico" sizes="48x48" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
-    <link rel="apple-touch-icon" href="/icon-512.png" />
+    <link rel="sitemap" href="/sitemap.xml" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
+    <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Sora Files" />
-    <meta property="og:title" content={title} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={socialTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:locale" content={localeMeta.og} />
@@ -92,42 +121,49 @@ const ambientMode = ambientModeForRoute(alternatePath);
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={imageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
+    <meta name="twitter:title" content={socialTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImage} />
     <meta name="twitter:image:alt" content={imageAlt} />
     {serializedSchema && <script type="application/ld+json" is:inline set:html={serializedSchema}></script>}
-    <title>{title}</title>
+    <title>{documentTitle}</title>
   </head>
-  <body class="min-h-screen bg-canvas font-sans text-ink antialiased">
-    {ambientMode !== 'off' && <AmbientBubbles mode={ambientMode} />}
-    <div class="site-content">
-      <a href="#main" class="fixed left-3 top-3 z-50 -translate-y-20 rounded-control bg-action px-4 py-2 text-sm font-medium text-action-contrast transition-transform focus:translate-y-0">Skip to content</a>
-      <slot />
+  <body class="min-h-screen font-sans text-ink antialiased">
+    <a href="#main" class="fixed left-3 top-3 z-50 -translate-y-20 rounded-control bg-action px-4 py-2 text-sm font-medium text-action-contrast transition-transform focus:translate-y-0">{legacyContent.common.skipToContent}</a>
+    <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
+      <div class="absolute inset-0 bg-[#f3f5fb] dark:bg-[#070a18]"></div>
+      <div class="absolute -top-32 right-[-8%] h-[480px] w-[480px] rounded-full bg-fuchsia-300/40 blur-[120px] dark:bg-fuchsia-600/15"></div>
+      <div class="absolute left-[-12%] top-[28%] h-[420px] w-[420px] rounded-full bg-blue-300/40 blur-[120px] dark:bg-blue-600/15"></div>
+      <div class="absolute bottom-[-12%] right-[18%] h-[400px] w-[400px] rounded-full bg-cyan-200/50 blur-[120px] dark:bg-cyan-500/10"></div>
     </div>
+    <div data-offline-banner hidden role="status" aria-live="polite" class="flex items-center justify-center gap-2 bg-amber-400/90 px-4 py-2 text-center text-xs font-bold text-amber-950">{liveText(locale, 'common.offline')}</div>
+    <slot />
     <script is:inline>
-      const systemTheme = matchMedia('(prefers-color-scheme: dark)');
-      const validThemes = ['system', 'dark', 'light'];
+      const validThemes = ['dark', 'light'];
 
       const getThemePreference = () => {
-        const savedTheme = localStorage.getItem('sora-theme');
-        return validThemes.includes(savedTheme) ? savedTheme : 'system';
+        try {
+          const savedTheme = localStorage.getItem('sora-theme');
+          return validThemes.includes(savedTheme) ? savedTheme : 'light';
+        } catch {
+          return 'light';
+        }
+      };
+
+      const saveThemePreference = (preference) => {
+        try { localStorage.setItem('sora-theme', preference); } catch {}
       };
 
       const applyTheme = (preference) => {
-        const isDark = preference === 'dark' || (preference === 'system' && systemTheme.matches);
+        const isDark = preference === 'dark';
         document.documentElement.classList.toggle('dark', isDark);
         document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
         document.documentElement.dataset.themePreference = preference;
-        document.querySelector('[data-theme-color]')?.setAttribute('content', isDark ? '#0a0a0a' : '#fafafa');
+        document.querySelector('[data-theme-color]')?.setAttribute('content', isDark ? '#070a18' : '#f3f5fb');
 
         document.querySelectorAll('[data-theme-menu]').forEach((menu) => {
           const summary = menu.querySelector('summary');
           if (summary instanceof HTMLElement) {
-            const preferenceLabel = summary.dataset[`themeLabel${preference[0].toUpperCase()}${preference.slice(1)}`];
-            const accessibleLabel = `${summary.dataset.themeName}: ${preferenceLabel}`;
-            summary.setAttribute('aria-label', accessibleLabel);
-            summary.setAttribute('title', accessibleLabel);
             summary.querySelectorAll('[data-theme-icon]').forEach((icon) => {
               if (icon instanceof HTMLElement) icon.hidden = icon.dataset.themeIcon !== preference;
             });
@@ -146,7 +182,7 @@ const ambientMode = ambientModeForRoute(alternatePath);
           if (!(event.currentTarget instanceof HTMLElement)) return;
           const choice = event.currentTarget.dataset.themeOption;
           if (choice && validThemes.includes(choice)) {
-            localStorage.setItem('sora-theme', choice);
+            saveThemePreference(choice);
             applyTheme(choice);
             const parentMenu = event.currentTarget.closest('[data-theme-menu]');
             if (parentMenu && parentMenu.hasAttribute('open')) {
@@ -156,11 +192,74 @@ const ambientMode = ambientModeForRoute(alternatePath);
         });
       });
 
-      systemTheme.addEventListener('change', () => {
-        if (getThemePreference() === 'system') applyTheme('system');
-      });
-
       applyTheme(getThemePreference());
+    </script>
+    <script is:inline>
+      (() => {
+        const banner = document.querySelector('[data-offline-banner]');
+        const updateConnection = () => { if (banner instanceof HTMLElement) banner.hidden = navigator.onLine; };
+        addEventListener('online', updateConnection);
+        addEventListener('offline', updateConnection);
+        updateConnection();
+        if ('serviceWorker' in navigator && location.protocol === 'https:') {
+          addEventListener('load', () => navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {}), { once: true });
+        }
+      })();
+    </script>
+    <script is:inline>
+      (() => {
+        const revealables = document.querySelectorAll('[data-reveal]');
+
+        const activate = (element) => element.classList.add('is-visible');
+
+        if (typeof IntersectionObserver !== 'function') {
+          revealables.forEach(activate);
+          document.querySelectorAll('[data-draw-line]').forEach(activate);
+          return;
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              activate(entry.target);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+        revealables.forEach((element) => observer.observe(element));
+
+        const lines = document.querySelectorAll('[data-draw-line]');
+        if (lines.length) {
+          const lineObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                activate(entry.target);
+                lineObserver.unobserve(entry.target);
+              }
+            });
+          }, { threshold: 0.4 });
+          lines.forEach((line) => lineObserver.observe(line));
+        }
+
+        const motionRegions = document.querySelectorAll('[data-motion-region]');
+        if (motionRegions.length) {
+          const motionObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+              if (entry.target instanceof HTMLElement) {
+                entry.target.dataset.motionPaused = entry.isIntersecting ? 'false' : 'true';
+              }
+            });
+          }, { threshold: 0, rootMargin: '160px 0px' });
+          motionRegions.forEach((region) => motionObserver.observe(region));
+
+          const syncPageMotion = () => {
+            document.documentElement.toggleAttribute('data-motion-suspended', document.hidden);
+          };
+          document.addEventListener('visibilitychange', syncPageMotion);
+          syncPageMotion();
+        }
+      })();
     </script>
   </body>
 </html>

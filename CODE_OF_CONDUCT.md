@@ -36,7 +36,7 @@ This Code of Conduct applies within project spaces and when an individual offici
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported privately to **soralabs2026@gmail.com**. Reports will be reviewed and investigated promptly and fairly as project capacity allows. The privacy and security of reporters will be respected.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported privately to **contact@sorafiles.com**. Reports will be reviewed and investigated promptly and fairly as project capacity allows. The privacy and security of reporters will be respected.
 
 ## Attribution
 
