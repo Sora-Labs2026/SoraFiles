@@ -3,12 +3,15 @@ import { fileURLToPath } from 'node:url';
 
 const astro = fileURLToPath(new URL('../node_modules/astro/bin/astro.mjs', import.meta.url));
 const generator = fileURLToPath(new URL('./generate-popularity-registry.mjs', import.meta.url));
-const generated = spawnSync(process.execPath, [generator], {
-  cwd: fileURLToPath(new URL('..', import.meta.url)),
-  env: process.env,
-  stdio: 'inherit',
-});
-if (generated.status !== 0) process.exit(generated.status ?? 1);
+const officeRuntimeSync = fileURLToPath(new URL('./sync-office-runtime.mjs', import.meta.url));
+for (const setupScript of [generator, officeRuntimeSync]) {
+  const setup = spawnSync(process.execPath, [setupScript], {
+    cwd: fileURLToPath(new URL('..', import.meta.url)),
+    env: process.env,
+    stdio: 'inherit',
+  });
+  if (setup.status !== 0) process.exit(setup.status ?? 1);
+}
 
 const result = spawnSync(process.execPath, [astro, 'build'], {
   cwd: fileURLToPath(new URL('..', import.meta.url)),

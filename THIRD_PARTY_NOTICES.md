@@ -58,6 +58,35 @@ SoraFiles uses the following open-source libraries for local file processing. Co
 - Source: https://github.com/101arrowz/fflate
 - Use: creating local ZIP downloads and validating DOCX containers
 
+## SheetJS Community Edition
+
+- Copyright SheetJS LLC and contributors
+- License: Apache License 2.0
+- Source: https://git.sheetjs.com/sheetjs/sheetjs
+- Use: optional best-effort editable PDF-text-to-XLSX extraction
+
+## ZetaJS and ZetaOffice / LibreOffice WebAssembly
+
+- ZetaJS copyright allotropia software GmbH and contributors
+- ZetaJS license: MIT
+- LibreOffice license: Mozilla Public License 2.0 / GNU Lesser General Public License 3.0 or later, as applicable to the distributed components
+- Sources: https://github.com/allotropia/zetajs and https://git.libreoffice.org/core/
+- Use: running LibreOffice locally in the browser for high-fidelity Word/Excel-to-PDF export
+
+## IMG.LY Background Removal
+
+- Copyright IMG.LY GmbH and contributors
+- License: GNU Affero General Public License v3.0
+- Source: https://github.com/imgly/background-removal-js
+- Use: browser-local ISNet image matting and transparent PNG output
+
+## ONNX Runtime Web
+
+- Copyright Microsoft Corporation and contributors
+- License: MIT
+- Source: https://github.com/microsoft/onnxruntime
+- Use: local CPU/WebAssembly or WebGPU inference for background removal
+
 ## Tesseract.js & Tesseract.js Core
 
 - Copyright Jerome Wu and Tesseract.js contributors

@@ -29,6 +29,9 @@ const routes = [
   { path: '/pdf-to-excel', chooser: '[data-extra-drop]' },
   { path: '/excel-to-pdf', chooser: '[data-extra-drop]' },
   { path: '/pdf-ocr', chooser: '[data-extra-drop]' },
+  { path: '/resize-image', chooser: '[data-resize-choose]' },
+  { path: '/doc-scanner', chooser: '[data-scanner-upload]' },
+  { path: '/remove-background', chooser: '[data-background-drop]' },
 ];
 
 const fixturePath = (name) => fileURLToPath(new URL(`../fixtures/${name}`, import.meta.url));
@@ -102,14 +105,14 @@ async function runPdfToWordNoText(page) {
   console.log('PASS pdf-to-word scanned page visual preservation');
 }
 
-async function processDocumentAction(page, { route, files, configure }) {
+async function processDocumentAction(page, { route, files, configure, timeout = 60_000 }) {
   await page.goto(`${baseUrl}/${route}`, { waitUntil: 'domcontentloaded' });
   await page.locator('#action-input').setInputFiles(files.map((file) => typeof file === 'string' ? fixturePath(file) : file));
   await page.locator('#action-work').waitFor({ state: 'visible' });
   if (configure) await configure(page);
   await page.locator('#action-process').click();
   try {
-    await page.locator('#action-result').waitFor({ state: 'visible', timeout: 60_000 });
+    await page.locator('#action-result').waitFor({ state: 'visible', timeout });
   } catch (error) {
     throw new Error(`${route} did not produce a result. Status: ${await page.locator('#action-status').textContent()}`, { cause: error });
   }
@@ -149,6 +152,31 @@ async function processExtraTool(page, { route, files, configure, timeout = 60_00
   }
   assert.ok(results.length > 0, `${route} must expose at least one download.`);
   return results;
+}
+
+async function runBackgroundRemoval(page) {
+  await page.goto(`${baseUrl}/remove-background`, { waitUntil: 'domcontentloaded' });
+  await page.locator('[data-background-input]').setInputFiles(fixturePath('sample.jpg'));
+  await page.locator('[data-background-editor]').waitFor({ state: 'visible' });
+  await page.locator('[data-background-process]').click();
+  for (let attempt = 0; attempt < 30 && await page.locator('[data-background-result]').isHidden(); attempt += 1) {
+    await page.waitForTimeout(10_000);
+    if (process.argv.includes('--diagnostic')) {
+      console.log(`BACKGROUND ${await page.locator('[data-background-percent]').textContent()} ${await page.locator('[data-background-status]').textContent()} error=${await page.locator('[data-background-error]').textContent()}`);
+    }
+    if (await page.locator('[data-background-error]').isVisible()) throw new Error(`Remove Background failed: ${await page.locator('[data-background-error]').textContent()}`);
+  }
+  assert.ok(await page.locator('[data-background-result]').isVisible(), 'Remove Background must finish within five minutes on the CPU test path.');
+  const [download] = await Promise.all([page.waitForEvent('download'), page.locator('[data-background-download]').click()]);
+  const path = await download.path();
+  assert.ok(path, 'Remove Background download path must be available.');
+  const buffer = await readFile(path);
+  await validateImageInBrowser(page, buffer, 'image/png');
+  const { decode } = await import('fast-png');
+  const image = decode(buffer);
+  assert.equal(image.channels, 4, 'Remove Background must return an RGBA PNG.');
+  assert.ok(image.data.some((value, index) => index % 4 === 3 && value < 255), 'Remove Background must create transparent pixels.');
+  console.log(`PASS remove-background focused ${download.suggestedFilename()}`);
 }
 
 async function runExtraTools(page) {
@@ -206,8 +234,8 @@ async function runExtraTools(page) {
   const pdfExcel = (await processExtraTool(page, { route: 'pdf-to-excel', files: ['text-two-page.pdf'] }))[0];
   const extractedWorkbook = spreadsheet.read(pdfExcel.buffer, { type: 'buffer' });
   assert.equal(extractedWorkbook.SheetNames.length, 2);
-  const extractedText = extractedWorkbook.SheetNames.map((name) => spreadsheet.utils.sheet_to_csv(extractedWorkbook.Sheets[name])).join('\n');
-  assert.match(extractedText, /Sora Files page one/i);
+  assert.match(pdfExcel.buffer.toString('latin1'), /xl\/media\/page1\.png/i, 'Exact PDF to Excel must preserve page one as a worksheet visual.');
+  assert.match(pdfExcel.buffer.toString('latin1'), /xl\/media\/page2\.png/i, 'Exact PDF to Excel must preserve page two as a worksheet visual.');
   console.log(`PASS pdf-to-excel ${pdfExcel.filename}`);
 
   const ocrText = (await processExtraTool(page, {
@@ -356,11 +384,12 @@ async function runDocumentActions(page) {
   const wordToPdf = await processDocumentAction(page, {
     route: 'word-to-pdf',
     files: ['single-paragraph.docx'],
+    timeout: 300_000,
   });
   const wordPdf = await validatePdf(wordToPdf.buffer);
   assert.ok(wordPdf.pageCount >= 1, 'Word to PDF must create at least one page.');
   assert.ok(wordToPdf.buffer.byteLength > 2_000, 'Word to PDF must contain rendered page content.');
-  assert.match(Buffer.from(wordToPdf.buffer).toString('latin1'), /\/Subtype\s*\/Image/, 'Word to PDF must preserve the rendered document as a page image.');
+  assert.ok((await extractPdfText(wordToPdf.buffer)).trim().length > 0, 'LibreOffice Word to PDF must retain selectable text.');
   console.log(`PASS word-to-pdf ${wordToPdf.filename} ${wordToPdf.stats}`);
 }
 
@@ -727,6 +756,14 @@ const browser = await chromium.launch({ headless: true, executablePath });
 
 try {
   const page = await browser.newPage({ acceptDownloads: true });
+  if (process.argv.includes('--diagnostic')) {
+    page.on('console', (message) => console.log(`BROWSER ${message.type()}: ${message.text()}`));
+    page.on('pageerror', (error) => console.log(`BROWSER pageerror: ${error.stack ?? error.message}`));
+    page.on('requestfailed', (request) => console.log(`BROWSER requestfailed: ${request.url()} ${request.failure()?.errorText ?? ''}`));
+    page.on('response', (response) => {
+      if (/staticimgly\.com|zetaoffice\.net/.test(response.url())) console.log(`BROWSER response: ${response.status()} ${response.url()}`);
+    });
+  }
   const toolIndex = process.argv.indexOf('--tool');
   const selectedTool = toolIndex >= 0 ? process.argv[toolIndex + 1] : undefined;
   const fixtureIndex = process.argv.indexOf('--fixture');
@@ -749,6 +786,14 @@ try {
   } else if (selectedTool === 'pdf-to-word') {
     await runPdfToWord(page, selectedFixture);
     if (!selectedFixture) await runPdfToWordNoText(page);
+  } else if (selectedTool === 'word-to-pdf') {
+    const output = await processDocumentAction(page, { route: 'word-to-pdf', files: ['single-paragraph.docx'], timeout: 300_000 });
+    const pdf = await validatePdf(output.buffer);
+    assert.ok(pdf.pageCount >= 1, 'Word to PDF must create at least one page.');
+    assert.ok((await extractPdfText(output.buffer)).trim().length > 0, 'LibreOffice Word to PDF must retain selectable text.');
+    console.log(`PASS word-to-pdf focused ${output.filename}`);
+  } else if (selectedTool === 'remove-background') {
+    await runBackgroundRemoval(page);
   } else if (selectedTool) {
     throw new Error(`Unknown tool test: ${selectedTool}`);
   } else {

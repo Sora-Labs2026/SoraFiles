@@ -4,6 +4,9 @@ import asia from './liveAsia.js';
 import arRu from './liveArRu.js';
 import { liveSupplement } from './liveSupplement';
 import type { LocalePath } from '../i18n/config';
+import { getConversionFidelityMessages } from '../i18n/documentTools';
+import { getSpreadsheetToolMessages } from '../i18n/spreadsheetTools';
+import { getBackgroundRemovalMessages } from '../i18n/backgroundRemoval';
 
 type Dictionary = Record<string, unknown>;
 const compactDictionaries: Record<string, Dictionary> = { en, ...latin, ...asia, ...arRu };
@@ -32,6 +35,22 @@ export function liveRaw<T>(locale: LocalePath, path: string): T {
 }
 
 export function liveText(locale: LocalePath, path: string, vars?: Record<string, string | number>): string {
+  const fidelity = getConversionFidelityMessages(locale);
+  const spreadsheet = getSpreadsheetToolMessages(locale);
+  const background = getBackgroundRemovalMessages(locale);
+  if (path === 'tool.pdf-to-word.d') return fidelity.pdfToWordResult;
+  if (path === 'tool.pdf-to-word.t') return fidelity.exactAppearance;
+  if (path === 'tool.word-to-pdf.d') return fidelity.wordToPdfResult;
+  if (path === 'tool.word-to-pdf.t') return fidelity.exactAppearance;
+  if (path === 'tool.pdf-to-excel.d') return spreadsheet.exactResult;
+  if (path === 'tool.pdf-to-excel.t') return spreadsheet.exactAppearance;
+  if (path === 'tool.excel-to-pdf.d') return spreadsheet.excelResult;
+  if (path === 'tool.excel-to-pdf.t') return spreadsheet.exactAppearance;
+  if (path === 'lim.pdfToExcel') return spreadsheet.exactHelp;
+  if (path === 'lim.excelToPdf') return spreadsheet.excelResult;
+  if (path === 'tool.remove-background.n') return background.name;
+  if (path === 'tool.remove-background.d') return background.description;
+  if (path === 'tool.remove-background.t') return background.tagline;
   const value = liveRaw<unknown>(locale, path);
   return interpolate(typeof value === 'string' ? value : path, vars);
 }

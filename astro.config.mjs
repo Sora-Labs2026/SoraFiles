@@ -17,6 +17,15 @@ export default defineConfig({
     routing: 'manual',
   },
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    server: {
+      // LibreOffice WebAssembly uses SharedArrayBuffer. Production limits these
+      // headers to Office-to-PDF routes in worker.js; local development is
+      // isolated globally because Vite's header hook is not route-aware.
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+      },
+    },
   }
 });

@@ -17,6 +17,7 @@ const POPULARITY_RANKING_PATH = '/__sf/popularity/ranking';
 const PUBLISHED_TOOL_SET = new Set(PUBLISHED_TOOL_IDS);
 const HSTS = 'max-age=31536000';
 const PUBLIC_CSP = "base-uri 'self'; object-src 'none'; frame-ancestors 'none'";
+const OFFICE_CONVERTER_PATH = /\/(?:word-to-pdf|excel-to-pdf|remove-background)\/?$/;
 // The document scanner needs same-origin camera access after explicit browser consent.
 // All unrelated powerful features remain disabled.
 const PERMISSIONS_POLICY = 'camera=(self), geolocation=(), microphone=(), payment=(), usb=()';
@@ -29,7 +30,7 @@ function redirectWithHsts(url) {
   return new Response(null, { status: 301, headers: { Location: url, 'Strict-Transport-Security': HSTS } });
 }
 
-function preparePublicHtml(response, ranking) {
+function preparePublicHtml(response, ranking, pathname = '/') {
   if (!/^text\/html\b/i.test(response.headers.get('Content-Type') || '')) return response;
   const headers = new Headers(response.headers);
   headers.set('Content-Type', 'text/html; charset=utf-8');
@@ -39,6 +40,14 @@ function preparePublicHtml(response, ranking) {
   headers.set('Permissions-Policy', PERMISSIONS_POLICY);
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('X-Frame-Options', 'DENY');
+  if (OFFICE_CONVERTER_PATH.test(pathname)) {
+    // ZetaOffice/LibreOffice WebAssembly requires SharedArrayBuffer. Keep the
+    // isolation surgical so ordinary pages and third-party analytics are not
+    // affected by the heavier converter runtime.
+    headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+    headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+    headers.set('Origin-Agent-Cluster', '?1');
+  }
   const cacheControl = (headers.get('Cache-Control') || 'public, max-age=0, must-revalidate')
     .split(',').map((directive) => directive.trim())
     .filter((directive) => directive && directive.toLowerCase() !== 'no-transform').join(', ');
@@ -218,7 +227,7 @@ export default {
     }
     const response = await env.ASSETS.fetch(request);
     const ranking = request.method === 'GET' && HOMEPAGE_PATH.test(url.pathname) ? await getCachedRanking(env) : null;
-    return preparePublicHtml(response, ranking);
+    return preparePublicHtml(response, ranking, url.pathname);
   },
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(refreshPopularityRanking(env, new Date(controller.scheduledTime)));

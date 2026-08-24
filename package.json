@@ -17,8 +17,8 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "astro dev",
-    "build": "npm run generate:popularity && astro build",
+    "dev": "npm run sync:office && astro dev",
+    "build": "npm run sync:office && npm run generate:popularity && astro build",
     "build:production": "node scripts/build-production.mjs",
     "preview": "astro preview",
     "preview:cloudflare": "npm run build && wrangler dev",
@@ -29,6 +29,7 @@
     "verify:brand": "node scripts/verify-search-branding.mjs",
     "verify:monetization": "node scripts/verify-monetization.mjs",
     "sync:ocr": "node scripts/sync-ocr-assets.mjs",
+    "sync:office": "node scripts/sync-office-runtime.mjs",
     "verify:ocr": "node scripts/verify-ocr-assets.mjs",
     "verify:optimizer": "node scripts/optimizer/validate.mjs",
     "generate:popularity": "node scripts/generate-popularity-registry.mjs",
@@ -59,6 +60,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@imgly/background-removal": "^1.7.0",
     "@jsquash/resize": "^2.1.1",
     "@pdfsmaller/pdf-decrypt": "^1.0.1",
     "@pdfsmaller/pdf-encrypt": "^1.2.0",
@@ -72,6 +74,7 @@
     "html-to-image": "^1.11.13",
     "jspdf": "^4.2.1",
     "mammoth": "^1.12.0",
+    "onnxruntime-web": "^1.21.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.2.108",
     "scanic": "^1.6.0",
@@ -79,7 +82,8 @@
     "tesseract.js": "^7.0.0",
     "tesseract.js-core": "^7.0.0",
     "utif": "^3.1.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "zetajs": "^1.2.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

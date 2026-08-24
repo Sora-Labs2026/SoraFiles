@@ -5,9 +5,10 @@ import { stripImageMeta, stripOpenXmlMeta } from '../lib/metadata-strip.js';
 // protect/unlock : real AES-256 encryption via @pdfsmaller (PDF 2.0 standard)
 // repair         : lenient pdf-lib re-save
 // metadata       : strip PDF Info/XMP and common image/Open XML metadata without changing content
-// excel<->pdf     : SheetJS (xlsx) + pdf-lib table render / pdf.js text extract
+// excel->pdf       : LibreOffice WebAssembly (lazy-loaded, browser-local)
+// pdf->excel       : exact page visuals or optional best-effort editable extraction
 // ocr            : tesseract.js (runs in a Web Worker)
-import { PDFDocument, PDFName, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFName } from "pdf-lib";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 export const baseName = (name) => safeOutputStem(name);
@@ -146,83 +147,37 @@ export async function removeMetadata(files, _opts, prog, ctrl) {
 }
 
 // ----------------------------------------------------------------------------
-// Excel -> PDF — render each sheet as a paginated table.
+// Excel -> PDF — export with LibreOffice Calc running locally in WebAssembly.
 // ----------------------------------------------------------------------------
-function fitText(font, text, size, maxWidth) {
-    let s = String(text ?? "");
-    if (font.widthOfTextAtSize(s, size) <= maxWidth) return s;
-    while (s.length > 1 && font.widthOfTextAtSize(s + "…", size) > maxWidth) s = s.slice(0, -1);
-    return s + "…";
-}
-
-export async function excelToPdf(files, _opts, prog, ctrl) {
-    const XLSX = await import("xlsx");
-    const wb = XLSX.read(new Uint8Array(await files[0].arrayBuffer()), { type: "array" });
-    const pdf = await PDFDocument.create();
-    const font = await pdf.embedFont(StandardFonts.Helvetica);
-    const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-
-    const PAGE_W = 842; // A4 landscape
-    const PAGE_H = 595;
-    const MARGIN = 32;
-    const ROW_H = 20;
-    const FONT_SIZE = 9;
-    const sheetNames = wb.SheetNames;
-
-    for (let sIdx = 0; sIdx < sheetNames.length; sIdx++) {
-        checkCancel(ctrl);
-        const ws = wb.Sheets[sheetNames[sIdx]];
-        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: "" });
-        if (!aoa.length) continue;
-        const cols = Math.max(1, ...aoa.map((r) => r.length));
-        const usableW = PAGE_W - MARGIN * 2;
-        const colW = usableW / cols;
-
-        let page = pdf.addPage([PAGE_W, PAGE_H]);
-        let y = PAGE_H - MARGIN;
-
-        // Sheet title
-        page.drawText(fitText(bold, sheetNames[sIdx], 12, usableW), { x: MARGIN, y: y - 10, size: 12, font: bold, color: rgb(0.29, 0.16, 0.64) });
-        y -= 28;
-
-        for (let r = 0; r < aoa.length; r++) {
-            if (y - ROW_H < MARGIN) {
-                page = pdf.addPage([PAGE_W, PAGE_H]);
-                y = PAGE_H - MARGIN;
-            }
-            const row = aoa[r];
-            const isHeader = r === 0;
-            if (isHeader) {
-                page.drawRectangle({ x: MARGIN, y: y - ROW_H + 4, width: usableW, height: ROW_H, color: rgb(0.95, 0.94, 0.99) });
-            }
-            for (let c = 0; c < cols; c++) {
-                const cx = MARGIN + c * colW + 4;
-                const val = row[c];
-                if (val !== "" && val != null) {
-                    page.drawText(fitText(isHeader ? bold : font, val, FONT_SIZE, colW - 8), {
-                        x: cx,
-                        y: y - 13,
-                        size: FONT_SIZE,
-                        font: isHeader ? bold : font,
-                        color: rgb(0.15, 0.17, 0.24),
-                    });
-                }
-            }
-            // horizontal separator
-            page.drawLine({ start: { x: MARGIN, y: y - ROW_H + 4 }, end: { x: MARGIN + usableW, y: y - ROW_H + 4 }, thickness: 0.5, color: rgb(0.85, 0.86, 0.9) });
-            y -= ROW_H;
-        }
-        prog?.(sIdx + 1, sheetNames.length);
+export async function excelToPdf(files, opts, prog, ctrl) {
+    checkCancel(ctrl);
+    const { convertOfficeToPdf } = await import('../lib/office-wasm/client.ts');
+    let out;
+    try {
+        out = await convertOfficeToPdf(files[0], 'calc', {
+            signal: ctrl?.abortController?.signal,
+            onProgress: (stage) => prog?.(stage === 'downloading-engine' ? 1 : stage === 'loading-document' ? 2 : 3, 4),
+        });
+    } catch (error) {
+        if (error?.name === 'AbortError') throw new Error('cancelled');
+        if (error?.message === 'officeIsolation') throw new Error('officeIsolation');
+        throw new Error('officeFailed');
     }
-    if (pdf.getPageCount() === 0) throw new Error("badExcel");
-    const out = await pdf.save();
-    return [{ name: `${baseName(files[0].name)}.pdf`, blob: pdfBlob(out) }];
+    checkCancel(ctrl);
+    const verified = await PDFDocument.load(out, { ignoreEncryption: true });
+    if (!verified.getPageCount()) throw new Error('officeFailed');
+    prog?.(4, 4);
+    return [{
+        name: `${baseName(files[0].name)}.pdf`,
+        blob: pdfBlob(out),
+        detail: opts?.messages?.excelResult || 'Exported locally by LibreOffice. Sheet formatting, charts, pictures, tables, formulas, and print layout are retained where the source file and available fonts permit.',
+    }];
 }
 
 // ----------------------------------------------------------------------------
-// PDF -> Excel — extract text into a sheet per page (best-effort tables).
+// PDF -> Excel — exact page visuals by default; editable extraction is explicit.
 // ----------------------------------------------------------------------------
-export async function pdfToExcel(files, _opts, prog, ctrl) {
+async function pdfToEditableExcel(files, opts, prog, ctrl) {
     const XLSX = await import("xlsx");
     const pdfjs = await getPdfjs();
     const doc = await pdfjs.getDocument({ data: new Uint8Array(await files[0].arrayBuffer()) }).promise;
@@ -254,7 +209,57 @@ export async function pdfToExcel(files, _opts, prog, ctrl) {
     }
     if (!anyRows) throw new Error("noText");
     const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-    return [{ name: `${baseName(files[0].name)}.xlsx`, blob: new Blob([buf], { type: XLSX_MIME }) }];
+    return [{
+        name: `${baseName(files[0].name)}-editable.xlsx`,
+        blob: new Blob([buf], { type: XLSX_MIME }),
+        detail: opts?.messages?.editableResult || 'Selectable PDF text was placed into editable cells. Complex tables, formulas, charts, and exact spacing may require cleanup.',
+    }];
+}
+
+export async function pdfToExcel(files, opts, prog, ctrl) {
+    if (opts?.spreadsheetMode === 'editable') return pdfToEditableExcel(files, opts, prog, ctrl);
+    const pdfjs = await getPdfjs();
+    const doc = await pdfjs.getDocument({ data: new Uint8Array(await files[0].arrayBuffer()) }).promise;
+    const pages = [];
+    try {
+        for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
+            checkCancel(ctrl);
+            const page = await doc.getPage(pageNumber);
+            const base = page.getViewport({ scale: 1 });
+            const scale = Math.max(1, Math.min(2, Math.sqrt(16_000_000 / Math.max(1, base.width * base.height))));
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.ceil(viewport.width));
+            canvas.height = Math.max(1, Math.ceil(viewport.height));
+            const context = canvas.getContext('2d', { alpha: false });
+            if (!context) throw new Error('officeFailed');
+            context.fillStyle = '#fff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            await page.render({ canvas, canvasContext: context, viewport, background: '#fff', intent: 'display' }).promise;
+            const pngBlob = await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('officeFailed')), 'image/png'));
+            pages.push({
+                png: new Uint8Array(await pngBlob.arrayBuffer()),
+                widthPixels: canvas.width,
+                heightPixels: canvas.height,
+                pageNumber,
+            });
+            page.cleanup();
+            canvas.width = 1;
+            canvas.height = 1;
+            prog?.(pageNumber, doc.numPages + 1);
+        }
+    } finally {
+        doc.destroy?.();
+    }
+    checkCancel(ctrl);
+    const { createVisualWorkbook } = await import('../lib/pdf-to-excel/visual-workbook.ts');
+    const blob = createVisualWorkbook(pages);
+    prog?.(doc.numPages + 1, doc.numPages + 1);
+    return [{
+        name: `${baseName(files[0].name)}.xlsx`,
+        blob,
+        detail: opts?.messages?.exactResult || 'Every PDF page is preserved losslessly on its own worksheet. The page visuals are exact; their contents are not editable cells.',
+    }];
 }
 
 // ----------------------------------------------------------------------------

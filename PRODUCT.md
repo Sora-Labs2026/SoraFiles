@@ -28,10 +28,10 @@ People commonly arrive with an email attachment that is too large, an image in t
 
 ## Capabilities and Constraints
 
-- Current public tools: 23 PDF and image tools covering compression, merging, splitting, rotation, page removal, conversion, OCR, signing, watermarking, protection, unlocking, repair, image resizing/editing, HEIC conversion, and metadata removal.
+- Current public tools: 26 PDF, document, spreadsheet, and image tools covering compression, merging, splitting, rotation, page removal, conversion, OCR, signing, watermarking, protection, unlocking, repair, image resizing/editing, local AI background removal, HEIC conversion, and metadata removal.
 - Browser capabilities, file complexity, memory, and supported codecs can limit processing. The product never promises unlimited files or exact compression outcomes when the engine cannot guarantee them.
 - PDF compression rebuilds pages as images and therefore removes selectable text, links, form fields, signatures, bookmarks, and accessibility structure.
-- Basic Word/PDF conversions preserve useful text, not complex document layout. PDF-to-Word includes local OCR for scan-like pages, with accuracy depending on the source and selected language.
+- PDF-to-Word preserves exact page visuals rather than editable structure. Word/Excel-to-PDF use browser-local LibreOffice WebAssembly; unavailable non-embedded fonts may be substituted. PDF-to-Excel separates exact visual preservation from best-effort editable extraction because a PDF does not contain the original spreadsheet model.
 - Tools must validate actual file signatures where practical, produce independently valid output, release temporary resources, and never present unsupported formats or unfinished flows as working features.
 - File contents must not be sent to analytics or other third-party services. The Contact form is a separate, disclosed network submission flow.
 

@@ -28,20 +28,20 @@ All adopted package licenses are compatible with the AGPL application: jSquash r
 | ---: | --- | --- | --- |
 | 1 | Compress PDF | Retained current engine after benchmark | Exact byte ceiling; parseable flattened PDF; loss disclosed. |
 | 2 | Merge PDF | Retained current engine after benchmark | Ordered inputs merge into a parseable PDF. |
-| 3 | Split PDF | Retained current engine with bounded compact fallback | Structure-preserving split is attempted first; Smart mode prevents abnormal shared-resource expansion with a disclosed, validated local fallback. |
+| 3 | Split PDF | Retained current engine after benchmark | Selected page range reopens correctly. |
 | 4 | Rotate PDF | Retained current engine after benchmark | Page rotation persists in output. |
-| 5 | Remove Pages | Retained current engine after benchmark | Chosen pages are omitted; empty output is blocked; mobile input accepts commas and ranges. |
+| 5 | Remove Pages | Retained current engine after benchmark | Chosen pages are omitted; empty output is blocked. |
 | 6 | PDF to JPG | Retained current engine after benchmark | PDF pages render as real JPEG images. |
 | 7 | JPG to PDF | Retained current engine after benchmark | Images become ordered PDF pages. |
 | 8 | PDF to Word | Retained current engine after benchmark | Text-first DOCX output parses; layout limit disclosed. |
 | 9 | Word to PDF | Retained current engine after benchmark | Text-first PDF output parses; layout limit disclosed. |
-| 10 | Watermark PDF | Extended local PDF/image engine | Text or uploaded PNG/JPG/WebP watermarks are embedded; users explicitly preserve the image or remove a sampled uniform background with preview. |
+| 10 | Watermark PDF | Retained current engine after benchmark | Visible watermark is embedded on pages. |
 | 11 | Page Numbers | Retained current engine after benchmark | Page labels are embedded at the selected position. |
 | 12 | Sign PDF | Retained current engine after benchmark | Drawn signature is embedded in the selected page. |
 | 13 | Image Converter | Retained current engine after benchmark | Capability-gated PNG/JPEG/WebP/TIFF/PSD conversion. |
 | 14 | Compress Image | Retained current engine after benchmark | Valid images and truthful larger-output warning. |
 | 15 | HEIC to JPG | Retained current engine after benchmark | Local HEIC decode and JPEG output. |
-| 16 | Edit Image | Extended Canvas image editor | Live preview, aspect crop, zoom/framing, rotation, flip, brightness, contrast, saturation and JPG/PNG/WebP export share one deterministic render pipeline. |
+| 16 | Edit Image | Retained current engine after benchmark | Real pixel edits and valid image output. |
 | 17 | Protect PDF | Retained current engine after benchmark | Password-encrypted PDF reopens with the password. |
 | 18 | Unlock PDF | Retained current engine after benchmark | Supported encrypted PDF becomes an unencrypted PDF. |
 | 19 | Repair PDF | Retained current engine after benchmark | Recoverable input is rewritten and reopened; unrecoverable input is rejected. |
@@ -50,13 +50,13 @@ All adopted package licenses are compatible with the AGPL application: jSquash r
 | 22 | Excel to PDF | Retained current engine after benchmark | Workbook cells produce a parseable PDF. |
 | 23 | PDF OCR | Retained current engine after benchmark | Local OCR produces a searchable PDF for supported languages. |
 | 24 | Resize Image | New jSquash engine | Crop, ratios, exact pixels, contain/fill/pad/stretch, quality and alpha-aware outputs. |
-| 25 | Doc Scanner | Scanic + existing PDF/OCR engines | Upload-only capture, corners, perspective, filters, multi-page reorder, local draft recovery, JPG/PNG/PDF and optional local OCR. |
+| 25 | Doc Scanner | New Scanic + existing PDF/OCR engines | Upload/camera, corners, perspective, filters, multi-page reorder, JPG/PNG/PDF and optional local OCR. |
 
 ## Isolation and safety
 
 - Neither new engine is imported by the homepage or shared shell.
 - jSquash, Scanic, PDF assembly, ZIP, and OCR code are dynamically imported after user action.
 - Resize rejects unsafe decoded/output pixel allocations before creating large canvases.
-- Scanner detection uses a bounded analysis dimension, caps a session at 20 pages, has no camera runtime, persists a recoverable on-device IndexedDB draft, and revokes generated object URLs.
+- Scanner detection uses a bounded analysis dimension, caps a session at 20 pages, closes media tracks on stop, page hide, and backgrounding, and revokes generated object URLs.
 - File replacement and cancellation invalidate stale jobs so a late result cannot overwrite newer state.
 - Runtime tests assert that processing makes no non-GET upload request and that tool output signatures/dimensions are real.

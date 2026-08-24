@@ -15,6 +15,7 @@ const { slug, locale = 'en' } = Astro.props;
 const compactPage = liveRaw<InfoCopy>(locale, `page.${slug}`);
 const reviewedPages = getLocaleContent(locale).pages;
 const contact = liveRaw<typeof copy.contactForm>(locale, 'contactForm');
+const currentRuntimeLicenses = 'ZetaJS (MIT) · LibreOffice WebAssembly (MPL-2.0 / LGPL-3.0+) · IMG.LY Background Removal (AGPL-3.0) · ONNX Runtime Web (MIT) · SheetJS CE (Apache-2.0).';
 const reviewedPage = slug === 'privacy'
   ? reviewedPages.privacy
   : slug === 'open-source'
@@ -28,8 +29,8 @@ const page: InfoCopy = reviewedPage ? {
     intro: reviewedPage.intro,
     cards: compactPage.cards.map((card, index) => index === 0 ? { ...card, d: 'contact@sorafiles.com' } : card),
   } : {}),
-  sections: [...reviewedPage.sections.map((section) => {
-    const text = section.paragraphs.join(' ');
+  sections: [...reviewedPage.sections.map((section, index) => {
+    const text = [section.paragraphs.join(' '), slug === 'open-source' && index === 0 ? currentRuntimeLicenses : ''].filter(Boolean).join(' ');
     return {
       h: section.heading,
       p: text,

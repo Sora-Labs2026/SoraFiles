@@ -50,6 +50,7 @@ const toolFormats: Record<string, { input: string[]; output: string[] }> = {
   'compress-image': { input: ['JPG', 'PNG', 'WebP', 'HEIC', 'HEIF'], output: ['JPG', 'PNG', 'WebP'] },
   'heic-to-jpg': { input: ['HEIC', 'HEIF'], output: ['JPG'] },
   'edit-image': { input: ['JPG', 'PNG', 'WebP'], output: ['JPG', 'PNG', 'WebP'] },
+  'remove-background': { input: ['JPG', 'PNG', 'WebP'], output: ['PNG'] },
   'protect-pdf': { input: ['PDF'], output: ['PDF'] },
   'unlock-pdf': { input: ['PDF'], output: ['PDF'] },
   'repair-pdf': { input: ['PDF'], output: ['PDF'] },
@@ -93,6 +94,7 @@ export const liveTools: LiveTool[] = [
   define({ slug: 'compress-image', id: 'compress-image', icon: 'minimize', engine: 'compressImages', tile: 'from-teal-400 to-cyan-600 shadow-teal-500/30', tint: 'border-teal-100 bg-teal-50/80 hover:border-teal-200 dark:border-teal-400/10 dark:bg-teal-500/[0.07]', accept: COMPRESSIBLE_IMG, multiple: true, reorder: false, outputLabel: 'JPG / WebP / ZIP', limitationKey: 'lim.flatten', related: ['image-converter', 'heic-to-jpg', 'jpg-to-pdf'] }),
   define({ slug: 'heic-to-jpg', id: 'heic-to-jpg', icon: 'image-out', engine: 'heicToJpg', tile: 'from-orange-400 to-rose-500 shadow-orange-500/30', tint: 'border-orange-100 bg-orange-50/80 hover:border-orange-200 dark:border-orange-400/10 dark:bg-orange-500/[0.07]', accept: '.heic,.heif,image/heic,image/heif', multiple: true, reorder: false, outputLabel: 'JPG / ZIP', limitationKey: null, related: ['image-converter', 'compress-image', 'jpg-to-pdf'] }),
   define({ slug: 'edit-image', id: 'edit-image', icon: 'crop', engine: null, tile: 'from-pink-500 to-rose-600 shadow-pink-500/30', tint: 'border-pink-100 bg-pink-50/80 hover:border-pink-200 dark:border-pink-400/10 dark:bg-pink-500/[0.07]', accept: IMG, multiple: false, reorder: false, outputLabel: 'Image', limitationKey: null, related: ['compress-image', 'image-converter', 'heic-to-jpg'] }),
+  define({ slug: 'remove-background', id: 'remove-background', icon: 'eraser', engine: 'imgly-isnet-medium', tile: 'from-violet-500 to-cyan-500 shadow-violet-500/30', tint: 'border-violet-100 bg-violet-50/80 hover:border-violet-200 dark:border-violet-400/10 dark:bg-violet-500/[0.07]', accept: IMG, multiple: false, reorder: false, outputLabel: 'PNG', limitationKey: null, related: ['edit-image', 'image-converter', 'compress-image'] }),
   define({ slug: 'protect-pdf', id: 'protect-pdf', icon: 'lock', engine: 'protectPdf', tile: 'from-slate-700 to-slate-900 shadow-slate-700/30', tint: 'border-slate-200 bg-slate-50/80 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.05]', accept: PDF, multiple: false, reorder: false, outputLabel: 'PDF', limitationKey: 'lim.protect', related: ['unlock-pdf', 'watermark-pdf', 'sign-pdf'] }),
   define({ slug: 'unlock-pdf', id: 'unlock-pdf', icon: 'unlock', engine: 'unlockPdf', tile: 'from-teal-500 to-emerald-600 shadow-teal-500/30', tint: 'border-teal-100 bg-teal-50/80 hover:border-teal-200 dark:border-teal-400/10 dark:bg-teal-500/[0.07]', accept: PDF, multiple: false, reorder: false, outputLabel: 'PDF', limitationKey: 'lim.unlock', related: ['protect-pdf', 'repair-pdf', 'compress-pdf'] }),
   define({ slug: 'repair-pdf', id: 'repair-pdf', icon: 'repair', engine: 'repairPdf', tile: 'from-amber-500 to-orange-600 shadow-amber-500/30', tint: 'border-amber-100 bg-amber-50/80 hover:border-amber-200 dark:border-amber-400/10 dark:bg-amber-500/[0.07]', accept: PDF, multiple: false, reorder: false, outputLabel: 'PDF', limitationKey: 'lim.repair', related: ['compress-pdf', 'unlock-pdf', 'merge-pdf'] }),
@@ -110,7 +112,7 @@ export const documentActionToolIds = new Set([
 ]);
 export const dedicatedWorkbenchToolIds = new Set([
   'compress-pdf', 'image-converter', 'compress-image', 'heic-to-jpg',
-  'resize-image', 'doc-scanner',
+  'resize-image', 'doc-scanner', 'remove-background',
   ...documentActionToolIds,
 ]);
 export const liveToolById = new Map(liveTools.map((tool) => [tool.id, tool]));

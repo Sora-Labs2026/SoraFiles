@@ -5,11 +5,15 @@ import { liveText } from '../data/liveI18n';
 import ToolIcon from './ToolIcon.astro';
 import { OCR_LANGUAGE_BY_LOCALE, OCR_LANGUAGE_OPTIONS } from '../lib/ocr/languages';
 import { chapter3English, chapter3Text } from '../data/chapter3Ui';
+import { getConversionFidelityMessages } from '../i18n/documentTools';
+import { getSpreadsheetToolMessages } from '../i18n/spreadsheetTools';
 interface Props { tool: LiveTool; locale?: LocalePath; }
 const { tool, locale = 'en' } = Astro.props;
 const t = (path: string) => liveText(locale, path);
 const defaultOcrCode = OCR_LANGUAGE_BY_LOCALE[locale] ?? 'eng';
 const c3 = (key: keyof typeof chapter3English) => chapter3Text(locale, key);
+const spreadsheetMsg = getSpreadsheetToolMessages(locale);
+const officeMsg = getConversionFidelityMessages(locale);
 const clientMessages = JSON.stringify({
   wrongType: t('wb.err.wrongType'),
   generic: t('wb.err.generic'),
@@ -23,6 +27,9 @@ const clientMessages = JSON.stringify({
   badExcel: t('wb.err.badExcel'),
   noText: t('wb.err.noText'),
   ocrFailed: t('wb.err.ocrFailed'),
+  officeIsolation: officeMsg.officeIsolation,
+  officeFailed: officeMsg.officeFailed,
+  spreadsheet: spreadsheetMsg,
   edit: Object.fromEntries(Object.keys(chapter3English).map((key) => [key, c3(key as keyof typeof chapter3English)])),
 }).replace(/</g, '\\u003c');
 ---
@@ -43,6 +50,7 @@ const clientMessages = JSON.stringify({
 
   {(tool.id === 'protect-pdf' || tool.id === 'unlock-pdf') && <label class="mt-4 block rounded-2xl border border-slate-100 bg-white/60 p-4 dark:border-white/10 dark:bg-white/[.03]"><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{tool.id === 'protect-pdf' ? t('opt.password') : t('opt.passwordUnlock')}</span><input data-extra-password type="password" autocomplete="new-password" placeholder={tool.id === 'protect-pdf' ? t('opt.password') : t('opt.passwordUnlock')} class="h-10 w-full rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold text-slate-700 outline-none focus:border-violet-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"/><span class="mt-1 block text-[10px] font-medium text-slate-500 dark:text-slate-400">{tool.id === 'protect-pdf' ? t('opt.passwordHint') : t('opt.passwordUnlockHint')}</span></label>}
   {tool.id === 'pdf-ocr' && <label class="mt-4 block rounded-2xl border border-slate-100 bg-white/60 p-4 dark:border-white/10 dark:bg-white/[.03]"><span class="mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300">{t('opt.ocrLang')}</span><select data-extra-lang class="h-10 w-full rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">{OCR_LANGUAGE_OPTIONS.map((option) => <option value={option.code} selected={option.code === defaultOcrCode} dir={option.direction}>{option.nativeName}</option>)}</select></label>}
+  {tool.id === 'pdf-to-excel' && <fieldset class="mt-4 rounded-2xl border border-slate-100 bg-white/60 p-4 dark:border-white/10 dark:bg-white/[.03]"><legend class="px-1 text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">{spreadsheetMsg.resultMode}</legend><div class="mt-2 grid gap-3 sm:grid-cols-2"><label class="cursor-pointer rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 has-[:checked]:ring-2 has-[:checked]:ring-emerald-500 dark:border-emerald-400/20 dark:bg-emerald-500/10"><span class="flex items-center gap-2 text-sm font-extrabold text-emerald-800 dark:text-emerald-200"><input data-spreadsheet-mode type="radio" name="spreadsheetMode" value="exact" checked class="h-4 w-4 accent-emerald-600"/>{spreadsheetMsg.exactAppearance}</span><span class="mt-2 block text-[11px] font-medium leading-relaxed text-slate-600 dark:text-slate-300">{spreadsheetMsg.exactHelp}</span></label><label class="cursor-pointer rounded-2xl border border-slate-200 bg-white/70 p-4 has-[:checked]:ring-2 has-[:checked]:ring-violet-500 dark:border-white/10 dark:bg-white/5"><span class="flex items-center gap-2 text-sm font-extrabold text-slate-800 dark:text-slate-100"><input data-spreadsheet-mode type="radio" name="spreadsheetMode" value="editable" class="h-4 w-4 accent-violet-600"/>{spreadsheetMsg.editableCells}</span><span class="mt-2 block text-[11px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">{spreadsheetMsg.editableHelp}</span></label></div></fieldset>}
   {tool.id === 'edit-image' && <section data-edit-editor hidden aria-labelledby="edit-image-heading" class="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white/70 dark:border-white/10 dark:bg-white/[.03]">
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 dark:border-white/10"><h2 id="edit-image-heading" class="text-sm font-extrabold text-slate-900 dark:text-white">{c3('edit')}</h2><div class="flex gap-2"><button type="button" data-edit-rotate-left aria-label={`${c3('rotate')} −90°`} class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-lg hover:border-violet-300 focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-white/10 dark:bg-white/5">↶</button><button type="button" data-edit-rotate-right aria-label={`${c3('rotate')} +90°`} class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-lg hover:border-violet-300 focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-white/10 dark:bg-white/5">↷</button><button type="button" data-edit-flip aria-label={c3('stretch')} class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-base hover:border-violet-300 focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-white/10 dark:bg-white/5">↔</button></div></div>
     <figure class="bg-slate-950 p-3 sm:p-5"><canvas data-edit-preview width="960" height="640" tabindex="0" role="img" aria-label={`${c3('preview')}. ${c3('crop')}: ${c3('dragCorners')}`} class="mx-auto block max-h-[65vh] w-full max-w-3xl touch-none cursor-grab rounded-xl object-contain shadow-2xl outline-none focus-visible:ring-2 focus-visible:ring-violet-400 active:cursor-grabbing"></canvas><figcaption class="mt-2 text-center text-xs font-semibold text-slate-300">{c3('preview')} · {c3('crop')}</figcaption></figure>
@@ -66,7 +74,7 @@ const clientMessages = JSON.stringify({
   import { safeOutputStem } from '../utils/filename';
   const root = document.querySelector<HTMLElement>('[data-extra-workbench]');
   if (root) {
-    const messages = JSON.parse(root.querySelector<HTMLElement>('[data-extra-messages]')?.textContent || '{}') as Record<string, string> & { edit: Record<string, string> };
+    const messages = JSON.parse(root.querySelector<HTMLElement>('[data-extra-messages]')?.textContent || '{}') as Record<string, string> & { edit: Record<string, string>; spreadsheet: Record<string, string> };
     const input = root.querySelector<HTMLInputElement>('[data-extra-input]')!;
     const drop = root.querySelector<HTMLElement>('[data-extra-drop]')!;
     const selected = root.querySelector<HTMLElement>('[data-extra-selected]')!;
@@ -149,7 +157,7 @@ const clientMessages = JSON.stringify({
       control = { cancelled: false, abortController: new AbortController() }; errorBox.hidden = true; resultsBox.hidden = true; progress.hidden = false; root.setAttribute('aria-busy', 'true'); start.hidden = true; cancel.hidden = false;
       const update = (done: number, total: number) => { const value = Math.max(4, Math.round((done / Math.max(1, total)) * 100)); percent.textContent = `${value}%`; bar.style.width = `${value}%`; progress.setAttribute('aria-valuenow', String(value)); status.textContent = messages.processing; };
       try {
-        const opts = { password: root.querySelector<HTMLInputElement>('[data-extra-password]')?.value || '', lang: root.querySelector<HTMLSelectElement>('[data-extra-lang]')?.value || 'eng' };
+        const opts = { password: root.querySelector<HTMLInputElement>('[data-extra-password]')?.value || '', lang: root.querySelector<HTMLSelectElement>('[data-extra-lang]')?.value || 'eng', spreadsheetMode: root.querySelector<HTMLInputElement>('[data-spreadsheet-mode]:checked')?.value || 'exact', messages: messages.spreadsheet };
         const engines: Record<string, Function> = { 'protect-pdf': protectPdf, 'unlock-pdf': unlockPdf, 'repair-pdf': repairPdf, 'metadata-remover': removeMetadata, 'excel-to-pdf': excelToPdf, 'pdf-to-excel': pdfToExcel, 'pdf-ocr': ocr };
         const output = toolId === 'edit-image' ? await editImage(files[0]) : await engines[toolId](files, opts, update, control);
         if (control.cancelled) throw new Error('cancelled');

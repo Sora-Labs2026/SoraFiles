@@ -21,7 +21,8 @@ const tools = [
   'image-converter', 'compress-image', 'heic-to-jpg', 'pdf', 'merge-pdf',
   'split-pdf', 'rotate-pdf', 'remove-pages', 'watermark-pdf', 'page-numbers', 'sign-pdf',
   'jpg-to-pdf', 'pdf-to-jpg', 'pdf-to-word', 'word-to-pdf', 'edit-image', 'protect-pdf',
-  'unlock-pdf', 'repair-pdf', 'metadata-remover', 'pdf-to-excel', 'excel-to-pdf', 'pdf-ocr'
+  'unlock-pdf', 'repair-pdf', 'metadata-remover', 'pdf-to-excel', 'excel-to-pdf', 'pdf-ocr',
+  'resize-image', 'doc-scanner', 'remove-background'
 ];
 
 async function runTests() {

@@ -481,16 +481,21 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
     activeAbortController = new AbortController();
     if (ocrCancelButton) ocrCancelButton.hidden = false;
     try {
-      const { createVisualPdfFromDocx } = await import('../lib/word-to-pdf/visual-pdf');
-      const result = await createVisualPdfFromDocx(await actionFiles[0].arrayBuffer(), {
+      const { convertOfficeToPdf } = await import('../lib/office-wasm/client');
+      const bytes = await convertOfficeToPdf(actionFiles[0], 'writer', {
         signal: activeAbortController.signal,
-        onProgress: (progress) => {
-          if (progress.stage === 'rendering-document') actionStatus.textContent = fidelityMessages.renderingDocument;
-          else if (progress.stage === 'rendering-page') actionStatus.textContent = fidelityMessages.renderingPage.replace('{current}', String(progress.page ?? 1)).replace('{total}', String(progress.total ?? 1));
-          else actionStatus.textContent = fidelityMessages.assembling;
+        onProgress: (stage) => {
+          actionStatus.textContent = stage === 'exporting-pdf' ? fidelityMessages.assembling : fidelityMessages.renderingDocument;
         },
       });
-      await downloadPdfBytes(result.bytes, result.pageCount, `${baseName(actionFiles[0].name)}.pdf`, `${result.pageCount} ${result.pageCount === 1 ? 'page' : 'pages'} · ${readableSize(result.bytes.length)}`, fidelityMessages.wordToPdfResult);
+      const { PDFDocument } = await import('pdf-lib');
+      const verified = await PDFDocument.load(bytes, { ignoreEncryption: false, updateMetadata: false });
+      const pageCount = verified.getPageCount();
+      await downloadPdfBytes(bytes, pageCount, `${baseName(actionFiles[0].name)}.pdf`, `${pageCount} ${pageCount === 1 ? 'page' : 'pages'} · ${readableSize(bytes.length)}`, fidelityMessages.wordToPdfResult);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'officeIsolation') throw new Error(fidelityMessages.officeIsolation);
+      if (error instanceof DOMException && error.name === 'AbortError') throw error;
+      throw new Error(fidelityMessages.officeFailed);
     } finally {
       if (ocrCancelButton) ocrCancelButton.hidden = true;
       activeAbortController = null;

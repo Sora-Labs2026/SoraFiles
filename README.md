@@ -28,15 +28,16 @@ Everyday file tasks should not require an account, a watermark, or an upload que
 
 - Compress, merge, split, rotate, protect, unlock, and repair PDFs
 - Remove pages, add page numbers, watermarks, and signatures
-- Convert between PDF, JPG, DOCX, and XLSX where the documented tool supports it
-- Extract PDF text to DOCX with local OCR for scan-like pages
+- Convert Word and Excel files to PDF with browser-local LibreOffice WebAssembly
+- Preserve PDF pages visually in DOCX or XLSX, with a separate editable-table extraction mode for PDF to Excel
 - Convert, compress, resize, and edit common image formats
+- Remove image backgrounds locally with high-quality AI matting
 - Convert HEIC/HEIF photos to JPG
 - Remove supported metadata locally
 
 The interface is statically rendered with Astro, supports 19 languages, includes right-to-left Arabic layouts, and remains navigable when JavaScript is disabled wherever processing is not required.
 
-The current release contains 25 public tools, 610 generated pages, and 608 localized canonical URLs. The repository is the public source for the live Cloudflare deployment.
+The current release contains 26 public tools across 19 languages. The repository is the public source for the live Cloudflare deployment.
 
 ## Privacy model
 
@@ -52,7 +53,10 @@ Do not use this software as a substitute for your organization’s document-hand
 ## Honest limitations
 
 - PDF compression rasterizes pages. It can remove selectable text, links, forms, signatures, bookmarks, and accessibility structure, and an already efficient PDF can become larger.
-- PDF-to-Word and Word-to-PDF are text-focused conversions, not exact layout reconstruction.
+- PDF-to-Word preserves each page as a full-page visual, so its page content is not editable in Word.
+- PDF-to-Excel offers exact page visuals or best-effort editable cells; arbitrary PDFs do not contain the original formulas, chart data, merged cells, or spreadsheet structure.
+- Word/Excel-to-PDF use LibreOffice WebAssembly locally. Missing non-embedded fonts can still be substituted by the browser runtime.
+- Background removal uses a semantic matting model and may need manual cleanup on transparent, reflective, very fine, or ambiguous edges.
 - OCR accuracy depends on scan quality, language, handwriting, layout, and device resources.
 - Browser codec support, file complexity, and available memory can limit an operation.
 - Static image conversion can flatten layers, animation, extra frames/pages, metadata, or color-profile information.
@@ -142,11 +146,11 @@ tests/           unit, browser, fixtures, and real-output validation
 
 Currently verified:
 
-- 25 public file tools and real output fixtures
+- 26 public file tools and real output fixtures
 - Cancellable PDF compression, merge, split, rotate, JPG-to-PDF, and PDF-to-JPG jobs with stale-result protection
 - Structured corrupt/encrypted-file recovery and tool-specific output validation before downloads appear
 - Local OCR assets for supported languages
-- 610 generated pages and 608 localized canonical URLs
+- Localized canonical routes for every public tool across all 19 supported languages
 - Responsive light/dark/system themes, keyboard access, reduced motion, RTL, and zoom/reflow coverage
 - No account requirement, no watermark, and no overwrite of the original file
 

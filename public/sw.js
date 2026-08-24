@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'sorafiles-local-';
-const CACHE_NAME = `${CACHE_PREFIX}v2`;
+const CACHE_NAME = `${CACHE_PREFIX}v3`;
 const CORE = ['/', '/site.webmanifest', '/favicon-48x48.png', '/icon-192.png'];
 const MAX_NAVIGATION_ENTRIES = 20;
 const MAX_STATIC_ENTRIES = 80;
