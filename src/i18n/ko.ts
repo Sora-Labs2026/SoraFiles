@@ -57,8 +57,8 @@ export const ko = createLocaleContent({
     'rotate-pdf': { title: 'PDF 회전', short: '페이지 방향 수정', description: 'PDF의 모든 페이지를 90°, 180° 또는 270° 회전합니다.', note: '모든 페이지에 같은 각도를 적용합니다.' },
     'jpg-to-pdf': { title: 'JPG를 PDF로', short: '이미지를 한 PDF로', description: 'JPG와 PNG 이미지를 선택한 순서대로 한 PDF로 만듭니다.' },
     'pdf-to-jpg': { title: 'PDF를 JPG로', short: '페이지를 이미지로', description: 'PDF의 각 페이지를 JPG로 렌더링하고 ZIP으로 저장합니다.' },
-    'pdf-to-word': { title: 'PDF를 Word로', short: '편집 가능한 텍스트 추출', description: 'PDF의 읽을 수 있는 텍스트로 기본 DOCX를 만듭니다.', note: '스캔한 페이지는 기기 내 OCR로 인식되며, 정확한 레이아웃 재현은 제공하지 않습니다.' },
-    'word-to-pdf': { title: 'Word를 PDF로', short: '텍스트 중심 변환', description: 'DOCX의 기본 텍스트로 깔끔한 PDF를 만듭니다.', note: '복잡한 표, 이미지, 머리글, 글꼴, 정확한 배치는 단순화되거나 생략됩니다.' },
+    'pdf-to-word': { title: 'PDF를 Word로', short: '모든 페이지 모양 보존', description: '텍스트, 간격, 로고, 이미지를 보존하는 고품질 DOCX를 만듭니다.', note: '각 페이지는 전체 페이지 이미지로 보존되며 Word에서 내용을 편집할 수 없습니다.' },
+    'word-to-pdf': { title: 'Word를 PDF로', short: 'Word 레이아웃 보존', description: 'DOCX의 글꼴, 간격, 이미지, 표, 머리글과 바닥글을 PDF로 렌더링합니다.', note: '페이지 모양은 보존되지만 PDF 텍스트는 선택할 수 없습니다.' },
   },
   toolTemplate: {
     h1: '{tool} — 업로드 없이 기기에서 처리',

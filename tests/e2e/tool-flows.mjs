@@ -51,8 +51,8 @@ async function runSmoke(page) {
 
 async function runPdfToWord(page, fixtureName = 'text') {
   const fixture = fixtureName === 'cmap'
-    ? { file: 'mozilla-cmap-gbkp-euc-h.pdf', expected: '我们都是黑体字', secondExpected: undefined }
-    : { file: 'text-two-page.pdf', expected: 'Sora Files page one', secondExpected: 'Sora Files page two' };
+    ? { file: 'mozilla-cmap-gbkp-euc-h.pdf', expectedPages: 1 }
+    : { file: 'text-two-page.pdf', expectedPages: 2 };
   const diagnostics = [];
   page.on('console', (message) => diagnostics.push(`console:${message.type()}: ${message.text()}`));
   page.on('pageerror', (error) => diagnostics.push(`pageerror: ${error.stack ?? error.message}`));
@@ -61,7 +61,6 @@ async function runPdfToWord(page, fixtureName = 'text') {
   await page.goto(`${baseUrl}/pdf-to-word`, { waitUntil: 'domcontentloaded' });
   await page.locator('#action-input').setInputFiles(fixturePath(fixture.file));
   await page.locator('#action-work').waitFor({ state: 'visible' });
-  await page.locator('#fidelity-confirm').check();
   await page.locator('#action-process').click();
 
   try {
@@ -78,18 +77,18 @@ async function runPdfToWord(page, fixtureName = 'text') {
   assert.match(download.suggestedFilename(), /\.docx$/i, 'PDF to Word must download a DOCX file.');
   const downloadPath = await download.path();
   assert.ok(downloadPath, 'Browser download path must be available.');
-  const { text } = await validateDocx(await readFile(downloadPath), fixture.expected);
-  if (fixture.secondExpected) {
-    assert.match(text, new RegExp(fixture.secondExpected, 'i'), 'DOCX must contain text from the second PDF page.');
-  }
-  console.log(`PASS pdf-to-word ${download.suggestedFilename()} (${text.trim().length} extracted characters)`);
+  const { entries } = await validateDocx(await readFile(downloadPath));
+  const media = Object.keys(entries).filter((name) => /^word\/media\/.*\.png$/i.test(name));
+  assert.equal(media.length, fixture.expectedPages, 'Visual DOCX must contain one lossless page image per PDF page.');
+  const documentXml = new TextDecoder().decode(entries['word/document.xml']);
+  assert.equal((documentXml.match(/<w:sectPr\b/g) ?? []).length, fixture.expectedPages, 'Visual DOCX must preserve one Word section per PDF page.');
+  console.log(`PASS pdf-to-word ${download.suggestedFilename()} (${media.length} page visuals)`);
 }
 
 async function runPdfToWordNoText(page) {
   await page.goto(`${baseUrl}/pdf-to-word`, { waitUntil: 'domcontentloaded' });
   await page.locator('#action-input').setInputFiles(fixturePath('scan-english.pdf'));
   await page.locator('#action-work').waitFor({ state: 'visible' });
-  await page.locator('#fidelity-confirm').check();
   await page.locator('#action-process').click();
   await page.locator('#action-result').waitFor({ state: 'visible', timeout: 60_000 });
   const [download] = await Promise.all([
@@ -98,9 +97,9 @@ async function runPdfToWordNoText(page) {
   ]);
   const downloadPath = await download.path();
   assert.ok(downloadPath, 'Scan OCR download path must be available.');
-  const { text } = await validateDocx(await readFile(downloadPath), 'Sora Files local OCR');
-  assert.match(text, /Sora Files local OCR/i);
-  console.log('PASS pdf-to-word local OCR scan recovery');
+  const { entries } = await validateDocx(await readFile(downloadPath));
+  assert.equal(Object.keys(entries).filter((name) => /^word\/media\/.*\.png$/i.test(name)).length, 1, 'Scanned PDF page must be preserved as one page visual.');
+  console.log('PASS pdf-to-word scanned page visual preservation');
 }
 
 async function processDocumentAction(page, { route, files, configure }) {
@@ -357,11 +356,11 @@ async function runDocumentActions(page) {
   const wordToPdf = await processDocumentAction(page, {
     route: 'word-to-pdf',
     files: ['single-paragraph.docx'],
-    configure: async (currentPage) => currentPage.locator('#fidelity-confirm').check(),
   });
   const wordPdf = await validatePdf(wordToPdf.buffer);
   assert.ok(wordPdf.pageCount >= 1, 'Word to PDF must create at least one page.');
-  assert.match(await extractPdfText(wordToPdf.buffer), /Walking on imported air/i, 'Word to PDF must preserve readable fixture text.');
+  assert.ok(wordToPdf.buffer.byteLength > 2_000, 'Word to PDF must contain rendered page content.');
+  assert.match(Buffer.from(wordToPdf.buffer).toString('latin1'), /\/Subtype\s*\/Image/, 'Word to PDF must preserve the rendered document as a page image.');
   console.log(`PASS word-to-pdf ${wordToPdf.filename} ${wordToPdf.stats}`);
 }
 

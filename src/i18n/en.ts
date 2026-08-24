@@ -222,12 +222,12 @@ export const en: LocaleContent = {
       h1: 'PDF to JPG', intro: 'Render every PDF page as a JPG and download multiple pages in a ZIP.', sectionTitle: 'How to convert PDF to JPG', paragraphs: [], steps: [], note: '', faqs: []
     },
     'pdf-to-word': {
-      title: 'PDF to Word', short: 'Extract editable text', description: 'Create a basic DOCX from readable text in a PDF.',
-      h1: 'PDF to Word', intro: 'Create a basic DOCX from readable text in a PDF.', sectionTitle: 'How to convert PDF to Word', paragraphs: [], steps: [], note: '', faqs: []
+      title: 'PDF to Word', short: 'Preserve every page visually', description: 'Create a high-fidelity DOCX that preserves each PDF page’s text, spacing, logos, and images.',
+      h1: 'PDF to Word with exact visual fidelity', intro: 'Preserve every PDF page as a full-page visual in a DOCX without uploading the file.', sectionTitle: 'How high-fidelity PDF to Word works', paragraphs: ['SoraFiles renders each PDF page locally at high resolution and places it on a matching Word page.', 'The result preserves appearance rather than rebuilding the document structure. Page content is therefore not editable in Word.'], steps: ['Choose a PDF.', 'Render every page locally.', 'Download the visual-fidelity DOCX and verify it.'], note: 'The page appearance is preserved, but text and objects are embedded in full-page visuals and are not editable.', faqs: [{ question: 'Will the Word file look like the PDF?', answer: 'Yes. Each page is preserved as a high-resolution full-page visual.' }, { question: 'Can I edit its text?', answer: 'No. Exact visual preservation and editable reconstruction are different tasks; this mode prioritizes appearance.' }]
     },
     'word-to-pdf': {
-      title: 'Word to PDF', short: 'Text-first conversion', description: 'Turn DOCX text into a clean, basic PDF.',
-      h1: 'Word to PDF', intro: 'Turn DOCX text into a clean, basic PDF.', sectionTitle: 'How to convert Word to PDF', paragraphs: [], steps: [], note: '', faqs: []
+      title: 'Word to PDF', short: 'Preserve the Word layout', description: 'Render DOCX pages with their fonts, spacing, images, tables, headers, and footers into PDF.',
+      h1: 'Word to PDF with high visual fidelity', intro: 'Render a DOCX page by page in your browser and preserve its appearance in PDF.', sectionTitle: 'How high-fidelity Word to PDF works', paragraphs: ['SoraFiles uses a local DOCX renderer for fonts, images, tables, headers, footers, spacing, and page geometry.', 'Each rendered page is preserved in the PDF as a lossless visual, so its text is not selectable. Word-only features can still vary from Microsoft Word.'], steps: ['Choose a DOCX file.', 'Render its pages locally.', 'Download the visual-fidelity PDF and verify it.'], note: 'The PDF prioritizes appearance. Its pages are flattened, so text is not selectable and Word-only rendering features may differ.', faqs: [{ question: 'Are images and layout preserved?', answer: 'Supported DOCX images, tables, spacing, headers, footers, and fonts are rendered locally.' }, { question: 'Can I select the PDF text?', answer: 'No. The pages are preserved as lossless visuals to avoid text-only conversion damage.' }]
     },
   },
   pages: {
