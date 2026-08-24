@@ -5,6 +5,7 @@ import type { LocalePath } from '../i18n/config';
 import { getWorkbenchMessages } from '../i18n/workbench';
 import { OCR_LANGUAGE_OPTIONS, OCR_LANGUAGE_BY_LOCALE } from '../lib/ocr/languages';
 import { getOcrMessages } from '../i18n/ocr';
+import { getWatermarkPdfMessages } from '../i18n/documentTools';
 import ToolIcon from './ToolIcon.astro';
 import { liveText } from '../data/liveI18n';
 
@@ -28,6 +29,7 @@ const {
 const m = getWorkbenchMessages(locale);
 const t = (path: string) => liveText(locale, path);
 const ocrMsg = getOcrMessages(locale);
+const watermarkMsg = getWatermarkPdfMessages(locale);
 const defaultOcrCode = OCR_LANGUAGE_BY_LOCALE[locale] ?? 'eng';
 
 const tones = {
@@ -45,7 +47,7 @@ const actionTones: Record<string, keyof typeof tones> = {
 };
 const actionTone = actionTones[tool.id] ?? 'indigo';
 ---
-<section data-workbench id="document-tool" aria-labelledby="document-tool-heading" class="mx-auto max-w-5xl px-5 sm:px-6" data-tool={tool.slug} data-accept={tool.accept} data-multiple={String(tool.multiple)} data-localized={locale !== 'en' ? 'true' : 'false'} data-copy-note={copy.note} data-locale={locale}>
+<section data-workbench id="document-tool" aria-labelledby="document-tool-heading" class="mx-auto max-w-5xl px-5 sm:px-6" data-tool={tool.slug} data-accept={tool.accept} data-multiple={String(tool.multiple)} data-localized={locale !== 'en' ? 'true' : 'false'} data-copy-note={copy.note} data-merge-minimum={t('wb.err.tooFew')} data-split-compact-warning={t('lim.compress')} data-locale={locale}>
   <div class="overflow-hidden rounded-card bg-surface shadow-card">
     <div class="border-b border-line px-5 py-4 sm:px-7"><div class="flex flex-wrap items-center justify-between gap-3"><div class="flex items-center gap-3"><span class:list={['flex h-10 w-10 items-center justify-center rounded-xl', tones[actionTone]]}><ToolIcon icon={tool.icon}/></span><div><p class="eyebrow text-xs font-semibold text-blue">{m.localFileTool}</p><h2 id="document-tool-heading" class="mt-1 text-lg font-semibold tracking-tight">{copy.title}</h2></div></div><div class="inline-flex items-center gap-2 rounded-full bg-green-soft px-3 py-1.5 text-xs font-medium text-green"><span class="h-2 w-2 rounded-full bg-green" aria-hidden="true"></span>{m.noUpload}</div></div></div>
     <div id="action-empty" class="p-4 sm:p-7">
@@ -61,8 +63,9 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
     </div>
     <div id="action-work" hidden class="grid min-w-0 lg:grid-cols-[1fr_0.85fr]">
       <div class="min-w-0 border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
-        <div class="flex items-center justify-between gap-4"><div><p class="text-sm font-semibold">{tool.multiple ? m.selectedFiles : m.selectedFile}</p><p id="action-total" class="mt-1 text-xs text-muted"></p></div><button id="action-remove" type="button" class="min-h-10 rounded-control px-3 text-sm text-muted hover:bg-canvas hover:text-ink">{m.removeAll}</button></div>
+        <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="text-sm font-semibold">{tool.multiple ? m.selectedFiles : m.selectedFile}</p><p id="action-total" class="mt-1 text-xs text-muted"></p></div><div class="flex flex-wrap items-center gap-2">{tool.multiple && <button id="action-add" type="button" class="min-h-10 rounded-control border border-line bg-surface px-3 text-sm font-medium text-ink hover:border-line-strong">+ {m.chooseFiles}</button>}<button id="action-remove" type="button" class="min-h-10 rounded-control px-3 text-sm text-muted hover:bg-canvas hover:text-ink">{m.removeAll}</button></div></div>
         <ol id="action-file-list" class="mt-5 max-h-80 divide-y divide-line overflow-y-auto rounded-xl border border-line"></ol>
+        {tool.slug === 'merge-pdf' && <p id="merge-minimum" class="mt-3 text-sm font-medium text-amber" aria-live="polite">{t('wb.err.tooFew')}</p>}
       </div>
       <form data-workbench-controls id="action-form" class="min-w-0 p-5 sm:p-7">
         {tool.slug === 'pdf-to-word' && (
@@ -79,13 +82,38 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
           </div>
         )}
         {tool.slug === 'rotate-pdf' && <div><label for="rotate-angle" class="text-sm font-semibold">{m.rotation}</label><select id="rotate-angle" name="rotateAngle" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></div>}
-        {tool.slug === 'remove-pages' && <div><label for="remove-page-spec" class="text-sm font-semibold">{t('opt.pages')}</label><input id="remove-page-spec" name="removePageSpec" type="text" inputmode="numeric" autocomplete="off" placeholder={t('opt.pagesHint')} class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/><p class="mt-2 text-xs leading-5 text-muted">{t('opt.pagesHint')}</p></div>}
-        {tool.slug === 'watermark-pdf' && <div class="space-y-5"><div><label for="watermark-text" class="text-sm font-semibold">{t('opt.text')}</label><input id="watermark-text" name="watermarkText" type="text" autocomplete="off" maxlength="60" placeholder={t('opt.text')} class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div><div><div class="flex items-center justify-between gap-4"><label for="watermark-opacity" class="text-sm font-semibold">{t('opt.opacity')}</label><output id="watermark-opacity-output" for="watermark-opacity" class="font-mono text-sm">20%</output></div><input id="watermark-opacity" name="watermarkOpacity" type="range" min="5" max="50" step="5" value="20" aria-valuetext="20%" class="mt-3 w-full accent-ink"/></div></div>}
+        {tool.slug === 'split-pdf' && <fieldset><legend class="text-sm font-semibold">{m.whatPreserved}</legend><div class="mt-3 grid gap-2 sm:grid-cols-2"><label class="flex cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-3 hover:border-line-strong has-[:checked]:border-cyan has-[:checked]:bg-cyan-soft"><input type="radio" name="splitMode" value="smart" checked class="mt-1 accent-cyan"/><span><span class="block text-sm font-medium">{m.smallerFile}</span><span class="mt-1 block text-xs leading-5 text-muted">{t('lim.compress')}</span></span></label><label class="flex cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-3 hover:border-line-strong has-[:checked]:border-cyan has-[:checked]:bg-cyan-soft"><input type="radio" name="splitMode" value="preserve" class="mt-1 accent-cyan"/><span><span class="block text-sm font-medium">{m.betterQuality}</span><span class="mt-1 block text-xs leading-5 text-muted">{copy.note}</span></span></label></div></fieldset>}
+        {tool.slug === 'remove-pages' && <div><label for="remove-page-spec" class="text-sm font-semibold">{t('opt.pages')}</label><input id="remove-page-spec" name="removePageSpec" type="text" inputmode="text" autocomplete="off" placeholder={t('opt.pagesHint')} class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/><p class="mt-2 text-xs leading-5 text-muted">{t('opt.pagesHint')}</p></div>}
+        {tool.slug === 'watermark-pdf' && <div class="space-y-5">
+          <fieldset><legend class="text-sm font-semibold">{watermarkMsg.watermarkType}</legend><div class="mt-3 grid grid-cols-2 rounded-control bg-canvas p-1 text-sm"><button type="button" data-watermark-mode="text" aria-pressed="true" class="min-h-11 rounded-md bg-surface px-3 font-medium text-ink shadow-small hover:text-blue-strong focus-visible:ring-2 focus-visible:ring-blue">{watermarkMsg.text}</button><button type="button" data-watermark-mode="image" aria-pressed="false" class="min-h-11 rounded-md px-3 font-medium text-muted hover:text-ink focus-visible:ring-2 focus-visible:ring-blue">{watermarkMsg.image}</button></div></fieldset>
+          <div data-watermark-panel="text"><label for="watermark-text" class="text-sm font-semibold">{t('opt.text')}</label><input id="watermark-text" name="watermarkText" type="text" autocomplete="off" maxlength="60" placeholder={t('opt.text')} class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div>
+          <div data-watermark-panel="image" hidden>
+            <label for="watermark-image" class="text-sm font-semibold">{watermarkMsg.uploadImage}</label>
+            <input id="watermark-image" name="watermarkImage" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" class="mt-2 block min-h-12 w-full rounded-control border border-line bg-surface p-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-violet-soft file:px-3 file:py-2 file:font-medium file:text-violet hover:border-line-strong focus-visible:ring-2 focus-visible:ring-blue"/>
+            <p class="mt-2 text-xs leading-5 text-muted">{watermarkMsg.imageHelp}</p>
+            <fieldset id="watermark-image-options" hidden class="mt-4"><legend class="text-sm font-semibold">{watermarkMsg.imageTreatment}</legend><div class="mt-3 grid gap-2 sm:grid-cols-2">
+              <label class="flex cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-3 hover:border-line-strong has-[:checked]:border-violet has-[:checked]:bg-violet-soft"><input type="radio" name="watermarkImageTreatment" value="as-is" checked class="mt-1 accent-violet"/><span><span class="block text-sm font-medium">{watermarkMsg.useAsIs}</span><span class="mt-1 block text-xs leading-5 text-muted">{watermarkMsg.useAsIsHelp}</span></span></label>
+              <label class="flex cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-3 hover:border-line-strong has-[:checked]:border-violet has-[:checked]:bg-violet-soft"><input type="radio" name="watermarkImageTreatment" value="remove" class="mt-1 accent-violet"/><span><span class="block text-sm font-medium">{watermarkMsg.removeBackground}</span><span class="mt-1 block text-xs leading-5 text-muted">{watermarkMsg.removeBackgroundHelp}</span></span></label>
+            </div></fieldset>
+            <div id="watermark-cleanup-controls" hidden class="mt-4"><div class="flex items-center justify-between gap-3"><label for="watermark-cleanup" class="text-xs font-medium text-muted">{watermarkMsg.cleanupStrength}</label><output id="watermark-cleanup-output" for="watermark-cleanup" class="font-mono text-xs font-medium text-muted">32%</output></div><input id="watermark-cleanup" name="watermarkCleanup" type="range" min="8" max="72" value="32" aria-valuetext="32%" class="mt-2 w-full accent-violet"/></div>
+            <div id="watermark-image-preview" hidden class="mt-4 grid grid-cols-2 gap-2"><figure class="min-w-0 overflow-hidden rounded-control border border-line bg-surface"><div class="grid h-28 place-items-center bg-[linear-gradient(45deg,var(--color-canvas)_25%,transparent_25%),linear-gradient(-45deg,var(--color-canvas)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,var(--color-canvas)_75%),linear-gradient(-45deg,transparent_75%,var(--color-canvas)_75%)] bg-[length:16px_16px] bg-[position:0_0,0_8px,8px_-8px,-8px_0]"><img id="watermark-image-before" alt={watermarkMsg.beforeAlt} width="320" height="112" class="h-28 w-full object-contain"/></div><figcaption class="border-t border-line px-2 py-1.5 text-xs text-muted">{watermarkMsg.before}</figcaption></figure><figure class="min-w-0 overflow-hidden rounded-control border border-line bg-surface"><div class="grid h-28 place-items-center bg-[linear-gradient(45deg,var(--color-canvas)_25%,transparent_25%),linear-gradient(-45deg,var(--color-canvas)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,var(--color-canvas)_75%),linear-gradient(-45deg,transparent_75%,var(--color-canvas)_75%)] bg-[length:16px_16px] bg-[position:0_0,0_8px,8px_-8px,-8px_0]"><img id="watermark-image-after" alt={watermarkMsg.afterAlt} width="320" height="112" class="h-28 w-full object-contain"/></div><figcaption class="border-t border-line px-2 py-1.5 text-xs text-muted">{watermarkMsg.after}</figcaption></figure></div>
+          </div>
+          <div><div class="flex items-center justify-between gap-4"><label for="watermark-opacity" class="text-sm font-semibold">{t('opt.opacity')}</label><output id="watermark-opacity-output" for="watermark-opacity" class="font-mono text-sm">20%</output></div><input id="watermark-opacity" name="watermarkOpacity" type="range" min="5" max="50" step="5" value="20" aria-valuetext="20%" class="mt-3 w-full accent-ink"/></div>
+        </div>}
         {tool.slug === 'page-numbers' && <div class="grid gap-5 sm:grid-cols-2"><div><label for="page-number-position" class="text-sm font-semibold">{t('opt.position')}</label><select id="page-number-position" name="pageNumberPosition" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="bottom-center">{t('optval.bottom-center')}</option><option value="bottom-right">{t('optval.bottom-right')}</option><option value="top-center">{t('optval.top-center')}</option><option value="top-right">{t('optval.top-right')}</option></select></div><div><label for="page-number-start" class="text-sm font-semibold">{t('opt.page')}</label><input id="page-number-start" name="pageNumberStart" type="number" inputmode="numeric" min="1" max="999999" value="1" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div></div>}
-        {tool.slug === 'sign-pdf' && <div><label for="signature-text" class="text-sm font-semibold">{t('opt.signature')} — {t('opt.text')}</label><input id="signature-text" name="signatureText" type="text" autocomplete="off" maxlength="80" aria-describedby="signature-help" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/><p id="signature-help" class="mt-2 text-xs leading-5 text-muted">{t('lim.sign')}</p><canvas id="signature-canvas" width="720" height="240" role="img" class="mt-3 h-32 w-full touch-none rounded-control border border-line bg-white" aria-label={t('opt.signature')}>{t('lim.sign')}</canvas><div class="mt-2 flex items-center justify-end"><button id="signature-clear" type="button" class="min-h-10 shrink-0 rounded-control border border-line px-3 text-sm text-muted hover:bg-canvas hover:text-ink">{t('opt.clear')}</button></div><label for="signature-scope" class="mt-5 block text-sm font-semibold">{t('opt.page')}</label><select id="signature-scope" name="signatureScope" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="last">{t('optval.last')}</option><option value="first">{t('optval.first')}</option><option value="all">{t('optval.all')}</option></select></div>}
+        {tool.slug === 'sign-pdf' && <div>
+          <fieldset><legend class="text-sm font-semibold">{t('opt.signature')}</legend><div class="mt-3 grid grid-cols-3 rounded-control bg-canvas p-1 text-sm"><button type="button" data-sign-mode="type" aria-pressed="true" class="min-h-10 rounded-md bg-surface px-2 font-medium text-ink shadow-small">Type</button><button type="button" data-sign-mode="draw" aria-pressed="false" class="min-h-10 rounded-md px-2 font-medium text-muted">Draw</button><button type="button" data-sign-mode="upload" aria-pressed="false" class="min-h-10 rounded-md px-2 font-medium text-muted">Upload</button></div></fieldset>
+          <div data-sign-panel="type" class="mt-4"><label for="signature-text" class="text-sm font-semibold">Your signature</label><input id="signature-text" name="signatureText" type="text" autocomplete="off" maxlength="80" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div>
+          <div data-sign-panel="draw" hidden class="mt-4"><p class="text-sm font-semibold">Draw your signature</p><canvas id="signature-draw-canvas" width="720" height="240" class="mt-2 h-32 w-full touch-none select-none rounded-control border border-line bg-white [-webkit-user-select:none]" aria-label="Draw your signature"></canvas></div>
+          <div data-sign-panel="upload" hidden class="mt-4"><label for="signature-upload" class="text-sm font-semibold">Upload a signature image</label><input id="signature-upload" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" class="mt-2 block min-h-12 w-full rounded-control border border-line bg-surface p-2 text-sm"/><div id="signature-upload-controls" hidden class="mt-3"><div class="flex items-center justify-between gap-3"><label for="signature-cleanup" class="text-xs font-medium text-muted">Background cleanup</label><output id="signature-cleanup-output" for="signature-cleanup" class="text-xs font-medium text-muted">32%</output></div><input id="signature-cleanup" type="range" min="8" max="72" value="32" class="mt-2 w-full accent-blue"/><div class="mt-3 grid grid-cols-2 gap-2"><figure class="overflow-hidden rounded-lg border border-line bg-white"><img id="signature-upload-before" alt="Uploaded signature before background cleanup" class="h-24 w-full object-contain"/><figcaption class="border-t border-line px-2 py-1 text-[10px] text-muted">Before</figcaption></figure><figure class="overflow-hidden rounded-lg border border-line bg-white"><img id="signature-upload-after" alt="Signature after background cleanup" class="h-24 w-full object-contain"/><figcaption class="border-t border-line px-2 py-1 text-[10px] text-muted">After</figcaption></figure></div></div></div>
+          <canvas id="signature-canvas" width="720" height="240" hidden aria-hidden="true"></canvas>
+          <div class="mt-3 flex items-center justify-end"><button id="signature-clear" type="button" class="min-h-10 shrink-0 rounded-control border border-line px-3 text-sm text-muted hover:bg-canvas hover:text-ink">{t('opt.clear')}</button></div>
+          <div id="signature-placement" hidden class="mt-5 rounded-xl border border-line bg-canvas p-3"><div class="flex items-center justify-between gap-3"><label for="signature-page" class="text-sm font-semibold">{t('opt.page')}</label><input id="signature-page" type="number" inputmode="numeric" min="1" value="1" class="min-h-10 w-24 rounded-control border border-line bg-surface px-3 text-sm"/></div><div id="signature-page-stage" class="relative mx-auto mt-3 w-fit max-w-full overflow-hidden rounded-lg bg-white shadow-small"><canvas id="signature-page-preview" class="block h-auto max-h-[22rem] w-auto max-w-full"></canvas><img id="signature-overlay" alt="Signature placement — drag to reposition" draggable="false" class="absolute left-[62%] top-[76%] w-[30%] touch-none select-none object-contain [-webkit-user-drag:none] [-webkit-user-select:none]"/></div><div class="mt-3 flex items-center justify-between gap-3"><label for="signature-size" class="text-xs font-medium text-muted">Signature size</label><input id="signature-size" type="range" min="15" max="55" value="30" class="w-2/3 accent-blue"/></div><p class="mt-2 text-xs leading-5 text-muted">Drag the signature to the exact position. The page preview and downloaded PDF use the same normalized coordinates.</p></div>
+          <p id="signature-help" class="mt-4 rounded-control bg-blue-soft px-4 py-3 text-xs leading-5 text-blue-strong">A drawn signature is an image stamp, not a cryptographic digital signature.</p>
+        </div>}
         {tool.slug === 'jpg-to-pdf' && <div><label for="image-page-size" class="text-sm font-semibold">{m.pageSize}</label><select id="image-page-size" name="imagePageSize" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="a4">A4</option><option value="image">{m.original}</option></select></div>}
         {tool.slug === 'pdf-to-jpg' && <div><label for="jpg-resolution" class="text-sm font-semibold">{m.imageQuality}</label><select id="jpg-resolution" name="jpgResolution" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="1.5">108 DPI</option><option value="2" selected>144 DPI</option><option value="2.5">180 DPI</option></select></div>}
-        <div class="rounded-control bg-blue-soft px-4 py-3 text-sm leading-6 text-blue-strong" class:list={[tool.slug !== 'merge-pdf' && tool.slug !== 'split-pdf' && tool.slug !== 'pdf-to-word' && tool.slug !== 'word-to-pdf' ? 'mt-5' : '']}>
+        <div id="action-tool-note" hidden={tool.slug === 'sign-pdf'} class="rounded-control bg-blue-soft px-4 py-3 text-sm leading-6 text-blue-strong" class:list={[tool.slug !== 'merge-pdf' && tool.slug !== 'split-pdf' && tool.slug !== 'pdf-to-word' && tool.slug !== 'word-to-pdf' ? 'mt-5' : '']}>
           {tool.slug === 'pdf-to-word' ? ocrMsg.layoutWarning : copy.note}
         </div>
         {(tool.slug === 'pdf-to-word' || tool.slug === 'word-to-pdf') && <label class="mt-5 flex cursor-pointer items-start gap-3 text-sm leading-6"><input id="fidelity-confirm" name="fidelityConfirm" type="checkbox" class="mt-1.5 accent-blue"/><span>{m.confirmLimitation}</span></label>}
@@ -99,6 +127,7 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
 </section>
 
 <script type="application/json" id="action-workbench-messages" is:inline set:html={JSON.stringify(m).replace(/</g, '\\u003c')}></script>
+<script type="application/json" id="watermark-pdf-messages" is:inline set:html={JSON.stringify(watermarkMsg).replace(/</g, '\\u003c')}></script>
 
 <script>
   import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -107,8 +136,10 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
   import type { LocalePath } from '../i18n/config';
   import { getOcrMessages, formatOcrMessage } from '../i18n/ocr';
   import type { OcrLanguageCode } from '../lib/ocr/languages';
+  import type { WatermarkPdfMessages } from '../i18n/documentTools';
 
   const actionMessages = JSON.parse(document.querySelector('#action-workbench-messages')?.textContent || '{}') as WorkbenchMessages;
+  const watermarkMessages = JSON.parse(document.querySelector('#watermark-pdf-messages')?.textContent || '{}') as WatermarkPdfMessages;
   type ActionTool = 'merge-pdf' | 'split-pdf' | 'rotate-pdf' | 'remove-pages' | 'watermark-pdf' | 'page-numbers' | 'sign-pdf' | 'jpg-to-pdf' | 'pdf-to-jpg' | 'pdf-to-word' | 'word-to-pdf';
   const actionRoot = document.querySelector<HTMLElement>('#document-tool'); if (!actionRoot) throw new Error('Missing document tool.');
   const localizedAction = actionRoot.dataset.localized === 'true';
@@ -148,33 +179,69 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
   new MutationObserver(localizeActionMutations).observe(actionRoot, { childList: true, subtree: true, characterData: true });
 
   let actionFiles: File[] = []; let actionUrl: string | null = null; let signatureHasInk = false;
+  let watermarkMode: 'text' | 'image' = 'text';
+  let watermarkSourceCanvas: HTMLCanvasElement | null = null;
+  let watermarkProcessedCanvas: HTMLCanvasElement | null = null;
+  let watermarkUploadUrl: string | null = null;
+  let signatureUploadUrl: string | null = null;
+  let signaturePdfPreview: any = null;
+  let signaturePreviewTask: { cancel: () => void; promise: Promise<unknown> } | null = null;
   const readableSize = (bytes: number) => bytes < 1000 ? `${bytes} B` : bytes < 1_000_000 ? `${(bytes / 1000).toFixed(0)} KB` : `${(bytes / 1_000_000).toFixed(2)} MB`;
   const baseName = (name: string) => safeOutputStem(name);
   const isPdf = async (file: File) => new TextDecoder('ascii').decode(await file.slice(0, 5).arrayBuffer()) === '%PDF-';
   const imageKind = async (file: File) => { const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer()); if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpg'; if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'png'; return null; };
   const isDocx = async (file: Blob) => { if (new TextDecoder('ascii').decode(await file.slice(0, 2).arrayBuffer()) !== 'PK') return false; const { unzipSync } = await import('fflate'); try { const archive = unzipSync(new Uint8Array(await file.arrayBuffer()), { filter: fileInfo => fileInfo.name === 'word/document.xml' && fileInfo.originalSize <= 20_000_000 }); return Boolean(archive['word/document.xml']); } catch { return false; } };
   const clearActionUrl = () => { if (actionUrl) URL.revokeObjectURL(actionUrl); actionUrl = null; actionResult.hidden = true; };
-  const resetAction = () => { clearActionUrl(); actionFiles = []; actionInput.value = ''; actionInput.removeAttribute('aria-invalid'); actionEmpty.hidden = false; actionWork.hidden = true; actionError.hidden = true; actionStatus.textContent = ''; if (ocrCancelButton) ocrCancelButton.hidden = true; };
+  const resetAction = () => { clearActionUrl(); if (signatureUploadUrl) URL.revokeObjectURL(signatureUploadUrl); signatureUploadUrl = null; if (watermarkUploadUrl) URL.revokeObjectURL(watermarkUploadUrl); watermarkUploadUrl = null; watermarkSourceCanvas = null; watermarkProcessedCanvas = null; signaturePreviewTask?.cancel(); signaturePreviewTask = null; void signaturePdfPreview?.cleanup(); signaturePdfPreview = null; signatureHasInk = false; actionFiles = []; actionInput.value = ''; actionInput.removeAttribute('aria-invalid'); actionEmpty.hidden = false; actionWork.hidden = true; actionError.hidden = true; actionStatus.textContent = ''; if (ocrCancelButton) ocrCancelButton.hidden = true; };
   const failSelection = (message: string) => { resetAction(); actionError.textContent = message; actionError.hidden = false; actionInput.setAttribute('aria-invalid', 'true'); actionError.focus(); };
 
-  const loadActionFiles = async (files: File[]) => {
-    resetAction();
+  const renderActionFiles = () => {
+    const list = actionEl<HTMLOListElement>('#action-file-list');
+    list.textContent = '';
+    actionFiles.forEach((file, index) => {
+      const item = document.createElement('li');
+      item.className = 'flex min-w-0 items-center gap-2 px-3 py-3';
+      item.dataset.fileIndex = String(index);
+      const count = document.createElement('span'); count.className = 'shrink-0 font-mono text-xs text-muted'; count.textContent = String(index + 1).padStart(2, '0');
+      const text = document.createElement('span'); text.className = 'min-w-0 flex-1';
+      const name = document.createElement('span'); name.className = 'block truncate text-sm font-medium'; setDisplayedFilename(name, file.name);
+      const size = document.createElement('span'); size.className = 'mt-0.5 block text-xs text-muted'; size.textContent = readableSize(file.size);
+      text.append(name, size);
+      const controls = document.createElement('span'); controls.className = 'flex shrink-0 items-center gap-1';
+      if (actionRoot.dataset.multiple === 'true' && actionRoot.dataset.tool !== 'metadata-remover') {
+        for (const [label, delta, symbol] of [['Move up', -1, '↑'], ['Move down', 1, '↓']] as const) {
+          const button = document.createElement('button'); button.type = 'button'; button.className = 'inline-flex h-10 w-10 items-center justify-center rounded-lg text-sm text-muted hover:bg-canvas hover:text-ink disabled:opacity-30'; button.textContent = symbol; button.setAttribute('aria-label', `${label}: ${file.name}`); button.disabled = delta < 0 ? index === 0 : index === actionFiles.length - 1;
+          button.addEventListener('click', () => { const target = index + delta; [actionFiles[index], actionFiles[target]] = [actionFiles[target], actionFiles[index]]; renderActionFiles(); actionStatus.textContent = `${file.name} is now ${target + 1} of ${actionFiles.length}.`; });
+          controls.append(button);
+        }
+      }
+      const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'inline-flex h-10 w-10 items-center justify-center rounded-lg text-lg text-muted hover:bg-rose-50 hover:text-rose-600'; remove.textContent = '×'; remove.setAttribute('aria-label', `${actionMessages.remove || 'Remove'}: ${file.name}`); remove.addEventListener('click', () => { actionFiles.splice(index, 1); clearActionUrl(); if (!actionFiles.length) { resetAction(); return; } renderActionFiles(); });
+      controls.append(remove); item.append(count, text, controls); list.append(item);
+    });
+    const total = actionFiles.reduce((sum, file) => sum + file.size, 0);
+    actionEl('#action-total').textContent = localizedAction ? `${actionFiles.length} · ${readableSize(total)}` : `${actionFiles.length} ${actionFiles.length === 1 ? 'file' : 'files'} · ${readableSize(total)}`;
+    const mergeMinimum = actionRoot.querySelector<HTMLElement>('#merge-minimum');
+    if (mergeMinimum) mergeMinimum.hidden = actionFiles.length >= 2;
+    actionButton.disabled = actionTool === 'merge-pdf' && actionFiles.length < 2;
+    actionEmpty.hidden = true; actionWork.hidden = false;
+  };
+
+  const loadActionFiles = async (files: File[], append = false) => {
     try {
       if (!files.length) return;
       if (!actionRoot.dataset.multiple || actionRoot.dataset.multiple === 'false') files = files.slice(0, 1);
-      if (files.length > 20) throw new Error('Choose no more than 20 files at once.');
-      const total = files.reduce((sum, file) => sum + file.size, 0); if (total > 100_000_000) throw new Error('The selected files exceed the 100 MB local-processing safety limit.');
+      const combined = append ? [...actionFiles, ...files] : files;
+      if (combined.length > 20) throw new Error('Choose no more than 20 files at once.');
+      const total = combined.reduce((sum, file) => sum + file.size, 0); if (total > 100_000_000) throw new Error('The selected files exceed the 100 MB local-processing safety limit.');
       if (actionTool === 'word-to-pdf' && files[0].size > 25_000_000) throw new Error('Choose a DOCX smaller than 25 MB to protect browser memory.');
       if (['merge-pdf','split-pdf','rotate-pdf','remove-pages','watermark-pdf','page-numbers','sign-pdf','pdf-to-jpg','pdf-to-word'].includes(actionTool)) { for (const file of files) if (!(await isPdf(file))) throw new Error(`${file.name} is not a valid PDF. Choose files with a real PDF signature.`); }
       if (actionTool === 'jpg-to-pdf') { for (const file of files) if (!(await imageKind(file))) throw new Error(`${file.name} is not a valid JPG or PNG image.`); }
       if (actionTool === 'word-to-pdf' && !(await isDocx(files[0]))) throw new Error('Choose a valid DOCX file created by Word, Google Docs, or LibreOffice.');
-      actionFiles = files; const list = actionEl<HTMLOListElement>('#action-file-list'); list.textContent = '';
-      files.forEach((file, index) => { const item = document.createElement('li'); item.className = 'flex min-w-0 items-center gap-3 px-4 py-3'; const count = document.createElement('span'); count.className = 'shrink-0 font-mono text-xs text-muted'; count.textContent = String(index + 1).padStart(2, '0'); const text = document.createElement('span'); text.className = 'min-w-0 flex-1 truncate text-sm font-medium'; setDisplayedFilename(text, file.name); const size = document.createElement('span'); size.className = 'shrink-0 text-xs text-muted'; size.textContent = readableSize(file.size); item.append(count, text, size); list.append(item); });
-      actionEl('#action-total').textContent = localizedAction ? `${files.length} · ${readableSize(total)}` : `${files.length} ${files.length === 1 ? 'file' : 'files'} · ${readableSize(total)}`; actionEmpty.hidden = true; actionWork.hidden = false;
-    } catch (error) { const detail = error instanceof Error ? error.message : ''; failSelection(localizedAction ? (/MB|limit|more than|smaller/i.test(detail) ? actionMessages.tooLarge : actionMessages.invalidFile) : (detail || actionMessages.invalidFile)); }
+      clearActionUrl(); actionError.hidden = true; actionInput.removeAttribute('aria-invalid'); actionFiles = combined; actionInput.value = ''; renderActionFiles(); if (actionTool === 'sign-pdf') void setupSignPdfPreview();
+    } catch (error) { const detail = error instanceof Error ? error.message : ''; const message = localizedAction ? (/MB|limit|more than|smaller/i.test(detail) ? actionMessages.tooLarge : actionMessages.invalidFile) : (detail || actionMessages.invalidFile); if (append && actionFiles.length) { actionStatus.textContent = message; actionInput.value = ''; } else failSelection(message); }
   };
 
-  const downloadBlob = (blob: Blob, name: string, stats: string, warning = '', ocrPages = 0, lowConfidencePages: number[] = []) => {
+  const downloadBlob = (blob: Blob, name: string, stats: string, warning = '', ocrPages = 0, lowConfidencePages: number[] = [], warningIsLocalized = false) => {
     clearActionUrl();
     actionUrl = URL.createObjectURL(blob);
     const link = actionEl<HTMLAnchorElement>('#action-download');
@@ -182,7 +249,7 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
     link.download = name;
     actionEl('#action-result-stats').textContent = localizedAction ? readableSize(blob.size) : stats;
     const warningEl = actionEl('#action-result-warning');
-    warningEl.textContent = localizedAction && warning ? actionMessages.review : warning;
+    warningEl.textContent = localizedAction && warning && !warningIsLocalized ? actionMessages.review : warning;
     warningEl.hidden = !warningEl.textContent;
     if (ocrPages > 0) {
       actionResult.setAttribute('data-ocr-pages', String(ocrPages));
@@ -201,6 +268,39 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
 
   const loadPdfLib = async (file: File) => { const { PDFDocument } = await import('pdf-lib'); return { PDFDocument, source: await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: false }) }; };
   const loadPdfJs = async (file: File) => { const pdfjs = await import('pdfjs-dist'); pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl; return pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), cMapUrl: '/pdfjs/cmaps/', cMapPacked: true, wasmUrl: '/pdfjs/wasm/' }).promise; };
+
+  const renderSignPdfPage = async () => {
+    if (!signaturePdfPreview) return;
+    const pageInput = actionEl<HTMLInputElement>('#signature-page');
+    const pageNumber = Math.max(1, Math.min(signaturePdfPreview.numPages, Number(pageInput.value) || 1));
+    pageInput.value = String(pageNumber);
+    signaturePreviewTask?.cancel();
+    const page = await signaturePdfPreview.getPage(pageNumber);
+    const base = page.getViewport({ scale: 1 });
+    const maxWidth = Math.max(220, Math.min(520, window.innerWidth - 112));
+    const maxHeight = 352;
+    const cssScale = Math.min(maxWidth / base.width, maxHeight / base.height, 1);
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const viewport = page.getViewport({ scale: cssScale * ratio });
+    const canvas = actionEl<HTMLCanvasElement>('#signature-page-preview');
+    canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+    canvas.style.width = `${Math.round(viewport.width / ratio)}px`; canvas.style.height = `${Math.round(viewport.height / ratio)}px`;
+    const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('PDF preview is unavailable.');
+    context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height);
+    const renderTask = page.render({ canvas, canvasContext: context, viewport, background: '#fff' });
+    signaturePreviewTask = renderTask;
+    try { await renderTask.promise; } catch (error: any) { if (error?.name !== 'RenderingCancelledException') throw error; }
+    signaturePreviewTask = null; page.cleanup();
+  };
+
+  const setupSignPdfPreview = async () => {
+    if (actionTool !== 'sign-pdf' || !actionFiles[0]) return;
+    signaturePreviewTask?.cancel(); await signaturePdfPreview?.cleanup();
+    signaturePdfPreview = await loadPdfJs(actionFiles[0]);
+    const pageInput = actionEl<HTMLInputElement>('#signature-page'); pageInput.max = String(signaturePdfPreview.numPages); pageInput.value = String(signaturePdfPreview.numPages);
+    actionEl('#signature-placement').hidden = false;
+    await renderSignPdfPage();
+  };
 
   const validatePdfBytes = async (bytes: Uint8Array, expectedPages: number) => {
     if (new TextDecoder('ascii').decode(bytes.slice(0, 5)) !== '%PDF-') throw new Error('The tool produced an invalid PDF. No download was created.');
@@ -231,7 +331,19 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
   };
 
   const mergePdfs = async () => { const { PDFDocument } = await import('pdf-lib'); const output = await PDFDocument.create(); let pages = 0; for (let i = 0; i < actionFiles.length; i += 1) { actionStatus.textContent = `Adding file ${i + 1} of ${actionFiles.length}…`; const source = await PDFDocument.load(await actionFiles[i].arrayBuffer(), { ignoreEncryption: false }); const copied = await output.copyPages(source, source.getPageIndices()); copied.forEach(page => output.addPage(page)); pages += copied.length; } const bytes = await output.save({ useObjectStreams: true }); await downloadPdfBytes(bytes, pages, 'merged-sorafiles.pdf', `${actionFiles.length} files · ${pages} pages · ${readableSize(bytes.length)}`); };
-  const splitPdf = async () => { const { PDFDocument } = await import('pdf-lib'); const { source } = await loadPdfLib(actionFiles[0]); if (source.getPageCount() > 100) throw new Error('Split currently supports up to 100 pages.'); const entries: Record<string, Uint8Array> = {}; for (let i = 0; i < source.getPageCount(); i += 1) { actionStatus.textContent = `Preparing page ${i + 1} of ${source.getPageCount()}…`; const output = await PDFDocument.create(); const [page] = await output.copyPages(source, [i]); output.addPage(page); const bytes = await output.save({ useObjectStreams: true }); await validatePdfBytes(bytes, 1); entries[`page-${String(i + 1).padStart(3, '0')}.pdf`] = bytes; } const { zipSync } = await import('fflate'); const zipped = zipSync(entries, { level: 6 }); const count = source.getPageCount(); downloadBlob(new Blob([zipped as BlobPart], { type: 'application/zip' }), `${baseName(actionFiles[0].name)}-pages.zip`, `${count} ${count === 1 ? 'PDF' : 'PDFs'} · ${readableSize(zipped.length)}`); };
+  const splitPdf = async () => {
+    const file = actionFiles[0]; const { PDFDocument } = await import('pdf-lib'); const { source } = await loadPdfLib(file); const count = source.getPageCount(); if (count > 100) throw new Error('Split currently supports up to 100 pages.');
+    let entries: Record<string, Uint8Array> = {}; let extractedBytes = 0;
+    for (let i = 0; i < count; i += 1) { actionStatus.textContent = `Preparing page ${i + 1} of ${count}…`; const output = await PDFDocument.create(); const [page] = await output.copyPages(source, [i]); output.addPage(page); const bytes = await output.save({ useObjectStreams: true }); await validatePdfBytes(bytes, 1); entries[`page-${String(i + 1).padStart(3, '0')}.pdf`] = bytes; extractedBytes += bytes.length; }
+    const smartMode = actionRoot.querySelector<HTMLInputElement>('input[name="splitMode"]:checked')?.value !== 'preserve'; const expanded = extractedBytes > Math.max(file.size * 1.75, file.size + 750_000); let compacted = false;
+    if (smartMode && expanded) {
+      compacted = true; entries = {}; const rendered = await loadPdfJs(file); const totalBudget = Math.max(file.size * 1.35, 2_000_000); const pageBudget = Math.max(120_000, totalBudget / count);
+      try { for (let pageNumber = 1; pageNumber <= count; pageNumber += 1) { actionStatus.textContent = `Optimizing page ${pageNumber} of ${count}…`; const page = await rendered.getPage(pageNumber); const base = page.getViewport({ scale: 1 }); let scale = 1.5; if (base.width * scale * base.height * scale > 10_000_000) scale *= Math.sqrt(10_000_000 / (base.width * scale * base.height * scale)); let viewport = page.getViewport({ scale }); let canvas = document.createElement('canvas'); canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height); let context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas rendering is unavailable.'); context.fillStyle = '#fff'; context.fillRect(0,0,canvas.width,canvas.height); await page.render({ canvas, canvasContext: context, viewport, background: '#fff' }).promise; let jpg: Blob | null = null; for (const quality of [.86,.74,.62,.5]) { jpg = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve,'image/jpeg',quality)); if (jpg && jpg.size <= pageBudget) break; } if (!jpg) throw new Error('Page encoding failed.'); if (jpg.size > pageBudget && scale > 1.05) { const smaller = document.createElement('canvas'); const shrink = Math.max(.55, Math.sqrt(pageBudget / jpg.size)); smaller.width = Math.max(1,Math.round(canvas.width*shrink)); smaller.height = Math.max(1,Math.round(canvas.height*shrink)); smaller.getContext('2d')?.drawImage(canvas,0,0,smaller.width,smaller.height); canvas.width=1;canvas.height=1;canvas=smaller;context=canvas.getContext('2d',{alpha:false});jpg=await new Promise<Blob | null>(resolve=>canvas.toBlob(resolve,'image/jpeg',.55)); if(!jpg)throw new Error('Page encoding failed.'); }
+        const output = await PDFDocument.create(); const image = await output.embedJpg(await jpg.arrayBuffer()); const outputPage = output.addPage([base.width,base.height]); outputPage.drawImage(image,{x:0,y:0,width:base.width,height:base.height}); const bytes = await output.save({useObjectStreams:true}); await validatePdfBytes(bytes,1); entries[`page-${String(pageNumber).padStart(3,'0')}.pdf`]=bytes; page.cleanup(); canvas.width=1;canvas.height=1; }
+      } finally { await rendered.cleanup().catch(()=>{}); }
+    }
+    const { zipSync } = await import('fflate'); const zipped = zipSync(entries,{level:6}); const warning = compacted ? (actionRoot.dataset.splitCompactWarning || actionMessages.review) : ''; downloadBlob(new Blob([zipped as BlobPart],{type:'application/zip'}),`${baseName(file.name)}-pages.zip`,`${count} ${count===1?'PDF':'PDFs'} · ${readableSize(zipped.length)}`,warning,0,[],compacted);
+  };
   const rotatePdf = async () => { const { degrees } = await import('pdf-lib'); const { source } = await loadPdfLib(actionFiles[0]); const angle = Number(actionEl<HTMLSelectElement>('#rotate-angle').value); source.getPages().forEach(page => page.setRotation(degrees((page.getRotation().angle + angle) % 360))); const bytes = await source.save({ useObjectStreams: true }); const count = source.getPageCount(); await downloadPdfBytes(bytes, count, `${baseName(actionFiles[0].name)}-rotated.pdf`, `${count} ${count === 1 ? 'page' : 'pages'} · ${angle}° · ${readableSize(bytes.length)}`); };
   const removePagesPdf = async () => {
     const { source } = await loadPdfLib(actionFiles[0]);
@@ -246,18 +358,30 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
 
   const watermarkPdf = async () => {
     const { source } = await loadPdfLib(actionFiles[0]);
-    const text = actionEl<HTMLInputElement>('#watermark-text').value.trim().replace(/\s+/g, ' ');
-    if (!text) throw new Error('Enter watermark text.');
-    if (text.length > 60) throw new Error('Keep the watermark to 60 characters or fewer.');
     const opacity = Number(actionEl<HTMLInputElement>('#watermark-opacity').value) / 100;
     if (!Number.isFinite(opacity) || opacity < 0.05 || opacity > 0.5) throw new Error('Choose a watermark opacity from 5% to 50%.');
-    const { StandardFonts, degrees, rgb } = await import('pdf-lib');
-    const font = await source.embedFont(StandardFonts.HelveticaBold);
-    for (const page of source.getPages()) {
-      const { width, height } = page.getSize();
-      const fontSize = Math.max(20, Math.min(64, Math.min(width, height) / 9));
-      const textWidth = font.widthOfTextAtSize(text, fontSize);
-      page.drawText(text, { x: (width - textWidth * 0.72) / 2, y: height / 2, size: fontSize, font, color: rgb(0.25, 0.29, 0.42), opacity, rotate: degrees(35) });
+    if (watermarkMode === 'image') {
+      if (!watermarkProcessedCanvas) throw new Error(watermarkMessages.missingImage);
+      const blob = await new Promise<Blob>((resolve, reject) => watermarkProcessedCanvas?.toBlob(value => value ? resolve(value) : reject(new Error(watermarkMessages.decodeFailed)), 'image/png'));
+      const image = await source.embedPng(await blob.arrayBuffer());
+      for (const page of source.getPages()) {
+        const { width, height } = page.getSize();
+        const scale = Math.min((width * .5) / image.width, (height * .4) / image.height);
+        const drawWidth = image.width * scale; const drawHeight = image.height * scale;
+        page.drawImage(image, { x: (width - drawWidth) / 2, y: (height - drawHeight) / 2, width: drawWidth, height: drawHeight, opacity });
+      }
+    } else {
+      const text = actionEl<HTMLInputElement>('#watermark-text').value.trim().replace(/\s+/g, ' ');
+      if (!text) throw new Error('Enter watermark text.');
+      if (text.length > 60) throw new Error('Keep the watermark to 60 characters or fewer.');
+      const { StandardFonts, degrees, rgb } = await import('pdf-lib');
+      const font = await source.embedFont(StandardFonts.HelveticaBold);
+      for (const page of source.getPages()) {
+        const { width, height } = page.getSize();
+        const fontSize = Math.max(20, Math.min(64, Math.min(width, height) / 9));
+        const textWidth = font.widthOfTextAtSize(text, fontSize);
+        page.drawText(text, { x: (width - textWidth * 0.72) / 2, y: height / 2, size: fontSize, font, color: rgb(0.25, 0.29, 0.42), opacity, rotate: degrees(35) });
+      }
     }
     const bytes = await source.save({ useObjectStreams: true });
     await downloadPdfBytes(bytes, source.getPageCount(), `${baseName(actionFiles[0].name)}-watermarked.pdf`, `${source.getPageCount()} pages · ${readableSize(bytes.length)}`);
@@ -285,23 +409,28 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
   };
 
   const signPdf = async () => {
-    if (!signatureHasInk) throw new Error('Draw a signature before processing the PDF.');
+    if (!signatureHasInk) throw new Error('Type, draw, or upload a signature before processing the PDF.');
     const canvas = actionEl<HTMLCanvasElement>('#signature-canvas');
     const signatureBlob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('The signature image could not be created.')), 'image/png'));
     const { source } = await loadPdfLib(actionFiles[0]);
     const signature = await source.embedPng(await signatureBlob.arrayBuffer());
-    const scope = actionEl<HTMLSelectElement>('#signature-scope').value;
     const pages = source.getPages();
-    const indices = scope === 'all' ? pages.map((_, index) => index) : scope === 'first' ? [0] : [pages.length - 1];
-    for (const index of indices) {
-      const page = pages[index];
-      const { width, height } = page.getSize();
-      const drawWidth = Math.min(170, width * 0.35);
-      const drawHeight = drawWidth * (signature.height / signature.width);
-      page.drawImage(signature, { x: Math.max(24, width - drawWidth - 36), y: Math.max(24, Math.min(48, height - drawHeight - 24)), width: drawWidth, height: drawHeight });
-    }
+    const pageNumber = Math.max(1, Math.min(pages.length, Number(actionEl<HTMLInputElement>('#signature-page').value) || pages.length));
+    const page = pages[pageNumber - 1];
+    const rotation = ((page.getRotation().angle % 360) + 360) % 360;
+    if (rotation !== 0) throw new Error('For exact placement, rotate this page upright with Rotate PDF first, then sign it. No changes were made.');
+    const stage = actionEl('#signature-page-stage'); const overlay = actionEl<HTMLImageElement>('#signature-overlay');
+    const stageRect = stage.getBoundingClientRect(); const overlayRect = overlay.getBoundingClientRect();
+    if (!stageRect.width || !stageRect.height || !overlayRect.width) throw new Error('Place the signature in the page preview before processing.');
+    const left = Math.max(0, overlayRect.left - stageRect.left); const top = Math.max(0, overlayRect.top - stageRect.top);
+    const { width, height } = page.getSize();
+    const drawWidth = Math.min(width, (overlayRect.width / stageRect.width) * width);
+    const drawHeight = drawWidth * (signature.height / signature.width);
+    const x = Math.min(width - drawWidth, (left / stageRect.width) * width);
+    const y = Math.max(0, Math.min(height - drawHeight, height - ((top / stageRect.height) * height) - drawHeight));
+    page.drawImage(signature, { x, y, width: drawWidth, height: drawHeight });
     const bytes = await source.save({ useObjectStreams: true });
-    await downloadPdfBytes(bytes, pages.length, `${baseName(actionFiles[0].name)}-signed.pdf`, `${indices.length} signed ${indices.length === 1 ? 'page' : 'pages'} · ${readableSize(bytes.length)}`, 'This adds a visible signature appearance only. It is not a certificate-backed digital signature and does not verify identity.');
+    await downloadPdfBytes(bytes, pages.length, `${baseName(actionFiles[0].name)}-signed.pdf`, `Page ${pageNumber} signed · ${readableSize(bytes.length)}`, 'This adds a visible signature appearance only. It is not a certificate-backed digital signature and does not verify identity.');
   };
   const imagesToPdf = async () => { const { PDFDocument } = await import('pdf-lib'); const output = await PDFDocument.create(); const mode = actionEl<HTMLSelectElement>('#image-page-size').value; for (let i = 0; i < actionFiles.length; i += 1) { actionStatus.textContent = `Adding image ${i + 1} of ${actionFiles.length}…`; const file = actionFiles[i]; const kind = await imageKind(file); const image = kind === 'png' ? await output.embedPng(await file.arrayBuffer()) : await output.embedJpg(await file.arrayBuffer()); let pageWidth: number; let pageHeight: number; if (mode === 'a4') { const landscape = image.width > image.height; pageWidth = landscape ? 841.89 : 595.28; pageHeight = landscape ? 595.28 : 841.89; } else { const scale = Math.min(1, 1600 / Math.max(image.width, image.height)); pageWidth = image.width * scale * 0.75; pageHeight = image.height * scale * 0.75; } const page = output.addPage([pageWidth, pageHeight]); const margin = mode === 'a4' ? 28 : 0; const fit = Math.min((pageWidth - margin * 2) / image.width, (pageHeight - margin * 2) / image.height); const width = image.width * fit; const height = image.height * fit; page.drawImage(image, { x: (pageWidth - width) / 2, y: (pageHeight - height) / 2, width, height }); } const bytes = await output.save({ useObjectStreams: true }); await downloadPdfBytes(bytes, actionFiles.length, 'images-sorafiles.pdf', `${actionFiles.length} ${actionFiles.length === 1 ? 'page' : 'pages'} · ${readableSize(bytes.length)}`); };
   const pdfToJpg = async () => { const source = await loadPdfJs(actionFiles[0]); if (source.numPages > 40) throw new Error('PDF to JPG currently supports up to 40 pages.'); const scaleSetting = Number(actionEl<HTMLSelectElement>('#jpg-resolution').value); const entries: Record<string, Uint8Array> = {}; for (let i = 1; i <= source.numPages; i += 1) { actionStatus.textContent = `Rendering page ${i} of ${source.numPages}…`; const page = await source.getPage(i); const base = page.getViewport({ scale: 1 }); let scale = scaleSetting; if (base.width * scale * base.height * scale > 16_000_000) scale *= Math.sqrt(16_000_000 / (base.width * scale * base.height * scale)); const viewport = page.getViewport({ scale }); const canvas = document.createElement('canvas'); canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height); const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas rendering is unavailable.'); context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height); await page.render({ canvas, canvasContext: context, viewport, background: '#fff' }).promise; const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('JPG encoding failed.')), 'image/jpeg', 0.86)); const bytes = new Uint8Array(await blob.arrayBuffer()); if (!(bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)) throw new Error(`Page ${i} did not produce a valid JPG. No download was created.`); entries[`page-${String(i).padStart(3, '0')}.jpg`] = bytes; page.cleanup(); canvas.width = 1; canvas.height = 1; } const count = source.numPages; await source.cleanup(); const { zipSync } = await import('fflate'); const zipped = zipSync(entries, { level: 0 }); downloadBlob(new Blob([zipped as BlobPart], { type: 'application/zip' }), `${baseName(actionFiles[0].name)}-jpg.zip`, `${count} JPG ${count === 1 ? 'file' : 'files'} · ${readableSize(zipped.length)}`); };
@@ -403,60 +532,160 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
 
   const wordToPdf = async () => { actionStatus.textContent = 'Reading document text locally…'; const mammoth = await import('mammoth'); const result = await mammoth.extractRawText({ arrayBuffer: await actionFiles[0].arrayBuffer() }); const text = result.value.trim(); if (!text) throw new Error('No readable text was found in this DOCX file.'); const { jsPDF } = await import('jspdf'); const pdf = new jsPDF({ unit: 'pt', format: 'a4', compress: true }); const margin = 54; const width = pdf.internal.pageSize.getWidth() - margin * 2; const lines = pdf.splitTextToSize(text, width) as string[]; const lineHeight = 16; let y = margin; pdf.setFont('helvetica', 'normal'); pdf.setFontSize(11); for (let i = 0; i < lines.length; i += 1) { if (y > pdf.internal.pageSize.getHeight() - margin) { pdf.addPage(); y = margin; } pdf.text(lines[i], margin, y); y += lineHeight; } const blob = pdf.output('blob'); const bytes = new Uint8Array(await blob.arrayBuffer()); const pageCount = pdf.getNumberOfPages(); await downloadPdfBytes(bytes, pageCount, `${baseName(actionFiles[0].name)}.pdf`, `${pageCount} ${pageCount === 1 ? 'page' : 'pages'} · ${readableSize(blob.size)}`, 'This text-first PDF does not reproduce advanced Word formatting, images, headers, columns, or exact pagination.'); };
 
-  const processAction = async () => { if (!actionFiles.length) return; if ((actionTool === 'pdf-to-word' || actionTool === 'word-to-pdf') && !actionEl<HTMLInputElement>('#fidelity-confirm').checked) { actionStatus.textContent = 'Confirm the formatting limitation before continuing.'; actionEl<HTMLInputElement>('#fidelity-confirm').focus(); return; } actionButton.disabled = true; actionRoot.setAttribute('aria-busy', 'true'); const original = actionButton.textContent ?? 'Process locally'; actionButton.textContent = 'Processing…'; actionResult.hidden = true; try { if (actionTool === 'merge-pdf') await mergePdfs(); else if (actionTool === 'split-pdf') await splitPdf(); else if (actionTool === 'rotate-pdf') await rotatePdf(); else if (actionTool === 'remove-pages') await removePagesPdf(); else if (actionTool === 'watermark-pdf') await watermarkPdf(); else if (actionTool === 'page-numbers') await addPageNumbersPdf(); else if (actionTool === 'sign-pdf') await signPdf(); else if (actionTool === 'jpg-to-pdf') await imagesToPdf(); else if (actionTool === 'pdf-to-jpg') await pdfToJpg(); else if (actionTool === 'pdf-to-word') await pdfToWord(); else await wordToPdf(); } catch (error: any) { if (error?.code === 'cancelled' || error?.message?.includes('cancelled')) { actionStatus.textContent = ocrMessages.cancelled; } else { actionStatus.textContent = error instanceof Error ? error.message : 'Local processing failed.'; } } finally { actionRoot.removeAttribute('aria-busy'); actionButton.disabled = false; actionButton.textContent = original; } };
+  const processAction = async () => { if (!actionFiles.length) return; if (actionTool === 'merge-pdf' && actionFiles.length < 2) { actionStatus.textContent = actionRoot.dataset.mergeMinimum ?? ''; actionRoot.querySelector<HTMLButtonElement>('#action-add')?.focus(); return; } if ((actionTool === 'pdf-to-word' || actionTool === 'word-to-pdf') && !actionEl<HTMLInputElement>('#fidelity-confirm').checked) { actionStatus.textContent = 'Confirm the formatting limitation before continuing.'; actionEl<HTMLInputElement>('#fidelity-confirm').focus(); return; } actionButton.disabled = true; actionRoot.setAttribute('aria-busy', 'true'); const original = actionButton.textContent ?? 'Process locally'; actionButton.textContent = 'Processing…'; actionResult.hidden = true; try { if (actionTool === 'merge-pdf') await mergePdfs(); else if (actionTool === 'split-pdf') await splitPdf(); else if (actionTool === 'rotate-pdf') await rotatePdf(); else if (actionTool === 'remove-pages') await removePagesPdf(); else if (actionTool === 'watermark-pdf') await watermarkPdf(); else if (actionTool === 'page-numbers') await addPageNumbersPdf(); else if (actionTool === 'sign-pdf') await signPdf(); else if (actionTool === 'jpg-to-pdf') await imagesToPdf(); else if (actionTool === 'pdf-to-jpg') await pdfToJpg(); else if (actionTool === 'pdf-to-word') await pdfToWord(); else await wordToPdf(); } catch (error: any) { if (error?.code === 'cancelled' || error?.message?.includes('cancelled')) { actionStatus.textContent = ocrMessages.cancelled; } else { actionStatus.textContent = error instanceof Error ? error.message : 'Local processing failed.'; } } finally { actionRoot.removeAttribute('aria-busy'); actionButton.disabled = actionTool === 'merge-pdf' && actionFiles.length < 2; actionButton.textContent = original; } };
 
   const watermarkOpacity = actionRoot.querySelector<HTMLInputElement>('#watermark-opacity');
   const watermarkOpacityOutput = actionRoot.querySelector<HTMLOutputElement>('#watermark-opacity-output');
   watermarkOpacity?.addEventListener('input', () => { const value = `${watermarkOpacity.value}%`; watermarkOpacity.setAttribute('aria-valuetext', value); if (watermarkOpacityOutput) watermarkOpacityOutput.value = value; });
 
+  const watermarkImageInput = actionRoot.querySelector<HTMLInputElement>('#watermark-image');
+  if (watermarkImageInput) {
+    const imageOptions = actionEl('#watermark-image-options');
+    const cleanupControls = actionEl('#watermark-cleanup-controls');
+    const cleanupRange = actionEl<HTMLInputElement>('#watermark-cleanup');
+    const cleanupOutput = actionEl<HTMLOutputElement>('#watermark-cleanup-output');
+    const preview = actionEl('#watermark-image-preview');
+    const beforeImage = actionEl<HTMLImageElement>('#watermark-image-before');
+    const afterImage = actionEl<HTMLImageElement>('#watermark-image-after');
+    const toolNote = actionEl('#action-tool-note');
+
+    const syncWatermarkNote = () => {
+      if (watermarkMode === 'text') {
+        toolNote.textContent = actionRoot.dataset.copyNote ?? '';
+        return;
+      }
+      const removeBackground = actionRoot.querySelector<HTMLInputElement>('input[name="watermarkImageTreatment"]:checked')?.value === 'remove';
+      toolNote.textContent = removeBackground ? watermarkMessages.removeBackgroundHelp : watermarkMessages.useAsIsHelp;
+    };
+
+    const renderWatermarkImage = () => {
+      if (!watermarkSourceCanvas) return;
+      const sourceContext = watermarkSourceCanvas.getContext('2d', { willReadFrequently: true }); if (!sourceContext) return;
+      const removeBackground = actionRoot.querySelector<HTMLInputElement>('input[name="watermarkImageTreatment"]:checked')?.value === 'remove';
+      cleanupControls.hidden = !removeBackground;
+      const sourceImage = sourceContext.getImageData(0, 0, watermarkSourceCanvas.width, watermarkSourceCanvas.height);
+      const outputData = new ImageData(new Uint8ClampedArray(sourceImage.data), sourceImage.width, sourceImage.height);
+      let minX = 0, minY = 0, maxX = sourceImage.width - 1, maxY = sourceImage.height - 1;
+      if (removeBackground) {
+        const samples: number[][] = []; const stepX = Math.max(1, Math.floor(sourceImage.width / 40)); const stepY = Math.max(1, Math.floor(sourceImage.height / 40));
+        for (let x = 0; x < sourceImage.width; x += stepX) for (const y of [0, sourceImage.height - 1]) { const i = (y * sourceImage.width + x) * 4; if (outputData.data[i + 3] > 0) samples.push([outputData.data[i], outputData.data[i + 1], outputData.data[i + 2]]); }
+        for (let y = 0; y < sourceImage.height; y += stepY) for (const x of [0, sourceImage.width - 1]) { const i = (y * sourceImage.width + x) * 4; if (outputData.data[i + 3] > 0) samples.push([outputData.data[i], outputData.data[i + 1], outputData.data[i + 2]]); }
+        const background = samples.reduce((sum, pixel) => [sum[0] + pixel[0], sum[1] + pixel[1], sum[2] + pixel[2]], [0, 0, 0]).map(value => value / Math.max(1, samples.length));
+        const threshold = Number(cleanupRange.value); const feather = Math.max(8, threshold * .55);
+        minX = sourceImage.width; minY = sourceImage.height; maxX = 0; maxY = 0;
+        for (let y = 0; y < sourceImage.height; y += 1) for (let x = 0; x < sourceImage.width; x += 1) {
+          const i = (y * sourceImage.width + x) * 4; if (outputData.data[i + 3] === 0) continue;
+          const distance = Math.hypot(outputData.data[i] - background[0], outputData.data[i + 1] - background[1], outputData.data[i + 2] - background[2]);
+          outputData.data[i + 3] = distance <= threshold ? 0 : distance < threshold + feather ? Math.round(outputData.data[i + 3] * ((distance - threshold) / feather)) : outputData.data[i + 3];
+          if (outputData.data[i + 3] > 18) { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); }
+        }
+        if (maxX <= minX || maxY <= minY) { minX = 0; minY = 0; maxX = sourceImage.width - 1; maxY = sourceImage.height - 1; }
+      }
+      const processed = document.createElement('canvas'); processed.width = sourceImage.width; processed.height = sourceImage.height; processed.getContext('2d')?.putImageData(outputData, 0, 0);
+      const sourceWidth = maxX - minX + 1; const sourceHeight = maxY - minY + 1; const maxDimension = 2048; const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
+      watermarkProcessedCanvas = document.createElement('canvas'); watermarkProcessedCanvas.width = Math.max(1, Math.round(sourceWidth * scale)); watermarkProcessedCanvas.height = Math.max(1, Math.round(sourceHeight * scale));
+      watermarkProcessedCanvas.getContext('2d')?.drawImage(processed, minX, minY, sourceWidth, sourceHeight, 0, 0, watermarkProcessedCanvas.width, watermarkProcessedCanvas.height);
+      afterImage.src = watermarkProcessedCanvas.toDataURL('image/png'); preview.hidden = false;
+      processed.width = 1; processed.height = 1;
+    };
+
+    actionRoot.querySelectorAll<HTMLButtonElement>('[data-watermark-mode]').forEach(button => button.addEventListener('click', () => {
+      watermarkMode = button.dataset.watermarkMode === 'image' ? 'image' : 'text';
+      actionRoot.querySelectorAll<HTMLButtonElement>('[data-watermark-mode]').forEach(candidate => { const active = candidate === button; candidate.setAttribute('aria-pressed', String(active)); candidate.classList.toggle('bg-surface', active); candidate.classList.toggle('text-ink', active); candidate.classList.toggle('shadow-small', active); candidate.classList.toggle('text-muted', !active); });
+      actionRoot.querySelectorAll<HTMLElement>('[data-watermark-panel]').forEach(panel => { panel.hidden = panel.dataset.watermarkPanel !== watermarkMode; });
+      syncWatermarkNote();
+      (watermarkMode === 'image' ? watermarkImageInput : actionEl<HTMLInputElement>('#watermark-text')).focus();
+    }));
+    watermarkImageInput.addEventListener('change', async () => {
+      const file = watermarkImageInput.files?.[0]; if (!file) return;
+      if (file.size > 10_000_000) { actionStatus.textContent = watermarkMessages.tooLarge; watermarkImageInput.value = ''; return; }
+      try {
+        const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        if (bitmap.width * bitmap.height > 20_000_000) { bitmap.close(); throw new Error(watermarkMessages.tooManyPixels); }
+        watermarkSourceCanvas = document.createElement('canvas'); watermarkSourceCanvas.width = bitmap.width; watermarkSourceCanvas.height = bitmap.height; watermarkSourceCanvas.getContext('2d')?.drawImage(bitmap, 0, 0); bitmap.close();
+        if (watermarkUploadUrl) URL.revokeObjectURL(watermarkUploadUrl); watermarkUploadUrl = URL.createObjectURL(file); beforeImage.src = watermarkUploadUrl; imageOptions.hidden = false; actionStatus.textContent = ''; renderWatermarkImage();
+      } catch (error) { watermarkSourceCanvas = null; watermarkProcessedCanvas = null; watermarkImageInput.value = ''; actionStatus.textContent = error instanceof Error ? error.message : watermarkMessages.decodeFailed; }
+    });
+    actionRoot.querySelectorAll<HTMLInputElement>('input[name="watermarkImageTreatment"]').forEach(input => input.addEventListener('change', () => { syncWatermarkNote(); renderWatermarkImage(); }));
+    cleanupRange.addEventListener('input', () => { const value = `${cleanupRange.value}%`; cleanupOutput.value = value; cleanupRange.setAttribute('aria-valuetext', value); renderWatermarkImage(); });
+  }
+
   const signatureCanvas = actionRoot.querySelector<HTMLCanvasElement>('#signature-canvas');
   if (signatureCanvas) {
-    const context = signatureCanvas.getContext('2d');
-    if (!context) throw new Error('Signature drawing is unavailable in this browser.');
-    context.strokeStyle = '#111827';
-    context.fillStyle = '#111827';
-    context.lineWidth = 5;
-    context.lineCap = 'round';
-    context.lineJoin = 'round';
-    const signatureText = actionRoot.querySelector<HTMLInputElement>('#signature-text');
+    const finalContext = signatureCanvas.getContext('2d');
+    const drawCanvas = actionEl<HTMLCanvasElement>('#signature-draw-canvas');
+    const drawContext = drawCanvas.getContext('2d');
+    if (!finalContext || !drawContext) throw new Error('Signature drawing is unavailable in this browser.');
+    const signatureText = actionEl<HTMLInputElement>('#signature-text');
+    const overlay = actionEl<HTMLImageElement>('#signature-overlay');
+    const uploadInput = actionEl<HTMLInputElement>('#signature-upload');
+    const uploadControls = actionEl('#signature-upload-controls');
+    const cleanupRange = actionEl<HTMLInputElement>('#signature-cleanup');
+    const cleanupOutput = actionEl<HTMLOutputElement>('#signature-cleanup-output');
+    let uploadedCanvas: HTMLCanvasElement | null = null;
+
+    const publishSignature = () => {
+      signatureHasInk = finalContext.getImageData(0, 0, signatureCanvas.width, signatureCanvas.height).data.some((value, index) => index % 4 === 3 && value > 8);
+      overlay.src = signatureHasInk ? signatureCanvas.toDataURL('image/png') : '';
+      overlay.hidden = !signatureHasInk;
+    };
+    const clearSignature = () => {
+      finalContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+      drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      signatureText.value = ''; uploadInput.value = ''; uploadedCanvas = null; uploadControls.hidden = true;
+      if (signatureUploadUrl) URL.revokeObjectURL(signatureUploadUrl); signatureUploadUrl = null;
+      signatureHasInk = false; overlay.src = ''; overlay.hidden = true;
+    };
+    const copyDrawnSignature = () => { finalContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height); finalContext.drawImage(drawCanvas, 0, 0); publishSignature(); };
     const renderTypedSignature = () => {
-      if (!signatureText) return;
-      context.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+      finalContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
       const value = signatureText.value.trim();
-      signatureHasInk = Boolean(value);
-      if (!value) return;
-      context.save();
-      context.fillStyle = '#111827';
-      context.font = 'italic 72px Georgia, serif';
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.fillText(value, signatureCanvas.width / 2, signatureCanvas.height / 2, signatureCanvas.width - 64);
-      context.restore();
+      if (value) { finalContext.save(); finalContext.fillStyle = '#111827'; finalContext.font = 'italic 72px Georgia, serif'; finalContext.textAlign = 'center'; finalContext.textBaseline = 'middle'; finalContext.fillText(value, signatureCanvas.width / 2, signatureCanvas.height / 2, signatureCanvas.width - 64); finalContext.restore(); }
+      publishSignature();
     };
-    signatureText?.addEventListener('input', renderTypedSignature);
+    signatureText.addEventListener('input', renderTypedSignature);
+
+    for (const context of [drawContext]) { context.strokeStyle = '#111827'; context.fillStyle = '#111827'; context.lineWidth = 5; context.lineCap = 'round'; context.lineJoin = 'round'; }
     let drawing = false;
-    const point = (event: PointerEvent) => {
-      const rect = signatureCanvas.getBoundingClientRect();
-      return { x: (event.clientX - rect.left) * (signatureCanvas.width / rect.width), y: (event.clientY - rect.top) * (signatureCanvas.height / rect.height) };
+    const point = (event: PointerEvent) => { const rect = drawCanvas.getBoundingClientRect(); return { x: (event.clientX - rect.left) * (drawCanvas.width / rect.width), y: (event.clientY - rect.top) * (drawCanvas.height / rect.height) }; };
+    drawCanvas.addEventListener('pointerdown', event => { event.preventDefault(); drawing = true; drawCanvas.setPointerCapture(event.pointerId); const current = point(event); drawContext.beginPath(); drawContext.arc(current.x, current.y, 2.5, 0, Math.PI * 2); drawContext.fill(); drawContext.beginPath(); drawContext.moveTo(current.x, current.y); });
+    drawCanvas.addEventListener('pointermove', event => { if (!drawing) return; event.preventDefault(); const current = point(event); drawContext.lineTo(current.x, current.y); drawContext.stroke(); copyDrawnSignature(); });
+    const stopDrawing = (event: PointerEvent) => { if (!drawing) return; event.preventDefault(); drawing = false; drawContext.closePath(); copyDrawnSignature(); };
+    drawCanvas.addEventListener('pointerup', stopDrawing); drawCanvas.addEventListener('pointercancel', stopDrawing);
+
+    const renderUploadedSignature = () => {
+      if (!uploadedCanvas) return;
+      const context = uploadedCanvas.getContext('2d', { willReadFrequently: true }); if (!context) return;
+      const image = context.getImageData(0, 0, uploadedCanvas.width, uploadedCanvas.height); const pixels = image.data;
+      const samples: number[][] = []; const stepX = Math.max(1, Math.floor(uploadedCanvas.width / 32)); const stepY = Math.max(1, Math.floor(uploadedCanvas.height / 32));
+      for (let x = 0; x < uploadedCanvas.width; x += stepX) for (const y of [0, uploadedCanvas.height - 1]) { const i = (y * uploadedCanvas.width + x) * 4; if (pixels[i + 3] > 0) samples.push([pixels[i], pixels[i + 1], pixels[i + 2]]); }
+      for (let y = 0; y < uploadedCanvas.height; y += stepY) for (const x of [0, uploadedCanvas.width - 1]) { const i = (y * uploadedCanvas.width + x) * 4; if (pixels[i + 3] > 0) samples.push([pixels[i], pixels[i + 1], pixels[i + 2]]); }
+      const bg = samples.reduce((sum, value) => [sum[0] + value[0], sum[1] + value[1], sum[2] + value[2]], [0, 0, 0]).map(value => value / Math.max(1, samples.length));
+      const threshold = Number(cleanupRange.value); const feather = Math.max(8, threshold * .55);
+      const cleaned = new ImageData(new Uint8ClampedArray(pixels), image.width, image.height); let minX = image.width, minY = image.height, maxX = 0, maxY = 0;
+      for (let y = 0; y < image.height; y += 1) for (let x = 0; x < image.width; x += 1) { const i = (y * image.width + x) * 4; if (cleaned.data[i + 3] === 0) continue; const distance = Math.hypot(cleaned.data[i] - bg[0], cleaned.data[i + 1] - bg[1], cleaned.data[i + 2] - bg[2]); const alpha = distance <= threshold ? 0 : distance < threshold + feather ? Math.round(cleaned.data[i + 3] * ((distance - threshold) / feather)) : cleaned.data[i + 3]; cleaned.data[i + 3] = alpha; if (alpha > 18) { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); } }
+      const temp = document.createElement('canvas'); temp.width = image.width; temp.height = image.height; temp.getContext('2d')?.putImageData(cleaned, 0, 0);
+      finalContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+      if (maxX > minX && maxY > minY) { const sourceWidth = maxX - minX + 1, sourceHeight = maxY - minY + 1; const scale = Math.min((signatureCanvas.width - 32) / sourceWidth, (signatureCanvas.height - 24) / sourceHeight); const width = sourceWidth * scale, height = sourceHeight * scale; finalContext.drawImage(temp, minX, minY, sourceWidth, sourceHeight, (signatureCanvas.width - width) / 2, (signatureCanvas.height - height) / 2, width, height); }
+      actionEl<HTMLImageElement>('#signature-upload-after').src = signatureCanvas.toDataURL('image/png'); publishSignature();
     };
-    signatureCanvas.addEventListener('pointerdown', event => {
-      if (signatureText?.value) { signatureText.value = ''; context.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height); }
-      drawing = true;
-      signatureHasInk = true;
-      signatureCanvas.setPointerCapture(event.pointerId);
-      const current = point(event);
-      context.beginPath();
-      context.arc(current.x, current.y, 2.5, 0, Math.PI * 2);
-      context.fill();
-      context.beginPath();
-      context.moveTo(current.x, current.y);
-    });
-    signatureCanvas.addEventListener('pointermove', event => { if (!drawing) return; const current = point(event); context.lineTo(current.x, current.y); context.stroke(); });
-    const stopDrawing = () => { drawing = false; context.closePath(); };
-    signatureCanvas.addEventListener('pointerup', stopDrawing);
-    signatureCanvas.addEventListener('pointercancel', stopDrawing);
-    actionEl<HTMLButtonElement>('#signature-clear').addEventListener('click', () => { context.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height); if (signatureText) signatureText.value = ''; signatureHasInk = false; signatureText?.focus(); });
+    uploadInput.addEventListener('change', async () => { const file = uploadInput.files?.[0]; if (!file) return; if (file.size > 10_000_000) { actionStatus.textContent = 'Choose a signature image smaller than 10 MB.'; return; } try { const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }); if (bitmap.width * bitmap.height > 20_000_000) { bitmap.close(); throw new Error('Choose an image under 20 megapixels.'); } uploadedCanvas = document.createElement('canvas'); uploadedCanvas.width = bitmap.width; uploadedCanvas.height = bitmap.height; uploadedCanvas.getContext('2d')?.drawImage(bitmap, 0, 0); bitmap.close(); if (signatureUploadUrl) URL.revokeObjectURL(signatureUploadUrl); signatureUploadUrl = URL.createObjectURL(file); actionEl<HTMLImageElement>('#signature-upload-before').src = signatureUploadUrl; uploadControls.hidden = false; renderUploadedSignature(); } catch (error) { actionStatus.textContent = error instanceof Error ? error.message : 'This signature image could not be decoded.'; } });
+    cleanupRange.addEventListener('input', () => { cleanupOutput.value = `${cleanupRange.value}%`; renderUploadedSignature(); });
+
+    actionRoot.querySelectorAll<HTMLButtonElement>('[data-sign-mode]').forEach(button => button.addEventListener('click', () => { clearSignature(); const mode = button.dataset.signMode; actionRoot.querySelectorAll<HTMLButtonElement>('[data-sign-mode]').forEach(candidate => { const active = candidate === button; candidate.setAttribute('aria-pressed', String(active)); candidate.classList.toggle('bg-surface', active); candidate.classList.toggle('text-ink', active); candidate.classList.toggle('shadow-small', active); candidate.classList.toggle('text-muted', !active); }); actionRoot.querySelectorAll<HTMLElement>('[data-sign-panel]').forEach(panel => { panel.hidden = panel.dataset.signPanel !== mode; }); (mode === 'type' ? signatureText : mode === 'draw' ? drawCanvas : uploadInput).focus(); }));
+    actionEl<HTMLButtonElement>('#signature-clear').addEventListener('click', () => { clearSignature(); signatureText.focus(); });
+
+    const sizeRange = actionEl<HTMLInputElement>('#signature-size'); sizeRange.addEventListener('input', () => { overlay.style.width = `${sizeRange.value}%`; });
+    const pageInput = actionEl<HTMLInputElement>('#signature-page'); pageInput.addEventListener('change', () => void renderSignPdfPage());
+    let moving = false, offsetX = 0, offsetY = 0;
+    overlay.addEventListener('pointerdown', event => { if (!signatureHasInk) return; event.preventDefault(); moving = true; overlay.setPointerCapture(event.pointerId); const rect = overlay.getBoundingClientRect(); offsetX = event.clientX - rect.left; offsetY = event.clientY - rect.top; });
+    overlay.addEventListener('pointermove', event => { if (!moving) return; event.preventDefault(); const stage = actionEl('#signature-page-stage'); const stageRect = stage.getBoundingClientRect(); const overlayRect = overlay.getBoundingClientRect(); const left = Math.max(0, Math.min(stageRect.width - overlayRect.width, event.clientX - stageRect.left - offsetX)); const top = Math.max(0, Math.min(stageRect.height - overlayRect.height, event.clientY - stageRect.top - offsetY)); overlay.style.left = `${(left / stageRect.width) * 100}%`; overlay.style.top = `${(top / stageRect.height) * 100}%`; });
+    const stopMove = (event: PointerEvent) => { if (!moving) return; event.preventDefault(); moving = false; };
+    overlay.addEventListener('pointerup', stopMove); overlay.addEventListener('pointercancel', stopMove);
   }
-  actionEl<HTMLButtonElement>('#action-choose').addEventListener('click', () => actionInput.click()); actionInput.addEventListener('change', () => void loadActionFiles(Array.from(actionInput.files ?? []))); actionEl<HTMLButtonElement>('#action-remove').addEventListener('click', resetAction); actionForm.addEventListener('submit', event => { event.preventDefault(); void processAction(); });
-  const actionDrop = actionEl('#action-drop'); for (const eventName of ['dragenter','dragover']) actionDrop.addEventListener(eventName, event => { event.preventDefault(); actionDrop.classList.add('border-blue','bg-blue-soft','select-none'); }); for (const eventName of ['dragleave','drop']) actionDrop.addEventListener(eventName, event => { event.preventDefault(); actionDrop.classList.remove('border-blue','bg-blue-soft','select-none'); }); actionDrop.addEventListener('drop', event => { const files = Array.from(event.dataTransfer?.files ?? []); if (files.length) void loadActionFiles(files); }); window.addEventListener('beforeunload', clearActionUrl);
+  let appendSelection = false;
+  actionEl<HTMLButtonElement>('#action-choose').addEventListener('click', () => { appendSelection = false; actionInput.click(); });
+  actionRoot.querySelector<HTMLButtonElement>('#action-add')?.addEventListener('click', () => { appendSelection = true; actionInput.click(); });
+  actionInput.addEventListener('change', () => void loadActionFiles(Array.from(actionInput.files ?? []), appendSelection)); actionEl<HTMLButtonElement>('#action-remove').addEventListener('click', resetAction); actionForm.addEventListener('submit', event => { event.preventDefault(); void processAction(); });
+  const actionDrop = actionEl('#action-drop'); for (const eventName of ['dragenter','dragover']) actionDrop.addEventListener(eventName, event => { event.preventDefault(); actionDrop.classList.add('border-blue','bg-blue-soft','select-none'); }); for (const eventName of ['dragleave','drop']) actionDrop.addEventListener(eventName, event => { event.preventDefault(); actionDrop.classList.remove('border-blue','bg-blue-soft','select-none'); }); actionDrop.addEventListener('drop', event => { const files = Array.from(event.dataTransfer?.files ?? []); if (files.length) void loadActionFiles(files, actionFiles.length > 0); }); window.addEventListener('beforeunload', clearActionUrl);
 </script>

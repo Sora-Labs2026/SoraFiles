@@ -1,12 +1,13 @@
 ---
 import type { LocaleContent } from '../i18n/types';
 import type { LocalePath } from '../i18n/config';
-import { liveTools, popularToolIds } from '../data/liveTools';
+import { liveTools } from '../data/liveTools';
+import { BOOTSTRAP_POPULAR_TOOL_IDS } from '../data/popularityRegistry.generated.js';
 import { liveText, liveToolCopy } from '../data/liveI18n';
+import { localizedPath } from '../i18n/config';
 import HeroVisualization from './HeroVisualization.astro';
 import LiveToolCard from './LiveToolCard.astro';
 import ToolPeekModal from './ToolPeekModal.astro';
-import AdsterraSlot from './AdsterraSlot.astro';
 import PreviewTrustIcon from './PreviewTrustIcon.astro';
 import FeatureIcon from './FeatureIcon.astro';
 import LocalProcessingPanel from './LocalProcessingPanel.astro';
@@ -15,6 +16,9 @@ interface Props { locale: LocalePath; content: LocaleContent; }
 const { locale } = Astro.props;
 const t = (path: string, vars?: Record<string, string | number>) => liveText(locale, path, vars);
 const localizedTools = liveTools.map((tool) => ({ tool, words: liveToolCopy(locale, tool.id) }));
+const popularToolIds = BOOTSTRAP_POPULAR_TOOL_IDS;
+const allToolsHref = localizedPath(locale, '/tools');
+const bootstrapRanking = { version: 1, mode: 'bootstrap', tools: popularToolIds };
 const marqueeTools = [...localizedTools, ...localizedTools];
 const trustItems = [
   ['local', t('trust.t1a'), t('trust.t1b'), t('trust.t1s'), 'lock-keyhole', 'bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300'],
@@ -26,7 +30,7 @@ const trustItems = [
 const features = [
   ['open-source', 'code-2', 'text-violet-500', t('feat.f1t'), t('feat.f1s')],
   ['mobile-friendly', 'smartphone', 'text-indigo-500', t('feat.f2t'), t('feat.f2s')],
-  ['ad-light', 'volume-1', 'text-emerald-500', t('feat.f3t'), t('feat.f3s')],
+  ['private-by-design', 'shield-check', 'text-emerald-500', t('panel.badge'), t('panel.check4')],
   ['offline-ready', 'wifi-off', 'text-blue-500', t('feat.f4t'), t('feat.f4s')],
   ['always-improving', 'rocket', 'text-rose-500', t('feat.f5t'), t('feat.f5s')],
 ] as const;
@@ -49,20 +53,17 @@ const features = [
     </div>
   </section>
 
-  <div data-testid="editorial-marquee" data-motion-region aria-hidden="true" class="marquee relative overflow-hidden border-y border-slate-900/5 py-5 dark:border-white/5"><div class="marquee-track flex w-max items-center gap-14 pr-14 rtl:pl-14 rtl:pr-0">{marqueeTools.map(({ words }) => <span class="flex items-center gap-14 text-xs font-bold uppercase tracking-[.35em] text-slate-600 dark:text-slate-400">{words.n}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 text-violet-500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0l1.58 6.14a2 2 0 0 0 1.44 1.44l6.14 1.58a.5.5 0 0 1 0 .96l-6.14 1.58a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0Z"/><path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/></svg></span>)}</div><div class="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[var(--sf-bg)] to-transparent rtl:left-auto rtl:right-0 rtl:bg-gradient-to-l"></div><div class="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[var(--sf-bg)] to-transparent rtl:left-0 rtl:right-auto rtl:bg-gradient-to-r"></div></div>
+  <div data-testid="editorial-marquee" aria-hidden="true" class="marquee relative overflow-hidden border-y border-slate-900/5 py-5 dark:border-white/5"><div class="marquee-track flex w-max items-center gap-14 pr-14 rtl:pl-14 rtl:pr-0">{marqueeTools.map(({ words }) => <span class="flex items-center gap-14 text-xs font-bold uppercase tracking-[.35em] text-slate-600 dark:text-slate-400">{words.n}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-3 w-3 text-violet-500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0l1.58 6.14a2 2 0 0 0 1.44 1.44l6.14 1.58a.5.5 0 0 1 0 .96l-6.14 1.58a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0Z"/><path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/></svg></span>)}</div><div class="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[var(--sf-bg)] to-transparent rtl:left-auto rtl:right-0 rtl:bg-gradient-to-l"></div><div class="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[var(--sf-bg)] to-transparent rtl:left-0 rtl:right-auto rtl:bg-gradient-to-r"></div></div>
 
   <section data-privacy-proof class="relative" aria-label={t('trust.t1s')}><div class="mx-auto max-w-[1200px] px-4 pt-10 sm:px-6"><div data-reveal data-testid="trust-strip" class="sf-reveal grid grid-cols-2 gap-x-4 gap-y-6 rounded-3xl border border-white/70 bg-white/75 px-6 py-7 shadow-xl shadow-indigo-500/10 backdrop-blur-xl sm:grid-cols-3 lg:grid-cols-5 dark:border-white/10 dark:bg-white/[.04] dark:shadow-black/30">{trustItems.map(([id,a,b,s,icon,tile], index) => <div data-privacy-proof-card data-testid={`trust-item-${id}`} class:list={['flex items-center gap-3.5', index > 0 && 'lg:border-l lg:border-slate-200/70 lg:pl-7 rtl:lg:border-l-0 rtl:lg:border-r rtl:lg:pl-0 rtl:lg:pr-7 dark:lg:border-white/10']}><span class:list={['flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', tile]}><PreviewTrustIcon {icon}/></span><span><span class="block text-[15px] font-extrabold leading-tight tracking-tight text-slate-900 dark:text-white">{a} <span class="block sm:inline">{b}</span></span><span class="mt-0.5 block text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400">{s}</span></span></div>)}</div></div></section>
 
-  <AdsterraSlot kind="responsive-horizontal" {locale} placement="home-primary" priority />
 
-  <section id="tools" data-testid="popular-tools-section" class="relative scroll-mt-20"><div class="mx-auto max-w-[1200px] px-4 py-14 sm:px-6 lg:py-20"><div data-reveal class="sf-reveal mb-8 flex items-end justify-between gap-6"><div><h2 data-tools-heading class="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{t('toolsSec.popular')}</h2><p data-tools-sub class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{t('toolsSec.popularSub')}</p><p data-tool-results-status class="sr-only" aria-live="polite">{t('toolsSec.popular')}: {popularToolIds.length}</p></div><button type="button" data-view-all-tools data-testid="view-all-tools-link" class="group hidden shrink-0 items-center gap-1.5 text-sm font-bold text-violet-600 transition-colors hover:text-violet-700 sm:inline-flex dark:text-violet-300">{t('toolsSec.viewAll')}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button></div><div id="tools-grid" data-testid="tools-grid" data-tools-grid class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">{localizedTools.map(({ tool, words }) => <div data-tool-search-item data-popular={String(popularToolIds.includes(tool.id))} data-search={`${words.n} ${words.d} ${tool.id} ${tool.slug}`.toLowerCase()} hidden={!popularToolIds.includes(tool.id)}><LiveToolCard {tool} {locale} modal /></div>)}</div><div data-tools-empty hidden data-testid="tools-empty-state" class="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-300 py-16 text-center dark:border-white/15"><span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-500 dark:bg-violet-500/15">⌕</span><p data-empty-copy class="text-sm font-bold text-slate-700 dark:text-slate-200"></p><button type="button" data-clear-search class="rounded-full bg-slate-900 px-5 py-2 text-xs font-bold text-white dark:bg-white dark:text-slate-900">{t('toolsSec.clear')}</button></div></div></section>
+  <section id="tools" data-testid="popular-tools-section" class="relative scroll-mt-20"><div class="mx-auto max-w-[1200px] px-4 py-14 sm:px-6 lg:py-20"><div data-reveal class="sf-reveal mb-8 flex items-end justify-between gap-6"><div><h2 data-tools-heading class="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{t('toolsSec.popular')}</h2><p data-tools-sub class="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{t('toolsSec.popularSub')}</p><p data-tool-results-status class="sr-only" aria-live="polite">{t('toolsSec.popular')}: {popularToolIds.length}</p></div><a href={allToolsHref} data-testid="view-all-tools-link" class="group hidden shrink-0 items-center gap-1.5 text-sm font-bold text-violet-600 transition-colors hover:text-violet-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-400 sm:inline-flex dark:text-violet-300">{t('toolsSec.viewAll', { n: liveTools.length })}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a></div><script is:inline type="application/json" data-popularity-ranking set:html={JSON.stringify(bootstrapRanking)}></script><div id="tools-grid" data-testid="tools-grid" data-tools-grid class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">{localizedTools.map(({ tool, words }) => <div data-tool-search-item data-tool-id={tool.id} data-popular={String(popularToolIds.includes(tool.id))} data-search={`${words.n} ${words.d} ${tool.id} ${tool.slug}`.toLowerCase()} hidden={!popularToolIds.includes(tool.id)}><LiveToolCard {tool} {locale} modal /></div>)}</div><div data-tools-empty hidden data-testid="tools-empty-state" class="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-slate-300 py-16 text-center dark:border-white/15"><span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-500 dark:bg-violet-500/15">⌕</span><p data-empty-copy class="text-sm font-bold text-slate-700 dark:text-slate-200"></p><button type="button" data-clear-search class="rounded-full bg-slate-900 px-5 py-2 text-xs font-bold text-white dark:bg-white dark:text-slate-900">{t('toolsSec.clear')}</button></div></div></section>
 
-  <AdsterraSlot kind="native" {locale} placement="home-secondary" />
 
   <LocalProcessingPanel {locale} />
 
   <section class="relative" aria-label={t('feat.f1t')}><div class="mx-auto max-w-[1200px] px-4 py-14 sm:px-6"><div data-reveal data-testid="feature-strip" class="sf-reveal grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">{features.map(([id,icon,tint,title,sub], index) => <div data-testid={`feature-${id}`} class:list={['flex items-center gap-3', index > 0 && 'lg:border-l lg:border-slate-200/80 lg:pl-7 rtl:lg:border-l-0 rtl:lg:border-r rtl:lg:pl-0 rtl:lg:pr-7 dark:lg:border-white/10']}><span class:list={['h-6 w-6 shrink-0', tint]}><FeatureIcon {icon}/></span><span><span class="block text-[13px] font-extrabold tracking-tight text-slate-900 dark:text-white">{title}</span><span class="block text-[11px] font-medium text-slate-500 dark:text-slate-400">{sub}</span></span></div>)}</div></div></section>
-  <AdsterraSlot kind="rectangle" {locale} placement="home-lower-desktop" />
   <ToolPeekModal {locale} />
 </main>
 
@@ -74,11 +75,28 @@ const features = [
   const searchForm = document.querySelector<HTMLFormElement>('[data-home-search-form]');
   const resultsSection = document.querySelector<HTMLElement>('#tools');
   const searchItems = [...document.querySelectorAll<HTMLElement>('[data-tool-search-item]')];
+  const toolsGrid = document.querySelector<HTMLElement>('[data-tools-grid]');
   const heading = document.querySelector<HTMLElement>('[data-tools-heading]');
   const sub = document.querySelector<HTMLElement>('[data-tools-sub]');
   const status = document.querySelector<HTMLElement>('[data-tool-results-status]');
   const empty = document.querySelector<HTMLElement>('[data-tools-empty]');
   const emptyCopy = document.querySelector<HTMLElement>('[data-empty-copy]');
+  const rankingNode = document.querySelector<HTMLScriptElement>('[data-popularity-ranking]');
+  try {
+    const ranking = JSON.parse(rankingNode?.textContent || '{}') as { tools?: unknown };
+    const rankedIds = Array.isArray(ranking.tools) ? ranking.tools.filter((id): id is string => typeof id === 'string').slice(0, 10) : [];
+    if (rankedIds.length === 10 && toolsGrid) {
+      const itemById = new Map(searchItems.map((item) => [item.dataset.toolId, item]));
+      const rankedSet = new Set(rankedIds);
+      rankedIds.forEach((id) => { const item = itemById.get(id); if (item) toolsGrid.append(item); });
+      searchItems.filter((item) => !rankedSet.has(item.dataset.toolId || '')).forEach((item) => toolsGrid.append(item));
+      searchItems.forEach((item) => {
+        const isPopular = rankedSet.has(item.dataset.toolId || '');
+        item.dataset.popular = String(isPopular);
+        item.hidden = !isPopular;
+      });
+    }
+  } catch {}
   const applySearch = (value: string) => {
     const q = value.trim().toLowerCase();
     let found = 0;
@@ -89,7 +107,10 @@ const features = [
     if (empty) empty.hidden = found > 0;
     if (emptyCopy) emptyCopy.textContent = fill(copy?.toolsNone, { q: value.trim() });
   };
-  const scrollToResults = () => resultsSection?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  const scrollToResults = () => {
+    const target = searchItems.find((item) => !item.hidden) ?? resultsSection;
+    target?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: target === resultsSection ? 'start' : 'center' });
+  };
   searchInput?.addEventListener('input', () => applySearch(searchInput.value));
   searchForm?.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -100,7 +121,6 @@ const features = [
   });
   document.querySelector('[data-explore-tools]')?.addEventListener('click', () => document.querySelector('#tools')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }));
   const clear = () => { if (!searchInput) return; searchInput.value = ''; applySearch(''); };
-  document.querySelector('[data-view-all-tools]')?.addEventListener('click', clear);
   document.querySelector('[data-clear-search]')?.addEventListener('click', clear);
-  addEventListener('keydown', (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); searchInput?.focus(); } });
+  window.addEventListener('keydown', (event: KeyboardEvent) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); searchInput?.focus(); } });
 </script>

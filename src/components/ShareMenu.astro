@@ -84,7 +84,7 @@ const networks = [
   [data-share-portal][hidden] { display: none !important; }
   [data-share-panel] { transform-origin: bottom center; }
   [data-share-portal][data-open] [data-share-dismiss].fixed { animation: share-backdrop-in 160ms ease-out both; }
-  [data-share-portal][data-open] [data-share-panel] { animation: share-panel-in 220ms cubic-bezier(.22, 1, .36, 1) both; }
+  [data-share-portal][data-open] [data-share-panel] { animation: share-panel-in 140ms cubic-bezier(.22, 1, .36, 1) both; }
   @keyframes share-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
   @keyframes share-panel-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @media (min-width: 640px) {
@@ -100,12 +100,29 @@ const networks = [
     return characters.length <= max ? characters.join('') : `${characters.slice(0, max - 1).join('').trimEnd()}…`;
   };
   const copyText = async (value: string) => {
-    try { await navigator.clipboard.writeText(value); }
-    catch {
-      const field = document.createElement('textarea');
-      field.value = value; field.setAttribute('readonly', ''); field.style.position = 'fixed'; field.style.opacity = '0';
-      document.body.append(field); field.select(); Reflect.get(document, 'execCommand').call(document, 'copy'); field.remove();
-    }
+    // Keep the legacy copy attempt synchronous with the trusted click. If the
+    // async Clipboard API rejects, browsers have already consumed that user
+    // activation and the fallback can no longer work (notably on iOS/Brave).
+    const field = document.createElement('textarea');
+    field.value = value;
+    field.setAttribute('readonly', '');
+    field.style.position = 'fixed';
+    field.style.inset = '0 auto auto -9999px';
+    document.body.append(field);
+    field.focus();
+    field.select();
+    field.setSelectionRange(0, field.value.length);
+    let copied = false;
+    try {
+      const legacyCopy = Reflect.get(document, 'execCommand');
+      if (typeof legacyCopy === 'function') copied = Boolean(Reflect.apply(legacyCopy, document, ['copy']));
+    } catch {}
+    field.remove();
+    if (copied) return true;
+    try {
+      if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(value); return true; }
+    } catch {}
+    return false;
   };
 
   document.querySelectorAll<HTMLDetailsElement>('[data-share-menu]').forEach((menu) => {
@@ -119,6 +136,10 @@ const networks = [
     document.body.append(portal);
     portal.hidden = true;
     portal.inert = true;
+    // The header closes open <details> menus on outside pointerdown. This
+    // panel is portaled to <body>, so its controls would otherwise be treated
+    // as outside clicks and the menu would close before their click handlers.
+    portal.addEventListener('pointerdown', (event) => event.stopPropagation());
 
     const focusable = () => [...portal.querySelectorAll<HTMLElement>('[data-share-panel] a[href], [data-share-panel] button:not([disabled]):not([hidden]), [data-share-panel] [tabindex]:not([tabindex="-1"])')].filter((element) => !element.hidden);
     let active = false;
@@ -151,8 +172,10 @@ const networks = [
       const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
       const isRtl = getComputedStyle(document.documentElement).direction === 'rtl';
       const inlineEnd = isRtl ? rect.left : viewportWidth - rect.right;
+      const stableTriggerTop = openingAnchor?.triggerTop ?? rect.top;
+      const alignedTriggerTop = Math.round(stableTriggerTop / 8) * 8;
       portal.style.setProperty('--sf-share-inline-end', `${Math.max(12, inlineEnd)}px`);
-      portal.style.setProperty('--sf-share-bottom', `${Math.max(12, viewportHeight - rect.top + 12)}px`);
+      portal.style.setProperty('--sf-share-bottom', `${Math.max(12, viewportHeight - alignedTriggerTop + 12)}px`);
     };
 
     const lockScroll = () => {
@@ -313,30 +336,36 @@ const networks = [
     };
     portal.querySelectorAll<HTMLAnchorElement>('[data-share-target]').forEach((link) => {
       const target = link.dataset.shareTarget; if (target && targets[target]) link.href = targets[target];
-      link.addEventListener('click', closeMenu);
     });
     const nativeButton = portal.querySelector<HTMLButtonElement>('[data-share-native]');
     if (nativeButton && typeof navigator.share === 'function') {
       nativeButton.hidden = false;
       nativeButton.addEventListener('click', async () => {
         try { await navigator.share({ title, text: post, url: canonical }); closeMenu(); }
-        catch (error) { if (error instanceof DOMException && error.name === 'AbortError') return; await copyText(sharedText); }
+        catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+          if (await copyText(canonical)) showCopiedState();
+        }
       });
     }
     const copyButton = portal.querySelector<HTMLButtonElement>('[data-share-copy]');
     const copyLabel = portal.querySelector<HTMLElement>('[data-share-copy-text]');
     const status = portal.querySelector<HTMLElement>('[data-share-status]');
     let copyResetTimer = 0;
+    const showCopiedState = () => {
+      const copied = copyButton?.dataset.copiedLabel ?? '';
+      if (copyLabel) copyLabel.textContent = copied;
+      if (status) status.textContent = copied;
+      window.clearTimeout(copyResetTimer);
+      copyResetTimer = window.setTimeout(() => { if (copyLabel) copyLabel.textContent = copyButton?.dataset.copyLabel ?? ''; }, 1600);
+    };
     resetCopyState = () => {
       window.clearTimeout(copyResetTimer);
       if (copyLabel) copyLabel.textContent = copyButton?.dataset.copyLabel ?? '';
       if (status) status.textContent = '';
     };
     copyButton?.addEventListener('click', async () => {
-      await copyText(sharedText); const copied = copyButton.dataset.copiedLabel ?? '';
-      if (copyLabel) copyLabel.textContent = copied; if (status) status.textContent = copied;
-      window.clearTimeout(copyResetTimer);
-      copyResetTimer = window.setTimeout(() => { if (copyLabel) copyLabel.textContent = copyButton.dataset.copyLabel ?? ''; }, 1600);
+      if (await copyText(canonical)) showCopiedState();
     });
   });
 </script>

@@ -38,7 +38,10 @@ async function runSmoke(page) {
     const response = await page.goto(`${baseUrl}${route.path}`, { waitUntil: 'domcontentloaded' });
     assert.ok(response?.ok(), `${route.path} returned ${response?.status() ?? 'no response'}.`);
     assert.equal(await page.locator('h1').count(), 1, `${route.path} must render exactly one H1.`);
-    assert.equal(await page.locator('input[type="file"]').count(), 1, `${route.path} must render one file input.`);
+    const expectedInputs = ['/sign-pdf', '/watermark-pdf'].includes(route.path) ? 2 : 1;
+    assert.equal(await page.locator('input[type="file"]').count(), expectedInputs, `${route.path} must render its source file input${expectedInputs === 2 ? ' and signature-image input' : ''}.`);
+    if (route.path === '/sign-pdf') assert.equal(await page.locator('#signature-upload').count(), 1, '/sign-pdf must render the signature-image chooser.');
+    if (route.path === '/watermark-pdf') assert.equal(await page.locator('#watermark-image').count(), 1, '/watermark-pdf must render the watermark-image chooser.');
     const chooser = page.locator(route.chooser);
     assert.equal(await chooser.count(), 1, `${route.path} must render its chooser.`);
     assert.ok(await chooser.isEnabled(), `${route.path} chooser must be enabled.`);
@@ -121,6 +124,7 @@ async function processDocumentAction(page, { route, files, configure }) {
     buffer: await readFile(path),
     filename: download.suggestedFilename(),
     stats: await page.locator('#action-result-stats').textContent(),
+    warning: await page.locator('#action-result-warning').textContent(),
   };
 }
 
@@ -152,7 +156,8 @@ async function runExtraTools(page) {
   const edited = (await processExtraTool(page, {
     route: 'edit-image', files: ['sample.jpg'],
     configure: async (currentPage) => {
-      await currentPage.locator('[data-extra-rotate]').selectOption('90');
+      await currentPage.locator('[data-edit-preview]').waitFor({ state: 'visible' });
+      await currentPage.locator('[data-edit-rotate-right]').click();
       await currentPage.locator('[data-extra-format]').selectOption('image/webp');
     },
   }))[0];
@@ -233,6 +238,18 @@ async function runDocumentActions(page) {
   for (const name of splitZip.names) await validatePdf(splitZip.entries[name], { pageCount: 1 });
   console.log(`PASS split-pdf ${split.filename} ${split.stats}`);
 
+  const sharedImageSource = await generateImageHeavyPdf(page);
+  const compactSplit = await processDocumentAction(page, {
+    route: 'split-pdf',
+    files: [{ name: 'shared-image-pages.pdf', mimeType: 'application/pdf', buffer: sharedImageSource }],
+  });
+  const compactZip = validateZip(compactSplit.buffer, /^page-\d{3}\.pdf$/i);
+  assert.equal(compactZip.names.length, 3);
+  assert.ok(compactSplit.warning?.trim(), 'Smart split must disclose when image-based compact pages were used.');
+  assert.ok(compactSplit.buffer.length < sharedImageSource.length * 2, `Smart split remained abnormally large: ${compactSplit.buffer.length}/${sharedImageSource.length} bytes.`);
+  for (const name of compactZip.names) await validatePdf(compactZip.entries[name], { pageCount: 1 });
+  console.log(`PASS split-pdf compact fallback ${compactSplit.buffer.length}/${sharedImageSource.length} bytes`);
+
   const rotate = await processDocumentAction(page, {
     route: 'rotate-pdf',
     files: ['text-two-page.pdf'],
@@ -259,6 +276,34 @@ async function runDocumentActions(page) {
   assert.match(await extractPdfText(watermarked.buffer), /QA WATERMARK/i, 'Watermark PDF must embed the requested visible text.');
   console.log(`PASS watermark-pdf ${watermarked.filename} ${watermarked.stats}`);
 
+  const imageWatermarkAsIs = await processDocumentAction(page, {
+    route: 'watermark-pdf',
+    files: ['text-two-page.pdf'],
+    configure: async (currentPage) => {
+      await currentPage.locator('[data-watermark-mode="image"]').click();
+      await currentPage.locator('#watermark-image').setInputFiles(fixturePath('sample.jpg'));
+      await currentPage.locator('#watermark-image-preview').waitFor({ state: 'visible' });
+      await currentPage.locator('input[name="watermarkImageTreatment"][value="as-is"]').check();
+    },
+  });
+  await validatePdf(imageWatermarkAsIs.buffer, { pageCount: 2 });
+  assert.ok(imageWatermarkAsIs.buffer.length > watermarked.buffer.length, 'Image watermark output must contain the embedded uploaded image.');
+
+  const imageWatermarkCleaned = await processDocumentAction(page, {
+    route: 'watermark-pdf',
+    files: ['text-two-page.pdf'],
+    configure: async (currentPage) => {
+      await currentPage.locator('[data-watermark-mode="image"]').click();
+      await currentPage.locator('#watermark-image').setInputFiles(fixturePath('sample.jpg'));
+      await currentPage.locator('input[name="watermarkImageTreatment"][value="remove"]').check();
+      await currentPage.locator('#watermark-cleanup').fill('40');
+      assert.equal(await currentPage.locator('#watermark-cleanup-controls').isVisible(), true, 'Background removal must expose its strength control.');
+    },
+  });
+  await validatePdf(imageWatermarkCleaned.buffer, { pageCount: 2 });
+  assert.notDeepEqual(imageWatermarkCleaned.buffer, imageWatermarkAsIs.buffer, 'Background removal and as-is modes must produce distinct PDFs.');
+  console.log('PASS watermark-pdf image as-is and background-removal modes');
+
   const numbered = await processDocumentAction(page, {
     route: 'page-numbers',
     files: ['text-two-page.pdf'],
@@ -272,7 +317,8 @@ async function runDocumentActions(page) {
     route: 'sign-pdf',
     files: ['text-two-page.pdf'],
     configure: async (currentPage) => {
-      const canvas = currentPage.locator('#signature-canvas');
+      await currentPage.locator('[data-sign-mode="draw"]').click();
+      const canvas = currentPage.locator('#signature-draw-canvas');
       await canvas.click({ position: { x: 35, y: 70 } });
       const box = await canvas.boundingBox();
       assert.ok(box, 'Signature canvas must be visible.');
@@ -505,13 +551,15 @@ async function runImageCompression(page) {
   const opaquePng = await generatePngFixture(page, false);
   const transparentPng = await generatePngFixture(page, true);
 
-  const targetSwitch = await processImageCompression(page, {
+  const pngTarget = await processImageCompression(page, {
     input: { name: 'opaque.png', mimeType: 'image/png', buffer: opaquePng },
     mode: 'target',
     targetKb: 250,
   });
-  assert.equal(targetSwitch.outputMime, 'image/webp', 'Choosing Target from PNG Auto must switch to a target-capable format immediately.');
-  console.log(`PASS compress-image PNG target-mode switch ${targetSwitch.stats}`);
+  assert.equal(pngTarget.outputMime, 'image/png', 'Choosing Target must not silently change PNG to WebP.');
+  assert.ok(pngTarget.buffer.length <= 250_000, 'PNG Target mode must honor its byte ceiling without changing format.');
+  await validateImageInBrowser(page, pngTarget.buffer, 'image/png');
+  console.log(`PASS compress-image PNG target-mode format truth ${pngTarget.stats}`);
 
   const opaque = await processImageCompression(page, {
     input: { name: 'opaque.png', mimeType: 'image/png', buffer: opaquePng },
@@ -695,6 +743,8 @@ try {
     await runImageCompression(page);
   } else if (selectedGroup === 'pdf') {
     await runPdfCompression(page);
+  } else if (selectedGroup === 'extra') {
+    await runExtraTools(page);
   } else if (selectedGroup) {
     throw new Error(`Unknown tool group: ${selectedGroup}`);
   } else if (selectedTool === 'pdf-to-word') {

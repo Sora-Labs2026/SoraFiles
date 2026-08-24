@@ -192,6 +192,27 @@ const toolRows: Record<NonEnglishLocale, ToolRow> = {
   ],
 };
 
+const chapter3ToolRows: Record<NonEnglishLocale, [ToolWords, ToolWords]> = {
+  es: [{ n: 'Redimensionar imagen', d: 'Recorta y cambia dimensiones localmente', t: 'Píxeles exactos, proporciones y calidad.' }, { n: 'Escáner de documentos', d: 'Escanea y mejora documentos en tu dispositivo', t: 'Corrige la perspectiva y exporta páginas limpias.' }],
+  fr: [{ n: 'Redimensionner une image', d: 'Recadrez et changez les dimensions localement', t: 'Pixels exacts, proportions et qualité.' }, { n: 'Scanner de documents', d: 'Numérisez et améliorez sur votre appareil', t: 'Corrigez la perspective et exportez des pages nettes.' }],
+  de: [{ n: 'Bildgröße ändern', d: 'Bild lokal zuschneiden und skalieren', t: 'Exakte Pixel, Seitenverhältnisse und Qualität.' }, { n: 'Dokumentenscanner', d: 'Dokumente auf dem Gerät scannen und verbessern', t: 'Perspektive korrigieren und saubere Seiten exportieren.' }],
+  pt: [{ n: 'Redimensionar imagem', d: 'Recorte e altere dimensões localmente', t: 'Píxeis exatos, proporções e qualidade.' }, { n: 'Digitalizador de documentos', d: 'Digitalize e melhore documentos no dispositivo', t: 'Corrija a perspetiva e exporte páginas limpas.' }],
+  it: [{ n: 'Ridimensiona immagine', d: 'Ritaglia e cambia dimensioni localmente', t: 'Pixel esatti, proporzioni e qualità.' }, { n: 'Scanner documenti', d: 'Scansiona e migliora documenti sul dispositivo', t: 'Correggi la prospettiva ed esporta pagine pulite.' }],
+  nl: [{ n: 'Afbeelding verkleinen', d: 'Snijd bij en wijzig afmetingen lokaal', t: 'Exacte pixels, verhoudingen en kwaliteit.' }, { n: 'Documentscanner', d: 'Scan en verbeter documenten op je apparaat', t: 'Corrigeer perspectief en exporteer nette pagina’s.' }],
+  pl: [{ n: 'Zmień rozmiar obrazu', d: 'Przytnij i zmień wymiary lokalnie', t: 'Dokładne piksele, proporcje i jakość.' }, { n: 'Skaner dokumentów', d: 'Skanuj i poprawiaj dokumenty na urządzeniu', t: 'Koryguj perspektywę i eksportuj czyste strony.' }],
+  tr: [{ n: 'Görseli boyutlandır', d: 'Görseli cihazda kırpın ve boyutlandırın', t: 'Kesin piksel, oran ve kalite kontrolleri.' }, { n: 'Belge tarayıcı', d: 'Belgeleri cihazınızda tarayın ve iyileştirin', t: 'Perspektifi düzeltin ve temiz sayfalar çıkarın.' }],
+  id: [{ n: 'Ubah ukuran gambar', d: 'Pangkas dan ubah dimensi secara lokal', t: 'Piksel, rasio, dan kualitas yang tepat.' }, { n: 'Pemindai dokumen', d: 'Pindai dan tingkatkan dokumen di perangkat', t: 'Perbaiki perspektif dan ekspor halaman bersih.' }],
+  vi: [{ n: 'Đổi kích thước ảnh', d: 'Cắt và đổi kích thước ngay trên thiết bị', t: 'Điều khiển chính xác pixel, tỉ lệ và chất lượng.' }, { n: 'Quét tài liệu', d: 'Quét và cải thiện tài liệu trên thiết bị', t: 'Sửa phối cảnh và xuất trang rõ nét.' }],
+  ja: [{ n: '画像サイズ変更', d: '画像を端末上で切り抜き・サイズ変更', t: '正確なピクセル、比率、品質を指定。' }, { n: '書類スキャナー', d: '端末上で書類をスキャン・補正', t: '遠近を補正して見やすいページを書き出し。' }],
+  ko: [{ n: '이미지 크기 조절', d: '기기에서 자르고 크기를 변경', t: '정확한 픽셀, 비율, 품질 제어.' }, { n: '문서 스캐너', d: '기기에서 문서를 스캔하고 보정', t: '원근을 교정해 깨끗한 페이지로 내보내세요.' }],
+  'zh-cn': [{ n: '调整图片大小', d: '在设备上裁剪并更改尺寸', t: '精确控制像素、比例和质量。' }, { n: '文档扫描仪', d: '在设备上扫描并增强文档', t: '校正透视并导出清晰页面。' }],
+  'zh-tw': [{ n: '調整圖片大小', d: '在裝置上裁切並變更尺寸', t: '精確控制像素、比例與品質。' }, { n: '文件掃描器', d: '在裝置上掃描並增強文件', t: '校正透視並匯出清晰頁面。' }],
+  hi: [{ n: 'इमेज का आकार बदलें', d: 'डिवाइस पर काटें और आयाम बदलें', t: 'सटीक पिक्सेल, अनुपात और गुणवत्ता नियंत्रण।' }, { n: 'दस्तावेज़ स्कैनर', d: 'डिवाइस पर दस्तावेज़ स्कैन और बेहतर करें', t: 'परिप्रेक्ष्य ठीक कर साफ़ पृष्ठ निर्यात करें।' }],
+  th: [{ n: 'ปรับขนาดรูปภาพ', d: 'ครอบตัดและเปลี่ยนขนาดบนอุปกรณ์', t: 'กำหนดพิกเซล อัตราส่วน และคุณภาพอย่างแม่นยำ' }, { n: 'สแกนเอกสาร', d: 'สแกนและปรับปรุงเอกสารบนอุปกรณ์', t: 'แก้มุมมองและส่งออกหน้าที่คมชัด' }],
+  ar: [{ n: 'تغيير حجم الصورة', d: 'اقتصص الصورة وغيّر أبعادها على جهازك', t: 'تحكم دقيق في البكسل والنسبة والجودة.' }, { n: 'ماسح المستندات', d: 'امسح المستندات وحسّنها على جهازك', t: 'صحح المنظور وصدّر صفحات واضحة.' }],
+  ru: [{ n: 'Изменить размер изображения', d: 'Обрезайте и меняйте размеры на устройстве', t: 'Точные пиксели, пропорции и качество.' }, { n: 'Сканер документов', d: 'Сканируйте и улучшайте документы на устройстве', t: 'Исправляйте перспективу и сохраняйте чистые страницы.' }],
+};
+
 const passwordLabels: Record<NonEnglishLocale, string> = {
   es: 'Contraseña', fr: 'Mot de passe', de: 'Passwort', pt: 'Palavra-passe', it: 'Parola d’accesso', nl: 'Wachtwoord', pl: 'Hasło', tr: 'Parola', id: 'Kata sandi', vi: 'Mật khẩu',
   ja: 'パスワード', ko: '비밀번호', 'zh-cn': '密码', 'zh-tw': '密碼', hi: 'पासवर्ड', th: 'รหัสผ่าน', ar: 'كلمة المرور', ru: 'Пароль',
@@ -223,7 +244,11 @@ export function liveSupplement(locale: LocalePath): Record<string, unknown> {
   const content = getLocaleContent(locale);
   const workbench = getWorkbenchMessages(locale);
   const ocr = getOcrMessages(locale);
-  const tools = Object.fromEntries(toolIds.map((id, index) => [id, toolRows[locale][index]]));
+  const tools: Record<string, ToolWords> = {
+    ...Object.fromEntries(toolIds.map((id, index) => [id, toolRows[locale][index]])),
+    'resize-image': chapter3ToolRows[locale][0],
+    'doc-scanner': chapter3ToolRows[locale][1],
+  };
   const form = content.pages.contact.form;
   const password = passwordLabels[locale];
 
@@ -276,6 +301,8 @@ export function liveSupplement(locale: LocalePath): Record<string, unknown> {
       pdfToExcel: tools['pdf-to-excel'].t,
       excelToPdf: tools['excel-to-pdf'].t,
       ocr: ocr.layoutWarning,
+      resize: chapter3ToolRows[locale][0].t,
+      scanner: chapter3ToolRows[locale][1].t,
     },
     tool: tools,
   };

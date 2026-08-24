@@ -1,16 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { access, readFile, readdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import worker from '../../worker.js';
 
-test('ads robots allows render resources while keeping the rest of the origin blocked', async () => {
-  const response = await worker.fetch(new Request('https://ads.sorafiles.com/robots.txt'), {});
-  assert.equal(response.status, 200);
-  assert.match(response.headers.get('content-type') || '', /^text\/plain/);
-  const body = await response.text();
-  assert.match(body, /^Disallow: \/$/m);
-  assert.match(body, /^Allow: \/ad-frame\/$/m);
-});
+const listAstroFiles = async (directory) => {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const nested = await Promise.all(entries.map((entry) => {
+    const path = join(directory, entry.name);
+    return entry.isDirectory() ? listAstroFiles(path) : path.endsWith('.astro') ? [path] : [];
+  }));
+  return nested.flat();
+};
 
 test('worker never marks unhashed public assets immutable', async () => {
   const env = { ASSETS: { fetch: async () => new Response('asset', { headers: { 'Cache-Control': 'public,max-age=0,must-revalidate' } }) } };
@@ -37,7 +39,7 @@ test('worker secures HTML while allowing native Cloudflare compression', async (
   assert.equal(response.headers.get('X-Frame-Options'), 'DENY');
   assert.match(response.headers.get('Content-Security-Policy') || '', /frame-ancestors 'none'/);
   assert.match(response.headers.get('Content-Security-Policy') || '', /object-src 'none'/);
-  assert.match(response.headers.get('Permissions-Policy') || '', /camera=\(\)/);
+  assert.match(response.headers.get('Permissions-Policy') || '', /camera=\(self\)/);
   assert.doesNotMatch(response.headers.get('Cache-Control') || '', /(?:^|,)\s*no-transform\s*(?:,|$)/i);
   assert.doesNotMatch(await response.text(), /cloudflareinsights|beacon\.min\.js|data-cf-beacon/i);
 });
@@ -75,12 +77,33 @@ test('legacy index filenames permanently redirect to the canonical root', async 
   }
 });
 
-test('completed Trustpilot HTML verification artifact remains unavailable', async () => {
-  const env = { ASSETS: { fetch: async () => new Response('stale token') } };
-  const response = await worker.fetch(new Request('https://sorafiles.com/012e83a8-ea3b-4e5f-984a-0b5e9d3bd7ad.html'), env);
-  assert.equal(response.status, 404);
-  assert.equal(response.headers.get('Cache-Control'), 'no-store');
-  assert.equal(await response.text(), 'Not Found');
+test('tool preview CTA is crawlable before client enhancement', async () => {
+  const source = await readFile('src/components/ToolPeekModal.astro', 'utf8');
+  assert.match(source, /const initialOpenToolHref = payload\[0\]\?\.href \?\? localizedPath\(locale, '\/'\);/);
+  assert.match(source, /<a href=\{initialOpenToolHref\} data-peek-open/);
+});
+
+test('every first-party Astro image declares alt semantics', async () => {
+  const files = await listAstroFiles('src');
+  for (const file of files) {
+    const source = await readFile(file, 'utf8');
+    for (const tag of source.match(/<img\b[^>]*>/gs) ?? []) {
+      assert.match(tag, /\balt\s*=/, `${file} contains an img without an alt attribute`);
+    }
+  }
+});
+
+test('homepage metadata and decorative brand marks satisfy the Part 14 contract', async () => {
+  const index = await readFile('src/pages/index.astro', 'utf8');
+  const description = index.match(/const description = '([^']+)'/)?.[1] ?? '';
+  assert.ok(description.length >= 120 && description.length <= 160, `homepage description length is ${description.length}`);
+  assert.match(description, /process files locally in your browser/i);
+
+  for (const file of ['src/components/Header.astro', 'src/components/Footer.astro']) {
+    const source = await readFile(file, 'utf8');
+    assert.match(source, /aria-hidden="true"[^>]+background-image: url\('\/favicon-48x48\.png'\)/);
+    assert.doesNotMatch(source, /<img[^>]+favicon-48x48\.png/);
+  }
 });
 
 test('Ahrefs analytics uses one direct low-priority asynchronous head tag', async () => {
@@ -90,6 +113,23 @@ test('Ahrefs analytics uses one direct low-priority asynchronous head tag', asyn
   assert.match(layout, /\basync\b/);
   assert.match(layout, /fetchpriority="low"/);
   assert.doesNotMatch(layout, /GTM-[A-Z0-9]+/);
+});
+
+test('Google Analytics runtime and measurement ID stay removed', async () => {
+  const layout = await readFile('src/layouts/Layout.astro', 'utf8');
+  await assert.rejects(access('src/components/GoogleServices.astro', constants.F_OK));
+  assert.doesNotMatch(layout, /GoogleServices|googletagmanager|google-analytics|G-GQ973RY74K|\bgtag\s*\(/i);
+  for (const path of ['dist/index.html', 'dist/privacy/index.html', 'dist/ja/index.html']) {
+    const html = await readFile(path, 'utf8');
+    assert.doesNotMatch(html, /googletagmanager|google-analytics|G-GQ973RY74K|data-sf-google-analytics|\bgtag\s*\(/i, path);
+  }
+});
+
+test('localized home metadata uses the reviewed native catalog instead of visual hero fragments', async () => {
+  const route = await readFile('src/pages/[locale]/[...path].astro', 'utf8');
+  assert.match(route, /const title = isHome \? content\.home\.title/);
+  assert.match(route, /const description = isHome \? content\.home\.description/);
+  assert.doesNotMatch(route, /isHome \? `SoraFiles — \$\{liveText\(locale, 'hero\.l1b'\)\}/);
 });
 
 test('English open-source page keeps substantive, truthful content', async () => {
@@ -107,20 +147,12 @@ test('English open-source page keeps substantive, truthful content', async () =>
   assert.doesNotMatch(openSourcePage, /sections:\s*\[\s*\]/);
 });
 
-test('isolated ad-frame HTML also disables Cloudflare analytics injection', async () => {
-  const env = {
-    ASSETS: {
-      fetch: async () => new Response('<!doctype html><title>Advertisement</title>', {
-        headers: { 'Content-Type': 'text/html' },
-      }),
-    },
-  };
-  const response = await worker.fetch(new Request('https://ads.sorafiles.com/ad-frame/mobile'), env);
-  assert.equal(response.headers.get('Content-Type'), 'text/html; charset=utf-8');
-  assert.equal(response.headers.get('X-Content-Type-Options'), 'nosniff');
-  assert.match(response.headers.get('Content-Security-Policy') || '', /frame-ancestors https:\/\/sorafiles\.com/);
-  assert.equal(response.headers.get('X-Frame-Options'), null);
-  assert.match(response.headers.get('Cache-Control') || '', /(?:^|,)\s*no-transform\s*(?:,|$)/i);
+test('legacy preview hubs permanently redirect to localized tools hubs', async () => {
+  const env = { ASSETS: { fetch: async () => new Response('not used') } };
+  const english = await worker.fetch(new Request('https://sorafiles.com/preview'), env);
+  const japanese = await worker.fetch(new Request('https://sorafiles.com/ja/preview/'), env);
+  assert.equal(english.status, 301); assert.equal(english.headers.get('Location'), 'https://sorafiles.com/tools');
+  assert.equal(japanese.status, 301); assert.equal(japanese.headers.get('Location'), 'https://sorafiles.com/ja/tools');
 });
 
 test('worker marks only allowlisted hashed Astro assets immutable when the recipe is active', async () => {

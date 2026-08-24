@@ -11,11 +11,12 @@ const payload = liveTools.map((tool) => ({
   id: tool.id,
   n: liveToolCopy(locale, tool.id).n,
   t: liveToolCopy(locale, tool.id).t,
-  accept: tool.accept,
-  outputLabel: tool.outputLabel,
+  inputFormats: tool.inputFormats,
+  outputFormats: tool.outputFormats,
   href: localizedPath(locale, `/${tool.slug}`),
   limitation: tool.limitationKey ? liveText(locale, tool.limitationKey) : '',
 }));
+const initialOpenToolHref = payload[0]?.href ?? localizedPath(locale, '/');
 const steps = [liveText(locale, 'steps.s1t'), liveText(locale, 'steps.s2t'), liveText(locale, 'steps.s3t')];
 ---
 
@@ -31,10 +32,27 @@ const steps = [liveText(locale, 'steps.s1t'), liveText(locale, 'steps.s2t'), liv
       </div>
       <p id="peek-tagline" data-peek-tagline class="mt-4 text-sm font-semibold leading-relaxed text-slate-600 dark:text-slate-300"></p>
       <div data-testid="peek-motion" class="mt-4 min-h-28 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/70 sm:min-h-32 dark:border-white/10 dark:bg-white/[0.04]"><div data-peek-motion></div></div>
-      <div class="mt-4 grid grid-cols-2 gap-3"><div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/5"><div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{liveText(locale, 'peek.worksWith')}</div><div data-peek-input class="mt-1 text-sm font-extrabold text-slate-800 dark:text-slate-100"></div></div><div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3 dark:border-emerald-400/20 dark:bg-emerald-500/10"><div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">{liveText(locale, 'peek.youGet')}</div><div data-peek-output class="mt-1 text-sm font-extrabold text-emerald-700 dark:text-emerald-300"></div></div></div>
+      <div class="relative mt-4 overflow-hidden rounded-2xl border border-violet-100/80 bg-gradient-to-br from-violet-50/90 via-white/90 to-cyan-50/80 p-4 shadow-sm shadow-violet-500/10 dark:border-violet-400/15 dark:from-violet-500/10 dark:via-white/[.04] dark:to-cyan-500/[.08]">
+        <div aria-hidden="true" class="absolute -right-12 -top-16 h-32 w-32 rounded-full bg-fuchsia-300/20 blur-3xl dark:bg-fuchsia-400/10"></div>
+        <div class="relative grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-start">
+          <section class="min-w-0" aria-labelledby="peek-input-label">
+            <div id="peek-input-label" class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-violet-700 dark:text-violet-300"><span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-violet-500 shadow-[0_0_0_4px_rgba(139,92,246,.12)]"></span>{liveText(locale, 'peek.worksWith')}</div>
+            <div data-peek-input translate="no" class="mt-2 flex min-w-0 flex-wrap gap-1.5"></div>
+          </section>
+          <div aria-hidden="true" class="flex items-center gap-2 text-violet-400 sm:mt-5 sm:block">
+            <span class="h-px flex-1 bg-gradient-to-r from-violet-200 to-cyan-200 sm:hidden"></span>
+            <span class="flex h-7 w-7 shrink-0 rotate-90 items-center justify-center rounded-full border border-violet-200/80 bg-white/90 shadow-sm sm:rotate-0 dark:border-white/15 dark:bg-white/10"><svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span>
+            <span class="h-px flex-1 bg-gradient-to-r from-cyan-200 to-violet-200 sm:hidden"></span>
+          </div>
+          <section class="min-w-0" aria-labelledby="peek-output-label">
+            <div id="peek-output-label" class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300"><span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,.12)]"></span>{liveText(locale, 'peek.youGet')}</div>
+            <div data-peek-output translate="no" class="mt-2 flex min-w-0 flex-wrap gap-1.5"></div>
+          </section>
+        </div>
+      </div>
       <ol class="mt-4 space-y-2">{steps.map((step, index) => <li class="flex items-center gap-2.5 text-xs font-bold text-slate-600 dark:text-slate-300"><span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[10px] font-extrabold text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">{index + 1}</span>{step}</li>)}</ol>
       <p data-peek-limitation hidden class="mt-4 items-start gap-2 text-[11px] font-medium leading-snug text-slate-500 dark:text-slate-400"><svg aria-hidden="true" viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h10l4 4v14H5zM15 3v5h4M8 13h8M8 17h6"/></svg><span data-peek-limitation-copy></span></p>
-      <a data-peek-open class="group mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-slate-900 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition-shadow hover:shadow-xl dark:bg-white dark:text-slate-900"><span data-peek-open-label></span><svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
+      <a href={initialOpenToolHref} data-peek-open class="group mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-slate-900 text-sm font-bold text-white shadow-lg shadow-slate-900/20 transition-shadow hover:shadow-xl dark:bg-white dark:text-slate-900"><span data-peek-open-label></span><svg aria-hidden="true" viewBox="0 0 24 24" class="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></a>
     </div>
   </div>
 </div>
@@ -42,11 +60,15 @@ const steps = [liveText(locale, 'steps.s1t'), liveText(locale, 'steps.s2t'), liv
   {liveTools.map((tool) => <span data-peek-icon-option={tool.id} class:list={['flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md [&_svg]:h-6 [&_svg]:w-6', tool.tile]}><ToolIcon icon={tool.icon}/></span>)}
   <div data-peek-motion-style-carrier><ToolMotion tool={liveTools[0]} compact /></div>
 </template>
+<template data-peek-input-chip-template><span class="inline-flex min-h-6 max-w-full items-center rounded-full border border-violet-200/80 bg-white/80 px-2.5 py-1 text-[10px] font-extrabold leading-none text-violet-700 shadow-sm dark:border-violet-400/20 dark:bg-violet-500/10 dark:text-violet-200"></span></template>
+<template data-peek-output-chip-template><span class="inline-flex min-h-6 max-w-full items-center rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2.5 py-1 text-[10px] font-extrabold leading-none text-emerald-700 shadow-sm dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200"></span></template>
 <script type="application/json" data-live-tools-json is:inline set:html={JSON.stringify(payload).replace(/</g, '\\u003c')}></script>
 
 <script is:inline define:vars={{ openToolLabel: liveText(locale, 'peek.openTool') }}>
   const peekRoot = document.querySelector('[data-peek-root]');
   const peekOptionsTemplate = document.querySelector('[data-peek-options-template]');
+  const inputChipTemplate = document.querySelector('[data-peek-input-chip-template]');
+  const outputChipTemplate = document.querySelector('[data-peek-output-chip-template]');
   const toolsPayload = JSON.parse(document.querySelector('[data-live-tools-json]')?.textContent || '[]');
   const byId = new Map(toolsPayload.map((tool) => [String(tool.id), tool]));
   const motionCache = new Map();
@@ -59,13 +81,15 @@ const steps = [liveText(locale, 'steps.s1t'), liveText(locale, 'steps.s2t'), liv
     document.body.style.overflow = previousBodyOverflow;
     activeTrigger?.focus();
   };
-  const inputSummary = (accept) => {
-    const value = accept.toLowerCase();
-    if (value.includes('heic')) return 'HEIC · HEIF';
-    if (value.includes('wordprocessingml')) return 'DOCX';
-    if (value.includes('excel') || value.includes('spreadsheet') || value.includes('csv')) return 'XLSX · XLS · CSV';
-    if (value.includes('image/')) return 'JPG · PNG · WebP';
-    return 'PDF';
+  const renderFormats = (selector, formats, template) => {
+    const slot = peekRoot?.querySelector(selector);
+    if (!slot || !template) return;
+    const chips = (Array.isArray(formats) ? formats : []).map((format) => {
+      const chip = template.content.firstElementChild?.cloneNode(true);
+      if (chip) chip.textContent = String(format);
+      return chip;
+    }).filter(Boolean);
+    slot.replaceChildren(...chips);
   };
   const loadMotion = async (tool) => {
     const id = String(tool.id);
@@ -116,8 +140,8 @@ const steps = [liveText(locale, 'steps.s1t'), liveText(locale, 'steps.s2t'), liv
     const set = (selector, value) => { const element = peekRoot.querySelector(selector); if (element) element.textContent = value; };
     set('[data-peek-title]', String(tool.n));
     set('[data-peek-tagline]', String(tool.t));
-    set('[data-peek-input]', inputSummary(String(tool.accept)));
-    set('[data-peek-output]', String(tool.outputLabel));
+    renderFormats('[data-peek-input]', tool.inputFormats, inputChipTemplate);
+    renderFormats('[data-peek-output]', tool.outputFormats, outputChipTemplate);
     set('[data-peek-open-label]', `${openToolLabel} — ${String(tool.n)}`);
     const link = peekRoot.querySelector('[data-peek-open]');
     if (link) link.href = String(tool.href);

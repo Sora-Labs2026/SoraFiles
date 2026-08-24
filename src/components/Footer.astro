@@ -5,18 +5,18 @@ import ShareMenu from './ShareMenu.astro';
 interface Props { locale?: LocalePath; }
 const { locale = 'en' } = Astro.props;
 const hrefFor = (path: string) => localizedPath(locale, path);
-const links = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 'nav.openSource'), '/open-source'], [liveText(locale, 'nav.contact'), '/contact'], [liveText(locale, 'nav.privacy'), '/privacy'], [liveText(locale, 'nav.terms'), '/terms'], [liveText(locale, 'nav.allPages'), '/preview']] as const;
+const links = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 'nav.openSource'), '/open-source'], [liveText(locale, 'nav.contact'), '/contact'], [liveText(locale, 'nav.privacy'), '/privacy'], [liveText(locale, 'nav.terms'), '/terms'], [liveText(locale, 'nav.allTools'), '/tools']] as const;
 const tagline = liveText(locale, 'footer.tagline');
 ---
 
 <footer data-testid="site-footer" class="sf-deferred-section relative">
   <div class="mx-auto flex max-w-[1200px] flex-col items-start justify-between gap-5 border-t border-slate-200/70 px-4 py-10 sm:flex-row sm:items-center sm:px-6 dark:border-white/10">
     <a href={hrefFor('/')} data-testid="footer-logo-link" class="flex items-center gap-2.5">
-      <img src="/favicon-48x48.png" alt="" class="h-7 w-7 rounded-lg" width="28" height="28" />
+      <span aria-hidden="true" class="h-7 w-7 rounded-lg bg-contain bg-center bg-no-repeat" style="background-image: url('/favicon-48x48.png')"></span>
       <span><span translate="no" class="block text-sm font-extrabold tracking-tight text-slate-900 dark:text-white">SoraFiles</span><span class="block text-[11px] font-medium text-slate-600 dark:text-slate-400">{tagline}</span></span>
     </a>
     <div class="flex w-full flex-col gap-4 sm:w-auto sm:items-end">
-      <nav aria-label={liveText(locale, 'nav.allPages')} class="flex flex-wrap items-center gap-x-6 gap-y-2">
+      <nav aria-label={liveText(locale, 'nav.allTools')} class="flex flex-wrap items-center gap-x-6 gap-y-2">
         {links.map(([label, path]) => <a href={hrefFor(path)} data-testid={`footer-link-${path.slice(1)}`} class="text-xs font-bold text-slate-600 transition-colors hover:text-violet-600 dark:text-slate-400 dark:hover:text-violet-300">{label}</a>)}
       </nav>
       <div class="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">

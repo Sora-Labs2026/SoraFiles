@@ -1,18 +1,20 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { extname, join } from 'node:path';
-import { liveTools, popularToolIds } from '../src/data/liveTools.ts';
+import { liveTools } from '../src/data/liveTools.ts';
+import { BOOTSTRAP_POPULAR_TOOL_IDS, PUBLISHED_TOOL_IDS } from '../src/data/popularityRegistry.generated.js';
 import { localizedPath, publishedLocales } from '../src/i18n/config.ts';
 import { getHardReductionMessage, getPdfPageLimit, workbenchMessages } from '../src/i18n/workbench.ts';
 
 const failures = [];
 const toolIds = new Set(liveTools.map((tool) => tool.id));
 const slugs = new Set(liveTools.map((tool) => tool.slug));
-const featured = new Set(popularToolIds);
+const popular = new Set(BOOTSTRAP_POPULAR_TOOL_IDS);
 
 if (toolIds.size !== liveTools.length) failures.push('Tool IDs must be unique.');
 if (slugs.size !== liveTools.length) failures.push('Tool slugs must be unique.');
-if (featured.size !== popularToolIds.length) failures.push('Featured tool IDs must be unique.');
-for (const id of popularToolIds) if (!toolIds.has(id)) failures.push(`Featured tool “${id}” is not in the public registry.`);
+if (popular.size !== 10 || BOOTSTRAP_POPULAR_TOOL_IDS.length !== 10) failures.push('Popular Tools bootstrap must contain exactly 10 unique tools.');
+for (const id of BOOTSTRAP_POPULAR_TOOL_IDS) if (!toolIds.has(id)) failures.push(`Popular tool “${id}” is not in the public registry.`);
+if (JSON.stringify(PUBLISHED_TOOL_IDS) !== JSON.stringify(liveTools.map((tool) => tool.id))) failures.push('Generated popularity registry is stale.');
 
 const compressImage = liveTools.find((tool) => tool.id === 'compress-image');
 if (!compressImage?.accept.toLowerCase().includes('heic') || !compressImage.accept.toLowerCase().includes('heif')) {
@@ -51,7 +53,7 @@ const canonicalCopy = readFileSync('src/data/liveCopy.ts', 'utf8');
 for (const stale of ['No uploads, no accounts, no watermarks.', 'nothing is uploaded', 'Nothing is uploaded.', 'No servers. No uploads.']) {
   if (canonicalCopy.includes(stale)) failures.push(`Canonical copy contains deprecated broad privacy wording: “${stale}”`);
 }
-for (const required of ['No file uploads for processing', 'No processing servers.', 'files stay on your device']) {
+for (const required of ['No file uploads for processing, processing servers, or upload queue.', 'files stay on your device']) {
   if (!canonicalCopy.includes(required)) failures.push(`Canonical copy is missing precise file-processing wording: “${required}”`);
 }
 
@@ -68,10 +70,11 @@ if (!process.argv.includes('--source-only') && existsSync('dist/index.html')) {
     const homepage = join('dist', ...(locale === 'en' ? [] : [locale]), 'index.html');
     const html = readFileSync(homepage, 'utf8');
     const renderedTools = (html.match(/\sdata-tool-search-item(?:\s|>)/g) ?? []).length;
-    const renderedFeatured = (html.match(/data-popular="true"/g) ?? []).length;
+    const renderedPopular = (html.match(/data-popular="true"/g) ?? []).length;
     if (renderedTools !== liveTools.length) failures.push(`${locale}: rendered ${renderedTools} tools; registry has ${liveTools.length}.`);
-    if (renderedFeatured !== popularToolIds.length) failures.push(`${locale}: rendered ${renderedFeatured} featured tools; configuration has ${popularToolIds.length}.`);
-    if (!html.includes(`data-tool-results-status`) || !html.includes(`: ${popularToolIds.length}</p>`)) failures.push(`${locale}: featured count is not rendered from configuration.`);
+    if (renderedPopular !== 10) failures.push(`${locale}: rendered ${renderedPopular} popular tools; exactly 10 are required.`);
+    if (!html.includes(`data-tool-results-status`) || !html.includes(`: 10</p>`)) failures.push(`${locale}: Popular Tools count is not rendered as 10.`);
+    if (!html.includes(`data-popularity-ranking`) || !html.includes(`data-tool-id=`)) failures.push(`${locale}: runtime popularity bootstrap contract is missing.`);
 
     const contactFile = join('dist', ...(locale === 'en' ? [] : [locale]), 'contact', 'index.html');
     const contactHtml = readFileSync(contactFile, 'utf8');
@@ -93,4 +96,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Content truth validation passed: ${liveTools.length} registry tools, ${popularToolIds.length} featured tools, ${publishedLocales.length} locale contracts.`);
+console.log(`Content truth validation passed: ${liveTools.length} registry tools, 10 popular tools, ${publishedLocales.length} locale contracts.`);

@@ -36,7 +36,7 @@ Everyday file tasks should not require an account, a watermark, or an upload que
 
 The interface is statically rendered with Astro, supports 19 languages, includes right-to-left Arabic layouts, and remains navigable when JavaScript is disabled wherever processing is not required.
 
-The current production build contains 23 public tools, 576 generated pages, and 570 localized canonical URLs. The repository is the public source for the live Cloudflare deployment.
+The current release contains 25 public tools, 610 generated pages, and 608 localized canonical URLs. The repository is the public source for the live Cloudflare deployment.
 
 ## Privacy model
 
@@ -45,7 +45,7 @@ SoraFiles has no file-upload or server-processing endpoint for its file tools. F
 Some page-level services are separate from file processing:
 
 - The Contact form sends the fields and optional attachment a user explicitly submits to FormSubmit for delivery to Sora Labs.
-- Production pages use separately disclosed analytics and dimensionally reserved Adsterra advertising. Advertising runs in isolated cross-origin frames, and first-party tool code does not send selected file contents to these services.
+- Production pages use separately disclosed analytics. First-party tool code does not send selected file contents to analytics services.
 
 Do not use this software as a substitute for your organization’s document-handling, legal, or security requirements.
 
@@ -63,7 +63,7 @@ SoraFiles shows relevant tradeoffs before processing and rejects formats or vari
 
 - Astro 7 static multi-page application
 - Strict TypeScript and Tailwind CSS 4
-- PDF.js, pdf-lib, Tesseract.js, heic-to, Canvas, Web Workers, and WebAssembly
+- PDF.js, pdf-lib, Tesseract.js, heic-to, Scanic, jSquash, Canvas, Web Workers, and WebAssembly
 - Static deployment through Cloudflare Workers assets
 - Real-output browser tests that parse generated PDFs, DOCX files, ZIP archives, and images
 
@@ -142,11 +142,11 @@ tests/           unit, browser, fixtures, and real-output validation
 
 Currently verified:
 
-- 23 public file tools and real output fixtures
+- 25 public file tools and real output fixtures
 - Cancellable PDF compression, merge, split, rotate, JPG-to-PDF, and PDF-to-JPG jobs with stale-result protection
 - Structured corrupt/encrypted-file recovery and tool-specific output validation before downloads appear
 - Local OCR assets for supported languages
-- 576 static pages and 570 localized canonical URLs
+- 610 generated pages and 608 localized canonical URLs
 - Responsive light/dark/system themes, keyboard access, reduced motion, RTL, and zoom/reflow coverage
 - No account requirement, no watermark, and no overwrite of the original file
 

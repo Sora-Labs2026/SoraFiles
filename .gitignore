@@ -1,5 +1,6 @@
 # build output
 dist/
+# generated types
 .astro/
 .wrangler/
 .wrangler-state/
@@ -7,17 +8,34 @@ dist/
 # dependencies
 node_modules/
 
-# task-local evidence and orchestration ledgers
-.artifacts/
-.superpowers/
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# private project operations and AI continuity
+
+# environment variables
+.env
+.env.production
+.env*.local
+
+# private Google Search Console credentials (exact/common local names only)
+google-search-console.json
+search-console-credentials.json
+.credentials/google-search-console*.json
+
+# local verification and submission receipts
+.artifacts/
+
+# private project operations, prompts, and local AI continuity
 .ai/
 .agent/
 .agents/
 .claude/
 .codex/
 docs/architecture/
+docs/reports/
 docs/superpowers/
 skill-observations/
 AI WORK LOG.txt
@@ -36,28 +54,10 @@ design-system/
 .reference/
 references/
 English Sub-links/
-docs/reports/
 *.zip
 
-# logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# environment variables
-.env
-.env.production
-.env.*
-!.env.example
-
-# operating-system and IDE files
+# macOS-specific files
 .DS_Store
+
+# jetbrains setting folder
 .idea/
-.vscode/
-Thumbs.db
-Desktop.ini
-coverage/
-playwright-report/
-test-results/

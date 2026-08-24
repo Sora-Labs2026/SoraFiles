@@ -1,9 +1,10 @@
 // Extra tools engine — 100% client-side. No file ever leaves the browser.
 import { safeOutputStem } from '../utils/filename.ts';
 import { createLocalOcrEngine } from '../lib/ocr/local-engine.ts';
+import { stripImageMeta, stripOpenXmlMeta } from '../lib/metadata-strip.js';
 // protect/unlock : real AES-256 encryption via @pdfsmaller (PDF 2.0 standard)
 // repair         : lenient pdf-lib re-save
-// metadata       : strip PDF Info + XMP, strip image EXIF via canvas re-encode
+// metadata       : strip PDF Info/XMP and common image/Open XML metadata without changing content
 // excel<->pdf     : SheetJS (xlsx) + pdf-lib table render / pdf.js text extract
 // ocr            : tesseract.js (runs in a Web Worker)
 import { PDFDocument, PDFName, StandardFonts, rgb } from "pdf-lib";
@@ -102,31 +103,8 @@ export async function repairPdf(files) {
 }
 
 // ----------------------------------------------------------------------------
-// Metadata remover — PDFs (Info + XMP) and images (EXIF/GPS via re-encode).
+// Metadata remover — PDFs, lossless JPG/PNG/WebP container cleanup, and Open XML.
 // ----------------------------------------------------------------------------
-async function stripImageMeta(file) {
-    const url = URL.createObjectURL(file);
-    try {
-        const img = await new Promise((resolve, reject) => {
-            const i = new Image();
-            i.onload = () => resolve(i);
-            i.onerror = () => reject(new Error("badImage"));
-            i.src = url;
-        });
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
-        const png = /\.png$/i.test(file.name) || file.type === "image/png";
-        const type = png ? "image/png" : "image/jpeg";
-        const blob = await new Promise((res) => canvas.toBlob(res, type, png ? undefined : 0.92));
-        return { blob, ext: png ? "png" : "jpg" };
-    } finally {
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-    }
-}
-
 export async function removeMetadata(files, _opts, prog, ctrl) {
     const results = [];
     for (let idx = 0; idx < files.length; idx++) {
@@ -153,11 +131,14 @@ export async function removeMetadata(files, _opts, prog, ctrl) {
                 /* no XMP present */
             }
             const out = await doc.save({ useObjectStreams: false });
-            results.push({ name: `${baseName(file.name)}-clean.pdf`, blob: pdfBlob(out) });
+            results.push({ name: `${baseName(file.name)}-clean.pdf`, blob: pdfBlob(out), detail: 'Removed PDF document information and XMP metadata. Page content was preserved.' });
+        } else if (/\.(docx|xlsx|pptx)$/i.test(file.name)) {
+            const cleaned = await stripOpenXmlMeta(file);
+            results.push({ name: `${baseName(file.name)}-clean.${cleaned.ext}`, blob: cleaned.blob, detail: cleaned.detail });
         } else {
-            const { blob, ext } = await stripImageMeta(file);
+            const { blob, ext, detail } = await stripImageMeta(file);
             if (!blob) throw new Error("badImage");
-            results.push({ name: `${baseName(file.name)}-clean.${ext}`, blob });
+            results.push({ name: `${baseName(file.name)}-clean.${ext}`, blob, detail });
         }
         prog?.(idx + 1, files.length);
     }

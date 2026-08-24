@@ -7,7 +7,7 @@ interface Props { tool: LiveTool; locale?: LocalePath; }
 const { tool } = Astro.props;
 ---
 
-<div data-process-motion hidden class="mt-4 overflow-hidden rounded-2xl border border-violet-100/80 bg-gradient-to-b from-violet-50/70 via-white/60 to-white/40 p-4 shadow-lg shadow-indigo-500/5 dark:border-violet-400/15 dark:from-violet-500/[.08] dark:via-transparent dark:to-transparent" aria-hidden="true">
+<div data-process-motion data-tool-process-motion={tool.id} hidden class="mt-4 overflow-hidden rounded-2xl border border-violet-100/80 bg-gradient-to-b from-violet-50/70 via-white/60 to-white/40 p-4 shadow-lg shadow-indigo-500/5 dark:border-violet-400/15 dark:from-violet-500/[.08] dark:via-transparent dark:to-transparent" aria-hidden="true">
   <ToolMotion {tool} />
 </div>
 
@@ -16,6 +16,7 @@ const { tool } = Astro.props;
     const workbench = motion.closest<HTMLElement>('#workbench');
     if (!workbench) return;
     const extraProgress = workbench.querySelector<HTMLElement>('[data-extra-progress]');
+    const result = workbench.querySelector<HTMLElement>('[data-workbench-result], [data-extra-results]');
     if (extraProgress) {
       extraProgress.prepend(motion);
       motion.dataset.embedded = 'true';
@@ -26,6 +27,20 @@ const { tool } = Astro.props;
 
     let submitted = false;
     const isShown = (node: Element) => !node.closest('[hidden]');
+    let resultWasVisible = Boolean(result && isShown(result));
+    const emitSuccess = () => {
+      if (location.origin !== 'https://sorafiles.com' || navigator.webdriver || document.documentElement.dataset.sfE2e === 'true') return;
+      const tool = motion.dataset.toolProcessMotion;
+      if (!tool) return;
+      const body = JSON.stringify({ tool, event: 'tool_process_success' });
+      try {
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/__sf/popularity/event', new Blob([body], { type: 'application/json' }));
+        } else {
+          void fetch('/__sf/popularity/event', { method: 'POST', body, headers: { 'Content-Type': 'application/json' }, keepalive: true, credentials: 'same-origin' }).catch(() => {});
+        }
+      } catch {}
+    };
     const sync = () => {
       const extraBusy = Boolean(extraProgress && !extraProgress.hidden);
       const formBusy = submitted && [...workbench.querySelectorAll<HTMLButtonElement>('button[type="submit"]')]
@@ -33,6 +48,9 @@ const { tool } = Astro.props;
       if (submitted && !formBusy && !extraBusy) submitted = false;
       const shouldHide = !(extraBusy || formBusy);
       if (motion.hidden !== shouldHide) motion.hidden = shouldHide;
+      const resultIsVisible = Boolean(result && isShown(result));
+      if (resultIsVisible && !resultWasVisible) emitSuccess();
+      resultWasVisible = resultIsVisible;
     };
 
     workbench.querySelectorAll('form').forEach((form) => form.addEventListener('submit', () => {

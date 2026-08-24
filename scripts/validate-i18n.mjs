@@ -19,11 +19,11 @@ const forbiddenEnglishFragments = [
   'aria-label="Primary"', 'aria-label="Appearance"', 'aria-label="Open menu"',
   'aria-label="Footer"', 'aria-label="Capabilities"', 'aria-label="Product features"',
   'PDF password', 'Enter a password', 'No rotation', 'clockwise',
+  'Start camera', 'Stop camera', 'Capture page', 'Adjust corners', 'Scanned pages',
+  'Crop ratio', 'Keep aspect ratio', 'Resize mode', 'Resize locally', 'Replace image',
+  'Camera access was denied', 'No usable camera', 'Files stay on this device',
 ];
 const obsoleteHomepageClaims = [
-  'Popular Tools', '人気のツール', '인기 도구', '热门工具', '熱門工具', 'लोकप्रिय टूल', 'เครื่องมือยอดนิยม',
-  'Herramientas populares', 'Outils populaires', 'Beliebte Tools', 'Ferramentas populares', 'Strumenti popolari',
-  'Populaire tools', 'Popularne narzędzia', 'Popüler araçlar', 'Alat populer', 'Công cụ phổ biến', 'أدوات شائعة', 'Популярные инструменты',
   'No servers. No uploads.', 'サーバーなし。アップロードなし。', '서버 없음. 업로드 없음.', '无服务器。无上传。', '無伺服器。無上傳。',
   'ना सर्वर। ना अपलोड।', 'ไม่มีเซิร์ฟเวอร์ ไม่มีการอัปโหลด', 'Sin servidores. Sin subidas.', "Pas de serveurs. Pas d'envois.",
   'Keine Server. Keine Uploads.', 'Sem servidores. Sem envios.', 'Niente server. Niente caricamenti.', 'Geen servers. Geen uploads.',

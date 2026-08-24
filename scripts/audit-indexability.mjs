@@ -156,7 +156,6 @@ const summary = {
   intentionalExclusions: [
     { route: '/404', classification: 'technical', reason: 'Error document; noindex.' },
     { route: '/heic', classification: 'duplicate-alias', reason: 'Compatibility alias; noindex and canonicalized to /heic-to-jpg.' },
-    { route: 'https://ads.sorafiles.com/ad-frame/{desktop|mobile|native|rectangle}', classification: 'technical', count: 4, reason: 'Sandboxed advertising documents; noindex/nofollow.' },
     { route: '/__locale', classification: 'technical', reason: 'Private no-store locale suggestion JSON endpoint.' },
   ],
   runtimeDynamicPublicHtmlRoutes: 0,

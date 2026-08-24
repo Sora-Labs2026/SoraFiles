@@ -33,7 +33,7 @@ const sharedRoutePaths = [
   '/privacy',
   '/terms',
   '/open-source',
-  '/preview',
+  '/tools',
 ] as const;
 
 export const localizedRoutePaths = [

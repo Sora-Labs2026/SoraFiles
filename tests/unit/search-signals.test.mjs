@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
+import { localizedRoutePaths, publishedLocales } from '../../src/i18n/config.ts';
 
 test('search automation validates the complete canonical sitemap without network calls', async () => {
   const result = spawnSync(process.execPath, ['scripts/ping-search-engines.js', '--dry-run'], {
@@ -11,7 +12,7 @@ test('search automation validates the complete canonical sitemap without network
   });
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const receipt = JSON.parse(await readFile('.artifacts/search-submission-receipt.json', 'utf8'));
-  assert.equal(receipt.canonicalUrlCount, 570);
+  assert.equal(receipt.canonicalUrlCount, publishedLocales.length * localizedRoutePaths.length);
   assert.equal(receipt.mode, 'dry-run');
   assert.deepEqual(receipt.operations.map(({ provider }) => provider), ['indexnow', 'google-search-console', 'bing-webmaster']);
   assert.equal(JSON.stringify(receipt).includes('TOKEN'), false);

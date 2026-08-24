@@ -2,12 +2,12 @@
 import type { LocalizedToolCopy } from '../i18n/types';
 import type { LocalePath } from '../i18n/config';
 import { getHardReductionMessage, getWorkbenchMessages } from '../i18n/workbench';
-interface Props { locale?: LocalePath; copy?: LocalizedToolCopy; }
-const { locale = 'en', copy = { title: 'Compress Images', description: 'Compress and resize JPG, PNG, WebP, HEIC, or HEIF locally.', note: 'Auto targets a useful reduction while preserving acceptable quality. Metadata may not be preserved; the original is never changed.' } as LocalizedToolCopy } = Astro.props;
+interface Props { locale?: LocalePath; copy?: LocalizedToolCopy; forceJpg?: boolean; }
+const { locale = 'en', forceJpg = false, copy = { title: 'Compress Images', description: 'Compress and resize JPG, PNG, WebP, HEIC, or HEIF locally.', note: 'Auto targets a useful reduction while preserving acceptable quality. Metadata may not be preserved; the original is never changed.' } as LocalizedToolCopy } = Astro.props;
 const m = getWorkbenchMessages(locale);
 const hardReductionMessage = getHardReductionMessage(locale);
 ---
-<section data-workbench id="image-tool" aria-labelledby="tool-heading" class="relative mx-auto max-w-5xl scroll-mt-24 px-5 sm:px-6" data-localized={locale !== 'en' ? 'true' : 'false'} data-copy-description={copy.description} data-copy-note={copy.note}>
+<section data-workbench id="image-tool" aria-labelledby="tool-heading" class="relative mx-auto max-w-5xl scroll-mt-24 px-5 sm:px-6" data-localized={locale !== 'en' ? 'true' : 'false'} data-force-jpg={forceJpg ? 'true' : 'false'} data-copy-description={copy.description} data-copy-note={copy.note}>
   <div class="overflow-hidden rounded-card bg-surface shadow-card">
     <div class="border-b border-line px-5 py-4 sm:px-7">
       <div class="flex flex-wrap items-center justify-between gap-3">
@@ -31,12 +31,12 @@ const hardReductionMessage = getHardReductionMessage(locale);
           </svg>
         </div>
         <h3 class="mt-5 text-xl font-semibold tracking-tight">{m.chooseImage}</h3>
-        <p class="mt-2 max-w-md text-sm leading-6 text-muted">JPG, PNG, WebP, HEIC, HEIF · {m.processedHere}</p>
+        <p class="mt-2 max-w-md text-sm leading-6 text-muted">{forceJpg ? 'HEIC, HEIF → JPG' : 'JPG, PNG, WebP, HEIC, HEIF'} · {m.processedHere}</p>
         <button id="choose-file" type="button" class="mt-6 inline-flex min-h-12 items-center justify-center rounded-control bg-action px-6 text-sm font-medium text-action-contrast shadow-small transition-colors hover:bg-action-hover">
           {m.chooseImage}
         </button>
         <p class="mt-3 hidden text-xs text-muted sm:block">{m.dragDrop}</p>
-        <input id="file-input" name="imageFile" class="sr-only" tabindex="-1" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" aria-label={m.chooseImage} aria-describedby="file-help file-error" />
+        <input id="file-input" name="imageFile" class="sr-only" tabindex="-1" type="file" accept={forceJpg ? 'image/heic,image/heif,.heic,.heif' : 'image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif'} aria-label={m.chooseImage} aria-describedby="file-help file-error" />
         <p id="file-help" class="sr-only">{copy.description}</p>
         <p id="file-error" hidden role="alert" tabindex="-1" class="mt-4 max-w-md break-words rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
       </div>
@@ -67,7 +67,7 @@ const hardReductionMessage = getHardReductionMessage(locale);
       </div>
 
       <form data-workbench-controls id="settings-form" class="p-5 sm:p-7">
-        <fieldset>
+        <fieldset hidden={forceJpg}>
           <legend class="text-sm font-semibold">{m.compressionGoal}</legend>
           <div class="mt-3 grid grid-cols-3 rounded-control bg-canvas p-1 text-sm">
             <label class="cursor-pointer">
@@ -110,7 +110,7 @@ const hardReductionMessage = getHardReductionMessage(locale);
 
         <div class="mt-5">
           <label for="output-format" class="text-sm font-medium">{m.outputFormat}</label>
-          <select id="output-format" name="outputFormat" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink focus:border-blue focus:ring-2 focus:ring-blue/15">
+          <select id="output-format" name="outputFormat" disabled={forceJpg} class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink focus:border-blue focus:ring-2 focus:ring-blue/15 disabled:cursor-not-allowed disabled:opacity-70">
             <option value="image/jpeg">JPG</option>
             <option value="image/webp">WebP</option>
             <option value="image/png">PNG</option>
@@ -118,6 +118,11 @@ const hardReductionMessage = getHardReductionMessage(locale);
         </div>
 
         <div id="format-warning" hidden role="status" class="mt-4 rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></div>
+
+        <label id="flatten-confirm-wrap" hidden class="mt-4 cursor-pointer items-start gap-3 rounded-control border border-line bg-surface px-4 py-3 text-sm leading-6">
+          <input id="flatten-confirm" type="checkbox" class="mt-1.5 accent-blue" />
+          <span>JPG cannot preserve transparency. Replace transparent pixels with white.</span>
+        </label>
 
         <details class="mt-5 rounded-control border border-line px-4 py-3">
           <summary class="cursor-pointer text-sm font-medium">{m.whatChanges}</summary>
@@ -180,6 +185,7 @@ const hardReductionMessage = getHardReductionMessage(locale);
 
   const input = $('#file-input') as HTMLInputElement;
   const imageToolRoot = $('#image-tool');
+  const forceJpg = imageToolRoot.dataset.forceJpg === 'true';
   const localizedWorkbench = imageToolRoot.dataset.localized === 'true';
   const chooseButton = $('#choose-file') as HTMLButtonElement;
   const dropZone = $('#drop-zone');
@@ -195,6 +201,8 @@ const hardReductionMessage = getHardReductionMessage(locale);
   const percentOutput = $('#percent-output') as HTMLOutputElement;
   bindPercentRange(percentInput, percentOutput);
   const formatWarning = $('#format-warning');
+  const flattenConfirmWrap = $('#flatten-confirm-wrap') as HTMLLabelElement;
+  const flattenConfirm = $('#flatten-confirm') as HTMLInputElement;
   const status = $('#process-status');
   const fileError = $('#file-error');
   const processButton = $('#process-file') as HTMLButtonElement;
@@ -308,26 +316,27 @@ const hardReductionMessage = getHardReductionMessage(locale);
 
   const updateMode = () => {
     const mode = new FormData(form).get('mode');
-    if (mode !== 'auto' && formatSelect.value === 'image/png') {
-      formatSelect.value = 'image/webp';
-      updateWarning();
-      return;
-    }
     targetControls.hidden = mode !== 'target';
     percentControls.hidden = mode !== 'percent';
+    updateWarning();
   };
 
   const updateWarning = () => {
     const output = formatSelect.value as OutputMime;
     let message = '';
     if (hasTransparency && output === 'image/jpeg') {
-      message = 'JPEG cannot keep transparency. Transparent areas will become white. Choose WebP or PNG to keep them transparent.';
+      message = 'JPG cannot keep transparency. Confirm a white background below, or choose WebP or PNG.';
     } else if (output === 'image/png') {
-      message = 'PNG Auto mode reduces color precision locally and keeps transparency. It preserves dimensions when possible, then resizes only if needed to save at least 20%. Choosing a target size or reduction amount switches the output to WebP.';
+      const mode = new FormData(form).get('mode');
+      message = mode === 'auto'
+        ? 'PNG keeps transparency. Compression reduces color precision and preserves dimensions when possible.'
+        : 'PNG hard limits are met with bounded color reduction and, only when necessary, deliberate dimension reduction. The result preview shows any resize.';
     }
+    flattenConfirmWrap.hidden = !(hasTransparency && output === 'image/jpeg');
+    flattenConfirmWrap.classList.toggle('flex', !flattenConfirmWrap.hidden);
+    processButton.disabled = !flattenConfirmWrap.hidden && !flattenConfirm.checked;
     formatWarning.textContent = message;
     formatWarning.hidden = !message;
-    updateMode();
   };
 
   const clearUrls = () => {
@@ -342,6 +351,7 @@ const hardReductionMessage = getHardReductionMessage(locale);
     selectedFile = null;
     selectedMime = null;
     hasTransparency = false;
+    flattenConfirm.checked = false;
     input.value = '';
     emptyState.hidden = false;
     workState.hidden = true;
@@ -374,7 +384,7 @@ const hardReductionMessage = getHardReductionMessage(locale);
         : hasTransparency
         ? 'Transparency detected. WebP is recommended because it can keep transparent pixels while often producing a smaller file.'
         : 'The image is ready. Auto aims for about 30% savings and only reduces dimensions when re-encoding alone cannot save at least 20%.';
-      formatSelect.value = detectedMime === 'image/heic' ? 'image/jpeg' : hasTransparency ? 'image/webp' : detectedMime;
+      formatSelect.value = forceJpg || detectedMime === 'image/heic' ? 'image/jpeg' : hasTransparency ? 'image/webp' : detectedMime;
       emptyState.hidden = true;
       workState.hidden = false;
       resultState.hidden = true;
@@ -454,7 +464,8 @@ const hardReductionMessage = getHardReductionMessage(locale);
     resultState.hidden = true;
     status.textContent = fileMessages.processing;
     try {
-      const mime = formatSelect.value as OutputMime;
+      const mime = forceJpg ? 'image/jpeg' : formatSelect.value as OutputMime;
+      if (hasTransparency && mime === 'image/jpeg' && !flattenConfirm.checked) throw new Error('Confirm the white background or choose a format that preserves transparency.');
       const mode = new FormData(form).get('mode');
       const { canvas, context } = await imageToCanvas(selectedFile, selectedMime);
       if (mime === 'image/jpeg' && hasTransparency) {
@@ -525,6 +536,7 @@ const hardReductionMessage = getHardReductionMessage(locale);
     if ((event.target as HTMLInputElement).name === 'mode') updateMode();
   });
   formatSelect.addEventListener('change', updateWarning);
+  flattenConfirm.addEventListener('change', updateWarning);
   form.addEventListener('submit', event => { event.preventDefault(); void processImage(); });
   document.querySelectorAll<HTMLButtonElement>('[data-target]').forEach(button => {
     button.addEventListener('click', () => { targetInput.value = button.dataset.target ?? '500'; });

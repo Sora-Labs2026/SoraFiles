@@ -1,6 +1,5 @@
 ---
 import '../styles/global.css';
-import GoogleServices from '../components/GoogleServices.astro';
 import { localeByPath, localeDefinitions, publishedAlternates, type LocalePath } from '../i18n/config';
 import { getLocaleContent } from '../i18n';
 import { liveText } from '../data/liveI18n';
@@ -16,7 +15,6 @@ interface Props {
   schema?: Record<string, unknown> | Record<string, unknown>[];
   locale?: LocalePath;
   alternatePath?: string;
-  monetized?: boolean;
 }
 
 const {
@@ -30,7 +28,6 @@ const {
   schema,
   locale = 'en',
   alternatePath = canonicalPath,
-  monetized = false,
 } = Astro.props;
 
 const description = providedDescription ?? liveText(locale, 'hero.desc');
@@ -55,17 +52,6 @@ const socialTitle = documentTitle.replace(/[–—]/g, '-');
   <head>
     <meta charset="utf-8" />
     <link rel="preload" href="/fonts/plus-jakarta-sans-vf.woff2" as="font" type="font/woff2" crossorigin />
-    {monetized && (
-      <>
-        <link rel="dns-prefetch" href="//ads.sorafiles.com" />
-        <link rel="preconnect" href="https://ads.sorafiles.com" crossorigin="anonymous" />
-        <link rel="dns-prefetch" href="//www.highperformanceformat.com" />
-        <link rel="preconnect" href="https://www.highperformanceformat.com" crossorigin="anonymous" />
-        <link rel="dns-prefetch" href="//pl30950304.effectivecpmnetwork.com" />
-        <link rel="preconnect" href="https://pl30950304.effectivecpmnetwork.com" crossorigin="anonymous" />
-      </>
-    )}
-    <GoogleServices />
     <script
       is:inline
       src="https://analytics.ahrefs.com/analytics.js"

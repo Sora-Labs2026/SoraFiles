@@ -13,10 +13,6 @@
     {
       "pattern": "www.sorafiles.com",
       "custom_domain": true
-    },
-    {
-      "pattern": "ads.sorafiles.com",
-      "custom_domain": true
     }
   ],
   "assets": {
@@ -25,5 +21,21 @@
     "run_worker_first": true,
     "not_found_handling": "404-page",
     "html_handling": "drop-trailing-slash"
+  },
+  "d1_databases": [
+    {
+      "binding": "POPULARITY_DB",
+      "database_name": "sorafiles-popularity",
+      "database_id": "d617e424-cde1-4920-af4b-f547ef3e6a2e",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "POPULARITY_MODE": "dynamic",
+    "POPULARITY_PIN": "",
+    "POPULARITY_EXCLUDE": ""
+  },
+  "triggers": {
+    "crons": ["17 3 * * *"]
   }
 }

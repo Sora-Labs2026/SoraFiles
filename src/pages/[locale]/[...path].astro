@@ -5,7 +5,7 @@ import Footer from '../../components/Footer.astro';
 import LocalizedHome from '../../components/LocalizedHome.astro';
 import LocalizedToolPage from '../../components/LocalizedToolPage.astro';
 import LiveInfoPage from '../../components/LiveInfoPage.astro';
-import LivePreviewIndex from '../../components/LivePreviewIndex.astro';
+import LiveToolsHub from '../../components/LiveToolsHub.astro';
 import { liveTools, liveToolBySlug } from '../../data/liveTools';
 import liveCopy from '../../data/liveCopy';
 import { liveRaw, liveText, liveToolCopy } from '../../data/liveI18n';
@@ -43,10 +43,10 @@ const reviewedInfoPage = infoSlug === 'about'
           : undefined;
 const toolWords = tool ? liveToolCopy(locale, tool.id) : undefined;
 const isHome = basePath === '/';
-const isPreview = basePath === '/preview';
+const isToolsHub = basePath === '/tools';
 const canonicalPath = localizedPath(locale, basePath);
-const title = isHome ? `SoraFiles — ${liveText(locale, 'hero.l1b')} ${liveText(locale, 'hero.l2b')}` : toolWords ? `${toolWords.n} | SoraFiles` : isPreview ? `${liveText(locale, 'preview.title')} | SoraFiles` : infoPage ? `${infoPage.title} | SoraFiles` : 'SoraFiles';
-const description = isHome ? liveText(locale, 'hero.desc') : toolWords ? `${toolWords.t} ${toolWords.d}` : isPreview ? liveText(locale, 'preview.intro', { n: localizedRoutePaths.length - 1 }) : reviewedInfoPage?.intro || infoPage?.intro.replace('{{n}}', String(liveTools.length)) || liveText(locale, 'hero.desc');
+const title = isHome ? content.home.title : toolWords ? `${toolWords.n} | SoraFiles` : isToolsHub ? `${liveText(locale, 'nav.allTools')} | SoraFiles` : infoPage ? `${infoPage.title} | SoraFiles` : 'SoraFiles';
+const description = isHome ? content.home.description : toolWords ? `${toolWords.t} ${toolWords.d}` : isToolsHub ? `${liveText(locale, 'nav.allTools')}. ${liveText(locale, 'hero.desc')}` : reviewedInfoPage?.intro || infoPage?.intro.replace('{{n}}', String(liveTools.length)) || liveText(locale, 'hero.desc');
 const schema = isHome ? {
   '@context': 'https://schema.org', '@graph': [
     { '@type': 'CollectionPage', name: title, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description },
@@ -59,11 +59,11 @@ const schema = isHome ? {
   ],
 } : { '@context': 'https://schema.org', '@type': infoSlug === 'contact' ? 'ContactPage' : infoSlug === 'about' ? 'AboutPage' : 'WebPage', name: infoPage?.title ?? title, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description };
 ---
-<Layout {title} {description} {canonicalPath} alternatePath={basePath} {schema} {locale} monetized={isHome || Boolean(tool)}>
+<Layout {title} {description} {canonicalPath} alternatePath={basePath} {schema} {locale}>
   <Header {locale} />
   {isHome && <LocalizedHome {locale} {content} />}
   {tool && <LocalizedToolPage {locale} {content} {tool} />}
-  {isPreview && <LivePreviewIndex {locale} />}
+  {isToolsHub && <LiveToolsHub {locale} />}
   {infoSlug && <LiveInfoPage slug={infoSlug} {locale} />}
   <Footer {locale} />
 </Layout>

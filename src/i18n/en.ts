@@ -234,14 +234,14 @@ export const en: LocaleContent = {
     about: { title: 'About', description: 'About SoraFiles.', h1: 'About', intro: '', sections: [] },
     privacy: {
       title: 'Privacy Policy | SoraFiles',
-      description: 'Local file processing, analytics, advertising, and contact-form privacy at SoraFiles.',
+      description: 'Local file processing, analytics, and contact-form privacy at SoraFiles.',
       h1: 'Your files remain yours.',
       intro: 'File tools and external page services handle different kinds of data.',
       updated: 'Last updated: August 23, 2026',
       sections: [
         { heading: 'Local file processing', paragraphs: ['Image, HEIC, PDF, ZIP, and DOCX tools process selected files inside this browser. File contents and results are not uploaded to a SoraFiles processing server.'] },
         { heading: 'Temporary browser data', paragraphs: ['Previews and download URLs exist temporarily in the open page and are released when a file is removed or the page is closed.'] },
-        { heading: 'Analytics and advertising', paragraphs: ['Google Analytics 4 (G-GQ973RY74K), Ahrefs Web Analytics, and Adsterra may process page activity, device information, approximate location, and advertising interactions, but not the contents of files processed locally. Analytics scripts load asynchronously and do not receive file contents.'] },
+        { heading: 'Analytics', paragraphs: ['Ahrefs Web Analytics may process page activity, device information, and approximate location, but not the contents of files processed locally. Its script loads asynchronously and does not receive file contents.'] },
         { heading: 'Contact form', paragraphs: ['Your name, email address, subject, message, and optional attachment are sent through FormSubmit for delivery to SoraFiles support. Do not attach confidential files.'] },
         { heading: 'Public source and contributions', paragraphs: ['The SoraFiles application source is published at github.com/Sora-Labs2026/SoraFiles under the GNU Affero General Public License v3.0. Local file processing does not send selected files to GitHub. Information or attachments that you voluntarily post in a public GitHub issue, discussion, or pull request are publicly visible, so do not submit confidential files or personal data there.'] },
       ],

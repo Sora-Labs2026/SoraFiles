@@ -4,6 +4,7 @@ import { liveRaw } from '../data/liveI18n';
 import { liveTools } from '../data/liveTools';
 import type { LocalePath } from '../i18n/config';
 import { getLocaleContent } from '../i18n';
+import { popularityPrivacy } from '../data/popularityPrivacy';
 
 type InfoSlug = 'about' | 'contact' | 'privacy' | 'terms' | 'open-source';
 interface InfoCard { t: string; d: string; }
@@ -27,15 +28,13 @@ const page: InfoCopy = reviewedPage ? {
     intro: reviewedPage.intro,
     cards: compactPage.cards.map((card, index) => index === 0 ? { ...card, d: 'contact@sorafiles.com' } : card),
   } : {}),
-  sections: reviewedPage.sections.map((section) => {
+  sections: [...reviewedPage.sections.map((section) => {
     const text = section.paragraphs.join(' ');
     return {
       h: section.heading,
-      p: text.includes('Ahrefs Web Analytics')
-        ? text
-        : text.replace('Adsterra', 'Ahrefs Web Analytics / Adsterra'),
+      p: text,
     };
-  }),
+  }), ...(slug === 'privacy' ? [popularityPrivacy[locale]] : [])],
 } : compactPage;
 const intro = page.intro.replace('{{n}}', String(liveTools.length));
 const nextPath = locale === 'en' ? '/contact?sent=1' : `/${locale}/contact?sent=1`;
@@ -82,7 +81,7 @@ const iconPaths: Record<InfoSlug, string[]> = {
     </form>
   </section>}
 
-  {page.sections?.map((section, index) => <section data-reveal class="sf-reveal mt-12"><h2 class="flex items-baseline gap-3 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white"><span class="text-gradient text-sm font-extrabold">{String(index + 1).padStart(2, '0')}</span>{section.h}</h2><p class="mt-3 text-[15px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">{section.p}</p></section>)}
+  {page.sections?.map((section, index) => <section data-reveal class="sf-reveal mt-12"><h2 class="flex items-baseline gap-3 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white"><span class="text-gradient text-sm font-extrabold">{String(index + 1).padStart(2, '0')}</span>{section.h.replace(/^\d+\.\s*/, '')}</h2><p class="mt-3 text-[15px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">{section.p}</p></section>)}
 </main>
 
 <script is:inline define:vars={{ sending: contact.sending }}>

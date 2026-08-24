@@ -32,12 +32,17 @@ const pdfPageLimit = getPdfPageLimit(locale);
       </div>
     </div>
 
-    <div id="pdf-work" hidden class="grid lg:grid-cols-[0.9fr_1.1fr]">
-      <div class="border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
+    <div id="pdf-work" hidden class="grid min-w-0 max-w-full lg:grid-cols-[0.9fr_1.1fr]">
+      <div class="min-w-0 overflow-hidden border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
         <div class="flex items-start justify-between gap-4"><div class="min-w-0"><p id="pdf-name" class="truncate text-sm font-semibold"></p><p id="pdf-meta" class="mt-1 text-xs text-muted"></p></div><button id="pdf-remove" type="button" class="min-h-10 rounded-control px-3 text-sm text-muted hover:bg-canvas hover:text-ink">{m.remove}</button></div>
-        <div class="mt-6 overflow-hidden rounded-xl border border-line bg-canvas p-3"><canvas id="pdf-preview" width="800" height="1040" class="mx-auto max-h-96 w-auto max-w-full rounded bg-white shadow-small" aria-label={copy.title}></canvas></div>
+        <figure class="mt-5 min-w-0 max-w-full overflow-hidden rounded-xl border border-line bg-canvas p-3">
+          <div id="pdf-preview-stage" class="mx-auto flex min-w-0 max-w-full justify-center overflow-hidden">
+            <canvas id="pdf-preview" width="320" height="416" class="block h-auto max-h-[20rem] max-w-full rounded bg-white shadow-small sm:max-h-96" aria-label={copy.title}></canvas>
+          </div>
+          <figcaption id="pdf-preview-count" class="mt-2 text-center text-xs font-medium text-muted"></figcaption>
+        </figure>
       </div>
-      <form data-workbench-controls id="pdf-form" class="p-5 sm:p-7">
+      <form data-workbench-controls id="pdf-form" class="min-w-0 p-5 sm:p-7">
         <fieldset><legend class="text-sm font-semibold">{m.compressionGoal}</legend>
           <div class="mt-3 grid grid-cols-3 rounded-control bg-canvas p-1 text-sm">
             <label class="cursor-pointer"><input class="peer sr-only" type="radio" name="pdfMode" value="auto" checked/><span class="flex min-h-10 items-center justify-center rounded-md px-2 text-muted peer-checked:bg-surface peer-checked:text-ink peer-checked:shadow-small">{m.auto}</span></label>
@@ -95,6 +100,7 @@ const pdfPageLimit = getPdfPageLimit(locale);
   const pdfButton = pdfEl<HTMLButtonElement>('#pdf-process');
   const pdfForm = pdfEl<HTMLFormElement>('#pdf-form');
   const pdfCanvas = pdfEl<HTMLCanvasElement>('#pdf-preview');
+  const pdfPreviewStage = pdfEl('#pdf-preview-stage');
   const pdfTargetControls = pdfEl('#pdf-target-controls');
   const pdfPercentControls = pdfEl('#pdf-percent-controls');
   const pdfTargetInput = pdfEl<HTMLInputElement>('#pdf-target-kb');
@@ -106,25 +112,58 @@ const pdfPageLimit = getPdfPageLimit(locale);
   let pdfFile: File | null = null;
   let pdfSource: PDFDocumentProxy | null = null;
   let pdfResultUrl: string | null = null;
+  let previewGeneration = 0;
+  let previewRenderTask: { cancel: () => void; promise: Promise<unknown> } | null = null;
+  let previewStageWidth = 0;
+  let previewResizeFrame = 0;
 
   const pdfBytes = (bytes: number) => bytes < 1000 ? `${bytes} B` : bytes < 1_000_000 ? `${(bytes / 1000).toFixed(0)} KB` : `${(bytes / 1_000_000).toFixed(2)} MB`;
   const validPdfSignature = async (file: File) => new TextDecoder('ascii').decode(await file.slice(0, 5).arrayBuffer()) === '%PDF-';
   const clearPdfResult = () => { if (pdfResultUrl) URL.revokeObjectURL(pdfResultUrl); pdfResultUrl = null; pdfResult.hidden = true; };
-  const resetPdf = async () => { clearPdfResult(); await pdfSource?.cleanup(); pdfSource = null; pdfFile = null; pdfInput.value = ''; pdfInput.removeAttribute('aria-invalid'); pdfEmpty.hidden = false; pdfWork.hidden = true; pdfError.hidden = true; pdfStatus.textContent = ''; };
+  const resetPdf = async () => { previewGeneration += 1; previewRenderTask?.cancel(); previewRenderTask = null; previewStageWidth = 0; cancelAnimationFrame(previewResizeFrame); clearPdfResult(); await pdfSource?.cleanup(); pdfSource = null; pdfFile = null; pdfInput.value = ''; pdfInput.removeAttribute('aria-invalid'); pdfEmpty.hidden = false; pdfWork.hidden = true; pdfError.hidden = true; pdfStatus.textContent = ''; };
 
   const renderPreview = async () => {
     if (!pdfSource) return;
+    const generation = ++previewGeneration;
+    previewRenderTask?.cancel();
+    previewRenderTask = null;
     const page = await pdfSource.getPage(1);
     const base = page.getViewport({ scale: 1 });
-    const scale = Math.min(1.25, 760 / base.width);
-    const viewport = page.getViewport({ scale });
+    const availableWidth = Math.floor(pdfPreviewStage.clientWidth);
+    if (availableWidth < 1) { page.cleanup(); return; }
+    previewStageWidth = availableWidth;
+    const maxCssWidth = Math.min(520, availableWidth);
+    const maxCssHeight = window.innerWidth < 640 ? 320 : 384;
+    const cssScale = Math.min(maxCssWidth / base.width, maxCssHeight / base.height, 1.1);
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const viewport = page.getViewport({ scale: cssScale * pixelRatio });
+    const cssWidth = Math.max(1, Math.round(viewport.width / pixelRatio));
+    const cssHeight = Math.max(1, Math.round(viewport.height / pixelRatio));
     pdfCanvas.width = Math.ceil(viewport.width);
     pdfCanvas.height = Math.ceil(viewport.height);
+    pdfCanvas.style.width = `${cssWidth}px`;
+    pdfCanvas.style.height = `${cssHeight}px`;
     const context = pdfCanvas.getContext('2d');
     if (!context) throw new Error('Canvas rendering is unavailable in this browser.');
-    await page.render({ canvas: pdfCanvas, canvasContext: context, viewport }).promise;
+    const renderTask = page.render({ canvas: pdfCanvas, canvasContext: context, viewport });
+    previewRenderTask = renderTask;
+    try { await renderTask.promise; } catch (error) { if (generation === previewGeneration) throw error; }
+    if (generation !== previewGeneration) { page.cleanup(); return; }
+    pdfEl('#pdf-preview-count').textContent = pdfSource.numPages === 1 ? '1 page' : `1 of ${pdfSource.numPages}`;
+    if (previewRenderTask === renderTask) previewRenderTask = null;
     page.cleanup();
   };
+
+  const schedulePreviewResize = () => {
+    if (!pdfSource || pdfWork.hidden) return;
+    const width = Math.floor(pdfPreviewStage.clientWidth);
+    if (width < 1 || Math.abs(width - previewStageWidth) < 2) return;
+    cancelAnimationFrame(previewResizeFrame);
+    previewResizeFrame = requestAnimationFrame(() => { void renderPreview().catch(() => {}); });
+  };
+  const previewResizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedulePreviewResize);
+  previewResizeObserver?.observe(pdfPreviewStage);
+  window.addEventListener('resize', schedulePreviewResize, { passive: true });
 
   const loadPdf = async (file: File) => {
     await resetPdf();
@@ -140,11 +179,13 @@ const pdfPageLimit = getPdfPageLimit(locale);
       pdfFile = file;
       setDisplayedFilename(pdfEl('#pdf-name'), file.name);
       pdfEl('#pdf-meta').textContent = localizedPdf ? `${pdfBytes(file.size)} · ${pdfSource.numPages} PDF` : `${pdfBytes(file.size)} · ${pdfSource.numPages} ${pdfSource.numPages === 1 ? 'page' : 'pages'}`;
-      await renderPreview();
       pdfEmpty.hidden = true;
       pdfWork.hidden = false;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await renderPreview();
     } catch (error) {
       await pdfSource?.cleanup(); pdfSource = null;
+      pdfWork.hidden = true; pdfEmpty.hidden = false;
       const detail = error instanceof Error ? error.message : '';
       pdfError.textContent = error instanceof Error && error.name === 'PasswordException' ? pdfMessages.password : localizedPdf ? (/50 MB|40 pages|memory/i.test(detail) ? pdfMessages.tooLarge : pdfMessages.invalidFile) : (detail || pdfMessages.invalidFile);
       pdfError.hidden = false; pdfInput.setAttribute('aria-invalid', 'true'); pdfError.focus();
@@ -247,5 +288,5 @@ const pdfPageLimit = getPdfPageLimit(locale);
   for (const eventName of ['dragenter', 'dragover']) pdfDrop.addEventListener(eventName, event => { event.preventDefault(); pdfDrop.classList.add('border-blue', 'bg-blue-soft', 'select-none'); });
   for (const eventName of ['dragleave', 'drop']) pdfDrop.addEventListener(eventName, event => { event.preventDefault(); pdfDrop.classList.remove('border-blue', 'bg-blue-soft', 'select-none'); });
   pdfDrop.addEventListener('drop', event => { const file = event.dataTransfer?.files[0]; if (file) void loadPdf(file); });
-  window.addEventListener('beforeunload', () => { if (pdfResultUrl) URL.revokeObjectURL(pdfResultUrl); void pdfSource?.cleanup(); });
+  window.addEventListener('beforeunload', () => { cancelAnimationFrame(previewResizeFrame); previewResizeObserver?.disconnect(); previewRenderTask?.cancel(); if (pdfResultUrl) URL.revokeObjectURL(pdfResultUrl); void pdfSource?.cleanup(); });
 </script>

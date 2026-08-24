@@ -9,13 +9,13 @@ const { locale = 'en' } = Astro.props;
 const hrefFor = (path: string) => localizedPath(locale, path);
 const activeLocale = localeDefinitions.find((item) => item.path === locale) ?? localeDefinitions[0];
 const navLinks = [['compress-pdf', '/pdf'], ['merge-pdf', '/merge-pdf'], ['split-pdf', '/split-pdf'], ['pdf-to-word', '/pdf-to-word'], ['rotate-pdf', '/rotate-pdf']].map(([id, path]) => [liveToolCopy(locale, id).n, path] as const);
-const moreLinks = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 'nav.openSource'), '/open-source'], [liveText(locale, 'nav.contact'), '/contact'], [liveText(locale, 'nav.allPages'), '/preview']] as const;
+const moreLinks = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 'nav.openSource'), '/open-source'], [liveText(locale, 'nav.contact'), '/contact'], [liveText(locale, 'nav.allTools'), '/tools']] as const;
 ---
 
 <header data-testid="site-header" class="sticky top-0 z-50 border-b border-slate-900/5 bg-white/70 backdrop-blur-xl dark:border-white/5 dark:bg-[#0a0e22]/70">
   <div class="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-3 px-4 sm:px-6">
     <a href={hrefFor('/')} data-testid="logo-link" aria-label={['SoraFiles', liveText(locale, 'nav.home')].join(' — ')} class="flex shrink-0 items-center gap-2">
-      <img src="/favicon-48x48.png" alt="" class="h-8 w-8 rounded-[10px] shadow-md shadow-violet-500/30" width="32" height="32" />
+      <span aria-hidden="true" class="h-8 w-8 rounded-[10px] bg-contain bg-center bg-no-repeat shadow-md shadow-violet-500/30" style="background-image: url('/favicon-48x48.png')"></span>
       <span translate="no" class="text-[17px] font-extrabold tracking-tight text-slate-900 dark:text-white">SoraFiles</span>
     </a>
 
@@ -34,8 +34,8 @@ const moreLinks = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 
               <span class="min-w-0"><span class="block truncate text-[13px] font-bold text-slate-800 dark:text-slate-100">{words.n}</span><span class="block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">{words.d}</span></span>
             </a>
           )})}
-          <a href={hrefFor('/preview')} data-testid="nav-view-all" class="mt-1 flex w-full items-center justify-between rounded-xl border-t border-slate-100 px-2.5 pb-1 pt-2.5 text-[12px] font-bold text-violet-600 transition-colors hover:text-violet-700 dark:border-white/10 dark:text-violet-300">
-            {liveText(locale, 'nav.viewAllPages')} <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+          <a href={hrefFor('/tools')} data-testid="nav-view-all" class="mt-1 flex w-full items-center justify-between rounded-xl border-t border-slate-100 px-2.5 pb-1 pt-2.5 text-[12px] font-bold text-violet-600 transition-colors hover:text-violet-700 dark:border-white/10 dark:text-violet-300">
+            {liveText(locale, 'nav.allTools')} <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
           </a>
         </div>
       </details>

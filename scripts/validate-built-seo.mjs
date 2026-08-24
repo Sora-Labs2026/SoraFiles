@@ -120,13 +120,6 @@ async function validatePage(file) {
   const charset = /<meta\s+charset=["']utf-8["'][^>]*>/i.exec(html);
   if (!charset) failures.push(`${label}: missing UTF-8 character encoding declaration.`);
   else if (Buffer.byteLength(html.slice(0, charset.index + charset[0].length), 'utf8') > 1024) failures.push(`${label}: UTF-8 character encoding declaration must be completely within the first 1024 bytes.`);
-  if (route.startsWith('/ad-frame/')) {
-    const robots = tags(html, 'meta').find(({ attributes: attrs }) => attrs.name === 'robots')?.attributes.content ?? '';
-    if (!/\bnoindex\b/i.test(robots) || !/\bnofollow\b/i.test(robots)) failures.push(`${label}: isolated ad document must be noindex and nofollow.`);
-    if ((html.match(/<title\b/gi) ?? []).length !== 1 || !/<title>Advertisement<\/title>/i.test(html)) failures.push(`${label}: isolated ad document must have its reserved title.`);
-    if (/<link\b[^>]*rel=["']canonical["']/i.test(html)) failures.push(`${label}: isolated ad document must not publish a canonical application URL.`);
-    return;
-  }
   const text = plainText(html);
   const { locale, base } = routeContext(route);
   const h1Count = (html.match(/<h1\b/gi) ?? []).length;
@@ -182,9 +175,7 @@ async function validatePage(file) {
 }
 
 async function validateInternalLinks(files) {
-  const publicRoutes = new Set(files
-    .map(routeFromFile)
-    .filter((route) => !route.startsWith('/ad-frame/')));
+  const publicRoutes = new Set(files.map(routeFromFile));
   const html = await readFile('dist/index.html', 'utf8');
   const hrefs = new Set(tags(html, 'a').map(({ attributes: attrs }) => attrs.href?.replace(/\/$/, '')).filter(Boolean));
   for (const tool of liveTools) {
@@ -194,7 +185,6 @@ async function validateInternalLinks(files) {
 
   for (const file of files) {
     const route = routeFromFile(file);
-    if (route.startsWith('/ad-frame/')) continue;
     const page = await readFile(file, 'utf8');
     for (const { attributes: attrs } of tags(page, 'a')) {
       const href = attrs.href?.trim();
@@ -284,7 +274,6 @@ async function validateSitemapAndRobots() {
     if (!group) failures.push(`robots: missing ${agent} user-agent group.`);
     if (!/^Allow:\s*\/$/im.test(group)) failures.push(`robots: ${agent} is missing the explicit public root allow rule.`);
     if (!/^Disallow:\s*\/__locale$/im.test(group)) failures.push(`robots: ${agent} does not exclude the internal locale endpoint.`);
-    if (!/^Disallow:\s*\/ad-frame\/$/im.test(group)) failures.push(`robots: ${agent} does not exclude isolated advertising documents.`);
   }
   if ((robots.match(/^Sitemap:\s*https:\/\/sorafiles\.com\/sitemap\.xml$/gim) ?? []).length !== 1) failures.push('robots: expected exactly one canonical sitemap declaration.');
   if (/^Disallow:\s*\/$/im.test(robots)) failures.push('robots: site-wide crawling is blocked.');

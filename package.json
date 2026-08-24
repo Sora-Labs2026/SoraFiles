@@ -18,7 +18,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "npm run generate:popularity && astro build",
     "build:production": "node scripts/build-production.mjs",
     "preview": "astro preview",
     "preview:cloudflare": "npm run build && wrangler dev",
@@ -31,6 +31,8 @@
     "sync:ocr": "node scripts/sync-ocr-assets.mjs",
     "verify:ocr": "node scripts/verify-ocr-assets.mjs",
     "verify:optimizer": "node scripts/optimizer/validate.mjs",
+    "generate:popularity": "node scripts/generate-popularity-registry.mjs",
+    "popularity:status": "npx wrangler d1 execute sorafiles-popularity --remote --command=\"SELECT key, updated_at, value FROM popularity_state WHERE key = 'current'\"",
     "optimizer:audit": "node scripts/optimizer/run.mjs audit",
     "optimizer:apply": "node scripts/optimizer/run.mjs apply",
     "optimizer:visual:baseline": "node scripts/optimizer/visual-resilience.mjs --capture-baseline",
@@ -46,6 +48,8 @@
     "audit:performance": "node scripts/audit-performance.mjs",
     "test:tools": "node tests/e2e/tool-flows.mjs",
     "test:tools:smoke": "node tests/e2e/tool-flows.mjs --smoke",
+    "test:pdf-preview": "node tests/e2e/pdf-preview-layout.mjs",
+    "test:chapter3-tools": "node tests/e2e/chapter3-tools.mjs",
     "test:ocr": "node tests/e2e/ocr-flows.mjs",
     "test:ocr:languages": "node tests/e2e/ocr-flows.mjs --all-languages",
     "test:unit": "node scripts/run-unit-tests.mjs",
@@ -55,6 +59,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@jsquash/resize": "^2.1.1",
     "@pdfsmaller/pdf-decrypt": "^1.0.1",
     "@pdfsmaller/pdf-encrypt": "^1.2.0",
     "@tailwindcss/vite": "^4.3.3",
@@ -67,6 +72,7 @@
     "mammoth": "^1.12.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.2.108",
+    "scanic": "^1.6.0",
     "tailwindcss": "^4.3.3",
     "tesseract.js": "^7.0.0",
     "tesseract.js-core": "^7.0.0",

@@ -4,7 +4,7 @@ SoraFiles provides free PDF and image utilities that process supported files loc
 
 Canonical site: https://sorafiles.com/
 Sitemap: https://sorafiles.com/sitemap.xml
-All tools: https://sorafiles.com/preview
+All tools: https://sorafiles.com/tools
 About: https://sorafiles.com/about
 Privacy: https://sorafiles.com/privacy
 

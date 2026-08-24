@@ -33,7 +33,7 @@ People commonly arrive with an email attachment that is too large, an image in t
 - PDF compression rebuilds pages as images and therefore removes selectable text, links, form fields, signatures, bookmarks, and accessibility structure.
 - Basic Word/PDF conversions preserve useful text, not complex document layout. PDF-to-Word includes local OCR for scan-like pages, with accuracy depending on the source and selected language.
 - Tools must validate actual file signatures where practical, produce independently valid output, release temporary resources, and never present unsupported formats or unfinished flows as working features.
-- File contents must not be sent to analytics, advertising, or other third-party services. The Contact form is a separate, disclosed network submission flow.
+- File contents must not be sent to analytics or other third-party services. The Contact form is a separate, disclosed network submission flow.
 
 ## Brand Commitments
 
