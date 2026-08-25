@@ -1,6 +1,7 @@
 ---
 import type { LocalePath } from '../i18n/config';
 import { localizedPath } from '../i18n/config';
+import { getLocaleContent } from '../i18n';
 import { liveTools } from '../data/liveTools';
 import { liveText } from '../data/liveI18n';
 import LiveToolCard from './LiveToolCard.astro';
@@ -8,11 +9,18 @@ import LiveToolCard from './LiveToolCard.astro';
 interface Props { locale?: LocalePath; }
 const { locale = 'en' } = Astro.props;
 const hrefFor = (path: string) => localizedPath(locale, path);
+const categoryLabels = getLocaleContent(locale).home.categories;
 const groups = [
-  ['PDF', ['compress-pdf','merge-pdf','split-pdf','rotate-pdf','remove-pages','page-numbers','watermark-pdf','sign-pdf','protect-pdf','unlock-pdf','repair-pdf','metadata-remover']],
-  ['PDF ↔', ['pdf-to-jpg','jpg-to-pdf','pdf-to-word','word-to-pdf','pdf-to-excel','excel-to-pdf','pdf-ocr','doc-scanner']],
-  ['◇', ['image-converter','compress-image','resize-image','heic-to-jpg','edit-image']],
+  [categoryLabels.organize, ['compress-pdf','merge-pdf','split-pdf','rotate-pdf','remove-pages','page-numbers','watermark-pdf','sign-pdf','protect-pdf','unlock-pdf','repair-pdf','metadata-remover']],
+  [categoryLabels.convert, ['pdf-to-jpg','jpg-to-pdf','pdf-to-word','word-to-pdf','pdf-to-excel','excel-to-pdf','pdf-ocr','doc-scanner']],
+  [categoryLabels.image, ['image-converter','compress-image','resize-image','heic-to-jpg','edit-image','remove-background']],
 ] as const;
+const groupedIds = groups.flatMap(([, ids]) => [...ids]);
+const missingIds = liveTools.filter((tool) => !groupedIds.includes(tool.id as never)).map((tool) => tool.id);
+const unknownIds = groupedIds.filter((id) => !liveTools.some((tool) => tool.id === id));
+if (new Set(groupedIds).size !== groupedIds.length || missingIds.length || unknownIds.length) {
+  throw new Error(`Tools directory groups are incomplete: missing=${missingIds.join(',') || 'none'} unknown=${unknownIds.join(',') || 'none'}`);
+}
 ---
 
 <main id="main" data-testid="tools-hub" class="mx-auto max-w-[1200px] px-4 py-14 sm:px-6 lg:py-20">
@@ -23,7 +31,7 @@ const groups = [
   </div>
   {groups.map(([label, ids], groupIndex) => {
     const tools = ids.map((id) => liveTools.find((tool) => tool.id === id)).filter((tool) => tool !== undefined);
-    return <section class="mt-12" aria-labelledby={`tool-group-${groupIndex}`}><h2 id={`tool-group-${groupIndex}`} class="flex items-center gap-3 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white"><span aria-hidden="true">{label}</span><span class="sr-only">{liveText(locale, 'nav.allTools')} {groupIndex + 1}</span><span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-extrabold text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">{tools.length}</span><span class="hidden h-px flex-1 bg-slate-200/80 sm:block dark:bg-white/10"></span></h2><div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{tools.map((tool) => <div data-reveal class="sf-reveal"><LiveToolCard {tool} {locale} href={hrefFor(`/${tool.slug}`)} /></div>)}</div></section>;
+    return <section class="mt-12" aria-labelledby={`tool-group-${groupIndex}`}><h2 id={`tool-group-${groupIndex}`} class="flex items-center gap-3 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white"><span>{label}</span><span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-extrabold text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">{tools.length}</span><span class="hidden h-px flex-1 bg-slate-200/80 sm:block dark:bg-white/10"></span></h2><div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{tools.map((tool) => <div data-reveal class="sf-reveal"><LiveToolCard {tool} {locale} href={hrefFor(`/${tool.slug}`)} /></div>)}</div></section>;
   })}
   <p class="mt-14 rounded-2xl border border-emerald-200/70 bg-emerald-50/70 px-5 py-4 text-sm font-medium leading-6 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">{liveText(locale, 'panel.check1')} {liveText(locale, 'panel.check2')}</p>
 </main>

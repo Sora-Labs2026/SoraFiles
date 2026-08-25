@@ -149,7 +149,7 @@ export async function removeMetadata(files, _opts, prog, ctrl) {
 // ----------------------------------------------------------------------------
 // Excel -> PDF — export with LibreOffice Calc running locally in WebAssembly.
 // ----------------------------------------------------------------------------
-export async function excelToPdf(files, opts, prog, ctrl) {
+export async function excelToPdf(files, _opts, prog, ctrl) {
     checkCancel(ctrl);
     const { convertOfficeToPdf } = await import('../lib/office-wasm/client.ts');
     let out;
@@ -170,14 +170,13 @@ export async function excelToPdf(files, opts, prog, ctrl) {
     return [{
         name: `${baseName(files[0].name)}.pdf`,
         blob: pdfBlob(out),
-        detail: opts?.messages?.excelResult || 'Exported locally by LibreOffice. Sheet formatting, charts, pictures, tables, formulas, and print layout are retained where the source file and available fonts permit.',
     }];
 }
 
 // ----------------------------------------------------------------------------
 // PDF -> Excel — exact page visuals by default; editable extraction is explicit.
 // ----------------------------------------------------------------------------
-async function pdfToEditableExcel(files, opts, prog, ctrl) {
+async function pdfToEditableExcel(files, _opts, prog, ctrl) {
     const XLSX = await import("xlsx");
     const pdfjs = await getPdfjs();
     const doc = await pdfjs.getDocument({ data: new Uint8Array(await files[0].arrayBuffer()) }).promise;
@@ -212,7 +211,6 @@ async function pdfToEditableExcel(files, opts, prog, ctrl) {
     return [{
         name: `${baseName(files[0].name)}-editable.xlsx`,
         blob: new Blob([buf], { type: XLSX_MIME }),
-        detail: opts?.messages?.editableResult || 'Selectable PDF text was placed into editable cells. Complex tables, formulas, charts, and exact spacing may require cleanup.',
     }];
 }
 
@@ -258,7 +256,6 @@ export async function pdfToExcel(files, opts, prog, ctrl) {
     return [{
         name: `${baseName(files[0].name)}.xlsx`,
         blob,
-        detail: opts?.messages?.exactResult || 'Every PDF page is preserved losslessly on its own worksheet. The page visuals are exact; their contents are not editable cells.',
     }];
 }
 

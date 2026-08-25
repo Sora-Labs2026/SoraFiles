@@ -67,17 +67,6 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
         {tool.slug === 'merge-pdf' && <p id="merge-minimum" class="mt-3 text-sm font-medium text-amber" aria-live="polite">{t('wb.err.tooFew')}</p>}
       </div>
       <form data-workbench-controls id="action-form" class="min-w-0 p-5 sm:p-7">
-        {(tool.slug === 'pdf-to-word' || tool.slug === 'word-to-pdf') && (
-          <section class="mb-5 rounded-control border border-blue/20 bg-blue-soft px-4 py-4" aria-labelledby="conversion-fidelity-heading">
-            <div class="flex items-start gap-3">
-              <span aria-hidden="true" class="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface text-blue shadow-small">✓</span>
-              <div class="min-w-0">
-                <h3 id="conversion-fidelity-heading" class="text-sm font-semibold text-blue-strong">{fidelityMsg.exactAppearance}</h3>
-                <p class="mt-1 text-xs leading-5 text-blue-strong">{tool.slug === 'pdf-to-word' ? fidelityMsg.pdfToWordNote : fidelityMsg.wordToPdfNote}</p>
-              </div>
-            </div>
-          </section>
-        )}
         {tool.slug === 'rotate-pdf' && <div><label for="rotate-angle" class="text-sm font-semibold">{m.rotation}</label><select id="rotate-angle" name="rotateAngle" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></div>}
         {tool.slug === 'split-pdf' && <fieldset><legend class="text-sm font-semibold">{m.whatPreserved}</legend><div class="mt-3 grid gap-2 sm:grid-cols-2"><label class="flex cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-3 hover:border-line-strong has-[:checked]:border-cyan has-[:checked]:bg-cyan-soft"><input type="radio" name="splitMode" value="smart" checked class="mt-1 accent-cyan"/><span><span class="block text-sm font-medium">{m.smallerFile}</span><span class="mt-1 block text-xs leading-5 text-muted">{t('lim.compress')}</span></span></label><label class="flex cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-3 hover:border-line-strong has-[:checked]:border-cyan has-[:checked]:bg-cyan-soft"><input type="radio" name="splitMode" value="preserve" class="mt-1 accent-cyan"/><span><span class="block text-sm font-medium">{m.betterQuality}</span><span class="mt-1 block text-xs leading-5 text-muted">{copy.note}</span></span></label></div></fieldset>}
         {tool.slug === 'remove-pages' && <div><label for="remove-page-spec" class="text-sm font-semibold">{t('opt.pages')}</label><input id="remove-page-spec" name="removePageSpec" type="text" inputmode="text" autocomplete="off" placeholder={t('opt.pagesHint')} class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/><p class="mt-2 text-xs leading-5 text-muted">{t('opt.pagesHint')}</p></div>}
@@ -110,9 +99,7 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
         </div>}
         {tool.slug === 'jpg-to-pdf' && <div><label for="image-page-size" class="text-sm font-semibold">{m.pageSize}</label><select id="image-page-size" name="imagePageSize" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="a4">A4</option><option value="image">{m.original}</option></select></div>}
         {tool.slug === 'pdf-to-jpg' && <div><label for="jpg-resolution" class="text-sm font-semibold">{m.imageQuality}</label><select id="jpg-resolution" name="jpgResolution" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="1.5">108 DPI</option><option value="2" selected>144 DPI</option><option value="2.5">180 DPI</option></select></div>}
-        <div id="action-tool-note" hidden={tool.slug === 'sign-pdf'} class="rounded-control bg-blue-soft px-4 py-3 text-sm leading-6 text-blue-strong" class:list={[tool.slug !== 'merge-pdf' && tool.slug !== 'split-pdf' && tool.slug !== 'pdf-to-word' && tool.slug !== 'word-to-pdf' ? 'mt-5' : '']}>
-          {tool.slug === 'pdf-to-word' ? fidelityMsg.pdfToWordResult : tool.slug === 'word-to-pdf' ? fidelityMsg.wordToPdfResult : copy.note}
-        </div>
+        {tool.slug !== 'sign-pdf' && tool.slug !== 'pdf-to-word' && tool.slug !== 'word-to-pdf' && <div id="action-tool-note" class="mt-5 rounded-control bg-blue-soft px-4 py-3 text-sm leading-6 text-blue-strong">{copy.note}</div>}
         <button id="action-process" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-50">{m.process}</button>
         {(tool.slug === 'pdf-to-word' || tool.slug === 'word-to-pdf') && <button id="ocr-cancel" type="button" hidden class="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-control border border-line bg-canvas text-sm font-medium text-ink hover:bg-surface">{ocrMsg.cancel}</button>}
         <p data-workbench-status id="action-status" class="mt-3 min-h-5 text-center text-xs text-muted" aria-live="polite"></p>
@@ -468,7 +455,6 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
         blob,
         `${baseName(actionFiles[0].name)}.docx`,
         `${pdfDoc.numPages} ${pdfDoc.numPages === 1 ? 'page' : 'pages'} · ${readableSize(blob.size)}`,
-        fidelityMessages.pdfToWordResult,
       );
     } finally {
       if (ocrCancelButton) ocrCancelButton.hidden = true;
@@ -491,7 +477,7 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
       const { PDFDocument } = await import('pdf-lib');
       const verified = await PDFDocument.load(bytes, { ignoreEncryption: false, updateMetadata: false });
       const pageCount = verified.getPageCount();
-      await downloadPdfBytes(bytes, pageCount, `${baseName(actionFiles[0].name)}.pdf`, `${pageCount} ${pageCount === 1 ? 'page' : 'pages'} · ${readableSize(bytes.length)}`, fidelityMessages.wordToPdfResult);
+      await downloadPdfBytes(bytes, pageCount, `${baseName(actionFiles[0].name)}.pdf`, `${pageCount} ${pageCount === 1 ? 'page' : 'pages'} · ${readableSize(bytes.length)}`);
     } catch (error) {
       if (error instanceof Error && error.message === 'officeIsolation') throw new Error(fidelityMessages.officeIsolation);
       if (error instanceof DOMException && error.name === 'AbortError') throw error;
