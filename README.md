@@ -4,7 +4,7 @@
 
 # SoraFiles
 
-Free, privacy-first PDF and image tools that run locally in your browser.
+SoraFiles is a privacy-first web app for working with PDFs and images directly in your browser. Supported file processing happens locally on your device.
 
 This repository contains the source deployed at [sorafiles.com](https://sorafiles.com), including its local processing engines, multilingual Astro interface, tests, and Cloudflare Worker configuration.
 
@@ -24,7 +24,7 @@ This repository contains the source deployed at [sorafiles.com](https://sorafile
 
 Everyday file tasks should not require an account, a watermark, or an upload queue. SoraFiles performs its supported PDF, image, HEIC, OCR, and basic document operations in the browser using local JavaScript, Web Workers, WebAssembly, and browser APIs. The original file is never overwritten.
 
-## Available tools
+## Available workflows
 
 - Compress, merge, split, rotate, protect, unlock, and repair PDFs
 - Remove pages, add page numbers, watermarks, and signatures
@@ -37,7 +37,7 @@ Everyday file tasks should not require an account, a watermark, or an upload que
 
 The interface is statically rendered with Astro, supports 19 languages, includes right-to-left Arabic layouts, and remains navigable when JavaScript is disabled wherever processing is not required.
 
-The current release contains 26 public tools across 19 languages. The repository is the public source for the live Cloudflare deployment.
+These workflows are features of one SoraFiles application across 19 languages. This repository is the public source for the live Cloudflare deployment.
 
 ## Privacy model
 
@@ -75,7 +75,7 @@ SoraFiles shows relevant tradeoffs before processing and rejects formats or vari
 
 Requirements:
 
-- Node.js 22.12 or newer (`.nvmrc` is provided)
+- Node.js 22.13 or newer (`.nvmrc` is provided)
 - npm and the committed `package-lock.json`
 - Playwright Chromium only when running browser tests
 
@@ -146,7 +146,7 @@ tests/           unit, browser, fixtures, and real-output validation
 
 Currently verified:
 
-- 26 public file tools and real output fixtures
+- Public file workflows backed by real output fixtures
 - Cancellable PDF compression, merge, split, rotate, JPG-to-PDF, and PDF-to-JPG jobs with stale-result protection
 - Structured corrupt/encrypted-file recovery and tool-specific output validation before downloads appear
 - Local OCR assets for supported languages

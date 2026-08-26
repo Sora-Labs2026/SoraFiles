@@ -1,0 +1,109 @@
+SoraFiles — EXTERNAL PROFILE COPY
+Updated: 2026-08-27
+Website: https://sorafiles.com
+Source: https://github.com/Sora-Labs2026/SoraFiles
+
+CANONICAL TAGLINE
+A privacy-first file app that runs locally in your browser.
+
+CANONICAL SHORT DESCRIPTION
+SoraFiles is a privacy-first web app for working with PDFs and images directly in your browser. Supported file processing happens locally on your device.
+
+1. X
+Bio:
+A privacy-first file app that runs locally in your browser. PDF and image workflows. No account or watermark. Open source: AGPL-3.0.
+
+2. LINKEDIN
+Tagline:
+A privacy-first file app that runs locally in your browser.
+
+About:
+SoraFiles is a privacy-first web app from Sora Labs for working with PDFs and images directly in your browser. Supported file processing happens locally on your device. Compress, merge, split, convert, OCR, sign, and edit without a SoraFiles processing-server upload. No account, no watermark, and no ads. The application is open source under AGPL-3.0.
+
+3. THREADS
+Bio:
+Privacy-first PDF and image workflows in one browser app. Supported processing happens locally on your device. Built by Sora Labs.
+
+4. FACEBOOK
+Intro:
+A privacy-first file app that runs locally in your browser.
+
+About:
+Work with PDFs and images directly in your browser. Supported file processing happens locally on your device. No account, watermark, or ads.
+
+5. INSTAGRAM
+Bio:
+Privacy-first file app
+PDF + image workflows in your browser
+Local processing · No account · Open source
+sorafiles.com
+
+6. REDDIT
+Profile description:
+Official SoraFiles profile by Sora Labs. SoraFiles is one privacy-first web app for PDF and image workflows. Supported file processing happens locally on your device. Source: github.com/Sora-Labs2026/SoraFiles
+
+7. BLUESKY
+Bio:
+A privacy-first file app that runs locally in your browser. PDF and image workflows by Sora Labs. Open source under AGPL-3.0.
+
+8. YOUTUBE
+Channel description:
+SoraFiles is a privacy-first web app from Sora Labs for working with PDFs and images directly in your browser. Supported file processing happens locally on your device. This channel shares workflow demos, release notes, privacy details, and practical file tips. Visit https://sorafiles.com or review the AGPL-3.0 source at https://github.com/Sora-Labs2026/SoraFiles.
+
+9. MEDIUM
+Bio:
+Sora Labs builds SoraFiles, a privacy-first file app that runs locally in your browser. Writing about browser-side PDF and image processing, privacy, and open-source product engineering.
+
+Publication description:
+Product notes and practical guides from SoraFiles, one privacy-first browser app for PDF and image workflows. Supported file processing happens locally on your device.
+
+10. DEV COMMUNITY
+Summary:
+Building SoraFiles: a privacy-first file app that runs locally in your browser. PDF and image workflows, browser APIs, WebAssembly, accessibility, and open-source engineering.
+
+11. HACKERNOON
+Bio:
+Sora Labs builds SoraFiles, a privacy-first web app for working with PDFs and images directly in the browser. Supported processing happens locally on the user’s device.
+
+12. UNEED
+Tagline:
+A privacy-first file app that runs locally in your browser.
+
+Description:
+Work with PDFs and images in one browser app. Compress, merge, split, convert, OCR, sign, remove metadata, and more. Supported file processing happens locally on your device, with no account, watermark, ads, or SoraFiles processing-server upload.
+
+13. SAASHUB
+Tagline:
+Private PDF and image workflows in your browser.
+
+Description:
+SoraFiles is one privacy-first web application for PDF and image workflows. Supported files are processed locally in your browser rather than being uploaded to a SoraFiles processing server. No account, watermark, or ads. Open source under AGPL-3.0.
+
+14. PRODUCT HUNT
+Tagline:
+A privacy-first file app that runs locally in your browser
+
+Short description:
+Work with PDFs and images in one browser app. Supported file processing happens locally on your device—no account, watermark, or ads.
+
+Maker comment opening:
+We built SoraFiles as one privacy-first file application, not an upload queue or a directory of unrelated converters. Its PDF and image workflows run directly in the browser when supported, so selected files do not go to a SoraFiles processing server.
+
+15. GITHUB ABOUT
+Description:
+A privacy-first file app that runs locally in your browser.
+
+Website:
+https://sorafiles.com
+
+Topics:
+privacy pdf image-processing browser webassembly astro open-source
+
+16. PRESS / BLOGGER OUTREACH SIGNATURE
+Sora Labs
+Builder of SoraFiles — a privacy-first file app that runs locally in your browser.
+https://sorafiles.com
+https://github.com/Sora-Labs2026/SoraFiles
+
+USAGE NOTE
+Keep workflow names explicit when a profile or post targets search intent (for example Compress PDF, Merge PDF, Split PDF, OCR PDF, Sign PDF, PDF to Word, Word to PDF, Compress Image, and Metadata Remover). Do not lead with a changing tool count or describe SoraFiles as a collection, directory, or converter suite.

@@ -5,10 +5,12 @@ import Footer from '../components/Footer.astro';
 import LocalizedHome from '../components/LocalizedHome.astro';
 import { liveTools } from '../data/liveTools';
 import { getLocaleContent } from '../i18n';
+import { getBrandPositioning } from '../i18n/brandPositioning';
 
 const locale = 'en' as const;
 const content = getLocaleContent(locale);
-const description = 'Free privacy-first PDF and image tools that process files locally in your browser. Compress, merge, split and convert with no account or watermark.';
+const brand = getBrandPositioning(locale);
+const description = brand.description;
 const keywords = 'compress PDF no upload, private PDF compressor, merge PDF local, split PDF without uploading, image converter, compress image online free, HEIC to JPG, PDF to image, image to PDF';
 
 const schema = {
@@ -38,7 +40,7 @@ const schema = {
     {
       '@type': 'ItemList',
       '@id': 'https://sorafiles.com/#tools',
-      name: 'SoraFiles Tool Catalog',
+      name: 'SoraFiles File Workflows',
       numberOfItems: liveTools.length,
       itemListElement: liveTools.map((tool, index) => ({
         '@type': 'ListItem',
@@ -51,7 +53,7 @@ const schema = {
 };
 ---
 
-<Layout title="SoraFiles — Free File Tools. Zero Uploads." {description} {keywords} canonicalPath="/" alternatePath="/" {schema} {locale}>
+<Layout title={brand.homeTitle} {description} {keywords} canonicalPath="/" alternatePath="/" {schema} {locale}>
   <Header {locale} />
   <LocalizedHome {locale} {content} />
   <Footer {locale} />

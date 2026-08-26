@@ -4,6 +4,7 @@ import Header from './Header.astro';
 import Footer from './Footer.astro';
 import LiveInfoPage from './LiveInfoPage.astro';
 import { liveRaw } from '../data/liveI18n';
+import { getBrandPositioning } from '../i18n/brandPositioning';
 import type { LocalePath } from '../i18n/config';
 import { localizedPath } from '../i18n/config';
 import { liveTools } from '../data/liveTools';
@@ -12,10 +13,12 @@ type InfoSlug = 'about' | 'contact' | 'privacy' | 'terms' | 'open-source';
 interface Props { slug: InfoSlug; locale?: LocalePath; }
 const { slug, locale = 'en' } = Astro.props;
 const page = liveRaw<{ title: string; intro: string }>(locale, `page.${slug}`);
+const localizedBrand = getBrandPositioning(locale);
 const canonicalPath = localizedPath(locale, `/${slug}`);
-const title = `${page.title} | SoraFiles`;
-const description = page.intro.replace('{{n}}', String(liveTools.length));
-const schema = { '@context': 'https://schema.org', '@type': slug === 'contact' ? 'ContactPage' : slug === 'about' ? 'AboutPage' : 'WebPage', name: page.title, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), description };
+const pageTitle = slug === 'about' ? localizedBrand.aboutTitle : page.title;
+const title = `${pageTitle} | SoraFiles`;
+const description = (slug === 'about' ? localizedBrand.aboutIntro : page.intro).replace('{{n}}', String(liveTools.length));
+const schema = { '@context': 'https://schema.org', '@type': slug === 'contact' ? 'ContactPage' : slug === 'about' ? 'AboutPage' : 'WebPage', name: pageTitle, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), description };
 ---
 <Layout {title} {description} {canonicalPath} alternatePath={`/${slug}`} {schema} {locale}>
   <Header {locale} />

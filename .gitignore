@@ -58,6 +58,10 @@ English Sub-links/
 
 # macOS-specific files
 .DS_Store
+._*
+
+# USB bootstrap source (the tracked canonical archive lives in prompts/)
+/SoraFiles_USB_Portable_Privacy_First_Repositioning_Master.txt
 
 # jetbrains setting folder
 .idea/

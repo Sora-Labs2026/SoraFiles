@@ -16,11 +16,11 @@ Ordinary global users who need to make an image or PDF smaller, change its forma
 
 ## Product Purpose
 
-SoraFiles provides free PDF and image utilities that run locally in the user's browser whenever the implemented operation supports it. Success means a visitor can find the right tool quickly, understand its limitations before processing, create a valid result, and download a new file while retaining the original.
+SoraFiles is one privacy-first web application for working with PDFs and images directly in the user's browser. Its individual file operations are workflows within the application. Success means a visitor can find the right workflow quickly, understand its limitations before processing, create a valid result, and download a new file while retaining the original.
 
 ## Positioning
 
-SoraFiles is private by architecture for its supported file tools: processing happens on the user's device, so file contents do not enter a SoraFiles upload or server-processing queue. The product combines that local-first mechanism with free access, no mandatory account, no watermark, and clear control over relevant output settings.
+SoraFiles is private by architecture for supported file workflows: processing happens on the user's device, so file contents do not enter a SoraFiles upload or server-processing queue. The product combines that local-first mechanism with free access, no mandatory account, no watermark, and clear control over relevant output settings.
 
 ## Operating Context
 
@@ -28,7 +28,7 @@ People commonly arrive with an email attachment that is too large, an image in t
 
 ## Capabilities and Constraints
 
-- Current public tools: 26 PDF, document, spreadsheet, and image tools covering compression, merging, splitting, rotation, page removal, conversion, OCR, signing, watermarking, protection, unlocking, repair, image resizing/editing, local AI background removal, HEIC conversion, and metadata removal.
+- Current workflows cover PDF, document, spreadsheet, and image compression, merging, splitting, rotation, page removal, conversion, OCR, signing, watermarking, protection, unlocking, repair, image resizing/editing, local AI background removal, HEIC conversion, and metadata removal.
 - Browser capabilities, file complexity, memory, and supported codecs can limit processing. The product never promises unlimited files or exact compression outcomes when the engine cannot guarantee them.
 - PDF compression rebuilds pages as images and therefore removes selectable text, links, form fields, signatures, bookmarks, and accessibility structure.
 - PDF-to-Word preserves exact page visuals rather than editable structure. Word/Excel-to-PDF use browser-local LibreOffice WebAssembly; unavailable non-embedded fonts may be substituted. PDF-to-Excel separates exact visual preservation from best-effort editable extraction because a PDF does not contain the original spreadsheet model.

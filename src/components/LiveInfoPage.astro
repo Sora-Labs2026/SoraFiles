@@ -5,6 +5,7 @@ import { liveTools } from '../data/liveTools';
 import type { LocalePath } from '../i18n/config';
 import { getLocaleContent } from '../i18n';
 import { popularityPrivacy } from '../data/popularityPrivacy';
+import { getBrandPositioning } from '../i18n/brandPositioning';
 
 type InfoSlug = 'about' | 'contact' | 'privacy' | 'terms' | 'open-source';
 interface InfoCard { t: string; d: string; }
@@ -12,7 +13,11 @@ interface InfoSection { h: string; p: string; }
 interface InfoCopy { overline: string; title: string; intro: string; cards: InfoCard[]; sections: InfoSection[]; }
 interface Props { slug: InfoSlug; locale?: LocalePath; }
 const { slug, locale = 'en' } = Astro.props;
-const compactPage = liveRaw<InfoCopy>(locale, `page.${slug}`);
+const localizedBrand = getBrandPositioning(locale);
+const compactPageSource = liveRaw<InfoCopy>(locale, `page.${slug}`);
+const compactPage = slug === 'about'
+  ? { ...compactPageSource, title: localizedBrand.aboutTitle, intro: localizedBrand.aboutIntro }
+  : compactPageSource;
 const reviewedPages = getLocaleContent(locale).pages;
 const contact = liveRaw<typeof copy.contactForm>(locale, 'contactForm');
 const currentRuntimeLicenses = 'ZetaJS (MIT) · LibreOffice WebAssembly (MPL-2.0 / LGPL-3.0+) · IMG.LY Background Removal (AGPL-3.0) · ONNX Runtime Web (MIT) · SheetJS CE (Apache-2.0).';

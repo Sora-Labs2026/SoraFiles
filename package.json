@@ -2,7 +2,7 @@
   "name": "sorafiles.com",
   "type": "module",
   "version": "0.0.1",
-  "description": "Free, privacy-first PDF and image tools that process files locally in the browser.",
+  "description": "A privacy-first file app that runs locally in your browser.",
   "license": "AGPL-3.0-only",
   "author": "Sora Labs",
   "homepage": "https://sorafiles.com/",
@@ -14,7 +14,7 @@
     "url": "https://github.com/Sora-Labs2026/SoraFiles/issues"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "dev": "npm run sync:office && astro dev",
@@ -41,6 +41,7 @@
     "fixtures:ocr": "node tests/fixtures/generate-ocr-fixtures.mjs",
     "validate:i18n": "node scripts/validate-i18n.mjs",
     "validate:truth": "node scripts/validate-content-truth.mjs",
+    "validate:positioning": "node scripts/validate-brand-positioning.mjs",
     "submit:search": "node --env-file-if-exists=.env.search.local scripts/ping-search-engines.js --live",
     "submit:search:dry": "node scripts/ping-search-engines.js --dry-run",
     "search-console": "node --env-file-if-exists=.env.search.local scripts/ping-search-engines.js --live",

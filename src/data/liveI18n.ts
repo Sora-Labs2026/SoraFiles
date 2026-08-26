@@ -6,6 +6,7 @@ import { liveSupplement } from './liveSupplement';
 import type { LocalePath } from '../i18n/config';
 import { getSpreadsheetToolMessages } from '../i18n/spreadsheetTools';
 import { getBackgroundRemovalMessages } from '../i18n/backgroundRemoval';
+import { getBrandPositioning } from '../i18n/brandPositioning';
 
 type Dictionary = Record<string, unknown>;
 const compactDictionaries: Record<string, Dictionary> = { en, ...latin, ...asia, ...arRu };
@@ -28,6 +29,9 @@ const dictionaries = Object.fromEntries(Object.entries(previewCode).map(([locale
 const interpolate = (value: string, vars?: Record<string, string | number>) => value.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars?.[key] === undefined ? `{{${key}}}` : String(vars[key]));
 
 export function liveRaw<T>(locale: LocalePath, path: string): T {
+  const brand = getBrandPositioning(locale);
+  if (path === 'page.about.title') return brand.aboutTitle as T;
+  if (path === 'page.about.intro') return brand.aboutIntro as T;
   const value = resolve(dictionaries[previewCode[locale]] ?? en, path);
   if (value === undefined) throw new Error(`Missing reviewed localization: ${locale}:${path}`);
   return value as T;
@@ -36,6 +40,11 @@ export function liveRaw<T>(locale: LocalePath, path: string): T {
 export function liveText(locale: LocalePath, path: string, vars?: Record<string, string | number>): string {
   const spreadsheet = getSpreadsheetToolMessages(locale);
   const background = getBackgroundRemovalMessages(locale);
+  const brand = getBrandPositioning(locale);
+  if (path === 'hero.desc') return brand.description;
+  if (path === 'page.about.title') return brand.aboutTitle;
+  if (path === 'page.about.intro') return brand.aboutIntro;
+  if (path === 'footer.tagline') return brand.footerTagline;
   if (path === 'lim.pdfToExcel') return spreadsheet.exactHelp;
   if (path === 'lim.excelToPdf') return spreadsheet.excelResult;
   if (path === 'tool.remove-background.n') return background.name;

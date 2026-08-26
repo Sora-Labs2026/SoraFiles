@@ -11,6 +11,7 @@ import liveCopy from '../../data/liveCopy';
 import { liveRaw, liveText, liveToolCopy } from '../../data/liveI18n';
 import { localeContent, getLocaleContent } from '../../i18n';
 import { localeByPath, localizedPath, localizedRoutePaths, type LocalePath, type LocalizedRoutePath } from '../../i18n/config';
+import { getBrandPositioning } from '../../i18n/brandPositioning';
 
 type InfoSlug = 'about' | 'contact' | 'privacy' | 'terms' | 'open-source';
 const infoSlugs = new Set<InfoSlug>(['about', 'contact', 'privacy', 'terms', 'open-source']);
@@ -25,6 +26,7 @@ export function getStaticPaths() {
 interface Props { locale: LocalePath; basePath: LocalizedRoutePath; }
 const { locale, basePath } = Astro.props as Props;
 const content = getLocaleContent(locale);
+const brand = getBrandPositioning(locale);
 const localeMeta = localeByPath.get(locale)!;
 const routeSlug = basePath.slice(1);
 const tool = liveToolBySlug.get(routeSlug);
@@ -45,8 +47,9 @@ const toolWords = tool ? liveToolCopy(locale, tool.id) : undefined;
 const isHome = basePath === '/';
 const isToolsHub = basePath === '/tools';
 const canonicalPath = localizedPath(locale, basePath);
-const title = isHome ? content.home.title : toolWords ? `${toolWords.n} | SoraFiles` : isToolsHub ? `${liveText(locale, 'nav.allTools')} | SoraFiles` : infoPage ? `${infoPage.title} | SoraFiles` : 'SoraFiles';
-const description = isHome ? content.home.description : toolWords ? `${toolWords.t} ${toolWords.d}` : isToolsHub ? `${liveText(locale, 'nav.allTools')}. ${liveText(locale, 'hero.desc')}` : reviewedInfoPage?.intro || infoPage?.intro.replace('{{n}}', String(liveTools.length)) || liveText(locale, 'hero.desc');
+const infoTitle = infoSlug === 'about' ? brand.aboutTitle : infoPage?.title;
+const title = isHome ? brand.homeTitle : toolWords ? `${toolWords.n} | SoraFiles` : isToolsHub ? `${liveText(locale, 'nav.allTools')} | SoraFiles` : infoTitle ? `${infoTitle} | SoraFiles` : 'SoraFiles';
+const description = isHome ? brand.description : toolWords ? `${toolWords.t} ${toolWords.d}` : isToolsHub ? `${liveText(locale, 'nav.allTools')}. ${liveText(locale, 'hero.desc')}` : infoSlug === 'about' ? brand.aboutIntro : reviewedInfoPage?.intro || infoPage?.intro.replace('{{n}}', String(liveTools.length)) || liveText(locale, 'hero.desc');
 const schema = isHome ? {
   '@context': 'https://schema.org', '@graph': [
     { '@type': 'CollectionPage', name: title, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description },

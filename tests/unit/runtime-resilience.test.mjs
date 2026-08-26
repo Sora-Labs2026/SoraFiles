@@ -94,10 +94,10 @@ test('every first-party Astro image declares alt semantics', async () => {
 });
 
 test('homepage metadata and decorative brand marks satisfy the Part 14 contract', async () => {
-  const index = await readFile('src/pages/index.astro', 'utf8');
-  const description = index.match(/const description = '([^']+)'/)?.[1] ?? '';
+  const { brandPositioning } = await import('../../src/i18n/brandPositioning.ts');
+  const description = brandPositioning.en.description;
   assert.ok(description.length >= 120 && description.length <= 160, `homepage description length is ${description.length}`);
-  assert.match(description, /process files locally in your browser/i);
+  assert.match(description, /processing happens locally on your device/i);
 
   for (const file of ['src/components/Header.astro', 'src/components/Footer.astro']) {
     const source = await readFile(file, 'utf8');
@@ -127,8 +127,8 @@ test('Google Analytics runtime and measurement ID stay removed', async () => {
 
 test('localized home metadata uses the reviewed native catalog instead of visual hero fragments', async () => {
   const route = await readFile('src/pages/[locale]/[...path].astro', 'utf8');
-  assert.match(route, /const title = isHome \? content\.home\.title/);
-  assert.match(route, /const description = isHome \? content\.home\.description/);
+  assert.match(route, /const title = isHome \? brand\.homeTitle/);
+  assert.match(route, /const description = isHome \? brand\.description/);
   assert.doesNotMatch(route, /isHome \? `SoraFiles — \$\{liveText\(locale, 'hero\.l1b'\)\}/);
 });
 

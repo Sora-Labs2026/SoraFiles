@@ -1,7 +1,7 @@
 {
   "name": "SoraFiles",
   "short_name": "SoraFiles",
-  "description": "Instant, free PDF and image tools that process files locally in your browser.",
+  "description": "A privacy-first file app that runs locally in your browser.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

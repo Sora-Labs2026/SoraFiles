@@ -44,8 +44,8 @@ try {
   assert.deepEqual(
     await page.evaluate(() => ({ ...window.__sfSharePayload })),
     {
-      title: 'SoraFiles - Free File Tools. Zero Uploads.',
-      text: 'SoraFiles - Free File Tools. Zero Uploads. — Fast, free PDF and image tools. Files are processed locally on your device, with no account or watermark.',
+      title: 'SoraFiles - Private File Processing in Your Browser',
+      text: 'SoraFiles - Private File Processing in Your Browser — SoraFiles is a privacy-first web app for working with PDFs and images directly in your browser. Supported file processing happens locally on your device.',
       url: 'https://sorafiles.com/',
     },
   );

@@ -23,6 +23,7 @@ if (result.status !== 0) process.exit(result.status ?? 1);
 const checks = [
   './validate-tool-metadata.mjs',
   './validate-content-truth.mjs',
+  './validate-brand-positioning.mjs',
   './validate-i18n.mjs',
   './validate-built-seo.mjs',
   './verify-search-branding.mjs',
