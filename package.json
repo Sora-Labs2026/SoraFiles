@@ -17,6 +17,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "ci": "astro check && npm run build:production && npm run test:unit",
     "dev": "npm run sync:office && astro dev",
     "build": "npm run sync:office && npm run generate:popularity && astro build",
     "build:production": "node scripts/build-production.mjs",
