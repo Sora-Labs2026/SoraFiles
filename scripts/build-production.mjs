@@ -4,8 +4,9 @@ import { fileURLToPath } from 'node:url';
 const astro = fileURLToPath(new URL('../node_modules/astro/bin/astro.mjs', import.meta.url));
 const generator = fileURLToPath(new URL('./generate-popularity-registry.mjs', import.meta.url));
 const officeRuntimeSync = fileURLToPath(new URL('./sync-office-runtime.mjs', import.meta.url));
+const typeScriptRuntimeArgs = ['--experimental-strip-types'];
 for (const setupScript of [generator, officeRuntimeSync]) {
-  const setup = spawnSync(process.execPath, [setupScript], {
+  const setup = spawnSync(process.execPath, [...typeScriptRuntimeArgs, setupScript], {
     cwd: fileURLToPath(new URL('..', import.meta.url)),
     env: process.env,
     stdio: 'inherit',
@@ -35,7 +36,7 @@ const checks = [
 for (const check of checks) {
   const checkPath = fileURLToPath(new URL(check, import.meta.url));
   const checkArgs = check === './validate-built-seo.mjs' ? [checkPath, '--all'] : [checkPath];
-  const checkResult = spawnSync(process.execPath, checkArgs, {
+  const checkResult = spawnSync(process.execPath, [...typeScriptRuntimeArgs, ...checkArgs], {
     cwd: fileURLToPath(new URL('..', import.meta.url)),
     stdio: 'inherit',
   });
