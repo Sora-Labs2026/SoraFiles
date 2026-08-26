@@ -2,8 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 import { ensureAstroServer, baseUrl } from '../tests/e2e/run-server.mjs';
 
-const executablePath = process.env.SORA_BROWSER_PATH
-  ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+const executablePath = process.env.SORA_BROWSER_PATH;
 const scenarios = [
   { name: 'mobile-home', route: '/', width: 390, height: 844 },
   { name: 'mobile-tool', route: '/pdf', width: 390, height: 844 },

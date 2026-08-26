@@ -92,6 +92,11 @@ test('document and image workbenches expose the new resilient editing controls',
   assert.match(scanner, /quality = \.97/);
   assert.match(scanner, /existing\?\.filter \|\| 'color'/);
   assert.match(scanner, /data-scanner-action-status/);
+  assert.match(scanner, /data-corner-dialog hidden[\s\S]*?role="dialog" aria-modal="true"/);
+  assert.match(scanner, /document\.body\.appendChild\(cornerDialog\)/);
+  assert.match(scanner, /handleHitArea:72/);
+  assert.match(scanner, /handleSize:32/);
+  assert.match(scanner, /nudges:\{enabled:false\}/);
   assert.match(scanner, /data-export-format/);
   assert.match(scanner, /data-export-run/);
   assert.match(imageEditor, /data-edit-preview/);
@@ -102,4 +107,11 @@ test('document and image workbenches expose the new resilient editing controls',
   assert.match(imageEditor, /imageSmoothingQuality = 'high'/);
   assert.match(imageEditor, /'brightness'/);
   assert.match(imageEditor, /renderEditCanvas/);
+});
+
+test('shared tool cards keep one bounded rectangle size across tool grids', async () => {
+  const card = await readFile('src/components/LiveToolCard.astro', 'utf8');
+  assert.match(card, /flex h-28[^"]*overflow-hidden/);
+  assert.match(card, /line-clamp-2[^"]*font-extrabold/);
+  assert.match(card, /line-clamp-3[^"]*text-\[11px\]/);
 });

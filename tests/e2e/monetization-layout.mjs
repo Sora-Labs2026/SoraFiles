@@ -1,8 +1,7 @@
 import { chromium } from 'playwright';
 import { ensureAstroServer, baseUrl } from './run-server.mjs';
 
-const executablePath = process.env.SORA_BROWSER_PATH ??
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+const executablePath = process.env.SORA_BROWSER_PATH;
 const widths = [320, 390, 768, 1024, 1440];
 const publicPaths = ['/', '/tools/', '/pdf/', '/ja/', '/ja/tools/', '/ja/pdf/', '/privacy/', '/terms/', '/contact/', '/open-source/', '/404.html'];
 

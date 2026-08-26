@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const baseUrl = process.env.SORA_BASE_URL ?? 'http://localhost:4321';
-const executablePath = process.env.SORA_BROWSER_PATH ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+const executablePath = process.env.SORA_BROWSER_PATH;
 const image = fileURLToPath(new URL('../fixtures/sample.jpg', import.meta.url));
 const pdf = fileURLToPath(new URL('../fixtures/text-two-page.pdf', import.meta.url));
 await mkdir('.artifacts', { recursive: true });

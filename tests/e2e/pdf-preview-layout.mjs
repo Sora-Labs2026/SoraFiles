@@ -3,8 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { ensureAstroServer, baseUrl } from './run-server.mjs';
 
-const executablePath = process.env.SORA_BROWSER_PATH ??
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+const executablePath = process.env.SORA_BROWSER_PATH;
 const widths = process.env.SORA_WIDTHS ? process.env.SORA_WIDTHS.split(',').map(Number) : [320, 390, 768, 1024, 1440];
 const pdfFixture = fileURLToPath(new URL('../fixtures/text-two-page.pdf', import.meta.url));
 
