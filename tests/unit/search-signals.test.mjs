@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { localizedRoutePaths, publishedLocales } from '../../src/i18n/config.ts';
 
 test('search automation validates the complete canonical sitemap without network calls', async () => {
-  const result = spawnSync(process.execPath, ['scripts/ping-search-engines.js', '--dry-run'], {
+  const result = spawnSync(process.execPath, ['--experimental-strip-types', 'scripts/ping-search-engines.js', '--dry-run'], {
     cwd: process.cwd(),
     encoding: 'utf8',
     windowsHide: true,
