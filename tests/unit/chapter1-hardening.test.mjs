@@ -76,9 +76,10 @@ test('shared workbenches retain Chapter 1 format, batch, preview, and signature 
 });
 
 test('document and image workbenches expose the new resilient editing controls', async () => {
-  const [document, scanner, imageEditor] = await Promise.all([
+  const [document, scanner, cornerEditor, imageEditor] = await Promise.all([
     readFile('src/components/DocumentActionWorkbench.astro', 'utf8'),
     readFile('src/components/DocScannerWorkbench.astro', 'utf8'),
+    readFile('src/lib/image/responsive-corner-editor.ts', 'utf8'),
     readFile('src/components/ExtraToolWorkbench.astro', 'utf8'),
   ]);
   assert.match(document, /id="remove-page-spec"[\s\S]*?inputmode="text"/);
@@ -94,9 +95,9 @@ test('document and image workbenches expose the new resilient editing controls',
   assert.match(scanner, /data-scanner-action-status/);
   assert.match(scanner, /data-corner-dialog hidden[\s\S]*?role="dialog" aria-modal="true"/);
   assert.match(scanner, /document\.body\.appendChild\(cornerDialog\)/);
-  assert.match(scanner, /handleHitArea:72/);
-  assert.match(scanner, /handleSize:32/);
-  assert.match(scanner, /nudges:\{enabled:false\}/);
+  assert.match(cornerEditor, /width: '52px', height: '52px'/);
+  assert.match(cornerEditor, /width: '32px', height: '32px'/);
+  assert.match(cornerEditor, /handle\.addEventListener\('keydown'/);
   assert.match(scanner, /data-export-format/);
   assert.match(scanner, /data-export-run/);
   assert.match(imageEditor, /data-edit-preview/);
@@ -111,7 +112,8 @@ test('document and image workbenches expose the new resilient editing controls',
 
 test('shared tool cards keep one bounded rectangle size across tool grids', async () => {
   const card = await readFile('src/components/LiveToolCard.astro', 'utf8');
-  assert.match(card, /flex h-28[^"]*overflow-hidden/);
+  assert.match(card, /flex h-28 items-center[^"]*overflow-hidden/);
   assert.match(card, /line-clamp-2[^"]*font-extrabold/);
   assert.match(card, /line-clamp-3[^"]*text-\[11px\]/);
+  assert.equal((card.match(/right-3\.5 top-1\/2[^"]*-translate-y-1\/2/g) ?? []).length, 2);
 });
