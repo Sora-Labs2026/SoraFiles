@@ -10,7 +10,7 @@ Sora Labs
 
 ## Tagline
 
-A privacy-first file app that runs locally in your browser.
+A privacy-first web app that runs locally in your browser.
 
 ## Description
 

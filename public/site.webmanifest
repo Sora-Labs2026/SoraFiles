@@ -1,7 +1,7 @@
 {
   "name": "SoraFiles",
   "short_name": "SoraFiles",
-  "description": "A privacy-first file app that runs locally in your browser.",
+  "description": "A privacy-first web app that runs locally in your browser.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

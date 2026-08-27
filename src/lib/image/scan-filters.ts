@@ -3,6 +3,53 @@ export type ScanFilter = 'original' | 'enhanced' | 'color' | 'grayscale' | 'bw' 
 const clamp = (value: number) => Math.max(0, Math.min(255, Math.round(value)));
 const luma = (r: number, g: number, b: number) => (54 * r + 183 * g + 19 * b) >> 8;
 
+function conservativeWhiteBalance(data: Uint8ClampedArray): [number, number, number] {
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+  let samples = 0;
+  const stride = Math.max(4, Math.floor(data.length / 80_000 / 4) * 4);
+  for (let index = 0; index < data.length; index += stride) {
+    red += data[index];
+    green += data[index + 1];
+    blue += data[index + 2];
+    samples += 1;
+  }
+  const average = (red + green + blue) / Math.max(1, samples * 3);
+  const restrainedGain = (channel: number) => {
+    const grayWorld = average / Math.max(1, channel / Math.max(1, samples));
+    return Math.max(.9, Math.min(1.1, 1 + (grayWorld - 1) * .28));
+  };
+  return [restrainedGain(red), restrainedGain(green), restrainedGain(blue)];
+}
+
+function restrainedSharpen(data: Uint8ClampedArray, width: number, height: number, amount: number) {
+  if (width < 3 || height < 3 || amount <= 0) return;
+  const rowBytes = width * 4;
+  let previous = data.slice(0, rowBytes);
+  let current = data.slice(rowBytes, rowBytes * 2);
+  for (let y = 1; y < height - 1; y += 1) {
+    const next = data.slice((y + 1) * rowBytes, (y + 2) * rowBytes);
+    for (let x = 1; x < width - 1; x += 1) {
+      const offset = x * 4;
+      const center = luma(current[offset], current[offset + 1], current[offset + 2]);
+      const neighbors = (
+        luma(current[offset - 4], current[offset - 3], current[offset - 2])
+        + luma(current[offset + 4], current[offset + 5], current[offset + 6])
+        + luma(previous[offset], previous[offset + 1], previous[offset + 2])
+        + luma(next[offset], next[offset + 1], next[offset + 2])
+      ) / 4;
+      const detail = Math.max(-8, Math.min(8, (center - neighbors) * amount));
+      const target = y * rowBytes + offset;
+      data[target] = clamp(current[offset] + detail);
+      data[target + 1] = clamp(current[offset + 1] + detail);
+      data[target + 2] = clamp(current[offset + 2] + detail);
+    }
+    previous = current;
+    current = next;
+  }
+}
+
 function percentileBounds(data: Uint8ClampedArray): [number, number] {
   const histogram = new Uint32Array(256);
   let pixels = 0;
@@ -70,6 +117,7 @@ export function applyScanFilter(source: ImageData, filter: ScanFilter): ImageDat
   const output = new Uint8ClampedArray(source.data);
   const [low, high] = percentileBounds(output);
   const range = Math.max(1, high - low);
+  const balance = filter === 'enhanced' ? conservativeWhiteBalance(output) : [1, 1, 1];
   for (let index = 0; index < output.length; index += 4) {
     const y = luma(output[index], output[index + 1], output[index + 2]);
     if (filter === 'grayscale' || filter === 'contrast') {
@@ -82,11 +130,12 @@ export function applyScanFilter(source: ImageData, filter: ScanFilter): ImageDat
       const strength = filter === 'enhanced' ? 0.72 : 0.5;
       const normalized = clamp(((y - low) * 255) / range);
       const gain = y > 4 ? (y + (normalized - y) * strength) / y : 1;
-      output[index] = clamp(output[index] * gain);
-      output[index + 1] = clamp(output[index + 1] * gain);
-      output[index + 2] = clamp(output[index + 2] * gain);
+      output[index] = clamp(output[index] * gain * balance[0]);
+      output[index + 1] = clamp(output[index + 1] * gain * balance[1]);
+      output[index + 2] = clamp(output[index + 2] * gain * balance[2]);
     }
   }
+  restrainedSharpen(output, source.width, source.height, filter === 'enhanced' ? .18 : filter === 'color' ? .1 : filter === 'grayscale' ? .08 : 0);
   return new ImageData(output, source.width, source.height);
 }
 

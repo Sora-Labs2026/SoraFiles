@@ -2,7 +2,7 @@
   "name": "sorafiles.com",
   "type": "module",
   "version": "0.0.1",
-  "description": "A privacy-first file app that runs locally in your browser.",
+  "description": "A privacy-first web app that runs locally in your browser.",
   "license": "AGPL-3.0-only",
   "author": "Sora Labs",
   "homepage": "https://sorafiles.com/",

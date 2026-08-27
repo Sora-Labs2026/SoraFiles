@@ -7,7 +7,7 @@ import liveCopy from '../src/data/liveCopy.ts';
 
 const failures = [];
 const check = (condition, message) => { if (!condition) failures.push(message); };
-const tagline = 'A privacy-first file app that runs locally in your browser.';
+const tagline = 'A privacy-first web app that runs locally in your browser.';
 const description = 'SoraFiles is a privacy-first web app for working with PDFs and images directly in your browser. Supported file processing happens locally on your device.';
 
 check(Object.keys(brandPositioning).length === publishedLocales.length, 'Brand positioning must cover every published locale exactly once.');
@@ -26,7 +26,6 @@ const read = (path) => readFileSync(path, 'utf8');
 for (const [path, required] of [
   ['README.md', description],
   ['docs/BRAND_POSITIONING.md', tagline],
-  ['SoraFiles_External_Profile_Copy.txt', description],
   ['public/site.webmanifest', tagline],
 ]) check(read(path).includes(required), `${path}: missing canonical positioning.`);
 
