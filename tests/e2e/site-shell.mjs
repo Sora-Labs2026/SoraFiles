@@ -130,8 +130,8 @@ async function runTests() {
               console.error(`  FAIL: Expected one share control on ${route} at ${width}px`);
               hasFailures = true;
             } else {
-              await shareTrigger.scrollIntoViewIfNeeded();
-              await page.waitForTimeout(250);
+              await shareTrigger.evaluate((element) => element.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' }));
+              await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
               const shareScrollBefore = await page.evaluate(() => window.scrollY);
               const shareTriggerTopBefore = await shareTrigger.evaluate((element) => element.getBoundingClientRect().top);
               await shareTrigger.click();
