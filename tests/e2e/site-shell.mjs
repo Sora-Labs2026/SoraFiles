@@ -132,6 +132,7 @@ async function runTests() {
             } else {
               await shareTrigger.evaluate((element) => element.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' }));
               await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+              await shareTrigger.click({ trial: true });
               const shareScrollBefore = await page.evaluate(() => window.scrollY);
               const shareTriggerTopBefore = await shareTrigger.evaluate((element) => element.getBoundingClientRect().top);
               await shareTrigger.click();
