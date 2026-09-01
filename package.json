@@ -89,7 +89,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "fast-png": "^6.4.0",
+    "fast-png": "^8.0.0",
     "playwright": "^1.62.1",
     "tsx": "^4.20.6",
     "typescript": "^6.0.3",
