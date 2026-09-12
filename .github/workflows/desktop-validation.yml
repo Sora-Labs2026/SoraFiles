@@ -1,0 +1,50 @@
+name: Desktop core and UI validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'src/data/liveTools.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/desktop-validation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shared-core:
+    name: Shared core and browser UI — ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - run: npm ci
+      - name: Test signatures, concurrent licensing, giveaway recovery and real PDF output
+        run: node --test desktop/tests/*.test.mjs
+      - name: Build the independent desktop UI
+        run: node desktop/scripts/build-ui.mjs
+      - name: Install the browser used for UI contract checks
+        run: npx playwright install --with-deps chromium
+      - name: Check keyboard, layout, native bridge contract and both themes
+        run: node desktop/tests/ui-qa.mjs
+        env:
+          SORA_BROWSER_CHANNEL: chromium
+      # These checks deliberately do not publish an installer. Native shell,
+      # secure storage, engine compatibility and installer lifecycle require
+      # separate platform-specific certification before a release is eligible.

@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "macos": {
+    "signing": "ad-hoc",
+    "notarized": false,
+    "installation": "gatekeeper-approval",
+    "updaterEligible": false,
+    "approvalInstructions": "https://sorafiles.com/desktop/help#macos-open-anyway",
+    "architectures": ["arm64", "x64"],
+    "ownerSteering": "Use Gatekeeper Open Anyway for first launch; do not require an Apple Developer certificate."
+  },
+  "linux": {
+    "initialBuildTarget": "ubuntu-22.04",
+    "architectures": ["x64"],
+    "packages": ["deb", "AppImage"],
+    "otherDistributions": "Publish compatibility only after actual installation and runtime tests."
+  },
+  "publication": "No artifact becomes downloadable merely because it builds. Require native runtime, engine, licensing and installer checks."
+}

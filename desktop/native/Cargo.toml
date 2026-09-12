@@ -1,0 +1,26 @@
+[package]
+name = "sorafiles-desktop"
+version = "0.1.0"
+description = "SoraFiles independent native desktop host"
+authors = ["Sora Labs"]
+license = "AGPL-3.0-only"
+edition = "2021"
+rust-version = "1.85"
+
+[build-dependencies]
+tauri-build = { version = "=2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "=2.11.5", features = ["tray-icon", "image-png", "image-ico"] }
+tauri-plugin-dialog = "=2.7.3"
+tauri-plugin-single-instance = "=2.4.4"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+uuid = { version = "=1.26.1", features = ["v4"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

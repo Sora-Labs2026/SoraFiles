@@ -1,0 +1,17 @@
+{
+  "mode": "test_mode",
+  "listenHost": "127.0.0.1",
+  "listenPort": 8788,
+  "databasePath": "SET_PRIVATE_PERSISTENT_DATABASE_PATH",
+  "publicOrigin": "https://license.sorafiles.com",
+  "catalogConfig": [
+    {"plan":"personal-monthly","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"},
+    {"plan":"personal-annual","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"},
+    {"plan":"personal-lifetime","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"},
+    {"plan":"team-monthly","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"},
+    {"plan":"team-annual","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"},
+    {"plan":"team-lifetime","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"}
+  ],
+  "secretStoreInputs": ["DODO_API_KEY","DODO_WEBHOOK_SECRET","ENTITLEMENT_ED25519_PRIVATE_KEY","ENTITLEMENT_KEY_ID","CHALLENGE_HMAC_SECRET","RATE_HMAC_SECRET"],
+  "trialIdentityProvider": "REQUIRED_SERVER_VERIFIED_SUBJECT_PROVIDER"
+}

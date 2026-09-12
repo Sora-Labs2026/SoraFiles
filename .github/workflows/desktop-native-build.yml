@@ -1,0 +1,97 @@
+name: Desktop native candidate builds
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/desktop-*']
+    paths: ['desktop/**', 'src/data/liveTools.ts', '.github/workflows/desktop-native-build.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+          - os: macos-15
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: dmg
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.19.0'
+          cache: npm
+      - name: Install Linux native libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev patchelf xdg-utils xvfb
+      - name: Select Rust compiler
+        shell: bash
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup default 1.98.1
+          rustup target add ${{ matrix.target }}
+      - run: npm ci
+      - name: Verify shared processing, licensing and release policy
+        run: node --test desktop/tests/*.test.mjs
+      - name: Build independent interface
+        run: node desktop/scripts/build-native-ui.mjs
+      - name: Native host tests
+        run: cargo test --locked --manifest-path desktop/native/Cargo.toml --target ${{ matrix.target }}
+      - name: Build platform package
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_SIGNING_IDENTITY: '-'
+        with:
+          projectPath: desktop/native
+          args: --locked --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+          # No tag/release ID: candidate artifacts only, never public releases.
+      - name: Inspect macOS ad-hoc bundle
+        if: runner.os == 'macOS'
+        run: node desktop/scripts/inspect-macos-bundle.mjs desktop/native/target/${{ matrix.target }}/release/bundle/macos
+      - name: Test actual native window lifecycle on macOS
+        if: runner.os == 'macOS'
+        run: node desktop/scripts/run-native-smoke.mjs 'desktop/native/target/${{ matrix.target }}/release/bundle/macos/SoraFiles Desktop.app/Contents/MacOS/sorafiles-desktop'
+      - name: Test actual native window lifecycle on Linux
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node desktop/scripts/run-native-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop
+      - name: Test actual native window lifecycle on Windows
+        if: runner.os == 'Windows'
+        run: node desktop/scripts/run-native-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop.exe
+      - name: Collect immutable artifact hashes
+        run: node desktop/scripts/record-native-artifacts.mjs ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-candidate-${{ matrix.target }}
+          path: |
+            desktop/native/target/${{ matrix.target }}/release/bundle/**/*.dmg
+            desktop/native/target/${{ matrix.target }}/release/bundle/**/*.deb
+            desktop/native/target/${{ matrix.target }}/release/bundle/**/*.AppImage
+            desktop/native/target/${{ matrix.target }}/release/bundle/**/*.exe
+            .artifacts/native-candidate-${{ matrix.target }}.json
+            .artifacts/macos-bundle-inspection.json
+            .artifacts/native-smoke-*.json
+          if-no-files-found: error
+          retention-days: 14

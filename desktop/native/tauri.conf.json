@@ -1,0 +1,28 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "SoraFiles Desktop",
+  "version": "0.1.0",
+  "identifier": "com.soralabs.sorafiles.desktop",
+  "build": {
+    "beforeBuildCommand": "node ../scripts/build-native-ui.mjs",
+    "beforeDevCommand": "node ../scripts/build-native-ui.mjs",
+    "frontendDist": "../../.artifacts/desktop-native-ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' asset: http://asset.localhost; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+      "capabilities": [{"identifier":"main-window","windows":["main"],"permissions":["core:default"]}]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Utility",
+    "shortDescription": "Local PDF and image tools",
+    "icon": ["../../public/icon-192.png", "../../public/favicon.ico"],
+    "macOS": {"signingIdentity":"-","minimumSystemVersion":"13.0"},
+    "windows": {"nsis":{"installMode":"currentUser"}}
+  }
+}

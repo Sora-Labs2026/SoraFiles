@@ -1,0 +1,4 @@
+{
+  "homepagePromotionEnabled": false,
+  "reason": "Launch targets Windows, macOS and Linux together. Enable only after tested signed installers, working licensing and the release checklist pass."
+}

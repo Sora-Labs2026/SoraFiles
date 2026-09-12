@@ -1,0 +1,282 @@
+{
+  "recordedAt": "2026-09-12T18:43:49.202Z",
+  "scope": "Implementation evidence, not platform or release certification",
+  "tools": [
+    {
+      "id": "compress-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "merge-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "implemented and independently tested",
+      "evidence": [
+        "desktop/tests/pdf-core.test.mjs",
+        "desktop/tests/pdf-jobs.test.mjs",
+        ".artifacts/desktop-pdf-core/independent-validation.json"
+      ],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "split-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "implemented and independently tested",
+      "evidence": [
+        "desktop/tests/pdf-core.test.mjs",
+        "desktop/tests/pdf-jobs.test.mjs",
+        ".artifacts/desktop-pdf-core/independent-validation.json"
+      ],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "rotate-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "implemented and independently tested",
+      "evidence": [
+        "desktop/tests/pdf-core.test.mjs",
+        "desktop/tests/pdf-jobs.test.mjs",
+        ".artifacts/desktop-pdf-core/independent-validation.json"
+      ],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "remove-pages",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "implemented and independently tested",
+      "evidence": [
+        "desktop/tests/pdf-core.test.mjs",
+        "desktop/tests/pdf-jobs.test.mjs",
+        ".artifacts/desktop-pdf-core/independent-validation.json"
+      ],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "pdf-to-jpg",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "jpg-to-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "pdf-to-word",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "word-to-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "watermark-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "page-numbers",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "sign-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "image-converter",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "compress-image",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "heic-to-jpg",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "edit-image",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "remove-background",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "protect-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "unlock-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "repair-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "metadata-remover",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "pdf-to-excel",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "excel-to-pdf",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "pdf-ocr",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "resize-image",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    },
+    {
+      "id": "doc-scanner",
+      "webAvailable": true,
+      "desktopReleased": false,
+      "nativeQuickActionReleased": false,
+      "headlessPort": "not certified",
+      "evidence": [],
+      "verifiedEngineImprovementOverWeb": false,
+      "permittedPublicClaim": "Desktop in development; no superiority claim."
+    }
+  ]
+}

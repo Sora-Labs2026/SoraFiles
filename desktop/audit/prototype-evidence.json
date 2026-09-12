@@ -1,0 +1,350 @@
+{
+  "recordedAt": "2026-09-12T16:02:16.410Z",
+  "platform": {
+    "os": "Windows",
+    "release": "10.0.19045",
+    "arch": "x64",
+    "framework": "Development-only .NET Framework/WinForms WebView2 prototype",
+    "sdk": "1.0.4191.47"
+  },
+  "status": "PROTOTYPES ONLY; NO DISTRIBUTABLE RELEASE",
+  "online": {
+    "type": "complete",
+    "nativeHost": "WebView2",
+    "crossOriginIsolated": true,
+    "sharedArrayBuffer": true,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 Edg/152.0.0.0",
+    "results": [
+      {
+        "id": "pdf",
+        "status": "PASS",
+        "durationMs": 49,
+        "detail": {
+          "pages": 12
+        }
+      },
+      {
+        "id": "image",
+        "status": "PASS",
+        "durationMs": 80,
+        "detail": {
+          "width": 1600,
+          "height": 1000
+        }
+      },
+      {
+        "id": "ocr",
+        "status": "PASS",
+        "durationMs": 1327,
+        "detail": {
+          "knownIdentifier": true
+        }
+      },
+      {
+        "id": "office",
+        "status": "PASS",
+        "durationMs": 28375,
+        "detail": {
+          "pages": 16
+        }
+      },
+      {
+        "id": "background",
+        "status": "PASS",
+        "durationMs": 16395,
+        "detail": {
+          "bytes": 43334
+        }
+      }
+    ]
+  },
+  "offline": {
+    "type": "complete",
+    "nativeHost": "WebView2",
+    "crossOriginIsolated": true,
+    "sharedArrayBuffer": true,
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36 Edg/152.0.0.0",
+    "results": [
+      {
+        "id": "pdf",
+        "status": "PASS",
+        "durationMs": 59,
+        "detail": {
+          "pages": 12
+        }
+      },
+      {
+        "id": "image",
+        "status": "PASS",
+        "durationMs": 76,
+        "detail": {
+          "width": 1600,
+          "height": 1000
+        }
+      },
+      {
+        "id": "ocr",
+        "status": "PASS",
+        "durationMs": 831,
+        "detail": {
+          "knownIdentifier": true
+        }
+      },
+      {
+        "id": "office",
+        "status": "PASS",
+        "durationMs": 27905,
+        "detail": {
+          "pages": 16
+        }
+      },
+      {
+        "id": "background",
+        "status": "PASS",
+        "durationMs": 8800,
+        "detail": {
+          "bytes": 43334
+        }
+      }
+    ]
+  },
+  "independent": {
+    "pdf": {
+      "pages": 12,
+      "allKnownPageLabels": true
+    },
+    "office": {
+      "pages": 16,
+      "all96TableIdentifiers": true,
+      "all8SectionLabels": true,
+      "images": 16
+    },
+    "image": {
+      "size": [
+        1600,
+        1000
+      ],
+      "knownPixels": true
+    },
+    "ocr": {
+      "knownPhrase": true
+    },
+    "background": {
+      "size": [
+        1600,
+        1000
+      ],
+      "maskIntersectionOverUnion": 1,
+      "transparentOutside": true
+    }
+  },
+  "lifecycle": {
+    "status": "PASS",
+    "samples": [
+      {
+        "stage": "helper-before-ui",
+        "workingSet": 26787840,
+        "privateBytes": 23425024,
+        "cpuMs": 218.75,
+        "uiAlive": false
+      },
+      {
+        "stage": "ui-open-0",
+        "workingSet": 38055936,
+        "privateBytes": 25772032,
+        "cpuMs": 468.75,
+        "uiAlive": true
+      },
+      {
+        "stage": "browser-after-close-0",
+        "browserExited": true,
+        "browserId": 1220
+      },
+      {
+        "stage": "helper-idle-start-0",
+        "workingSet": 39448576,
+        "privateBytes": 26382336,
+        "cpuMs": 515.625,
+        "uiAlive": false
+      },
+      {
+        "stage": "helper-idle-end-0",
+        "workingSet": 39456768,
+        "privateBytes": 26382336,
+        "cpuMs": 515.625,
+        "uiAlive": false
+      },
+      {
+        "stage": "ui-open-1",
+        "workingSet": 39600128,
+        "privateBytes": 26406912,
+        "cpuMs": 593.75,
+        "uiAlive": true
+      },
+      {
+        "stage": "browser-after-close-1",
+        "browserExited": true,
+        "browserId": 5932
+      },
+      {
+        "stage": "helper-idle-start-1",
+        "workingSet": 39882752,
+        "privateBytes": 26394624,
+        "cpuMs": 609.375,
+        "uiAlive": false
+      },
+      {
+        "stage": "helper-idle-end-1",
+        "workingSet": 39882752,
+        "privateBytes": 26394624,
+        "cpuMs": 609.375,
+        "uiAlive": false
+      }
+    ]
+  },
+  "nativeBinaries": {
+    "NativeProbe.exe": 15360,
+    "LifecycleProbe.exe": 16384,
+    "Microsoft.Web.WebView2.Core.dll": 698208,
+    "Microsoft.Web.WebView2.WinForms.dll": 38752,
+    "WebView2Loader.dll": 163680
+  },
+  "downloadedAssets": [
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/a2385cccf96fda2efcf32b61349bc9c3a8ccb9be2246e45db6bfca6e37b78117",
+      "bytes": 4194304,
+      "sha256": "a2385cccf96fda2efcf32b61349bc9c3a8ccb9be2246e45db6bfca6e37b78117"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/9d4c548caff42434be7b42d2f46e35a0da25f4d679ff4218b72bc8cf8fd4d291",
+      "bytes": 4194304,
+      "sha256": "9d4c548caff42434be7b42d2f46e35a0da25f4d679ff4218b72bc8cf8fd4d291"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/f27ae13d9f59f61a6a1b5d9a91c203f2c613346083f02072c27c91672ccda8cf",
+      "bytes": 4194304,
+      "sha256": "f27ae13d9f59f61a6a1b5d9a91c203f2c613346083f02072c27c91672ccda8cf"
+    },
+    {
+      "url": "https://cdn.zetaoffice.net/zetaoffice_latest/soffice.js",
+      "bytes": 858124,
+      "sha256": "5143e5354f470b87f86ba272bcfef857bd13e6f07b59666e48a7ccb89643cd77"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/3dae4038fc722ce4ce041fbc9c63fd5c2d9864bc732a01994518f96e9ec2f357",
+      "bytes": 4194304,
+      "sha256": "3dae4038fc722ce4ce041fbc9c63fd5c2d9864bc732a01994518f96e9ec2f357"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/b275d60a2e1790daff7c9040fd99a3897bfdf7d1550da1ccf8bea60902e9c585",
+      "bytes": 2405900,
+      "sha256": "b275d60a2e1790daff7c9040fd99a3897bfdf7d1550da1ccf8bea60902e9c585"
+    },
+    {
+      "url": "https://cdn.zetaoffice.net/zetaoffice_latest/soffice.wasm",
+      "bytes": 161667499,
+      "sha256": "9ebd9a487e849a24b9c69f843ebdb451709c27b7722c010e36846433474a5bd4"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/b7b88898b9ab9e43209322097282f88e9e02315273e291373366261cd0a77059",
+      "bytes": 4194304,
+      "sha256": "b7b88898b9ab9e43209322097282f88e9e02315273e291373366261cd0a77059"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/ef08462567a199c89e0701ad47876c8fdc1b5eb487bbd6c2b58dd65fdc8bdc47",
+      "bytes": 4194304,
+      "sha256": "ef08462567a199c89e0701ad47876c8fdc1b5eb487bbd6c2b58dd65fdc8bdc47"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/829842727f98368990f103f052e112e521dd27123b9f6b8615efa6cb32bfaa4f",
+      "bytes": 4194304,
+      "sha256": "829842727f98368990f103f052e112e521dd27123b9f6b8615efa6cb32bfaa4f"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/ff8e86f29887739d249494309ca84dff33bef456c0346c2bbfcd21e3b388d87a",
+      "bytes": 4194304,
+      "sha256": "ff8e86f29887739d249494309ca84dff33bef456c0346c2bbfcd21e3b388d87a"
+    },
+    {
+      "url": "https://cdn.zetaoffice.net/zetaoffice_latest/soffice.data.js.metadata",
+      "bytes": 215180,
+      "sha256": "5d9d909d0b9b38443c0f19704032d0fc12d654f6c9c24c2c3b237739c4848ae3"
+    },
+    {
+      "url": "https://cdn.zetaoffice.net/zetaoffice_latest/soffice.data",
+      "bytes": 99520604,
+      "sha256": "3dab0a5448e599dccc1b1e69f4f86ea9eb30777c3f1ed7b9c386a5f4163e361c"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/064e16ef5bd663f4c8b2d2531c018973282906db2b80c9995731340b84d28a47",
+      "bytes": 4194304,
+      "sha256": "064e16ef5bd663f4c8b2d2531c018973282906db2b80c9995731340b84d28a47"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/aa485cf3fa61ca007b3e1ca7b65068328270f072b61cdda490b732211e1da5d9",
+      "bytes": 25539,
+      "sha256": "aa485cf3fa61ca007b3e1ca7b65068328270f072b61cdda490b732211e1da5d9"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/0a2415f50fe3072be594f7c4c66787f9465efed8dae6010b02f8575ea36bf81b",
+      "bytes": 4194304,
+      "sha256": "0a2415f50fe3072be594f7c4c66787f9465efed8dae6010b02f8575ea36bf81b"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/f3ce5fa0c5dc650423b4cb885d9fce1dbf043ee002c4a161688f36c2d2a122e0",
+      "bytes": 4194304,
+      "sha256": "f3ce5fa0c5dc650423b4cb885d9fce1dbf043ee002c4a161688f36c2d2a122e0"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/e57a35056b1480bc581977524cf0c19994542cb044626cfffca0b304a6cf227c",
+      "bytes": 4194304,
+      "sha256": "e57a35056b1480bc581977524cf0c19994542cb044626cfffca0b304a6cf227c"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/84addde9e759e397be2ee00d49a52dbf1b1a98863df325dc1c080252cbfe5fd9",
+      "bytes": 3431207,
+      "sha256": "84addde9e759e397be2ee00d49a52dbf1b1a98863df325dc1c080252cbfe5fd9"
+    },
+    {
+      "url": "https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/resources.json",
+      "bytes": 22759,
+      "sha256": "4e2a359d0436f1e55cb0e4e29a1c943f5d86d639ba4f4b5ea874a699b1f742d3"
+    }
+  ],
+  "downloadedBytes": 318478460,
+  "sourceHashes": {
+    "desktop/prototypes/NativeProbe.cs": "23891e29c072e7e4b4af3b5ff1a794b479d0993ab42216a33345693186856676",
+    "desktop/prototypes/LifecycleProbe.cs": "0f97c67c7a4e3bbf4f7423f8afa362e9b49f278bbde5699abcd7047279638663",
+    "desktop/prototypes/StorageProbe.cs": "838549b885a80e0a8deab76f46af0f4524ce7b8707e4dae5a4c4ea954340ecdd",
+    "desktop/prototypes/WindowsFileBoundary.cs": "6f3a6fd1cc4c91a41f94e73eed905654b7c531253a584fecac15da231378713e",
+    "desktop/prototypes/probe.ts": "6e3a88c47499fa1bb94164085fd77f316638d11970d5293ff2595d0d5c05d532",
+    "desktop/scripts/probe-server.mjs": "a4c341d171f10c8cb9514d690a752a6b88773ff2bc41420570eef7e2c594f83d"
+  },
+  "limits": [
+    "Only five representative workflows tested, not all 26 tools.",
+    "Offline run disabled engine downloads and blocked nonlocal WebView resource requests; host OS was not physically disconnected.",
+    "Office text/table/image checks passed; exact Microsoft Word font/pagination fidelity not established.",
+    "Synthetic product mask passed; hair/thin-detail/real-photo quality not established by this probe.",
+    "Lifecycle samples cover two closes and five seconds idle each; no production shell/startup/uninstall integration tested.",
+    "No installer, platform signing, updater, or macOS/Linux artifact tested.",
+    "Downloaded Office latest payload is hash-recorded but not a release-cleared, source-complete engine pack."
+  ],
+  "storage": {
+    "status": "PASS",
+    "checks": [
+      "12 concurrent native writes: originals preserved and collision names unique",
+      "Failed validation never published",
+      "Cancellation after staging never published",
+      "Native directory pin denied ancestor rename during validation",
+      "No temporary outputs remain",
+      "OS current-user DPAPI protected bytes survive disk roundtrip",
+      "DPAPI tampering rejected"
+    ],
+    "limits": [
+      "Windows local filesystem prototype only",
+      "No other-user/machine DPAPI test",
+      "No persistent trusted-clock integration",
+      "No installer or production bridge integration"
+    ]
+  }
+}
