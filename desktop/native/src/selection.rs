@@ -55,7 +55,9 @@ impl Selection {
 #[cfg(test)] mod tests {
     use super::*;
     #[test] fn bounded_selection_and_release() {
-        let directory = fs::canonicalize(std::env::temp_dir()).unwrap().join(format!("sorafiles-selection-{}", Uuid::new_v4())); fs::create_dir(&directory).unwrap();
+        let base = std::env::temp_dir();
+        #[cfg(unix)] let base = fs::canonicalize(base).unwrap();
+        let directory = base.join(format!("sorafiles-selection-{}", Uuid::new_v4())); fs::create_dir(&directory).unwrap();
         let path = directory.join("not-a-pdf.txt"); fs::write(&path, b"%PDF-1.7\nfixture").unwrap();
         let mut selection = Selection::default();
         for _ in 0..300 { let result = selection.add(vec![path.clone()]); assert_eq!(result.files[0].format, Some("PDF")); assert!(!result.rejected); selection.release(&[result.files[0].id.clone()]).unwrap(); assert!(selection.entries.is_empty()); }
