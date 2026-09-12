@@ -8,6 +8,12 @@ Run `node desktop/scripts/build-native-ui.mjs`, then `./desktop/scripts/native-c
 
 Run `node desktop/scripts/run-native-smoke.mjs desktop/native/target/debug/sorafiles-desktop.exe` to exercise three native window loads with two close/reopen cycles. The diagnostic uses a hidden window and exits afterward. Its JSON records its narrow scope: it does not certify file processing, installer behavior, licensing or process-memory recovery.
 
+For a local installer candidate, install the pinned CLI with `npm install --prefix .artifacts/desktop-tauri-cli --no-save --package-lock=false @tauri-apps/cli@2.11.4`, then run `./desktop/scripts/native-cargo.ps1 package`. This creates an unsigned Windows candidate, not a release-approved download. The build hook runs from the `desktop` directory; direct UI builds also work from the repository root.
+
+The host permits only packaged app origins and refuses popup WebViews. Renderer event permissions are limited to subscribing/unsubscribing; native selection events cannot be emitted by the view. IPC rejects unknown fields/actions. Native dialogs are serialized and their results are discarded if the original window closed. Selection order is retained, with 256-file/512-MB limits and rejected empty, unreadable, linked or network inputs. Signature detection alone is not full document validation.
+
+The launcher consumes absolute file arguments literally, optionally following `--open`, and forwards second-instance selections to the existing helper. macOS file-open events are wired to the same selection boundary. These routes open the independent interface and do not authorize processing. Explorer/Finder/Linux menu registration and actual shell invocation tests remain separate work.
+
 ## macOS and Linux build hosts
 
 The `Desktop native candidate builds` GitHub Actions workflow uses separate native runners for Windows x64, Apple Silicon, Intel Mac and Ubuntu 22.04 x64. It pins the Rust toolchain and lockfile, builds the independent UI, runs the shared/native tests, creates platform packages, then exercises the packaged Mac executable or native Windows/Linux binary. Linux uses Xvfb for the window test. Artifacts include checksums and scoped evidence and expire after 14 days. The workflow deliberately creates no public GitHub release.

@@ -59,6 +59,8 @@ jobs:
         run: node desktop/scripts/build-native-ui.mjs
       - name: Native host tests
         run: cargo test --locked --manifest-path desktop/native/Cargo.toml --target ${{ matrix.target }}
+      - name: Install pinned native packaging CLI
+        run: npm install --global @tauri-apps/cli@2.11.4
       - name: Build platform package
         uses: tauri-apps/tauri-action@v1
         env:
@@ -83,6 +85,7 @@ jobs:
       - name: Collect immutable artifact hashes
         run: node desktop/scripts/record-native-artifacts.mjs ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: desktop-candidate-${{ matrix.target }}
           path: |

@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod selection;
 mod bridge_policy;
+mod launch;
 use bridge_policy::{DialogLease, local_navigation, valid_request};
 use selection::Selection;
 use serde_json::{json, Value};
@@ -13,6 +14,14 @@ impl Default for HostState {
     fn default() -> Self { Self { selection: Mutex::new(Selection::default()), settings: Mutex::new(json!({"output":"source","theme":"system","startup":false})), quitting: AtomicBool::new(false), tray_available: AtomicBool::new(false), smoke_count:AtomicUsize::new(0), window_generation:AtomicUsize::new(0), dialog_busy:AtomicBool::new(false) } }
 }
 fn smoke_output() -> Option<std::path::PathBuf> { let args:Vec<_>=std::env::args().collect();let index=args.iter().position(|arg| arg=="--native-smoke")?;args.get(index+1).map(std::path::PathBuf::from) }
+fn receive_launch(app: &tauri::AppHandle, args: &[String]) {
+    let Ok(paths)=launch::selected_paths(args) else { return; };
+    if paths.is_empty() { return; }
+    if let Ok(mut selection)=app.state::<HostState>().selection.lock() {
+        let result=selection.add(paths);
+        let _=app.emit_to("main","native-selection",result);
+    }
+}
 fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
     let state = app.state::<HostState>();
     let mut value = state.settings.lock().map_err(|_| "Settings unavailable")?.clone();
@@ -120,7 +129,7 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
 
 fn main() {
     let app=tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app,_,_| { let _=open_window(app); }))
+        .plugin(tauri_plugin_single_instance::init(|app,args,_| { receive_launch(app,&args.into_iter().skip(1).collect::<Vec<_>>()); let _=open_window(app); }))
         .plugin(tauri_plugin_dialog::init()).manage(HostState::default())
         .invoke_handler(tauri::generate_handler![host_request])
         .on_page_load(|view,payload| {
@@ -138,12 +147,18 @@ fn main() {
                     "quit"=>{app.state::<HostState>().quitting.store(true,Ordering::SeqCst);app.exit(0);},_=>{}
                 }).build(app);
             app.state::<HostState>().tray_available.store(tray.is_ok(),Ordering::SeqCst);
+            receive_launch(app.handle(),&std::env::args().skip(1).collect::<Vec<_>>());
             open_window(app.handle())?; Ok(())
         }).build(tauri::generate_context!()).expect("Unable to initialize SoraFiles Desktop");
     app.run(|app,event| match event {
         RunEvent::ExitRequested { api, .. } => { let state=app.state::<HostState>();if !state.quitting.load(Ordering::SeqCst)&&(state.tray_available.load(Ordering::SeqCst)||smoke_output().is_some()) { api.prevent_exit(); } }
         #[cfg(target_os="macos")]
         RunEvent::Reopen { .. } => { let _=open_window(app); }
+        #[cfg(target_os="macos")]
+        RunEvent::Opened { urls } => {
+            let files:Vec<_>=urls.into_iter().filter_map(|url|url.to_file_path().ok()).map(|path|path.to_string_lossy().into_owned()).collect();
+            receive_launch(app,&files);let _=open_window(app);
+        }
         _=>{}
     });
 }

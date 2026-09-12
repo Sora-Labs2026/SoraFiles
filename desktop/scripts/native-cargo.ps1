@@ -1,4 +1,4 @@
-param([ValidateSet('check','test','build','generate-lockfile','metadata')][string]$Command='check')
+param([ValidateSet('check','test','build','generate-lockfile','metadata','package')][string]$Command='check')
 $ErrorActionPreference='Stop'
 $soraRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $env:RUSTUP_HOME=Join-Path $soraRoot '.artifacts/desktop-toolchain/rustup'
@@ -15,5 +15,11 @@ if (Test-Path -LiteralPath $soraVcVars) {
         if ($soraEnvironmentLine -match '^([^=]+)=(.*)$') { [Environment]::SetEnvironmentVariable($Matches[1],$Matches[2],'Process') }
     }
 }
-& $soraCargo $Command --manifest-path $soraManifest
+if ($Command -eq 'package') {
+    $soraCli=Join-Path $soraRoot '.artifacts/desktop-tauri-cli/node_modules/@tauri-apps/cli/tauri.js'
+    if (!(Test-Path -LiteralPath $soraCli)) { throw 'Install the pinned Tauri CLI in .artifacts/desktop-tauri-cli first.' }
+    Push-Location (Join-Path $soraRoot 'desktop/native')
+    try { & node $soraCli build --target x86_64-pc-windows-msvc --bundles nsis -- --locked }
+    finally { Pop-Location }
+} else { & $soraCargo $Command --manifest-path $soraManifest }
 exit $LASTEXITCODE
