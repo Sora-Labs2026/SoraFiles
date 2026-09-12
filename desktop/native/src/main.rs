@@ -1,14 +1,16 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod selection;
+mod bridge_policy;
+use bridge_policy::{DialogLease, local_navigation, valid_request};
 use selection::Selection;
 use serde_json::{json, Value};
 use std::sync::{Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}};
 use tauri::{Manager, Emitter, WebviewUrl, WebviewWindowBuilder, RunEvent, DragDropEvent, menu::{Menu, MenuItem}, tray::TrayIconBuilder};
 use tauri_plugin_dialog::DialogExt;
 
-struct HostState { selection: Mutex<Selection>, settings: Mutex<Value>, quitting: AtomicBool, tray_available: AtomicBool, smoke_count: AtomicUsize }
+struct HostState { selection: Mutex<Selection>, settings: Mutex<Value>, quitting: AtomicBool, tray_available: AtomicBool, smoke_count: AtomicUsize, window_generation: AtomicUsize, dialog_busy: AtomicBool }
 impl Default for HostState {
-    fn default() -> Self { Self { selection: Mutex::new(Selection::default()), settings: Mutex::new(json!({"output":"source","theme":"system","startup":false})), quitting: AtomicBool::new(false), tray_available: AtomicBool::new(false), smoke_count:AtomicUsize::new(0) } }
+    fn default() -> Self { Self { selection: Mutex::new(Selection::default()), settings: Mutex::new(json!({"output":"source","theme":"system","startup":false})), quitting: AtomicBool::new(false), tray_available: AtomicBool::new(false), smoke_count:AtomicUsize::new(0), window_generation:AtomicUsize::new(0), dialog_busy:AtomicBool::new(false) } }
 }
 fn smoke_output() -> Option<std::path::PathBuf> { let args:Vec<_>=std::env::args().collect();let index=args.iter().position(|arg| arg=="--native-smoke")?;args.get(index+1).map(std::path::PathBuf::from) }
 fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
@@ -22,17 +24,24 @@ fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
 }
 fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     if let Some(window) = app.get_webview_window("main") { window.show()?; window.unminimize()?; window.set_focus()?; return Ok(()); }
+    let generation = app.state::<HostState>().window_generation.fetch_add(1, Ordering::SeqCst) + 1;
     let window = WebviewWindowBuilder::new(app,"main",WebviewUrl::App("index.html".into()))
         .title("SoraFiles Desktop").inner_size(1180.0,900.0).min_inner_size(760.0,600.0)
         .visible(smoke_output().is_none())
-        .on_navigation(|url| matches!(url.scheme(),"tauri"|"http"|"https") && matches!(url.host_str(),Some("localhost"|"tauri.localhost")))
+        .on_navigation(local_navigation)
+        .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
         .build()?;
     let handle = app.clone();
     window.on_window_event(move |event| match event {
         tauri::WindowEvent::DragDrop(DragDropEvent::Drop { paths, .. }) => {
             if let Ok(mut selection) = handle.state::<HostState>().selection.lock() { let result=selection.add(paths.clone()); let _=handle.emit_to("main","native-selection",result); }
         }
-        tauri::WindowEvent::Destroyed => { if let Ok(mut selection)=handle.state::<HostState>().selection.lock() { selection.clear(); } }
+        tauri::WindowEvent::Destroyed => {
+            let state=handle.state::<HostState>();
+            if state.window_generation.compare_exchange(generation,generation+1,Ordering::SeqCst,Ordering::SeqCst).is_ok() {
+                if let Ok(mut selection)=state.selection.lock() { selection.clear(); }
+            }
+        }
         _ => {}
     });
     Ok(())
@@ -40,8 +49,9 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
 
 #[tauri::command]
 async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, method: String, params: Value) -> Result<Value,String> {
-    if window.label()!="main" || !params.is_object() || params.to_string().len()>16384 { return Err("Invalid desktop request".into()); }
+    if window.label()!="main" || !valid_request(&method,&params,smoke_output().is_some()) { return Err("Invalid desktop request".into()); }
     let state=app.state::<HostState>();
+    let generation=state.window_generation.load(Ordering::SeqCst);
     match method.as_str() {
         "getState" if params.as_object().unwrap().is_empty() => state_value(&app),
         "smokeReport" => {
@@ -62,9 +72,14 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
         "selectFiles" if params.as_object().unwrap().is_empty() => {
             let handle=app.clone();
             tauri::async_runtime::spawn_blocking(move || {
+                let state=handle.state::<HostState>();
+                let _lease=DialogLease::acquire(&state.dialog_busy)?;
+                if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose files again.".into()); }
                 let files=handle.dialog().file().set_title("Choose files for SoraFiles").blocking_pick_files().unwrap_or_default();
+                if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose files again.".into()); }
                 let paths=files.into_iter().filter_map(|file| file.into_path().ok()).collect();
-                let state=handle.state::<HostState>(); let mut selection=state.selection.lock().map_err(|_| "Selection unavailable")?;
+                let mut selection=state.selection.lock().map_err(|_| "Selection unavailable")?;
+                if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose files again.".into()); }
                 Ok(json!(selection.add(paths)))
             }).await.map_err(|_| "File picker unavailable")?
         }
@@ -83,10 +98,16 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
         }
         "chooseFolder" if params.as_object().unwrap().is_empty() => {
             let handle=app.clone();tauri::async_runtime::spawn_blocking(move || {
+                let state=handle.state::<HostState>();
+                let _lease=DialogLease::acquire(&state.dialog_busy)?;
+                if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose a folder again.".into()); }
                 let folder=handle.dialog().file().set_title("Choose output folder").blocking_pick_folder();
+                if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose a folder again.".into()); }
                 if let Some(folder)=folder { let path=folder.into_path().map_err(|_| "Choose a local folder")?;
                     // This preference is native-only; paths are not returned to the view.
-                    handle.state::<HostState>().settings.lock().map_err(|_| "Settings unavailable")?["customFolder"]=json!(path); return Ok(json!({"selected":true})); }
+                    let mut settings=state.settings.lock().map_err(|_| "Settings unavailable")?;
+                    if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose a folder again.".into()); }
+                    settings["customFolder"]=json!(path); return Ok(json!({"selected":true})); }
                 Ok(json!({"selected":false}))
             }).await.map_err(|_| "Folder picker unavailable")?
         }

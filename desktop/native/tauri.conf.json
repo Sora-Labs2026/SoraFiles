@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "identifier": "com.soralabs.sorafiles.desktop",
   "build": {
-    "beforeBuildCommand": "node ../scripts/build-native-ui.mjs",
-    "beforeDevCommand": "node ../scripts/build-native-ui.mjs",
+    "beforeBuildCommand": "node scripts/build-native-ui.mjs",
+    "beforeDevCommand": "node scripts/build-native-ui.mjs",
     "frontendDist": "../../.artifacts/desktop-native-ui"
   },
   "app": {
@@ -13,7 +13,7 @@
     "windows": [],
     "security": {
       "csp": "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' asset: http://asset.localhost; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
-      "capabilities": [{"identifier":"main-window","windows":["main"],"permissions":["core:default"]}]
+      "capabilities": [{"identifier":"main-window","windows":["main"],"permissions":["core:event:allow-listen","core:event:allow-unlisten"]}]
     }
   },
   "bundle": {
