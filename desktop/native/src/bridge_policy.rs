@@ -19,7 +19,7 @@ pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
                 text.len() == 32 && text.bytes().all(|b| b.is_ascii_hexdigit())))),
         "saveSettings" => fields.len() == 1 && (matches!(params["output"].as_str(), Some("source" | "downloads" | "custom" | "ask"))
             || matches!(params["theme"].as_str(), Some("system" | "light" | "dark"))),
-        "smokeReport" => diagnostic && fields.len() == 4 && ["heading", "tools", "overflow", "error"].iter().all(|key| fields.contains_key(*key)),
+        "smokeReport" => diagnostic && fields.len() == 5 && ["heading", "tools", "overflow", "error", "layout"].iter().all(|key| fields.contains_key(*key)),
         _ => false,
     }
 }

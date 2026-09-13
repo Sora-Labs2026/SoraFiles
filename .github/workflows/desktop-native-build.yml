@@ -78,7 +78,7 @@ jobs:
         run: node desktop/scripts/run-native-smoke.mjs 'desktop/native/target/${{ matrix.target }}/release/bundle/macos/SoraFiles Desktop.app/Contents/MacOS/sorafiles-desktop'
       - name: Test actual native window lifecycle on Linux
         if: runner.os == 'Linux'
-        run: xvfb-run -a node desktop/scripts/run-native-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop
+        run: xvfb-run -a --server-args="-screen 0 1600x1200x24" node desktop/scripts/run-native-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop
       - name: Test actual native window lifecycle on Windows
         if: runner.os == 'Windows'
         run: node desktop/scripts/run-native-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop.exe
@@ -97,4 +97,5 @@ jobs:
             .artifacts/macos-bundle-inspection.json
             .artifacts/native-smoke-*.json
           if-no-files-found: error
+          include-hidden-files: true
           retention-days: 14

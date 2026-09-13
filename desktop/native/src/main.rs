@@ -36,7 +36,8 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     let generation = app.state::<HostState>().window_generation.fetch_add(1, Ordering::SeqCst) + 1;
     let window = WebviewWindowBuilder::new(app,"main",WebviewUrl::App("index.html".into()))
         .title("SoraFiles Desktop").inner_size(1180.0,900.0).min_inner_size(760.0,600.0)
-        .visible(smoke_output().is_none())
+        // GTK needs a mapped window to allocate the WebView viewport. CI uses Xvfb.
+        .visible(smoke_output().is_none() || cfg!(target_os="linux"))
         .on_navigation(local_navigation)
         .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
         .build()?;
@@ -134,7 +135,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![host_request])
         .on_page_load(|view,payload| {
             if smoke_output().is_some() && payload.event()==tauri::webview::PageLoadEvent::Finished {
-                let _=view.eval("setTimeout(()=>window.__TAURI__.core.invoke('host_request',{method:'smokeReport',params:{heading:document.querySelector('h1')?.textContent||null,tools:document.querySelectorAll('[data-tool]').length,overflow:document.documentElement.scrollWidth>innerWidth,error:document.querySelector('[role=alert]')?.textContent||null}}),800)");
+                let _=view.eval(include_str!("smoke-probe.js"));
             }
         })
         .setup(|app| {
