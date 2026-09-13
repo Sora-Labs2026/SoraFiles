@@ -46,10 +46,27 @@ The configured `/desktop/purchase` route now exists locally. It displays a bound
 
 Validation: four return-flow/edge tests plus three service-worker tests pass. The built page was inspected through the browser in light and dark mode at the default desktop viewport and 320px width: URL scrubbing, hidden/revealed key, clipboard success, keyboard focus, empty reload and zero horizontal overflow were verified with a synthetic key. Controls have 48px minimum height. Production generated 642 pages; all production validation checks passed after registering this sensitive noindex route. No real key was used for this UI check. The route is not deployed yet.
 
-The licensing catalog verifier requires `price.tax_inclusive === true`; absent or false values fail closed for every plan. All 60 desktop tests pass, including activation retry/restart handling and explicit checkout currency.
+The licensing catalog verifier requires `price.tax_inclusive === true`; absent or false values fail closed for every plan. Activation retry/restart handling and explicit checkout currency have local tests.
 
-All six products and their six named license-key entitlements have been created. Full entitlement IDs, purchase/lifecycle verification, server test credentials, and verified trial sign-in integration remain pending. The owner approved creation of a Test Mode API key. Automatic approval review separately required confirmation of the default general write-access scope; that confirmation is still pending. No key has been created. These product IDs are test identifiers, never production configuration.
+All six products and their six named license-key entitlements have been created. The owner approved the Test Mode API key and its write scope. The key was created and stored only in ignored private local configuration. The initial usage-limit approval block was subsequently cleared; all six products now pass actual API catalog verification. Native trial integration and deployed service configuration remain pending. These product IDs are test identifiers, never production configuration.
 
 Reference: [Dodo license-key lifecycle and configuration](https://docs.dodopayments.com/features/license-keys).
 Tax reference: [Dodo tax-inclusive pricing](https://docs.dodopayments.com/features/tax-inclusive-pricing).
 Currency reference: [Dodo checkout-session configuration](https://docs.dodopayments.com/api-reference/checkout-sessions/create).
+
+## Actual API and lifecycle verification
+
+All six plans passed exact price, USD currency, tax-inclusive pricing, billing interval, automatic license fulfillment and device-limit checks against the Test Mode API. Verified entitlement mappings:
+
+| Plan | Entitlement ID |
+| --- | --- |
+| personal-monthly | `ent_0NnTvJvpsmFg1WWK5CEo9` |
+| personal-annual | `ent_0NnTvu01uiePzum0s3SAi` |
+| personal-lifetime | `ent_0NnTwNd7EDh7sFJfbU7am` |
+| team-monthly | `ent_0NnTwneyJJbODzy2bPaFn` |
+| team-annual | `ent_0NnTxo8orvH4SI9EQQeOz` |
+| team-lifetime | `ent_0NnTySqAGuALIFJiFXt3K` |
+
+Using the existing owner-created Personal Monthly test license, the first-party local HTTP service and signed-entitlement client passed online activation, idempotent activation retry, offline authorization, refusal of offline activation, online subscription refresh, one-device listing, and rejection of a second device. The temporary activation was deactivated and the provider count was confirmed back at zero. Private state and raw keys remain in ignored `desktop/.local/` files. No purchase or email was submitted. This is actual provider integration evidence, not installed-app or production-host certification.
+
+Six API checkout sessions were created with the verified USD currency and currency selection disabled. All six sessions were inspected with Australia selected and showed the approved totals including GST. A first-load country-detection race initially reset the Team selections; selecting Australia after the page initialized produced the same included GST figures in the table above. Existing static-link evidence above remains separate.

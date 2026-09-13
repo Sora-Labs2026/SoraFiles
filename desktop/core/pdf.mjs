@@ -1,6 +1,7 @@
 // Headless extraction of the production pdf-lib page operations. No DOM, network,
 // download clicks or filesystem writes. The trusted job host owns input/output handles.
-import {PDFDocument,degrees} from 'pdf-lib';
+import {PDFDocument,degrees,StandardFonts,rgb} from 'pdf-lib';
+import {visiblePage} from './pdf-geometry.mjs';
 const MAX_BYTES=256*1024*1024,MAX_PAGES=1000;
 const check=signal=>signal?.throwIfAborted();
 async function load(bytes,signal){check(signal);if(!(bytes instanceof Uint8Array)||!bytes.length||bytes.length>MAX_BYTES)throw Error('Choose a PDF up to 256 MB');const doc=await PDFDocument.load(bytes,{ignoreEncryption:false,updateMetadata:false});if(doc.getPageCount()<1||doc.getPageCount()>MAX_PAGES)throw Error('PDF must contain 1 to 1000 pages');check(signal);return doc;}
@@ -24,6 +25,25 @@ export async function rotatePdf(input,{rotations,signal,onProgress=()=>{}}={}){
  return {bytes:await save(doc,doc.getPageCount(),signal),pages:doc.getPageCount()};
 }
 export async function removePdfPages(input,{remove,signal}={}){const doc=await load(input,signal),selected=indices(remove,doc.getPageCount()).sort((a,b)=>b-a);if(selected.length===doc.getPageCount())throw Error('Keep at least one page');for(const page of selected){check(signal);doc.removePage(page);}return {bytes:await save(doc,doc.getPageCount(),signal),pages:doc.getPageCount()};}
+export async function numberPdfPages(input,{selected,start=1,skip=0,format='number',position='bottom-center',size=10,margin=24,color='#333b52',signal,onProgress=()=>{}}={}){
+ if(!Number.isSafeInteger(start)||start<1||start>999999||!Number.isSafeInteger(skip)||skip<0||skip>999
+  ||!['number','page','total','roman'].includes(format)||!['top-left','top-center','top-right','bottom-left','bottom-center','bottom-right'].includes(position)
+  ||!Number.isFinite(size)||size<6||size>72||!Number.isFinite(margin)||margin<4||margin>144||typeof color!=='string'||!/^#[a-f0-9]{6}$/i.test(color))throw Error('Choose valid page numbering options');
+ const doc=await load(input,signal),pages=doc.getPages(),chosen=indices(selected??doc.getPageIndices(),pages.length).filter(index=>index>=skip).sort((a,b)=>a-b);
+ if(!chosen.length)throw Error('Select at least one page to number');
+ const last=start+chosen.length-1;if(last>999999||(format==='roman'&&last>3999))throw Error('Numbering exceeds the selected format');
+ const roman=value=>{let text='';for(const [amount,glyph] of [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']])while(value>=amount){text+=glyph;value-=amount;}return text;};
+ const font=await doc.embedFont(StandardFonts.Helvetica),ink=rgb(...[1,3,5].map(at=>parseInt(color.slice(at,at+2),16)/255));
+ for(const [numbered,index] of chosen.entries()){
+  check(signal);const page=pages[index],view=visiblePage(page),{width:w,height:h,angle}=view,number=start+numbered;
+  const label=format==='page'?`Page ${number}`:format==='total'?`Page ${number} of ${last}`:format==='roman'?roman(number):String(number),textWidth=font.widthOfTextAtSize(label,size);
+  if(textWidth+2*margin>w||size*1.25+2*margin>h)throw Error('Page numbers do not fit. Reduce the font size or margin.');
+  const x=position.endsWith('left')?margin:position.endsWith('right')?w-margin-textWidth:(w-textWidth)/2,y=position.startsWith('top')?h-margin-size:margin+size*.25;
+  page.drawText(label,{...view.point(x,y),rotate:degrees(angle),size,font,color:ink});
+  onProgress({completed:numbered+1,total:chosen.length,stage:'numbering-pages'});
+ }
+ return {bytes:await save(doc,pages.length,signal),pages:pages.length,numbered:chosen.length};
+}
 export async function splitPdf(input,{mode='each',selected,every,groups,signal,onProgress=()=>{}}={}){
  const source=await load(input,signal),count=source.getPageCount();let selections;
  if(mode==='each')selections=indices(selected??source.getPageIndices(),count).map(page=>[page]);
@@ -36,3 +56,5 @@ export async function splitPdf(input,{mode='each',selected,every,groups,signal,o
  const results=[];let bytesTotal=0;for(const [index,group] of selections.entries()){check(signal);const doc=await PDFDocument.create();for(const page of await doc.copyPages(source,group))doc.addPage(page);const bytes=await save(doc,group.length,signal);bytesTotal+=bytes.length;if(bytesTotal>MAX_BYTES)throw Error('Split output exceeds 256 MB');results.push({bytes,pages:group.length,sourcePages:group.map(p=>p+1),suffix:group.length===1?'-page-'+String(group[0]+1).padStart(3,'0'):'-group-'+String(index+1).padStart(2,'0')});onProgress({completed:index+1,total:selections.length,stage:'extracting-pages'});}
  return results;
 }
+// Common bounded I/O for the remaining headless PDF engines.
+export {load as loadPdfDocument,save as savePdfDocument,indices as pdfPageIndices};

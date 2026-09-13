@@ -6,7 +6,7 @@ const keys=()=>{const p=generateKeyPairSync('ed25519');return {privateKey:p.priv
 function setup({file=':memory:',secret=randomBytes(32)}={}){let now=1800000000,counter=0;const signing=keys(),store=new LicenseStore(file),guard=new RequestGuard({secret,store,now:()=>now});const calls=[];
  const state={ref:'lic',plan:'personal-monthly',status:'active',periodEnd:now+86400,observedAt:now};
  const dodo={activate:async()=>({id:'instance-'+(++counter),license_key_id:'lic',customer:{customer_id:'customer'}}),deactivate:async(key,id)=>calls.push({op:'deactivate',id}),validate:async()=>({valid:true})};
- const service=new LicenseService({store,guard,dodo,authority:{resolve:async()=>({...state,observedAt:now})},signing:{privateKey:signing.privateKey,kid:'test'},verifyTrialSubject:async()=> 'a'.repeat(64),now:()=>now});
+ const service=new LicenseService({store,guard,dodo,authority:{resolve:async()=>({...state,observedAt:now})},signing:{privateKey:signing.privateKey,kid:'test'},now:()=>now});
  async function execute(action,body,device){const {challenge:c,token}=service.challenge({action,body,publicKey:device.publicKey});const signature=sign(null,Buffer.from(`sorafiles-device-v1\n${c.id}\n${c.context}\n${c.expires}`),device.privateKey).toString('base64url');return service.execute(action,{body,publicKey:device.publicKey,signature,token});}
  const verify=(token,device)=>verifyEntitlement(token,{keys:{test:signing.publicKey},deviceId:deviceIdentity(device.publicKey),now:now*1000});
  return {store,service,dodo,calls,state,execute,verify,activationCount:()=>counter,advance:seconds=>now+=seconds};
@@ -27,11 +27,24 @@ test('revocation rejects refresh and existing offline grant remains independentl
  // Offline machines cannot receive immediate revocation. This is an explicit lease limitation.
  assert.ok(s.verify(activation.entitlement,device));s.advance(86400);assert.throws(()=>s.verify(activation.entitlement,device),/expired/);
  }finally{s.store.close();}});
-test('trial retry preserves original deadline and a new key cannot reuse the verified subject',async()=>{const s=setup(),device=keys();try{
- const first=s.verify((await s.execute('trial',{subjectToken:'verified'},device)).entitlement,device);s.advance(3600);
- const retry=s.verify((await s.execute('trial',{subjectToken:'verified'},device)).entitlement,device);assert.equal(first.exp,retry.exp);
- await assert.rejects(s.execute('trial',{subjectToken:'verified'},keys()),/already used/);s.advance(7*86400);await assert.rejects(s.execute('trial',{subjectToken:'verified'},device),/expired/);
+test('device trial retry preserves its original deadline without a sign-in provider',async()=>{const s=setup(),device=keys();try{
+ const first=s.verify((await s.execute('trial',{},device)).entitlement,device);s.advance(3600);
+ const retry=s.verify((await s.execute('trial',{},device)).entitlement,device);assert.equal(first.exp,retry.exp);
+ const other=keys();assert.ok(s.verify((await s.execute('trial',{},other)).entitlement,other));s.advance(7*86400);await assert.rejects(s.execute('trial',{},device),/expired/);
  }finally{s.store.close();}});
+
+test('device trial survives a service restart and never accepts client identity or duration fields',async()=>{
+ const directory=mkdtempSync(join(tmpdir(),'sf-device-trial-')),file=join(directory,'licenses.sqlite'),secret=randomBytes(32),device=keys();let s=setup({file,secret});
+ try{
+  const first=s.verify((await s.execute('trial',{},device)).entitlement,device);assert.equal(first.exp-first.iat,7*86400);
+  assert.throws(()=>s.verify((s.service.issue(null,deviceIdentity(device.publicKey),{iat:first.iat,exp:first.exp})),keys()),/claims/);
+  s.store.close();s=setup({file,secret});s.advance(86400);
+  const retry=s.verify((await s.execute('trial',{},device)).entitlement,device);assert.equal(retry.exp,first.exp);
+  for(const body of [{subjectToken:'arbitrary'},{deviceId:'other'},{days:30},{plan:'personal-lifetime'}])await assert.rejects(s.execute('trial',body,device),/fields/);
+  const rows=s.store.db.prepare('SELECT * FROM trials').all();assert.equal(rows.length,1);assert.equal(JSON.stringify(rows).includes(device.publicKey),false);
+  s.advance(6*86400);await assert.rejects(s.execute('trial',{},device),/expired/);
+ }finally{s.store.close();rmSync(directory,{recursive:true,force:true});}
+});
 
 test('a lost activation response can be retried after restart without consuming a second provider seat',async()=>{
  const directory=mkdtempSync(join(tmpdir(),'sf-activation-')),file=join(directory,'licenses.sqlite'),secret=randomBytes(32),device=keys();let s=setup({file,secret});

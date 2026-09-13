@@ -14,8 +14,9 @@ export function signatureFormat(head,tail=Buffer.alloc(0)){
  if(starts(head,'49492a00')||starts(head,'4d4d002a')||starts(head,'49492b00')||starts(head,'4d4d002b'))return 'TIFF';
  if(starts(head,'384250530001'))return 'PSD';
  if(head.length>=20&&head.subarray(4,8).toString()==='ftyp'){
-  const size=head.readUInt32BE(0);if(size<20||size>head.length||size>4096)return null;
+  const size=head.readUInt32BE(0);if(size<20||size>head.length||size>4096||size%4!==0)return null;
   const brands=[head.subarray(8,12).toString()];for(let i=16;i+4<=size;i+=4)brands.push(head.subarray(i,i+4).toString());
+  if(brands.some(b=>['avif','avis'].includes(b)))return null;
   if(brands.some(b=>['heic','heix','hevc','hevx'].includes(b)))return 'HEIC';
   if(brands.some(b=>['mif1','msf1'].includes(b)))return 'HEIF';
  }

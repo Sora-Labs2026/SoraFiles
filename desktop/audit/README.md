@@ -1,6 +1,6 @@
 # Desktop tool and dependency audit
 
-Recorded 2026-09-12T14:48:39.633Z. 26 tools, 29 direct dependencies, 455 production lock entries. 232 local public assets total 63498557 bytes. Remote Office/model payloads are additional; these are not installer-size measurements.
+Recorded 2026-09-13T12:42:19.397Z. 26 tools, 30 direct dependencies, 449 production lock entries. 234 local public assets total 63552241 bytes. Remote Office/model payloads are additional; these are not installer-size measurements.
 
 RELEASE BLOCKED: source/compliance packs and native-host prototypes incomplete
 
@@ -8,7 +8,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Compress PDF — /pdf
 - Engine: compressPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0); @neslinesli93/qpdf-wasm 0.3.0 (ISC); @okathira/ghostpdl-wasm 1.1.0 (AGPL-3.0-or-later).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0); @neslinesli93/qpdf-wasm 0.3.0 (ISC); @okathira/ghostpdl-wasm 1.1.0 (AGPL-3.0-or-later).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -19,7 +19,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Merge PDF — /merge-pdf
 - Engine: mergePdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -30,7 +30,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Split PDF — /split-pdf
 - Engine: splitPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0); fflate 0.8.3 (MIT).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0); fflate 0.8.3 (MIT).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -41,7 +41,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Rotate PDF — /rotate-pdf
 - Engine: rotatePdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -52,7 +52,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Remove Pages — /remove-pages
 - Engine: removePagesPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -63,7 +63,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## PDF to JPG — /pdf-to-jpg
 - Engine: pdfToImages. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0); fflate 0.8.3 (MIT).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0); fflate 0.8.3 (MIT).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -74,7 +74,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## JPG to PDF — /jpg-to-pdf
 - Engine: imagesToPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -85,7 +85,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## PDF to Word — /pdf-to-word
 - Engine: pdfToDocx. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0); docx 9.7.1 (MIT); tesseract.js 7.0.0 (Apache-2.0); tesseract.js-core 7.0.0 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0); docx 9.7.1 (MIT); tesseract.js 7.0.0 (Apache-2.0); tesseract.js-core 7.0.0 (Apache-2.0).
 - Model: Tesseract traineddata Apache-2.0 notices must accompany packs.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -107,7 +107,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Watermark PDF — /watermark-pdf
 - Engine: watermarkPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -118,7 +118,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Page Numbers — /page-numbers
 - Engine: pageNumbersPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -129,7 +129,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Sign PDF — /sign-pdf
 - Engine: signPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -140,7 +140,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Image Converter — /image-converter
 - Engine: convertImages. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: @jsquash/jpeg 1.6.0 (Apache-2.0); @jsquash/webp 1.5.0 (Apache-2.0); @jsquash/oxipng 2.3.0 (Apache-2.0); @jsquash/resize 2.1.1 (Apache-2.0); heic-to 1.5.2 (LGPL-3.0); utif 3.1.0 (MIT); ag-psd 31.0.2 (MIT); pdfjs-dist 6.3.289 (Apache-2.0); fflate 0.8.3 (MIT).
+- Dependencies: @jsquash/jpeg 1.6.0 (Apache-2.0); @jsquash/webp 1.5.0 (Apache-2.0); @jsquash/oxipng 2.3.0 (Apache-2.0); @jsquash/resize 2.1.1 (Apache-2.0); heic-to 1.5.2 (LGPL-3.0); utif 3.1.0 (MIT); ag-psd 31.0.2 (MIT); pdfjs-dist 6.2.108 (Apache-2.0); fflate 0.8.3 (MIT).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -195,7 +195,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Protect PDF — /protect-pdf
 - Engine: protectPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0); @pdfsmaller/pdf-encrypt 1.2.0 (MIT).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0); @pdfsmaller/pdf-encrypt 1.2.0 (MIT).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -206,7 +206,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Unlock PDF — /unlock-pdf
 - Engine: unlockPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0); @pdfsmaller/pdf-decrypt 1.0.1 (MIT); fflate 0.8.3 (MIT).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0); @pdfsmaller/pdf-decrypt 1.0.1 (MIT); fflate 0.8.3 (MIT).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -217,7 +217,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## Repair PDF — /repair-pdf
 - Engine: repairPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -239,7 +239,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## PDF to Excel — /pdf-to-excel
 - Engine: pdfToExcel. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0); xlsx 0.20.3 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0); xlsx 0.20.3 (Apache-2.0).
 - Model: None separately identified.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.
@@ -261,7 +261,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 
 ## PDF OCR — /pdf-ocr
 - Engine: ocr. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
-- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.3.289 (Apache-2.0); tesseract.js 7.0.0 (Apache-2.0); tesseract.js-core 7.0.0 (Apache-2.0).
+- Dependencies: pdf-lib 1.17.1 (MIT); pdfjs-dist 6.2.108 (Apache-2.0); tesseract.js 7.0.0 (Apache-2.0); tesseract.js-core 7.0.0 (Apache-2.0).
 - Model: Tesseract traineddata Apache-2.0 notices must accompany packs.
 - Commercial/redistribution: retain notices; apply each dependency’s conditions listed in inventory.json. Copyleft code must not be made proprietary through licensing enforcement.
 - Offline: Feasible with local packaged code and assets; must prove in native host with network blocked.

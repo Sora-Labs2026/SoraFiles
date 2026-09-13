@@ -4,6 +4,8 @@ mod bridge_policy;
 mod launch;
 mod preferences;
 mod classify;
+mod vault;
+mod license_host;
 use bridge_policy::{DialogLease, local_navigation, valid_request};
 use selection::Selection;
 use serde_json::{json, Value};
@@ -138,7 +140,15 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                 Ok(json!({"selected":false}))
             }).await.map_err(|_| "Folder picker unavailable")?
         }
-        "startTrial"|"activate" => Err("License activation is not configured in this development build.".into()),
+        "startTrial"|"activate"|"licenseStatus"|"refreshLicense"|"deactivateLicense"|"licenseDevices" => {
+            let handle=app.clone();tauri::async_runtime::spawn_blocking(move||{
+                let state=handle.state::<HostState>();let _lease=DialogLease::acquire(&state.dialog_busy)?;
+                let directory=handle.path().app_config_dir().map_err(|_|"Private storage folder unavailable")?;
+                let resources=handle.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
+                let action=match method.as_str(){"startTrial"=>"trial","activate"=>"activate","refreshLicense"=>"refresh","deactivateLicense"=>"deactivate","licenseDevices"=>"devices",_=>"status"};
+                license_host::run(&directory,&resources,action,params)
+            }).await.map_err(|_|"License action could not finish")?
+        },
         "checkUpdates" => Ok(json!({"message":"No Desktop releases are published yet."})),
         "quit" => { state.quitting.store(true,Ordering::SeqCst);app.exit(0);Ok(json!({"quitting":true})) }
         _ => Err("This action is not available.".into())

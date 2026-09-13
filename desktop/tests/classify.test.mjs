@@ -8,3 +8,10 @@ test('Office container inspection distinguishes DOCX/XLSX and rejects ambiguous 
  for(const [name,extra,expected] of [['word',{'word/document.xml':entry},'DOCX'],['sheet',{'xl/workbook.xml':entry},'XLSX'],['ambiguous',{'word/document.xml':entry,'xl/workbook.xml':entry},null],['traversal',{'../bad':entry,'word/document.xml':entry},null]]){const file=join(dir,name+'.zip');await writeFile(file,zipSync({...base,...extra}));assert.equal((await classifySelection([file]))[0].format,expected);}
  }finally{await rm(dir,{recursive:true,force:true});}});
 test('unrecognized bytes, relative paths and network paths never become automatic actions',async()=>{assert.equal(signatureFormat(Buffer.from('MZfake.exe')),null);const files=await classifySelection(['relative.pdf','\\\\server\\share\\a.pdf']);assert.ok(files.every(f=>!f.validated));});
+
+test('HEIF brands stay bounded and unsupported AVIF is not suggested as HEIF',()=>{
+ const bytes=Buffer.from('00000018667479706d696631000000006d69663168656963','hex');
+ assert.equal(signatureFormat(bytes),'HEIC');bytes.write('avif',20);assert.equal(signatureFormat(bytes),null);
+ bytes.write('mif1',20);assert.equal(signatureFormat(bytes),'HEIF');
+ for(const size of [0,16,23,28,0xffffffff]){bytes.writeUInt32BE(size);assert.equal(signatureFormat(bytes),null);}
+});

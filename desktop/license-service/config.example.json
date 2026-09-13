@@ -13,5 +13,5 @@
     {"plan":"team-lifetime","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"}
   ],
   "secretStoreInputs": ["DODO_API_KEY","DODO_WEBHOOK_SECRET","ENTITLEMENT_ED25519_PRIVATE_KEY","ENTITLEMENT_KEY_ID","CHALLENGE_HMAC_SECRET","RATE_HMAC_SECRET"],
-  "trialIdentityProvider": "REQUIRED_SERVER_VERIFIED_SUBJECT_PROVIDER"
+  "trialPolicy": "device-bound-seven-days-no-sign-in"
 }

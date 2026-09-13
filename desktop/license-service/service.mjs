@@ -5,16 +5,15 @@ const reconciliationRequired=()=>Object.assign(Error('Activation requires reconc
 // Application layer, deliberately separate from HTTP and deploy-specific identity providers.
 // All public actions require device proof. No client-provided plan/status can issue a grant.
 export class LicenseService {
- constructor({store,guard,dodo,authority,signing,verifyTrialSubject,now=()=>Math.floor(Date.now()/1000)}){signEntitlement({configurationCheck:true},signing);store.pinActivationKey(guard.activationFingerprint(''));Object.assign(this,{store,guard,dodo,authority,signing,verifyTrialSubject,now});}
+ constructor({store,guard,dodo,authority,signing,now=()=>Math.floor(Date.now()/1000)}){signEntitlement({configurationCheck:true},signing);store.pinActivationKey(guard.activationFingerprint(''));Object.assign(this,{store,guard,dodo,authority,signing,now});}
  challenge(request){return this.guard.issue(request);}
  issue(license,deviceId,trial){return signEntitlement(entitlementClaims({license,deviceId,trial,now:this.now()}),this.signing);}
  async execute(action,request){
   const deviceId=this.guard.verify({...request,action}),body=request.body;
   if(action==='trial'){
-   if(!this.verifyTrialSubject)throw Error('Trial verification unavailable');
-   // Provider returns an opaque, stable server-verified subject hash. Never accept an
-   // editable installation ID/email as trial eligibility, or trust a UI verified flag.
-   const subject=await this.verifyTrialSubject(body.subjectToken);if(typeof subject!=='string'||!/^[a-f0-9]{64}$/.test(subject))throw Error('Trial identity unavailable');
+   // Owner-selected accountless trial: only the proved device key determines the
+   // ledger subject. A new key can represent a new device; no hardware tracking.
+   const subject=this.guard.trialSubject(deviceId);
    const trial=this.store.existingTrial(subject,deviceId)||this.store.trial(subject,deviceId,this.now());if(trial.exp<=this.now())throw Error('Trial expired');return {entitlement:this.issue(null,deviceId,trial)};
   }
   if(action==='activate'){
@@ -64,12 +63,13 @@ export class LicenseService {
     throw error;
    }
   }
+  if(action==='deactivate'&&this.store.deactivationReceipt(body.licenseRef,deviceId,body.instanceId,this.guard.activationFingerprint(body.licenseKey)))return {deactivated:true};
   const local=this.store.active(body.licenseRef,deviceId),binding=this.store.binding(body.licenseRef);
   if(!local||!binding)throw Error('Device is not activated');
   if(action==='devices')return {devices:this.store.devices(body.licenseRef).map(d=>({id:d.device_id,current:d.device_id===deviceId,active:!!d.active}))};
   if(local.instance_id!==body.instanceId)throw Error('Wrong activation instance');
   if(action==='deactivate'){
-   await this.dodo.deactivate(body.licenseKey,body.instanceId);this.store.deactivate(body.licenseRef,deviceId);return {deactivated:true};
+   await this.dodo.deactivate(body.licenseKey,body.instanceId);this.store.completeDeactivation(body.licenseRef,deviceId,body.instanceId,this.guard.activationFingerprint(body.licenseKey));return {deactivated:true};
   }
   if(action==='refresh'){
    const valid=await this.dodo.validate(body.licenseKey,body.instanceId);if(valid?.valid!==true)throw Error('License no longer valid');

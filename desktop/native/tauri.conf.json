@@ -20,6 +20,7 @@
     "active": true,
     "targets": "all",
     "category": "Utility",
+    "resources": {"../../.artifacts/desktop-license-host/":"license-host/"},
     "shortDescription": "Local PDF and image tools",
     "icon": ["../../public/icon-192.png", "../../public/favicon.ico"],
     "macOS": {"signingIdentity":"-","minimumSystemVersion":"13.0"},

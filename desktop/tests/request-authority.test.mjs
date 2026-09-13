@@ -14,7 +14,7 @@ test('authenticated challenge rejects forged nonce, body substitution, wrong act
   const signature=sign(null,Buffer.from(`sorafiles-device-v1\n${c.id}\n${c.context}\n${c.expires}`),pair.privateKey).toString('base64url');
   const request={action:'activate',body,publicKey,signature,token};
   assert.throws(()=>guard.verify({...request,body:{licenseKey:'another'}}),/challenge/);
-  assert.throws(()=>guard.verify({...request,action:'trial',body:{subjectToken:'another'}}),/challenge/);
+  assert.throws(()=>guard.verify({...request,action:'trial',body:{}}),/challenge/);
   assert.throws(()=>guard.verify({...request,token:Buffer.from(JSON.stringify({...c,id:'attacker'})).toString('base64url')+'.'+token.split('.')[1]}),/challenge/);
   assert.ok(guard.verify(request));assert.throws(()=>guard.verify(request),/Replayed/);
  }finally{store.close();}

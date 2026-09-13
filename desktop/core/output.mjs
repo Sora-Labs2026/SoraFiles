@@ -1,7 +1,8 @@
-import {open,lstat,realpath,link,unlink} from 'node:fs/promises';
+import {open,lstat,realpath,unlink} from 'node:fs/promises';
+import {publishStagedOutput} from './publication.mjs';
 import {basename,dirname,extname,join,resolve,parse,sep} from 'node:path';
 import {randomUUID} from 'node:crypto';
-const suffixes={'compress-pdf':'-compressed','compress-image':'-compressed','pdf-ocr':'-ocr','remove-background':'-no-bg','metadata-remover':'-clean','rotate-pdf':'-rotated','resize-image':'-resized','split-pdf':'-split','merge-pdf':'-merged','remove-pages':'-pages-removed'};
+const suffixes={'watermark-pdf':'-watermarked','sign-pdf':'-signed','jpg-to-pdf':'-images','page-numbers':'-numbered','compress-pdf':'-compressed','compress-image':'-compressed','pdf-ocr':'-ocr','remove-background':'-no-bg','metadata-remover':'-clean','rotate-pdf':'-rotated','resize-image':'-resized','split-pdf':'-split','merge-pdf':'-merged','remove-pages':'-pages-removed'};
 export function outputName(source,tool,extension){
  if(/^[a-z]:[^\\/]/i.test(source))throw Error('Drive-relative paths are not allowed');
  const name=basename(source),stem=name.slice(0,name.length-extname(name).length).normalize('NFC');
@@ -24,7 +25,7 @@ export async function saveOutput({source,folder=dirname(source),tool,extension,b
   const stem=name.slice(0,-extname(name).length),extensionPart=extname(name);
   for(let i=0;i<10000;i++){signal?.throwIfAborted();await checkedDirectory(dir);const target=join(dir,i?`${stem} (${i})${extensionPart}`:name);
    // Hard-link publication is atomic and refuses collisions; rename would replace on POSIX.
-   try{await link(temp,target);await unlink(temp);owned=false;return {path:target,bytes:bytes.length};}catch(e){if(e.code==='EEXIST')continue;throw e;}
+   try{const {cleanupPending}=await publishStagedOutput(temp,target);owned=cleanupPending;return {path:target,bytes:bytes.length,...(cleanupPending?{cleanupPending:true}:{})};}catch(e){if(e.code==='EEXIST')continue;throw e;}
   }throw Error('Too many filename conflicts');
  }finally{if(owned)await unlink(temp).catch(()=>{});}
 }

@@ -1,0 +1,15 @@
+# Desktop image processing evidence
+
+The reference job layer now implements image conversion, compression, resize and basic crop/rotate/flip editing with pinned Sharp 0.35.4. The same decoder supplies oriented, lossless images to image-to-PDF and visible-signature placement. These paths are not yet wired into the native application or included in a published installer.
+
+The helper starts a separate process for each image and waits for it to exit before returning success. The process receives image bytes and validated options, not selected paths or licensing credentials. Environment inheritance is limited to ordinary runtime paths. Cancellation terminates the process, and a two-minute deadline bounds stalled decoding. This is process separation, not an OS sandbox: inherited user filesystem/network rights still require native restrictions before release.
+
+Inputs are limited to 64 MB and 25 million pixels. Output dimensions and bytes are bounded. These are current conservative implementation limits, not claims that desktop hardware has unlimited capacity. JPEG/PNG/WebP output is decoded completely a second time before saving. The queue writes a separate output and compares staged bytes before atomic publication. Compression preserves the original bytes when a candidate is not smaller.
+
+JPEG/PNG are supported by the PDF image paths. The standalone image paths additionally accept WebP, GIF and TIFF. Multipage or animated input requires an explicit page/frame index, and APNG is currently rejected. HEIC, PSD and other web-supported formats remain separate implementation work; do not advertise full converter format parity yet.
+
+Auto-orientation occurs before cropping or sizing. Resize preserves aspect ratio by default and disallows enlargement unless explicitly selected. JPEG uses an explicit background for transparency and 4:4:4 chroma sampling. PNG remains lossless. Metadata is omitted from new encodings; original-byte compression fallback retains the original metadata and must not be described as metadata removal. General image editing, HDR/wide-gamut/CMYK ground-truth fixtures, hostile-decoder OS containment, packed engine provenance and minimum-machine benchmarks remain release gates.
+
+Tests decode saved output using an independent canvas/image implementation. They check alpha, colours, crop coordinates after camera rotation, quarter-turns, paper margins, fit modes, enlargement, lossless PNG pixels, malformed files, cancellation and explicit animation selection. These small-fixture tests establish correctness for the tested cases; they do not establish universal superiority over the web tools.
+
+Implementation references: [Sharp constructor and input limits](https://sharp.pixelplumbing.com/api-constructor/), [input metadata](https://sharp.pixelplumbing.com/api-input/), [orientation](https://sharp.pixelplumbing.com/api-operation/). Sharp and its libvips/codec distribution require their own notices, provenance and source/relinking assessment before shipping.

@@ -1,15 +1,15 @@
 import {DodoClient} from './dodo.mjs';import {fetchVerifiedCatalog} from './catalog.mjs';import {DodoAuthority} from './authority.mjs';import {LicenseStore} from './store.mjs';import {RequestGuard} from './request-guard.mjs';import {LicenseService} from './service.mjs';import {WebhookInbox} from './webhooks.mjs';import {createLicenseHttpServer} from './http.mjs';
 import {PromotionStore,PromotionService} from './promotions.mjs';import {createPromotionHttpServer} from './promotion-http.mjs';
 
-// Host deployment supplies verified identity integration and secrets. This function
+// Host deployment supplies service secrets. Trials use proved device keys, with no sign-in provider. This function
 // never reads web-app PUBLIC_ variables and does not start a production service by import.
-export async function createLicenseRuntime({databasePath,apiKey,mode='test_mode',catalogConfig,signing,challengeSecret,rateSecret,webhookSecret,verifyTrialSubject,promotionConfig=null,onFailure=()=>{}}){
- if(!apiKey||!webhookSecret||typeof verifyTrialSubject!=='function')throw Error('Dodo and verified trial identity configuration required');
+export async function createLicenseRuntime({databasePath,apiKey,mode='test_mode',catalogConfig,signing,challengeSecret,rateSecret,webhookSecret,promotionConfig=null,onFailure=()=>{}}){
+ if(!apiKey||!webhookSecret)throw Error('Dodo configuration required');
  const dodo=new DodoClient({apiKey,mode}),catalog=await fetchVerifiedCatalog(dodo,catalogConfig);
  const store=new LicenseStore(databasePath);
  try{const promotions=promotionConfig?new PromotionService({store:new PromotionStore(store,{encryptionKey:promotionConfig.encryptionKey}),dodo,verifyIdentity:promotionConfig.verifyIdentity}):null;
   const promotionServer=promotions?createPromotionHttpServer({promotions,rateSecret}):null;
-  const authority=new DodoAuthority({dodo,catalog,promotions}),guard=new RequestGuard({store,secret:challengeSecret}),service=new LicenseService({store,guard,dodo,authority,signing,verifyTrialSubject});
+  const authority=new DodoAuthority({dodo,catalog,promotions}),guard=new RequestGuard({store,secret:challengeSecret}),service=new LicenseService({store,guard,dodo,authority,signing});
   const webhooks=new WebhookInbox({store,authority,secret:webhookSecret}),server=createLicenseHttpServer({service,webhooks,rateSecret,onFailure});
   let timer=null,closing=false,active=null;const controller=new AbortController();
   const sweep=()=>{if(closing||active)return;active=webhooks.reconcile({signal:controller.signal}).catch(()=>{try{onFailure({status:503,operation:'reconcile'});}catch{}}).finally(()=>{active=null;});};

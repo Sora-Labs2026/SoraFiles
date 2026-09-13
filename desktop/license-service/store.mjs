@@ -11,6 +11,7 @@ export class LicenseStore {
  CREATE TABLE IF NOT EXISTS webhook_inbox(sequence INTEGER PRIMARY KEY AUTOINCREMENT,id TEXT UNIQUE NOT NULL,received INTEGER NOT NULL,completed INTEGER);
  CREATE TABLE IF NOT EXISTS activation_attempts(key_hash TEXT NOT NULL,device_id TEXT NOT NULL,status TEXT NOT NULL,license_ref TEXT,instance_id TEXT,customer_id TEXT,created INTEGER NOT NULL,PRIMARY KEY(key_hash,device_id));
  CREATE TABLE IF NOT EXISTS service_metadata(name TEXT PRIMARY KEY,value TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS deactivation_receipts(license_ref TEXT NOT NULL,device_id TEXT NOT NULL,instance_id TEXT NOT NULL,key_hash TEXT NOT NULL,PRIMARY KEY(license_ref,device_id,instance_id));
  `);}
  transaction(fn){this.db.exec('BEGIN IMMEDIATE');try{const value=fn();this.db.exec('COMMIT');return value;}catch(e){this.db.exec('ROLLBACK');throw e;}}
  sync({ref,plan,status,periodEnd,observedAt}){if(!plans[plan]||!['active','inactive','revoked'].includes(status)||!Number.isSafeInteger(observedAt))throw Error('Invalid authoritative state');this.db.prepare('INSERT INTO licenses VALUES(?,?,?,?,?) ON CONFLICT(ref) DO UPDATE SET plan=excluded.plan,status=excluded.status,period_end=excluded.period_end,updated=excluded.updated WHERE excluded.updated>licenses.updated OR (excluded.updated=licenses.updated AND excluded.status<>\'active\')').run(ref,plan,status,periodEnd??null,observedAt);}
@@ -37,6 +38,13 @@ export class LicenseStore {
  });}
  deactivate(ref,deviceId){this.transaction(()=>{this.db.prepare('UPDATE devices SET active=0 WHERE license_ref=? AND device_id=?').run(ref,deviceId);this.db.prepare("DELETE FROM activation_attempts WHERE license_ref=? AND device_id=? AND status='complete'").run(ref,deviceId);});}
  active(ref,deviceId){return this.db.prepare('SELECT d.*,l.plan,l.status,l.period_end FROM devices d JOIN licenses l ON l.ref=d.license_ref WHERE d.license_ref=? AND d.device_id=? AND d.active=1').get(ref,deviceId);}
+ deactivationReceipt(ref,deviceId,instanceId,keyHash){return !!this.db.prepare('SELECT 1 FROM deactivation_receipts WHERE license_ref=? AND device_id=? AND instance_id=? AND key_hash=?').get(ref,deviceId,instanceId,keyHash);}
+ completeDeactivation(ref,deviceId,instanceId,keyHash){this.transaction(()=>{
+  // An old response must never deactivate a newer instance for the same device.
+  this.db.prepare('UPDATE devices SET active=0 WHERE license_ref=? AND device_id=? AND instance_id=?').run(ref,deviceId,instanceId);
+  this.db.prepare("DELETE FROM activation_attempts WHERE license_ref=? AND device_id=? AND instance_id=? AND status='complete'").run(ref,deviceId,instanceId);
+  this.db.prepare('INSERT OR IGNORE INTO deactivation_receipts VALUES(?,?,?,?)').run(ref,deviceId,instanceId,keyHash);
+ });}
  trial(subjectHash,deviceId,now){return this.transaction(()=>{if(this.db.prepare('SELECT 1 FROM trials WHERE subject_hash=? OR device_id=?').get(subjectHash,deviceId))throw Error('Trial already used');const exp=now+7*86400;this.db.prepare('INSERT INTO trials VALUES(?,?,?,?)').run(subjectHash,deviceId,now,exp);return {iat:now,exp};});}
  consumeNonce(id,expires,now){this.db.prepare('DELETE FROM consumed_nonces WHERE expires<?').run(now);try{this.db.prepare('INSERT INTO consumed_nonces VALUES(?,?)').run(id,expires);}catch{throw Error('Replayed request');}}
  webhookOnce(id,now,apply){return this.transaction(()=>{if(this.db.prepare('SELECT 1 FROM webhook_events WHERE id=?').get(id))return false;apply();this.db.prepare('INSERT INTO webhook_events VALUES(?,?)').run(id,now);return true;});}

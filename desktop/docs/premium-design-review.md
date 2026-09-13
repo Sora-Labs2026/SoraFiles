@@ -4,6 +4,8 @@ Reviewed September 13, 2026 using Apple-HIG-derived cross-platform design princi
 
 Purchase-return follow-up: reused the Desktop layout, site typography, semantic colors, rounded controls and card treatment. Inspected the built page at the default desktop viewport and 320px width in light/dark modes. Key visibility is explicit, Copy is the primary action, feedback uses a polite status region, clipboard denial offers manual selection, and button targets remain 48px high. Keyboard focus and empty reload were checked; no horizontal overflow was observed. Only synthetic license data was displayed. This does not certify completed payment, native activation or email delivery.
 
+Header follow-up: replaced the five tool shortcut links with Desktop App while retaining All Tools and More. Browser checks confirmed the destination, the 320px mobile menu and the German page's link to `/desktop`. The updated web build passes all publication checks and all 115 web unit tests. The Desktop overview now describes Windows/macOS/Linux development builds accurately without presenting them as released downloads.
+
 ## External reference and licensing
 
 Consulted [apple-design-skill](https://github.com/dickwu/apple-design-skill), its [SKILL.md](https://github.com/dickwu/apple-design-skill/blob/main/SKILL.md) and [HIG lookup](https://github.com/dickwu/apple-design-skill/blob/main/references/hig-lookup.md). Loaded accessibility, layout, typography, color, dark mode, designing for macOS, icons, app icons, loading and keyboards. The repository root did not provide a clear redistribution license at inspection. It remains an external reference: no skill, Apple text, symbols, font, artwork or runtime dependency was vendored.

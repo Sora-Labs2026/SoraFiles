@@ -1,4 +1,4 @@
-param([ValidateSet('check','test','build','generate-lockfile','metadata','package')][string]$Command='check')
+param([ValidateSet('check','test','build','generate-lockfile','metadata','package')][string]$Command='check', [string[]]$ExtraArgs=@())
 $ErrorActionPreference='Stop'
 $soraRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $env:RUSTUP_HOME=Join-Path $soraRoot '.artifacts/desktop-toolchain/rustup'
@@ -21,5 +21,5 @@ if ($Command -eq 'package') {
     Push-Location (Join-Path $soraRoot 'desktop/native')
     try { & node $soraCli build --target x86_64-pc-windows-msvc --bundles nsis -- --locked }
     finally { Pop-Location }
-} else { & $soraCargo $Command --manifest-path $soraManifest }
+} else { & $soraCargo $Command --manifest-path $soraManifest @ExtraArgs }
 exit $LASTEXITCODE
