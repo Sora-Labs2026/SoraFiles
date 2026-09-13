@@ -11,6 +11,7 @@ export function verifyDodoProduct(planId,product,expected){
  const plan=plans[planId],price=product?.price;
  if(!plan||product.product_id!==expected.productId||!price||price.price!==amountInMinorUnits(plan.amount,price.currency))throw Error('Dodo launch price mismatch');
  if(product.is_recurring!==plan.recurring||price.type!==(plan.recurring?'recurring_price':'one_time_price'))throw Error('Dodo billing type mismatch');
+ if(price.tax_inclusive!==true)throw Error('Dodo launch prices must include tax');
  if(price.discount||price.discount_bps||price.pay_what_you_want||price.purchasing_power_parity||product.pricing_mode||price.trial_period_days)throw Error('Dodo price overrides require review');
  if(plan.recurring){const count=price.payment_frequency_count,interval=price.payment_frequency_interval;const correct=plan.interval==='monthly'?count===1&&interval==='Month':count===1&&interval==='Year'||count===12&&interval==='Month';if(!correct)throw Error('Dodo billing interval mismatch');}
  const entitlements=product.entitlements?.filter(e=>e.id===expected.entitlementId&&e.integration_type==='license_key');

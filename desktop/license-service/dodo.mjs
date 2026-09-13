@@ -14,7 +14,7 @@ export class DodoClient {
   const result=await this.call('/customers/'+encodeURIComponent(customerId)+'/entitlement-grants?integration_type=license_key&page_size=100&page_number='+page,{privileged:true});
   if(!Array.isArray(result?.items)||result.items.length>100)throw Error('Invalid Dodo grants response');items.push(...result.items);if(result.items.length<100)return items;
  }throw Error('Dodo grants pagination limit');}
- checkout(productId){return this.call('/checkouts',{privileged:true,body:{product_cart:[{product_id:productId,quantity:1}],feature_flags:{allow_discount_code:true,allow_currency_selection:false},return_url:'https://sorafiles.com/desktop/purchase'}});}
+ checkout(productId,currency){if(!Intl.supportedValuesOf('currency').includes(currency))throw Error('Verified checkout currency required');return this.call('/checkouts',{privileged:true,body:{product_cart:[{product_id:productId,quantity:1}],billing_currency:currency,feature_flags:{allow_discount_code:true,allow_currency_selection:false},return_url:'https://sorafiles.com/desktop/purchase'}});}
  importLicense({customerId,productId,key,maxDevices,expiresAt}){return this.call('/license_keys',{privileged:true,body:{customer_id:customerId,product_id:productId,key,activations_limit:maxDevices,expires_at:expiresAt}});}
  async importedLicenses(customerId,productId){
   // Narrow compatibility fallback for imported-key recovery. Normal paid authority

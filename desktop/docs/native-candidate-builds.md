@@ -14,7 +14,17 @@ The host permits only packaged app origins and refuses popup WebViews. Renderer 
 
 The launcher consumes absolute file arguments literally, optionally following `--open`, and forwards second-instance selections to the existing helper. macOS file-open events are wired to the same selection boundary. These routes open the independent interface and do not authorize processing. Explorer/Finder/Linux menu registration and actual shell invocation tests remain separate work.
 
+The current local host saves theme and output preferences in its application configuration directory. Reads are bounded and validate version, fields and values. Replacement uses a uniquely created temporary file, a flush and rename; failed saves preserve the old destination. Final symlink/reparse locations are rejected, but ancestor paths are not pinned by native handles. This is ordinary preference storage, not a secret or entitlement store. Ten Windows unit tests pass, including persistence, malformed/oversized configuration and failed replacement. Diagnostics use defaults without modifying installed preferences. These additions are not yet included in the cross-platform candidate below.
+
+The native content classifier adds GIF, TIFF, PSD, HEIC/HEIF and Word/Excel detection to PDF, PNG, JPG and WebP. Office inspection reads a bounded ZIP directory without decompression and refuses ambiguous, encrypted, multidisk, duplicate, traversal or oversized directory records. Header recognition is explicitly labeled `signature-only`; complete decoding still belongs to the processing engine. Three additional native tests cover image signatures, bounded HEIF brands, Office ambiguity and malformed/truncated inputs, bringing the local Windows total to 13.
+
+The latest Windows diagnostic completed three loads and two close/reopen cycles at 1180×900 with no overflow. The sandboxed run stalled before WebView initialization; the normal-access run passed. This does not establish new processing or installation coverage.
+
 ## macOS and Linux build hosts
+
+Candidate commit `fd102a46c8b8b95d209f73928d053dfce0bfd4ec` ran in [GitHub Actions run 34732669398](https://github.com/Sora-Labs2026/SoraFiles/actions/runs/34732669398). All four jobs completed successfully: Windows x64, Apple Silicon Mac, Intel Mac and Ubuntu x64. This verifies candidate packaging and the scoped checks below, not a finished product. Subsequent licensing changes have local tests but are not part of that candidate commit.
+
+The Linux diagnostic originally inspected an unmapped GTK window and reported overflow. It now maps the window within a 1600-by-1200 Xvfb display and records viewport geometry after fonts load. The passing Linux evidence has three window loads, two close/reopen cycles, an 1180-by-900 viewport, zero overflowing elements, and no UI error. Windows and Mac diagnostics remain hidden. Diagnostic JSON is explicitly included in candidate artifact uploads.
 
 The `Desktop native candidate builds` GitHub Actions workflow uses separate native runners for Windows x64, Apple Silicon, Intel Mac and Ubuntu 22.04 x64. It pins the Rust toolchain and lockfile, builds the independent UI, runs the shared/native tests, creates platform packages, then exercises the packaged Mac executable or native Windows/Linux binary. Linux uses Xvfb for the window test. Artifacts include checksums and scoped evidence and expire after 14 days. The workflow deliberately creates no public GitHub release.
 

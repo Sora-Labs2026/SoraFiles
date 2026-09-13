@@ -2,7 +2,7 @@
 
 ## Checkout discounts
 
-`DodoClient.checkout()` enables Dodo's hosted discount field. Amounts, percentage/fixed discounts, product eligibility, redemption caps, expiration and subscription cycles remain Dodo's responsibility. The six paid plans and their exact decimal amounts are unchanged. Currency selection is disabled in the checkout request; launch still requires reading and verifying the actual configured catalog.
+`DodoClient.checkout(productId, currency)` enables Dodo's hosted discount field. Amounts, percentage/fixed discounts, product eligibility, redemption caps, expiration and subscription cycles remain Dodo's responsibility. The six paid plans and their exact decimal amounts are unchanged. The request explicitly sets the verified billing currency and disables currency selection; launch still requires reading and verifying the actual configured catalog and checking API-created sessions.
 
 No discount was created, no checkout was completed and no money moved in this work. Tests use a mocked Dodo transport. Owner configuration and a real Dodo test-mode purchase/discount lifecycle are required before checkout opens.
 

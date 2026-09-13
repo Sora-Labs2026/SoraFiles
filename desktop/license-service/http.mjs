@@ -43,7 +43,7 @@ export function createLicenseHttpServer({service,webhooks,rateSecret,limiter=new
   }catch(error){
    // Do not echo key material, provider response bodies, paths or stack traces.
    const status=error.httpStatus||(error.code==='providerUnavailable'?503:400);try{onFailure({status});}catch{}
-   json(res,status,{error:status===503?'License verification is temporarily unavailable. Please try again later.':status===429?'Please wait a moment and try again.':status===413?'The request is too large.':'The request could not be completed. Check your details and try again.'});
+   json(res,status,{error:error.code==='activationReconciliation'?'Your activation needs to be checked before another attempt. Contact SoraFiles support if it remains pending.':status===503?'License verification is temporarily unavailable. Please try again later.':status===429?'Please wait a moment and try again.':status===413?'The request is too large.':'The request could not be completed. Check your details and try again.'});
   }
  });
  server.keepAliveTimeout=5000;server.maxRequestsPerSocket=100;

@@ -1,9 +1,9 @@
 use serde::Serialize;
-use std::{fs::{self, File}, io::Read, path::{Component, Path, PathBuf}};
+use std::{fs::{self, File}, path::{Component, Path, PathBuf}};
 use uuid::Uuid;
 
 #[derive(Clone, Serialize)]
-pub struct Selected { pub id: String, pub name: String, pub format: Option<&'static str>, pub validated: bool, pub bytes: u64 }
+pub struct Selected { pub id: String, pub name: String, pub format: Option<&'static str>, pub validated: bool, pub validation: &'static str, pub bytes: u64 }
 #[derive(Default)]
 pub struct Selection { entries: Vec<(PathBuf, Selected)> }
 #[derive(Clone, Serialize)]
@@ -24,6 +24,8 @@ fn local_file(path: &Path) -> Result<(PathBuf, File, u64), &'static str> {
         #[cfg(windows)] { use std::os::windows::fs::MetadataExt; if metadata.file_attributes() & 0x400 != 0 { return Err("Choose a local original file"); } }
     }
     let canonical = fs::canonicalize(path).map_err(|_| "File unavailable")?;
+    // Refuse special files before opening; on Unix, opening a FIFO may block.
+    if !fs::symlink_metadata(&canonical).map_err(|_| "File unavailable")?.is_file() { return Err("Choose an ordinary local file"); }
     let file = File::open(&canonical).map_err(|_| "File unavailable")?;
     let info = file.metadata().map_err(|_| "File unavailable")?;
     if !info.is_file() || info.len() == 0 || info.len() > 512 * 1024 * 1024 { return Err("File outside selection limits"); }
@@ -37,13 +39,11 @@ impl Selection {
             let Ok((canonical, mut file, bytes)) = local_file(&path) else { result.rejected = true; continue; };
             if let Some((_, item)) = self.entries.iter().find(|(old, _)| old == &canonical) { result.files.push(item.clone()); continue; }
             if self.entries.len() >= 256 { result.rejected = true; continue; }
-            let mut head = [0u8; 16];
-            let Ok(count) = file.read(&mut head) else { result.rejected = true; continue; };
-            let format = if head.starts_with(b"%PDF-") { Some("PDF") }
-                else if count >= 8 && head.starts_with(b"\x89PNG\r\n\x1a\n") { Some("PNG") }
-                else if count >= 3 && head.starts_with(b"\xff\xd8\xff") { Some("JPG") }
-                else if count >= 12 && head.starts_with(b"RIFF") && &head[8..12] == b"WEBP" { Some("WebP") } else { None };
-            let item = Selected { id: Uuid::new_v4().simple().to_string(), name: path.file_name().unwrap_or_default().to_string_lossy().into_owned(), format, validated: format.is_some(), bytes };
+            let before = file.metadata().ok();
+            let Ok(format) = crate::classify::classify(&mut file, bytes) else { result.rejected = true; continue; };
+            let unchanged = before.zip(file.metadata().ok()).is_some_and(|(old, now)| old.len() == now.len() && old.modified().ok() == now.modified().ok());
+            if !unchanged { result.rejected = true; continue; }
+            let item = Selected { id: Uuid::new_v4().simple().to_string(), name: path.file_name().unwrap_or_default().to_string_lossy().into_owned(), format, validated: format.is_some(), validation: "signature-only", bytes };
             self.entries.push((canonical, item.clone())); result.files.push(item);
         }
         result

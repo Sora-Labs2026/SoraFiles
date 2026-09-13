@@ -2,6 +2,8 @@
 mod selection;
 mod bridge_policy;
 mod launch;
+mod preferences;
+mod classify;
 use bridge_policy::{DialogLease, local_navigation, valid_request};
 use selection::Selection;
 use serde_json::{json, Value};
@@ -14,6 +16,7 @@ impl Default for HostState {
     fn default() -> Self { Self { selection: Mutex::new(Selection::default()), settings: Mutex::new(json!({"output":"source","theme":"system","startup":false})), quitting: AtomicBool::new(false), tray_available: AtomicBool::new(false), smoke_count:AtomicUsize::new(0), window_generation:AtomicUsize::new(0), dialog_busy:AtomicBool::new(false) } }
 }
 fn smoke_output() -> Option<std::path::PathBuf> { let args:Vec<_>=std::env::args().collect();let index=args.iter().position(|arg| arg=="--native-smoke")?;args.get(index+1).map(std::path::PathBuf::from) }
+fn diagnostic_step(step: &str) { if smoke_output().is_some() { eprintln!("Native diagnostic: {step}"); } }
 fn receive_launch(app: &tauri::AppHandle, args: &[String]) {
     let Ok(paths)=launch::selected_paths(args) else { return; };
     if paths.is_empty() { return; }
@@ -31,7 +34,14 @@ fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
     value["files"] = json!(state.selection.lock().map_err(|_| "Selection unavailable")?.list());
     Ok(value)
 }
+fn persist_preferences(app: &tauri::AppHandle, value: &Value) -> Result<(), String> {
+    // Diagnostics use defaults and never touch the user's installed preferences.
+    if smoke_output().is_some() { return Ok(()); }
+    let directory=app.path().app_config_dir().map_err(|_| "Settings folder unavailable")?;
+    preferences::save(&directory,&preferences::Preferences::from_value(value)?).map_err(String::from)
+}
 fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
+    diagnostic_step("opening window");
     if let Some(window) = app.get_webview_window("main") { window.show()?; window.unminimize()?; window.set_focus()?; return Ok(()); }
     let generation = app.state::<HostState>().window_generation.fetch_add(1, Ordering::SeqCst) + 1;
     let window = WebviewWindowBuilder::new(app,"main",WebviewUrl::App("index.html".into()))
@@ -61,6 +71,7 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
 async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, method: String, params: Value) -> Result<Value,String> {
     if window.label()!="main" || !valid_request(&method,&params,smoke_output().is_some()) { return Err("Invalid desktop request".into()); }
     let state=app.state::<HostState>();
+    if method == "smokeReport" { diagnostic_step("received view report"); }
     let generation=state.window_generation.load(Ordering::SeqCst);
     match method.as_str() {
         "getState" if params.as_object().unwrap().is_empty() => state_value(&app),
@@ -104,7 +115,12 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
             let (key,value)=params.as_object().unwrap().iter().next().unwrap();
             let valid=match key.as_str() { "output"=>matches!(value.as_str(),Some("source"|"downloads"|"custom"|"ask")), "theme"=>matches!(value.as_str(),Some("system"|"light"|"dark")), _=>false };
             if !valid { return Err("This setting is not available in this build.".into()); }
-            state.settings.lock().map_err(|_| "Settings unavailable")?[key]=value.clone(); state_value(&app)
+            {
+                let mut settings=state.settings.lock().map_err(|_| "Settings unavailable")?;
+                let mut next=settings.clone();next[key]=value.clone();next.as_object_mut().unwrap().remove("notice");
+                persist_preferences(&app,&next)?;*settings=next;
+            }
+            state_value(&app)
         }
         "chooseFolder" if params.as_object().unwrap().is_empty() => {
             let handle=app.clone();tauri::async_runtime::spawn_blocking(move || {
@@ -117,7 +133,8 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                     // This preference is native-only; paths are not returned to the view.
                     let mut settings=state.settings.lock().map_err(|_| "Settings unavailable")?;
                     if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose a folder again.".into()); }
-                    settings["customFolder"]=json!(path); return Ok(json!({"selected":true})); }
+                    let mut next=settings.clone();next["customFolder"]=json!(path);
+                    persist_preferences(&handle,&next)?;*settings=next;return Ok(json!({"selected":true})); }
                 Ok(json!({"selected":false}))
             }).await.map_err(|_| "Folder picker unavailable")?
         }
@@ -135,10 +152,19 @@ fn main() {
         .invoke_handler(tauri::generate_handler![host_request])
         .on_page_load(|view,payload| {
             if smoke_output().is_some() && payload.event()==tauri::webview::PageLoadEvent::Finished {
-                let _=view.eval(include_str!("smoke-probe.js"));
+                diagnostic_step("view loaded");
+                if view.eval(include_str!("smoke-probe.js")).is_err() { diagnostic_step("view probe could not start"); }
             }
         })
         .setup(|app| {
+            if smoke_output().is_none() {
+                let loaded=app.path().app_config_dir().map_err(|_| "Settings folder unavailable").and_then(|directory| preferences::load(&directory));
+                let value=match loaded { Ok(settings)=>settings.value(),Err(_)=>{
+                    let mut defaults=preferences::Preferences::default().value();
+                    defaults["notice"]=json!("Saved settings could not be read. Default settings are in use; choose your preferences in Settings.");defaults
+                }};
+                *app.state::<HostState>().settings.lock().map_err(|_| "Settings unavailable")?=value;
+            }
             let open=MenuItem::with_id(app,"open","Open SoraFiles",true,None::<&str>)?;
             let quit=MenuItem::with_id(app,"quit","Quit SoraFiles",true,None::<&str>)?;
             let menu=Menu::with_items(app,&[&open,&quit])?;

@@ -15,7 +15,7 @@ Create separate test and live configurations. The six authoritative amounts are:
 | Team Annual | 199.99 | 5 |
 | Team Lifetime | 999.99 | 5 |
 
-The currency must be read and verified from the actual Dodo products. Amounts above do not imply USD. Product and entitlement IDs must be distinct for each plan. Configure recurring intervals and entitlement activation limits to match. Lifetime must have no expiry. One Team purchase has quantity one and permits five activations; do not multiply checkout quantity by five.
+The six SoraFiles Test Mode products were observed in USD with tax included. The currency must still be read and verified from the actual API products in each environment; do not treat a dashboard observation as live API verification. Pass that verified currency explicitly to `DodoClient.checkout(productId, currency)`. Product and entitlement IDs must be distinct for each plan. Configure recurring intervals and entitlement activation limits to match. Lifetime must have no expiry. One Team purchase has quantity one and permits five activations; do not multiply checkout quantity by five.
 
 `license-service/catalog.mjs` performs read-only Dodo product checks before producing the verified six-plan configuration. It reads the currency, compares exact amounts in that currency's minor units, checks billing frequency, attached license entitlements, automatic key fulfillment and activation limits, and rejects price overrides or fixed-duration keys. Run this against the configured Dodo environment before exposing checkout or publishing pricing. Only synthetic API responses have been tested so far; a manually supplied `verified` flag is not live API evidence.
 
@@ -25,7 +25,7 @@ Current integration references: [license keys](https://docs.dodopayments.com/fea
 
 ## License-service deployment
 
-Provision the first-party license-service hostname, HTTPS, persistent database, backups, trusted-proxy policy and ingress rate limits. Provision an Ed25519 signing key and key ID with rotation; embed only public verification keys in the app. Provision a separate random challenge HMAC secret of at least 32 bytes. Server clock must be reliable.
+Provision the first-party license-service hostname, HTTPS, persistent database, backups, trusted-proxy policy and ingress rate limits. Provision an Ed25519 signing key and key ID with rotation; embed only public verification keys in the app. Provision a separate random challenge HMAC secret of at least 32 bytes. This secret also derives the activation retry fingerprints: preserve it across replicas, restarts and database restores. A changed secret fails startup; rotation requires a planned ledger migration. Server clock must be reliable.
 
 Trial activation still needs a server-verified stable subject provider. The service deliberately fails without one. A newly generated installation key alone cannot identify a reinstall; a plain email/installation ID from the client is not verified eligibility. The provider must supply an opaque subject hash, and its tokens need audience, expiry and replay validation.
 

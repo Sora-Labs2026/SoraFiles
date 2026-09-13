@@ -45,7 +45,8 @@ test('all eight Personal/Team duration campaigns produce signed device-limited e
 });
 test('Dodo checkout delegates discounts and giveaway import fixes device limit and expiry server-side',async()=>{
  const calls=[],dodo=new DodoClient({apiKey:'synthetic-server-key',request:async(url,options)=>{calls.push({url,body:JSON.parse(options.body),headers:options.headers});return new Response('{}');}});
- await dodo.checkout('prod');assert.equal(calls[0].body.feature_flags.allow_discount_code,true);assert.equal(calls[0].body.feature_flags.allow_currency_selection,false);assert.equal(calls[0].body.discount_code,undefined);
+ await dodo.checkout('prod','USD');assert.equal(calls[0].body.billing_currency,'USD');assert.equal(calls[0].body.feature_flags.allow_discount_code,true);assert.equal(calls[0].body.feature_flags.allow_currency_selection,false);assert.equal(calls[0].body.discount_code,undefined);
+ assert.throws(()=>dodo.checkout('prod'),/currency required/);assert.throws(()=>dodo.checkout('prod','invalid'),/currency required/);assert.equal(calls.length,1);
  await dodo.importLicense({customerId:'cus',productId:'prod',key:'synthetic-license',maxDevices:5,expiresAt:null});assert.deepEqual(calls[1].body,{customer_id:'cus',product_id:'prod',key:'synthetic-license',activations_limit:5,expires_at:null});assert.ok(calls[1].url.endsWith('/license_keys'));
 });
 test('independent SQLite workers racing one code reserve it for exactly one verified subject',async()=>{

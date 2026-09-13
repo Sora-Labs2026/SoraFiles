@@ -16,6 +16,7 @@ export function requestContext(action,body){
 // One-use consumption is in the shared durable store, so it works across service processes.
 export class RequestGuard {
  constructor({secret,store,now=()=>Math.floor(Date.now()/1000)}){if(!(secret instanceof Uint8Array)||secret.length<32)throw Error('Challenge secret required');this.secret=secret;this.store=store;this.now=now;}
+ activationFingerprint(licenseKey){return createHmac('sha256',this.secret).update('sorafiles-activation-v1\n').update(licenseKey.trim()).digest('hex');}
  issue({action,body,publicKey}){const now=this.now(),deviceId=deviceIdentity(publicKey),context=requestContext(action,body);
   const value={id:randomBytes(32).toString('base64url'),deviceId,context,expires:now+120};
   const encoded=Buffer.from(JSON.stringify(value)).toString('base64url');
