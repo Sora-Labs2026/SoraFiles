@@ -9,7 +9,9 @@ export function verifyEntitlement(token,{keys,deviceId,now=Date.now(),lastTruste
  const key=createPublicKey(keys[header.kid]);if(key.asymmetricKeyType!=='ed25519'||!verify(null,Buffer.from(parts[0]+'.'+parts[1]),key,decode(parts[2])))throw Error('Invalid signature');
  const e=JSON.parse(decode(parts[1]));const time=Math.floor(now/1000);
  if(!Number.isFinite(now)||!Number.isFinite(lastTrustedTime)||now+300000<lastTrustedTime)throw Error('Clock needs verification');
- if(e.schema!==1||e.iss!=='sorafiles-license-service'||e.aud!=='sorafiles-desktop'||e.deviceId!==deviceId||!e.jti||!Number.isSafeInteger(e.iat)||!Number.isSafeInteger(e.nbf)||e.iat>time+300||e.nbf>time)throw Error('Invalid entitlement claims');
+ // Separate processes can straddle a clock tick or have small clock offsets.
+ // Tolerance applies only to the start boundary, never to expired access.
+ if(e.schema!==1||e.iss!=='sorafiles-license-service'||e.aud!=='sorafiles-desktop'||e.deviceId!==deviceId||!e.jti||!Number.isSafeInteger(e.iat)||!Number.isSafeInteger(e.nbf)||e.iat>time+60||e.nbf>time+60)throw Error('Invalid entitlement claims');
  if(!Array.isArray(e.features)||!e.features.includes(feature))throw Error('Feature not authorized');
  if(e.plan==='trial'){if(e.maxDevices!==1||!Number.isSafeInteger(e.exp)||e.exp>e.iat+7*86400)throw Error('Invalid trial');}
  else {const plan=plans[e.plan];if(!plan||e.maxDevices!==plan.maxDevices||e.edition!==plan.edition||!e.licenseRef)throw Error('Invalid plan');if(plan.interval==='lifetime'){if(e.exp!==null)throw Error('Lifetime requires permanent grant');}else if(!Number.isSafeInteger(e.exp))throw Error('Subscription expiry required');}

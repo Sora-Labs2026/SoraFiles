@@ -37,3 +37,14 @@ main { container-type:inline-size; }
 @media(max-width:680px) { .quit { display:flex; justify-content:center; padding:12px 0; } .quit span { display:none; } .sidebar-bottom { padding-top:16px; } }
 @media(max-width:420px) { main { padding:24px 12px; } .dropzone,.panel { padding:18px; } .section-title,.setting-row { flex-wrap:wrap; } }
 @media(prefers-reduced-transparency:reduce) { .sidebar { background:var(--surface); } main { background:var(--canvas); } }
+
+/* Shared control hit areas and keyboard entry, preserving the existing shell. */
+.primary,.secondary,.text-button,.trial-card .secondary { min-height:44px; }
+.icon-button { min-width:44px; min-height:44px; }
+.skip-link { position:fixed; inset:12px auto auto 12px; z-index:10; padding:12px 16px; border-radius:9px; background:var(--action); color:var(--action-text); transform:translateY(-200%); }
+.skip-link:focus { transform:none; outline:2px solid var(--purple); outline-offset:3px; }
+input { caret-color:var(--purple); }
+::selection { background:var(--tint); color:var(--text); }
+.selected li>span small,.result-count { font-variant-numeric:tabular-nums; }
+h1,h2 { text-wrap:balance; }
+@media(hover:hover) and (pointer:fine) { .text-button:hover { text-decoration:underline; text-underline-offset:4px; } }

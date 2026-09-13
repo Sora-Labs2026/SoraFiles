@@ -140,12 +140,12 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                 Ok(json!({"selected":false}))
             }).await.map_err(|_| "Folder picker unavailable")?
         }
-        "startTrial"|"activate"|"licenseStatus"|"refreshLicense"|"deactivateLicense"|"licenseDevices" => {
+        "startTrial"|"activate"|"licenseStatus"|"refreshLicense"|"licenseDevices" => {
             let handle=app.clone();tauri::async_runtime::spawn_blocking(move||{
                 let state=handle.state::<HostState>();let _lease=DialogLease::acquire(&state.dialog_busy)?;
                 let directory=handle.path().app_config_dir().map_err(|_|"Private storage folder unavailable")?;
                 let resources=handle.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
-                let action=match method.as_str(){"startTrial"=>"trial","activate"=>"activate","refreshLicense"=>"refresh","deactivateLicense"=>"deactivate","licenseDevices"=>"devices",_=>"status"};
+                let action=match method.as_str(){"startTrial"=>"trial","activate"=>"activate","refreshLicense"=>"refresh","licenseDevices"=>"devices",_=>"status"};
                 license_host::run(&directory,&resources,action,params)
             }).await.map_err(|_|"License action could not finish")?
         },

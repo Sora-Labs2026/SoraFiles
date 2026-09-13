@@ -12,7 +12,18 @@ test('native license adapter persists the device before online trial and exposes
  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));store.close();}
 });
 test('native license adapter rejects renderer-configurable actions and unavailable signing config',async()=>{
+ await assert.rejects(runLicenseAction({action:'deactivate',state:null}),/Invalid/);
  await assert.rejects(runLicenseAction({action:'execute',params:{command:'unsafe'}}),/Invalid/);
  await assert.rejects(runLicenseAction({action:'trial',params:{origin:'https://example.com'}}),/Invalid/);
  await assert.rejects(runLicenseAction({action:'trial',state:null,config:{keys:{}},saveState:async()=>{}}),/configuration/);
+});
+test('an unverifiable trial offers paid activation without granting access or replacing a paid binding',async()=>{
+ const pair=generateKeyPairSync('ed25519'),device={publicKey:pair.publicKey.export({type:'spki',format:'pem'}),privateKey:pair.privateKey.export({type:'pkcs8',format:'pem'})};
+ const config={origin:'https://license.sorafiles.com',keys:{test:device.publicKey}};
+ for(const paid of [false,true]){
+  const state={schema:1,device,license:{entitlement:'expired-or-damaged',...(paid?{licenseRef:'bound',licenseKey:'saved-paid-key'}:{})}};
+  const status=await runLicenseAction({action:'status',state,config,saveState:async()=>assert.fail('Unverified status must not write a new grant'),fetchImpl:()=>assert.fail('Status remains local')});
+  assert.deepEqual(status,{license:'needs-verification',activationAvailable:!paid});
+  assert.equal(JSON.stringify(status).includes('saved-paid-key'),false);
+ }
 });

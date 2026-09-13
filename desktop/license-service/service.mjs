@@ -51,26 +51,22 @@ export class LicenseService {
     const state=await this.authority.resolve({customerId:activation.customer.customer_id,licenseRef:activation.license_key_id});
     if(state.ref!==activation.license_key_id)throw Error('License reference mismatch');
     this.store.sync(state);this.store.bind(state.ref,activation.customer.customer_id);
-    const license=this.store.activate(state.ref,deviceId,activation.id,this.now());registered=true;
+    const license=this.store.activate(state.ref,deviceId,activation.id,this.now(),{provisional:true});registered=true;
     const entitlement=this.issue(license,deviceId);
     this.store.finishActivation(fingerprint,deviceId,'complete');
     return {licenseRef:state.ref,instanceId:activation.id,entitlement};
    }catch(error){
-    if(registered)this.store.deactivate(activation.license_key_id,deviceId);
+    if(registered)this.store.rollbackActivation(activation.license_key_id,deviceId);
     // A failed compensation must remain visible; it needs reconciliation before retry.
     try{await this.dodo.deactivate(body.licenseKey,activation.id);}catch{this.store.finishActivation(fingerprint,deviceId,'blocked');throw reconciliationRequired();}
     this.store.forgetActivation(fingerprint,deviceId);
     throw error;
    }
   }
-  if(action==='deactivate'&&this.store.deactivationReceipt(body.licenseRef,deviceId,body.instanceId,this.guard.activationFingerprint(body.licenseKey)))return {deactivated:true};
   const local=this.store.active(body.licenseRef,deviceId),binding=this.store.binding(body.licenseRef);
   if(!local||!binding)throw Error('Device is not activated');
   if(action==='devices')return {devices:this.store.devices(body.licenseRef).map(d=>({id:d.device_id,current:d.device_id===deviceId,active:!!d.active}))};
   if(local.instance_id!==body.instanceId)throw Error('Wrong activation instance');
-  if(action==='deactivate'){
-   await this.dodo.deactivate(body.licenseKey,body.instanceId);this.store.completeDeactivation(body.licenseRef,deviceId,body.instanceId,this.guard.activationFingerprint(body.licenseKey));return {deactivated:true};
-  }
   if(action==='refresh'){
    const valid=await this.dodo.validate(body.licenseKey,body.instanceId);if(valid?.valid!==true)throw Error('License no longer valid');
    this.store.sync(await this.authority.resolve({customerId:binding.customer_id,licenseRef:body.licenseRef}));

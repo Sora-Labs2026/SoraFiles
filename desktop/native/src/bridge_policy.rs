@@ -11,7 +11,7 @@ pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
     let Some(fields) = params.as_object() else { return false; };
     if params.to_string().len() > 16384 { return false; }
     match method {
-        "getState" | "selectFiles" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "deactivateLicense" | "licenseDevices" | "checkUpdates" | "quit" => fields.is_empty(),
+        "getState" | "selectFiles" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "checkUpdates" | "quit" => fields.is_empty(),
         "activate" => fields.len() == 1 && params["licenseKey"].as_str()
             .is_some_and(|key| !key.trim().is_empty() && key.len() <= 4096 && !key.chars().any(char::is_control)),
         "releaseSelection" => fields.len() == 1 && params["ids"].as_array().is_some_and(|ids|
@@ -45,6 +45,7 @@ impl Drop for DialogLease<'_> { fn drop(&mut self) { self.0.store(false, Orderin
         }
     }
     #[test] fn ipc_rejects_unknown_fields_and_actions() {
+        assert!(!valid_request("deactivateLicense", &json!({}), false));
         assert!(valid_request("getState", &json!({}), false));
         assert!(valid_request("saveSettings", &json!({"theme":"dark"}), false));
         assert!(valid_request("releaseSelection", &json!({"ids":["a".repeat(32)]}), false));

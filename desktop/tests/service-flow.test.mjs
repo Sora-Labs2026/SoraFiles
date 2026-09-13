@@ -11,15 +11,16 @@ function setup({file=':memory:',secret=randomBytes(32)}={}){let now=1800000000,c
  const verify=(token,device)=>verifyEntitlement(token,{keys:{test:signing.publicKey},deviceId:deviceIdentity(device.publicKey),now:now*1000});
  return {store,service,dodo,calls,state,execute,verify,activationCount:()=>counter,advance:seconds=>now+=seconds};
 }
-test('activation through proof, Dodo state, cap, entitlement, refresh, deactivation and replacement',async()=>{const s=setup(),device=keys(),other=keys();try{
+test('paid activation binds the device permanently and refuses transfer requests',async()=>{const s=setup(),device=keys(),other=keys();try{
  const activated=await s.execute('activate',{licenseKey:'key'},device);assert.equal(s.verify(activated.entitlement,device).maxDevices,1);
  await assert.rejects(s.execute('activate',{licenseKey:'key'},other),/limit/);assert.equal(s.calls.length,1);
  const body={licenseKey:'key',licenseRef:activated.licenseRef,instanceId:activated.instanceId};
  assert.ok((await s.execute('devices',{licenseRef:'lic'},device)).devices[0].current);
  assert.ok(s.verify((await s.execute('refresh',body,device)).entitlement,device));
  await assert.rejects(s.execute('refresh',body,other),/not activated/);
- await s.execute('deactivate',body,device);await assert.rejects(s.execute('refresh',body,device),/not activated/);
- const replacement=await s.execute('activate',{licenseKey:'key'},other);assert.ok(s.verify(replacement.entitlement,other));
+ await assert.rejects(s.execute('deactivate',body,device),/fields/);
+ s.store.revokeDevice('lic',deviceIdentity(device.publicKey));
+ await assert.rejects(s.execute('activate',{licenseKey:'key'},other),/limit/);
  }finally{s.store.close();}});
 test('revocation rejects refresh and existing offline grant remains independently verifiable until lease expiry',async()=>{const s=setup(),device=keys();try{
  const activation=await s.execute('activate',{licenseKey:'key'},device);s.advance(1);s.state.status='revoked';
@@ -75,21 +76,20 @@ test('provider timeout stays blocked across service restart and stores no raw li
  }finally{s.store.close();rmSync(directory,{recursive:true,force:true});}
 });
 
-test('failed compensation blocks another activation; successful deactivation permits deliberate reactivation',async()=>{
+test('failed compensation blocks retries without releasing the original device binding',async()=>{
  const s=setup(),device=keys();try{
   const first=await s.execute('activate',{licenseKey:'key'},device);
-  await s.execute('deactivate',{licenseKey:'key',licenseRef:first.licenseRef,instanceId:first.instanceId},device);
-  const next=await s.execute('activate',{licenseKey:'key'},device);assert.notEqual(next.instanceId,first.instanceId);
+  const next=await s.execute('activate',{licenseKey:'key'},device);assert.equal(next.instanceId,first.instanceId);
   const other=keys();s.dodo.deactivate=async()=>{throw Error('timeout');};
   await assert.rejects(s.execute('activate',{licenseKey:'key'},other),/reconciliation/);const count=s.activationCount();
   await assert.rejects(s.execute('activate',{licenseKey:'key'},other),/reconciliation/);assert.equal(s.activationCount(),count);
  }finally{s.store.close();}
 });
 
-test('refresh cannot resurrect a device deactivated during provider verification',async()=>{
+test('refresh cannot resurrect a device revoked during provider verification',async()=>{
  const s=setup(),device=keys();try{
   const activation=await s.execute('activate',{licenseKey:'key'},device);
-  s.dodo.validate=async()=>{s.store.deactivate(activation.licenseRef,deviceIdentity(device.publicKey));return {valid:true};};
+  s.dodo.validate=async()=>{s.store.revokeDevice(activation.licenseRef,deviceIdentity(device.publicKey));return {valid:true};};
   await assert.rejects(s.execute('refresh',{licenseKey:'key',licenseRef:activation.licenseRef,instanceId:activation.instanceId},device),/not activated/);
   assert.equal(s.store.active(activation.licenseRef,deviceIdentity(device.publicKey)),undefined);
  }finally{s.store.close();}
@@ -99,4 +99,24 @@ test('changing the fingerprint secret fails closed rather than losing activation
  const s=setup();try{const otherGuard=new RequestGuard({secret:randomBytes(32),store:s.store});
   assert.throws(()=>new LicenseService({...s.service,guard:otherGuard}),/Activation key changed/);
  }finally{s.store.close();}
+});
+
+test('permanent device seats survive revocation and a service restart',async()=>{
+ const directory=mkdtempSync(join(tmpdir(),'sf-permanent-binding-')),file=join(directory,'licenses.sqlite'),secret=randomBytes(32),device=keys();let s=setup({file,secret});
+ try{
+  await s.execute('activate',{licenseKey:'key'},device);
+  s.store.revokeDevice('lic',deviceIdentity(device.publicKey));s.store.close();s=setup({file,secret});
+  await assert.rejects(s.execute('activate',{licenseKey:'key'},keys()),/limit/);
+  assert.equal(s.store.db.prepare('SELECT COUNT(*) AS n FROM permanent_devices').get().n,1);
+  assert.throws(()=>s.store.rollbackActivation('lic',deviceIdentity(device.publicKey)),/cannot be released/);
+ }finally{s.store.close();rmSync(directory,{recursive:true,force:true});}
+});
+
+test('another service replica cannot permanently bind a still-provisional registration',()=>{
+ const directory=mkdtempSync(join(tmpdir(),'sf-provisional-binding-')),file=join(directory,'licenses.sqlite');const first=new LicenseStore(file);let other;
+ try{first.sync({ref:'lic',plan:'personal-lifetime',status:'active',observedAt:1800000000});first.activate('lic','device','instance',1800000000,{provisional:true});
+  other=new LicenseStore(file);assert.deepEqual(other.devices('lic'),[]);first.rollbackActivation('lic','device');
+  assert.equal(other.db.prepare('SELECT COUNT(*) AS n FROM permanent_devices').get().n,0);
+  other.activate('lic','successful-device','successful-instance',1800000000);assert.equal(other.devices('lic').length,1);
+ }finally{other?.close();first.close();rmSync(directory,{recursive:true,force:true});}
 });

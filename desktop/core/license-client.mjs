@@ -43,7 +43,8 @@ export class LicenseClient {
  });}
  async activate(licenseKey){return this.exclusive(async()=>{
   requestContext('activate',{licenseKey});const device=await this.readDevice(),saved=await this.readLicense();
-  if(saved?.deactivationPending)throw Error('Finish deactivating this device first');
+  if(saved?.licenseKey&&saved.licenseKey.trim()!==licenseKey.trim())throw Error('This device is already bound to a license');
+  if(saved?.deactivationPending)throw Error('This saved license needs online verification');
   const response=await this.request('activate',{licenseKey},device),claims=this.verify(response.entitlement,device,saved?.lastTrustedTime||0);
   if(claims.plan==='trial'||claims.licenseRef!==response.licenseRef||typeof response.instanceId!=='string'||!response.instanceId||response.instanceId.length>512)throw Error('Invalid activation response');
   await this.saveLicense({licenseKey,licenseRef:response.licenseRef,instanceId:response.instanceId,entitlement:response.entitlement,lastTrustedTime:this.now()});
@@ -51,7 +52,7 @@ export class LicenseClient {
  });}
  async refresh(){return this.exclusive(async()=>{
   const device=await this.readDevice(),saved=await this.readLicense();if(!saved?.licenseRef||!saved?.instanceId||!saved?.licenseKey)throw Error('Activate a paid license first');
-  if(saved.deactivationPending)throw Error('Finish deactivating this device first');
+  if(saved.deactivationPending)throw Error('This saved license needs online verification');
   const body={licenseKey:saved.licenseKey,licenseRef:saved.licenseRef,instanceId:saved.instanceId};
   const response=await this.request('refresh',body,device),claims=this.verify(response.entitlement,device,saved.lastTrustedTime||0);
   if(claims.plan==='trial'||claims.licenseRef!==saved.licenseRef)throw Error('Invalid renewal response');
@@ -63,14 +64,5 @@ export class LicenseClient {
   if(!Array.isArray(response.devices)||response.devices.length>256||response.devices.some(row=>!row||typeof row.id!=='string'||row.id.length>128||typeof row.current!=='boolean'||typeof row.active!=='boolean'))throw Error('Invalid device list');
   return response.devices.map(({id,current,active})=>({id,current,active}));
  });}
- async deactivate(){return this.exclusive(async()=>{
-  const device=await this.readDevice(),saved=await this.readLicense();if(!saved?.licenseRef||!saved?.instanceId||!saved?.licenseKey)throw Error('Activate a paid license first');
-  // Persist intent before the remote action. A crash after seat release must not
-  // silently restore offline authorization from the previous saved entitlement.
-  if(!saved.deactivationPending)await this.saveLicense({...saved,deactivationPending:true});
-  const response=await this.request('deactivate',{licenseKey:saved.licenseKey,licenseRef:saved.licenseRef,instanceId:saved.instanceId},device);
-  if(response?.deactivated!==true)throw Error('Deactivation could not be confirmed');
-  await this.saveLicense(null);return {deactivated:true};
- });}
- async authorize(){return this.exclusive(async()=>{const device=await this.readDevice(),saved=await this.readLicense();if(!saved)throw Error('Start a trial or activate a license');if(saved.deactivationPending)throw Error('Finish deactivating this device first');const claims=this.verify(saved.entitlement,device,saved.lastTrustedTime||0);await this.saveLicense({...saved,lastTrustedTime:Math.max(saved.lastTrustedTime||0,this.now())});return {plan:claims.plan,expiresAt:claims.exp};});}
+ async authorize(){return this.exclusive(async()=>{const device=await this.readDevice(),saved=await this.readLicense();if(!saved)throw Error('Start a trial or activate a license');if(saved.deactivationPending)throw Error('This saved license needs online verification');const claims=this.verify(saved.entitlement,device,saved.lastTrustedTime||0);await this.saveLicense({...saved,lastTrustedTime:Math.max(saved.lastTrustedTime||0,this.now())});return {plan:claims.plan,expiresAt:claims.exp};});}
 }

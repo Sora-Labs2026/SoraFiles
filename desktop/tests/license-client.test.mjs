@@ -55,15 +55,15 @@ test('subscription refresh requires internet and renews only a verified existing
   f.advance(86401);await assert.rejects(f.client.authorize(),/expired/);
  }finally{await f.close();}
 });
-test('deactivation persists intent and recovers a lost response without restoring offline access',async()=>{
- const f=await fixture();try{
-  await f.client.activate('synthetic-dodo-key');let drop=true;
-  const client=new LicenseClient({...f.options,fetchImpl:async(url,options)=>{const response=await fetch(url,options);if(drop&&url.endsWith('/deactivate')){drop=false;await response.body.cancel();throw Error('response lost');}return response;}});
-  await assert.rejects(client.deactivate(),/response lost/);assert.equal(f.read().deactivationPending,true);
-  await assert.rejects(client.authorize(),/deactivating/);await assert.rejects(client.refresh(),/deactivating/);await assert.rejects(client.activate('another-key'),/deactivating/);
-  const restarted=new LicenseClient(f.options);assert.deepEqual(await restarted.deactivate(),{deactivated:true});assert.equal(f.read(),null);await assert.rejects(restarted.authorize(),/Start a trial/);
+test('a bound client has no deactivation action and cannot replace its paid license',async()=>{
+ const f=await fixture();try{await f.client.activate('synthetic-dodo-key');const saved=structuredClone(f.read()),calls=f.calls();
+  assert.equal(f.client.deactivate,undefined);await assert.rejects(f.client.activate('different-key'),/already bound/);assert.deepEqual(f.read(),saved);assert.equal(f.calls(),calls);
+  const origin=f.options.origin;
+  const removed=await fetch(origin+'/v1/deactivate',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});assert.equal(removed.status,404);
+  const challenge=await fetch(origin+'/v1/challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deactivate',body:{},publicKey:(await f.options.readDevice()).publicKey})});assert.equal(challenge.status,400);
+  assert.equal((await f.client.authorize()).plan,'personal-monthly');
  }finally{await f.close();}
 });
-test('an offline deactivation remains pending until confirmed and never clears the stored recovery fields',async()=>{
- const f=await fixture();try{await f.client.activate('synthetic-dodo-key');f.offline();await assert.rejects(f.client.deactivate(),/offline/);assert.equal(f.read().licenseRef,'license');assert.equal(f.read().deactivationPending,true);await assert.rejects(f.client.authorize(),/deactivating/);}finally{await f.close();}
+test('legacy interrupted-deactivation state stays locked and cannot silently release a seat',async()=>{
+ const f=await fixture();try{await f.client.activate('synthetic-dodo-key');f.set({...f.read(),deactivationPending:true});await assert.rejects(f.client.authorize(),/verification/);await assert.rejects(f.client.refresh(),/verification/);assert.equal(f.read().licenseRef,'license');}finally{await f.close();}
 });

@@ -65,11 +65,12 @@ fn validate_state(value:&Value)->Result<(),String>{
 }
 fn validate_result(value:&Value)->Result<(),String>{
  let result=value.as_object().ok_or("Invalid license result")?;
- if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"deactivated"|"devices")){return Err("Private fields cannot enter the interface".into());}
+ if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"devices"|"activationAvailable")){return Err("Private fields cannot enter the interface".into());}
  for (key,value) in result {let valid=match key.as_str(){
-  "license"=>matches!(value.as_str(),Some("not-activated"|"trial"|"active"|"needs-verification"|"deactivation-pending")),
+  "license"=>matches!(value.as_str(),Some("not-activated"|"trial"|"active"|"needs-verification")),
   "plan"=>value.as_str().is_some_and(|s|s.len()<64&&s.bytes().all(|b|b.is_ascii_lowercase()||b.is_ascii_digit()||b==b'-')),
-  "expiresAt"=>value.is_null()||value.as_u64().is_some(),"maxDevices"=>matches!(value.as_u64(),Some(1|5)),"deactivated"=>value==true,
+  "expiresAt"=>value.is_null()||value.as_u64().is_some(),"maxDevices"=>matches!(value.as_u64(),Some(1|5)),
+  "activationAvailable"=>value.is_boolean(),
   "devices"=>value.as_array().is_some_and(|rows|rows.len()<=256&&rows.iter().all(|row|row.as_object().is_some_and(|r|r.len()==3&&r.get("id").and_then(Value::as_str).is_some_and(|id|id.len()<=128)&&r.get("current").is_some_and(Value::is_boolean)&&r.get("active").is_some_and(Value::is_boolean)))),_=>false};
   if !valid{return Err("Invalid public license response".into());}
  }
