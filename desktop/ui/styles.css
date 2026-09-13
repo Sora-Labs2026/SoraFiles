@@ -7,3 +7,5 @@ nav button,.tool-card strong{font-size:13px}.tool-card small,.dropzone small,.pr
 
 .license-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:20px}
 main>.panel+.panel{margin-top:24px}
+body[data-processing=true] #pending-action{bottom:84px;right:24px}
+.processing-options{margin-top:24px}.option-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px;margin:20px 0}.option-fields label{display:grid;gap:8px;font-size:13px;font-weight:600}.option-fields input,.option-fields select{min-width:0;width:100%;min-height:44px;border:1px solid var(--line);border-radius:9px;padding:10px;background:var(--surface);color:var(--text)}.option-fields p{color:var(--muted);font-size:13px;grid-column:1/-1}.cancel-processing{position:fixed;right:24px;bottom:24px;z-index:5;box-shadow:0 4px 24px #0002}.cancel-processing[hidden]{display:none}

@@ -11,7 +11,10 @@ pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
     let Some(fields) = params.as_object() else { return false; };
     if params.to_string().len() > 16384 { return false; }
     match method {
-        "getState" | "selectFiles" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "checkUpdates" | "quit" => fields.is_empty(),
+        "getState" | "selectFiles" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "checkUpdates" | "quit" | "cancelProcessing" => fields.is_empty(),
+        "processFiles" => fields.len()==3 && params["options"].is_object()
+            && matches!(params["tool"].as_str(),Some("pdf-to-jpg"|"merge-pdf"|"split-pdf"|"rotate-pdf"|"remove-pages"|"page-numbers"|"watermark-pdf"|"sign-pdf"|"jpg-to-pdf"|"image-converter"|"compress-image"|"resize-image"|"edit-image"))
+            && params["selectionIds"].as_array().is_some_and(|ids|!ids.is_empty()&&ids.len()<=256&&ids.iter().all(|id|id.as_str().is_some_and(|text|text.len()==32&&text.bytes().all(|b|b.is_ascii_hexdigit())))),
         "activate" => fields.len() == 1 && params["licenseKey"].as_str()
             .is_some_and(|key| !key.trim().is_empty() && key.len() <= 4096 && !key.chars().any(char::is_control)),
         "releaseSelection" => fields.len() == 1 && params["ids"].as_array().is_some_and(|ids|
@@ -60,5 +63,17 @@ impl Drop for DialogLease<'_> { fn drop(&mut self) { self.0.store(false, Orderin
         drop(first);
         assert!(DialogLease::acquire(&busy).is_ok());
         assert!(!busy.load(Ordering::SeqCst));
+    }
+    #[test] fn processing_accepts_only_known_tools_and_opaque_selection_ids() {
+        let valid=json!({"tool":"pdf-to-jpg","selectionIds":["b".repeat(32)],"options":{"dpi":150}});
+        assert!(valid_request("processFiles",&valid,false));
+        for params in [json!({"tool":"unknown", "selectionIds":["b".repeat(32)],"options":{}}),
+            json!({"tool":"pdf-to-jpg","selectionIds":["C:/private.pdf"],"options":{}}),
+            json!({"tool":"pdf-to-jpg","selectionIds":[],"options":{}}),
+            json!({"tool":"pdf-to-jpg","selectionIds":["b".repeat(32)],"options":{},"path":"private"})] {
+            assert!(!valid_request("processFiles",&params,false));
+        }
+        assert!(valid_request("cancelProcessing",&json!({}),false));
+        assert!(!valid_request("cancelProcessing",&json!({"kill":true}),false));
     }
 }

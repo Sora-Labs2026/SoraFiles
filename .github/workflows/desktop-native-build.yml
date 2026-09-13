@@ -57,6 +57,8 @@ jobs:
         run: node --test desktop/tests/*.test.mjs
       - name: Build independent interface
         run: node desktop/scripts/build-native-ui.mjs
+      - name: Verify isolated processing package
+        run: node desktop/scripts/verify-processing-pack.mjs
       - name: Native host tests
         run: cargo test --locked --manifest-path desktop/native/Cargo.toml --target ${{ matrix.target }}
       - name: Install pinned native packaging CLI
@@ -96,6 +98,7 @@ jobs:
             .artifacts/native-candidate-${{ matrix.target }}.json
             .artifacts/macos-bundle-inspection.json
             .artifacts/native-smoke-*.json
+            .artifacts/processing-pack-verification.json
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 14

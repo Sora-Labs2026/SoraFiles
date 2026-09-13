@@ -7,5 +7,5 @@ const runtime=join(out,process.platform==='win32'?'node.exe':'node');await copyF
 const config=JSON.parse(await readFile(join(root,'desktop/releases/license-service.json'),'utf8'));
 if(config.origin!=='https://license.sorafiles.com'||!config.keys||typeof config.keys!=='object')throw Error('Invalid bundled license configuration');
 await writeFile(join(out,'config.json'),JSON.stringify(config));
-await writeFile(join(out,'runtime.json'),JSON.stringify({node:process.version,platform:process.platform,arch:process.arch,scope:'On-demand license client only; public signing configuration and runtime notice pack required before release'},null,2));
+await writeFile(join(out,'runtime.json'),JSON.stringify({node:process.version,platform:process.platform,arch:process.arch,scope:'On-demand license and processing components; public signing configuration and runtime notice pack required before release'},null,2));
 console.log('Prepared on-demand native license component');

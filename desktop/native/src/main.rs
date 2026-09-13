@@ -6,6 +6,7 @@ mod preferences;
 mod classify;
 mod vault;
 mod license_host;
+mod processing_host;
 use bridge_policy::{DialogLease, local_navigation, valid_request};
 use selection::Selection;
 use serde_json::{json, Value};
@@ -13,9 +14,9 @@ use std::sync::{Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}};
 use tauri::{Manager, Emitter, WebviewUrl, WebviewWindowBuilder, RunEvent, DragDropEvent, menu::{Menu, MenuItem}, tray::TrayIconBuilder};
 use tauri_plugin_dialog::DialogExt;
 
-struct HostState { selection: Mutex<Selection>, settings: Mutex<Value>, quitting: AtomicBool, tray_available: AtomicBool, smoke_count: AtomicUsize, window_generation: AtomicUsize, dialog_busy: AtomicBool }
+struct HostState { selection: Mutex<Selection>, settings: Mutex<Value>, quitting: AtomicBool, tray_available: AtomicBool, smoke_count: AtomicUsize, window_generation: AtomicUsize, dialog_busy: AtomicBool, processing_busy: AtomicBool, processing_cancel: AtomicBool }
 impl Default for HostState {
-    fn default() -> Self { Self { selection: Mutex::new(Selection::default()), settings: Mutex::new(json!({"output":"source","theme":"system","startup":false})), quitting: AtomicBool::new(false), tray_available: AtomicBool::new(false), smoke_count:AtomicUsize::new(0), window_generation:AtomicUsize::new(0), dialog_busy:AtomicBool::new(false) } }
+    fn default() -> Self { Self { selection: Mutex::new(Selection::default()), settings: Mutex::new(json!({"output":"source","theme":"system","startup":false})), quitting: AtomicBool::new(false), tray_available: AtomicBool::new(false), smoke_count:AtomicUsize::new(0), window_generation:AtomicUsize::new(0), dialog_busy:AtomicBool::new(false), processing_busy:AtomicBool::new(false), processing_cancel:AtomicBool::new(false) } }
 }
 fn smoke_output() -> Option<std::path::PathBuf> { let args:Vec<_>=std::env::args().collect();let index=args.iter().position(|arg| arg=="--native-smoke")?;args.get(index+1).map(std::path::PathBuf::from) }
 fn diagnostic_step(step: &str) { if smoke_output().is_some() { eprintln!("Native diagnostic: {step}"); } }
@@ -55,6 +56,9 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         .build()?;
     let handle = app.clone();
     window.on_window_event(move |event| match event {
+        tauri::WindowEvent::CloseRequested { api, .. } if handle.state::<HostState>().processing_busy.load(Ordering::SeqCst) => {
+            api.prevent_close();let _=handle.emit_to("main","native-notice","Wait for processing to finish, or cancel it before closing this window.");
+        }
         tauri::WindowEvent::DragDrop(DragDropEvent::Drop { paths, .. }) => {
             if let Ok(mut selection) = handle.state::<HostState>().selection.lock() { let result=selection.add(paths.clone()); let _=handle.emit_to("main","native-selection",result); }
         }
@@ -149,8 +153,33 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                 license_host::run(&directory,&resources,action,params)
             }).await.map_err(|_|"License action could not finish")?
         },
+        "cancelProcessing" => {state.processing_cancel.store(true,Ordering::SeqCst);Ok(json!({"requested":true}))},
+        "processFiles" => {
+            let handle=app.clone();tauri::async_runtime::spawn_blocking(move||{
+                let state=handle.state::<HostState>();let _processing=DialogLease::acquire(&state.processing_busy)?;
+                state.processing_cancel.store(false,Ordering::SeqCst);
+                let _private=DialogLease::acquire(&state.dialog_busy)?;
+                let ids:Vec<String>=serde_json::from_value(params["selectionIds"].clone()).map_err(|_|"Choose files first")?;
+                let paths=state.selection.lock().map_err(|_|"Selection unavailable")?.resolve(&ids)?;
+                let settings=state.settings.lock().map_err(|_|"Settings unavailable")?.clone();
+                let folder=match settings["output"].as_str().unwrap_or("source") {
+                    "downloads"=>Some(handle.path().download_dir().map_err(|_|"Downloads folder unavailable")?),
+                    "custom"=>Some(std::path::PathBuf::from(settings["customFolder"].as_str().ok_or("Choose an output folder in Settings")?)),
+                    "ask"=>handle.dialog().file().set_title("Save SoraFiles results").blocking_pick_folder().and_then(|file|file.into_path().ok()),
+                    _=>None
+                };
+                if settings["output"]=="ask"&&folder.is_none(){return Ok(json!({"state":"cancelled"}));}
+                if state.window_generation.load(Ordering::SeqCst)!=generation{return Err("The original window was closed. Choose files again.".into());}
+                let directory=handle.path().app_config_dir().map_err(|_|"Private storage folder unavailable")?;
+                let resources=handle.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
+                let result=processing_host::run(&directory,&resources,json!({"tool":params["tool"],"options":params["options"],"paths":paths,"folder":folder}),&state.processing_cancel,|progress|{let _=handle.emit_to("main","processing-progress",progress);})?;
+                if result["state"]=="cancelled"{return Ok(result);}
+                let name=std::path::Path::new(result["path"].as_str().ok_or("Output unavailable")?).file_name().unwrap_or_default().to_string_lossy();
+                Ok(json!({"state":"completed","name":name,"bytes":result["bytes"],"warnings":result["warnings"]}))
+            }).await.map_err(|_|"Processing could not finish")?
+        },
         "checkUpdates" => Ok(json!({"message":"No Desktop releases are published yet."})),
-        "quit" => { state.quitting.store(true,Ordering::SeqCst);app.exit(0);Ok(json!({"quitting":true})) }
+        "quit" => { if state.processing_busy.load(Ordering::SeqCst) {return Err("Wait for processing to finish, or cancel it before quitting.".into());} state.quitting.store(true,Ordering::SeqCst);app.exit(0);Ok(json!({"quitting":true})) }
         _ => Err("This action is not available.".into())
     }
 }
@@ -188,7 +217,10 @@ fn main() {
             open_window(app.handle())?; Ok(())
         }).build(tauri::generate_context!()).expect("Unable to initialize SoraFiles Desktop");
     app.run(|app,event| match event {
-        RunEvent::ExitRequested { api, .. } => { let state=app.state::<HostState>();if !state.quitting.load(Ordering::SeqCst)&&(state.tray_available.load(Ordering::SeqCst)||smoke_output().is_some()) { api.prevent_exit(); } }
+        RunEvent::ExitRequested { api, .. } => { let state=app.state::<HostState>();
+            if state.processing_busy.load(Ordering::SeqCst) {api.prevent_exit();state.quitting.store(false,Ordering::SeqCst);let _=open_window(app);let _=app.emit_to("main","native-notice","Wait for processing to finish, or cancel it before quitting.");}
+            else if !state.quitting.load(Ordering::SeqCst)&&(state.tray_available.load(Ordering::SeqCst)||smoke_output().is_some()) { api.prevent_exit(); }
+        }
         #[cfg(target_os="macos")]
         RunEvent::Reopen { .. } => { let _=open_window(app); }
         #[cfg(target_os="macos")]

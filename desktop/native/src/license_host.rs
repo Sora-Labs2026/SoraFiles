@@ -41,7 +41,7 @@ fn run_component(directory:&Path,runtime:&Path,entry:&Path,config:Value,action:&
  drop(input);let _=child.kill();let _=child.wait();drop(receiver);let _=reader.join();outcome
 }
 fn write_frame(writer:&mut impl Write,value:&Value)->Result<(),String>{let bytes=serde_json::to_vec(value).map_err(|_|"Invalid private request")?;if bytes.len()>MAX_FRAME as usize-1{return Err("Private request exceeds its limit".into());}writer.write_all(&bytes).and_then(|_|writer.write_all(b"\n")).and_then(|_|writer.flush()).map_err(|_|"Private connection closed".into())}
-fn locations(resources:&Path)->Result<(PathBuf,PathBuf,Value),String>{
+pub(crate) fn locations(resources:&Path)->Result<(PathBuf,PathBuf,Value),String>{
  let mut runtime=resources.join("license-host").join(if cfg!(windows){"node.exe"}else{"node"});
  let mut entry=resources.join("license-host/desktop/native-host/main.mjs");
  let mut config_path=resources.join("license-host/config.json");
@@ -55,7 +55,7 @@ fn locations(resources:&Path)->Result<(PathBuf,PathBuf,Value),String>{
  #[cfg(not(debug_assertions))] let config={let mut config=config;config["allowLocalTesting"]=json!(false);config["origin"]=json!("https://license.sorafiles.com");config};
  Ok((runtime,entry,config))
 }
-fn validate_state(value:&Value)->Result<(),String>{
+pub(crate) fn validate_state(value:&Value)->Result<(),String>{
  let object=value.as_object().ok_or("Invalid private state")?;
  if object.len()!=3||value["schema"]!=1||!object.contains_key("license"){return Err("Invalid private state".into());}
  let device=value["device"].as_object().ok_or("Invalid private device")?;
@@ -97,6 +97,18 @@ fn validate_result(value:&Value)->Result<(),String>{
   assert_eq!(invoke("status",json!({})).unwrap()["license"],"trial");
   cleanup.child.kill().unwrap();cleanup.child.wait().unwrap();
   assert_eq!(invoke("status",json!({})).unwrap()["license"],"trial");
+  // Run a real PDF job through Rust -> private process -> reference engine,
+  // while the service is offline. Only synthetic files/keys are used.
+  let pdf_fixture=PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../tests/fixtures/processing-pdf.mjs");
+  let folder=std::fs::canonicalize(&cleanup.directory).unwrap();
+  #[cfg(windows)] let folder=PathBuf::from(folder.to_string_lossy().strip_prefix(r"\\?\").unwrap().to_string());
+  let source=folder.join("input.pdf");
+  assert!(Command::new(&runtime).arg(&pdf_fixture).arg("create").arg(&source).status().unwrap().success());
+  let original=std::fs::read(&source).unwrap();
+  let result=crate::processing_host::run_component(&cleanup.directory,&runtime,&entry.with_file_name("process-main.mjs"),config.clone(),json!({"tool":"rotate-pdf","paths":[source],"options":{"rotations":[{"pageIndex":0,"angle":90}]}}),&std::sync::atomic::AtomicBool::new(false),|_|{},&store).unwrap();
+  assert_eq!(result["state"],"completed");let output=PathBuf::from(result["path"].as_str().unwrap());
+  assert!(Command::new(&runtime).arg(&pdf_fixture).arg("verify").arg(&output).status().unwrap().success());
+  assert_eq!(std::fs::read(&source).unwrap(),original);std::fs::remove_file(source).unwrap();std::fs::remove_file(output).unwrap();
   assert!(invoke("activate",json!({"licenseKey":"synthetic-license-key"})).is_err());
   assert_eq!(invoke("status",json!({})).unwrap()["license"],"trial");
   let mut damaged=std::fs::read(cleanup.directory.join("private-state.sealed")).unwrap();damaged[25]^=1;std::fs::write(cleanup.directory.join("private-state.sealed"),damaged).unwrap();assert!(invoke("status",json!({})).is_err());

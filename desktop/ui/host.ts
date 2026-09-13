@@ -3,6 +3,7 @@ const bridge=(window as HostWindow).chrome?.webview;
 type TauriWindow=Window&{__TAURI__?:{core:{invoke:(command:string,args:Record<string,unknown>)=>Promise<any>};event:{listen:(event:string,callback:(event:{payload:any})=>void)=>Promise<()=>void>}}};
 const native=(window as TauriWindow).__TAURI__;
 export function onNativeSelection(callback:(selection:any)=>void){if(native)void native.event.listen('native-selection',event=>callback(event.payload));}
+export function onNativeNotice(callback:(message:string)=>void){if(native)void native.event.listen('native-notice',event=>{if(typeof event.payload==='string')callback(event.payload);});}
 const pending=new Map<string,{resolve:(value:any)=>void;reject:(error:Error)=>void;timer:ReturnType<typeof setTimeout>}>();
 bridge?.addEventListener('message',({data})=>{if(data?.protocol!==1||typeof data.id!=='string')return;const request=pending.get(data.id);if(!request)return;clearTimeout(request.timer);pending.delete(data.id);data.ok?request.resolve(data.result):request.reject(Error(typeof data.error==='string'?data.error:'This action could not finish.'));});
 export function host(method:string,params:Record<string,unknown>={},files?:File[]):Promise<any>{

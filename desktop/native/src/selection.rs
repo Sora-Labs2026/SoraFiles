@@ -53,6 +53,20 @@ impl Selection {
         self.entries.retain(|(_, item)| !ids.contains(&item.id)); Ok(())
     }
     pub fn list(&self) -> Vec<Selected> { self.entries.iter().map(|(_, item)| item.clone()).collect() }
+    pub fn resolve(&self, ids: &[String]) -> Result<Vec<PathBuf>, &'static str> {
+        if ids.is_empty() || ids.len()>256 {return Err("Choose files first");}
+        ids.iter().map(|id| {
+            let (path,_)=self.entries.iter().find(|(_,item)| &item.id==id).ok_or("Selection expired. Choose the files again.")?;
+            // Node's local-file boundary refuses UNC paths. Keep ordinary drive
+            // paths while removing only Windows' canonical local-drive prefix.
+            #[cfg(windows)] let canonical={let value=path.to_string_lossy();if let Some(rest)=value.strip_prefix(r"\\?\") {
+                if rest.as_bytes().get(1)!=Some(&b':') {return Err("Choose a local file");}PathBuf::from(rest)
+            }else{path.clone()}};
+            #[cfg(not(windows))] let canonical=path.clone();
+            local_file(&canonical)?;
+            Ok(canonical)
+        }).collect()
+    }
     pub fn clear(&mut self) { self.entries.clear(); }
 }
 
@@ -84,6 +98,18 @@ impl Selection {
         let result=selection.add(vec![empty.clone(),directory.clone(),PathBuf::from("relative.pdf"),directory.join("missing.pdf")]);
         assert!(result.rejected);assert!(result.files.is_empty());assert!(selection.list().is_empty());
         fs::remove_file(empty).unwrap();fs::remove_dir(directory).unwrap();
+    }
+    #[test] fn resolved_selection_preserves_order_and_rejects_expired_files() {
+        let directory=fixture_directory();let first=directory.join("first.pdf");let second=directory.join("second.pdf");
+        fs::write(&first,b"%PDF-1.7\nfirst").unwrap();fs::write(&second,b"%PDF-1.7\nsecond").unwrap();
+        let mut selection=Selection::default();let added=selection.add(vec![first.clone(),second.clone()]);
+        let ids=vec![added.files[1].id.clone(),added.files[0].id.clone()];let paths=selection.resolve(&ids).unwrap();
+        assert_eq!(paths[0].file_name().unwrap(),"second.pdf");assert_eq!(paths[1].file_name().unwrap(),"first.pdf");
+        #[cfg(windows)] assert!(!paths[0].to_string_lossy().starts_with(r"\\?\"));
+        assert!(selection.resolve(&["a".repeat(32)]).is_err());assert!(selection.resolve(&[]).is_err());
+        fs::remove_file(&second).unwrap();assert!(selection.resolve(&ids).is_err());
+        selection.release(&[added.files[0].id.clone()]).unwrap();assert!(selection.resolve(&[added.files[0].id.clone()]).is_err());
+        fs::remove_file(first).unwrap();fs::remove_dir(directory).unwrap();
     }
     #[test] fn selection_capacity_is_bounded_across_requests() {
         let directory=fixture_directory();let mut paths=Vec::new();
