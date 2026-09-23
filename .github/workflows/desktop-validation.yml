@@ -26,23 +26,35 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    env:
+      SORA_BROWSER_CHANNEL: chromium
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: '24.19.0'
+          node-version: '24.21.0'
           cache: npm
       - run: npm ci
+      - name: Install the browser used for processing and UI contract checks
+        run: npx playwright install --with-deps chromium
+      - name: Prepare checksum-pinned background model for local tests
+        run: node desktop/scripts/sync-background-model.mjs --download
       - name: Test signatures, concurrent licensing, giveaway recovery and real PDF output
         run: node --test desktop/tests/*.test.mjs
       - name: Build the independent desktop UI
         run: node desktop/scripts/build-ui.mjs
-      - name: Install the browser used for UI contract checks
-        run: npx playwright install --with-deps chromium
       - name: Check keyboard, layout, native bridge contract and both themes
-        run: node desktop/tests/ui-qa.mjs
+        run: node desktop/tests/ui-qa.mjs --desktop-only
+        env:
+          SORA_BROWSER_CHANNEL: chromium
+      - name: Compare shared image adjustments against browser output
+        run: node desktop/tests/image-adjustments-parity.mjs
+        env:
+          SORA_BROWSER_CHANNEL: chromium
+      - name: Compare lossless metadata cleanup against browser output
+        run: node desktop/tests/metadata-parity.mjs
         env:
           SORA_BROWSER_CHANNEL: chromium
       # These checks deliberately do not publish an installer. Native shell,

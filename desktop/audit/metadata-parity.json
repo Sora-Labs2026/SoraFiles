@@ -1,0 +1,31 @@
+{
+  "recordedAt": "2026-09-17T17:25:00.627Z",
+  "status": "PASS",
+  "scope": "Actual Web stripImageMeta executed in Chrome versus Desktop output, project-generated sRGB JPEG/PNG/WebP without ICC or orientation transforms. Exact output bytes and decoded pixel preservation including alpha; no Office/animated/profile parity claim.",
+  "results": [
+    {
+      "format": "jpeg",
+      "inputBytes": 2899,
+      "outputBytes": 2627,
+      "webDesktopBytesEqual": true,
+      "maxDecodedDifference": 0,
+      "fixtureSha256": "33e5ab2bb698188f2a90a90ba69595f7a897b194735fc9a444529b56fd4cefbf"
+    },
+    {
+      "format": "png",
+      "inputBytes": 21969,
+      "outputBytes": 21695,
+      "webDesktopBytesEqual": true,
+      "maxDecodedDifference": 0,
+      "fixtureSha256": "a43daae80b1dbdf2895da33afc451329927d85a015f0799c29f849a849498e29"
+    },
+    {
+      "format": "webp",
+      "inputBytes": 3916,
+      "outputBytes": 3640,
+      "webDesktopBytesEqual": true,
+      "maxDecodedDifference": 0,
+      "fixtureSha256": "6adccf9fae0b4243c4ae1136a81c57183f88770c277c3a1c14259ed8d9dab022"
+    }
+  ]
+}

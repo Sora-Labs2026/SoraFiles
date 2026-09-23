@@ -1,4 +1,8 @@
 import {PDFDocument} from 'pdf-lib';import {writeFile,readFile} from 'node:fs/promises';
-if(process.argv[2]==='create'){const doc=await PDFDocument.create();doc.addPage([200,300]);await writeFile(process.argv[3],await doc.save());}
+if(process.argv[2]==='create'){const doc=await PDFDocument.create();doc.addPage([200,300]).drawText('Synthetic invoice 00123',{x:10,y:200,size:10});await writeFile(process.argv[3],await doc.save());}
+else if(process.argv[2]==='create-damaged'){const doc=await PDFDocument.create();doc.addPage([200,300]).drawText('Repair fixture 00123',{x:10,y:200,size:10});await writeFile(process.argv[3],Buffer.from(Buffer.from(await doc.save({useObjectStreams:false})).toString('latin1').replace(/startxref\s+\d+/,'startxref\n1'),'latin1'));}
+else if(process.argv[2]==='verify-repaired'){const bytes=await readFile(process.argv[3]);const xref=Number(bytes.toString('latin1').match(/startxref\s+(\d+)/)[1]);if(xref<=1||xref>=bytes.length||(await PDFDocument.load(bytes)).getPageCount()!==1)throw Error('Unexpected repaired PDF');}
 else if(process.argv[2]==='verify'){const doc=await PDFDocument.load(await readFile(process.argv[3]));if(doc.getPageCount()!==1||doc.getPage(0).getRotation().angle!==90)throw Error('Unexpected PDF result');}
+else if(process.argv[2]==='verify-word'){const {unzipSync,strFromU8}=await import('fflate');const archive=unzipSync(await readFile(process.argv[3]));if(!strFromU8(archive['word/document.xml']).includes('Synthetic invoice 00123'))throw Error('Unexpected Word result');}
+else if(process.argv[2]==='verify-compressed'){const doc=await PDFDocument.load(await readFile(process.argv[3]));if(doc.getPageCount()!==1||doc.getPage(0).getRotation().angle!==0||doc.getPage(0).getWidth()!==200)throw Error('Unexpected compressed PDF');}
 else throw Error('Choose a fixture action');

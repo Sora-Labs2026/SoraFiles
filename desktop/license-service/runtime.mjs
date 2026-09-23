@@ -8,7 +8,7 @@ export async function createLicenseRuntime({databasePath,apiKey,mode='test_mode'
  const dodo=new DodoClient({apiKey,mode}),catalog=await fetchVerifiedCatalog(dodo,catalogConfig);
  const store=new LicenseStore(databasePath);
  try{const promotions=promotionConfig?new PromotionService({store:new PromotionStore(store,{encryptionKey:promotionConfig.encryptionKey}),dodo,verifyIdentity:promotionConfig.verifyIdentity}):null;
-  const promotionServer=promotions?createPromotionHttpServer({promotions,rateSecret}):null;
+  const promotionServer=promotions?createPromotionHttpServer({promotions,rateSecret,issueIdentitySession:promotionConfig.issueIdentitySession??null}):null;
   const authority=new DodoAuthority({dodo,catalog,promotions}),guard=new RequestGuard({store,secret:challengeSecret}),service=new LicenseService({store,guard,dodo,authority,signing});
   const webhooks=new WebhookInbox({store,authority,secret:webhookSecret}),server=createLicenseHttpServer({service,webhooks,rateSecret,onFailure});
   let timer=null,closing=false,active=null;const controller=new AbortController();

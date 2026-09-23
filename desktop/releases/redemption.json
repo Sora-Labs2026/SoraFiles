@@ -1,0 +1,4 @@
+{
+  "enabled": false,
+  "reason": "Requires verified recipient sessions, deployed redemption service, tested Dodo imports and owner-authorized campaign issuance."
+}

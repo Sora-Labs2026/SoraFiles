@@ -1,6 +1,6 @@
 import {open,lstat} from 'node:fs/promises';
 import {extname,isAbsolute,resolve} from 'node:path';
-const extensions={PDF:['pdf'],JPG:['jpg','jpeg'],PNG:['png'],WebP:['webp'],HEIC:['heic'],HEIF:['heif'],TIFF:['tif','tiff'],PSD:['psd'],DOCX:['docx'],XLSX:['xlsx'],GIF:['gif']};
+const extensions={PDF:['pdf'],JPG:['jpg','jpeg'],PNG:['png'],WebP:['webp'],HEIC:['heic'],HEIF:['heif'],TIFF:['tif','tiff'],PSD:['psd'],DOCX:['docx'],XLSX:['xlsx'],PPTX:['pptx'],GIF:['gif']};
 const starts=(bytes,hex)=>bytes.subarray(0,hex.length/2).equals(Buffer.from(hex,'hex'));
 
 // This establishes content type for suggestions, not document validity. Every engine
@@ -36,7 +36,8 @@ async function officeFormat(handle,size){
   const name=directory.subarray(pos+46,pos+46+n).toString('utf8');if(name.includes('\\')||name.includes('\0')||name.startsWith('/')||name.split('/').includes('..')||names.has(name))return null;names.add(name);pos+=46+n+extra+comment;
  }
  if(pos!==length||!names.has('[Content_Types].xml'))return null;
- const word=names.has('word/document.xml'),excel=names.has('xl/workbook.xml');return word&&!excel?'DOCX':excel&&!word?'XLSX':null;
+ const candidates=[['word/document.xml','DOCX'],['xl/workbook.xml','XLSX'],['ppt/presentation.xml','PPTX']].filter(([name])=>names.has(name));
+ return candidates.length===1?candidates[0][1]:null;
 }
 export async function classifySelection(paths){
  if(!Array.isArray(paths)||paths.length>256)throw Error('Select up to 256 files');

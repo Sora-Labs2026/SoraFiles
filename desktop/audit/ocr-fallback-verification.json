@@ -1,0 +1,39 @@
+{
+  "recordedAt": "2026-09-17T16:31:00.320Z",
+  "platform": "win32",
+  "arch": "x64",
+  "status": "PASS",
+  "scope": "Isolated bundled Node, real English recognition in each retained CPU/WASM core; not another CPU or language certification",
+  "results": [
+    {
+      "variant": "tesseract-core",
+      "status": "PASS",
+      "recognizedInvoice": true
+    },
+    {
+      "variant": "tesseract-core-lstm",
+      "status": "PASS",
+      "recognizedInvoice": true
+    },
+    {
+      "variant": "tesseract-core-simd",
+      "status": "PASS",
+      "recognizedInvoice": true
+    },
+    {
+      "variant": "tesseract-core-simd-lstm",
+      "status": "PASS",
+      "recognizedInvoice": true
+    },
+    {
+      "variant": "tesseract-core-relaxedsimd",
+      "status": "PASS",
+      "recognizedInvoice": true
+    },
+    {
+      "variant": "tesseract-core-relaxedsimd-lstm",
+      "status": "PASS",
+      "recognizedInvoice": true
+    }
+  ]
+}

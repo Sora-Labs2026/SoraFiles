@@ -1,4 +1,5 @@
 import {build} from 'vite';import {mkdir,copyFile} from 'node:fs/promises';
+await import('./sync-tool-metadata.mjs');
 await build({configFile:false,root:'desktop/ui',publicDir:false,build:{outDir:'../../.artifacts/desktop-ui',emptyOutDir:true,target:'es2022'}});
 await mkdir('.artifacts/desktop-ui/fonts',{recursive:true});
 await copyFile('public/favicon.ico','.artifacts/desktop-ui/favicon.ico');

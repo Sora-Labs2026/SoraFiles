@@ -8,6 +8,7 @@ export function amountInMinorUnits(amount,currency){
  if(minor>BigInt(Number.MAX_SAFE_INTEGER))throw Error('Amount out of range');return Number(minor);
 }
 export function verifyDodoProduct(planId,product,expected){
+ assertDesktopProductCopy(product);
  const plan=plans[planId],price=product?.price;
  if(!plan||product.product_id!==expected.productId||!price||price.price!==amountInMinorUnits(plan.amount,price.currency))throw Error('Dodo launch price mismatch');
  if(product.is_recurring!==plan.recurring||price.type!==(plan.recurring?'recurring_price':'one_time_price'))throw Error('Dodo billing type mismatch');
@@ -18,6 +19,14 @@ export function verifyDodoProduct(planId,product,expected){
  if(entitlements?.length!==1)throw Error('Dodo license entitlement missing');const config=entitlements[0].integration_config;
  if(config?.activations_limit!==plan.maxDevices||config.duration_count!=null||config.duration_interval!=null||config.fulfillment_mode==='manual')throw Error('Dodo license configuration mismatch');
  return {plan:plan.id,amount:plan.amount,interval:plan.interval,activationLimit:plan.maxDevices,currency:price.currency,productId:expected.productId,entitlementId:expected.entitlementId,verified:true};
+}
+// Inspect only public product/entitlement copy and metadata; never log provider
+// payloads. This is a release guard, not a substitute for dashboard review.
+export function assertDesktopProductCopy(product){
+ const copy={name:product?.name,description:product?.description,metadata:product?.metadata,
+  entitlements:product?.entitlements?.map(e=>({name:e.name,description:e.description,metadata:e.metadata,integration_config:e.integration_config}))};
+ const normalized=JSON.stringify(copy).normalize('NFKC').replace(/[^a-z0-9]+/gi,' ').toLowerCase();
+ if(/(?:unlock\s*pdf|pdf\s*unlock|decrypt\s*pdf|pdf\s*decrypt|unprotect\s*pdf|remove\s*pdf\s*password|bypass\s*pdf\s*password|strip\s*pdf\s*security)/.test(normalized))throw Error('Dodo product copy includes an excluded Desktop capability');
 }
 // Read-only API checks; never creates products, checkout sessions or charges.
 export async function fetchVerifiedCatalog(dodo,config){

@@ -1,5 +1,8 @@
 setTimeout(async () => {
   await document.fonts.ready;
+  // A background diagnostic may restore a workspace. Inspect the same home
+  // geometry after native state restoration; Rust separately verifies retention.
+  document.querySelector('[data-page="home"]')?.click();
   const width = innerWidth;
   const height = innerHeight;
   const layout = {

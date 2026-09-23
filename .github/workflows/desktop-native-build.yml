@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: ['codex/desktop-*']
-    paths: ['desktop/**', 'src/data/liveTools.ts', '.github/workflows/desktop-native-build.yml']
+    paths: ['desktop/**', 'src/**', 'public/**', 'package.json', 'package-lock.json', '.github/workflows/desktop-native-build.yml']
 
 permissions:
   contents: read
@@ -33,13 +33,15 @@ jobs:
             bundles: deb,appimage
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    env:
+      SORA_BROWSER_CHANNEL: chromium
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: '24.19.0'
+          node-version: '24.21.0'
           cache: npm
       - name: Install Linux native libraries
         if: runner.os == 'Linux'
@@ -53,28 +55,41 @@ jobs:
           rustup default 1.98.1
           rustup target add ${{ matrix.target }}
       - run: npm ci
+      - name: Verify native runner and bundled runtime architecture
+        run: node desktop/scripts/verify-native-target.mjs ${{ matrix.target }}
+      - name: Install browser for actual processing form tests
+        run: npx playwright install --with-deps chromium
+      - name: Prepare checksum-pinned background model for local tests
+        run: node desktop/scripts/sync-background-model.mjs --download
       - name: Verify shared processing, licensing and release policy
         run: node --test desktop/tests/*.test.mjs
       - name: Build independent interface
         run: node desktop/scripts/build-native-ui.mjs
       - name: Verify isolated processing package
         run: node desktop/scripts/verify-processing-pack.mjs
+      - name: Verify retained OCR CPU fallback engines
+        run: node desktop/scripts/verify-ocr-fallbacks.mjs
+      - name: Measure processing resources for this platform
+        run: node desktop/scripts/measure-processing-pack.mjs
       - name: Native host tests
         run: cargo test --locked --manifest-path desktop/native/Cargo.toml --target ${{ matrix.target }}
       - name: Install pinned native packaging CLI
         run: npm install --global @tauri-apps/cli@2.11.4
       - name: Build platform package
-        uses: tauri-apps/tauri-action@v1
+        working-directory: desktop/native
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_SIGNING_IDENTITY: '-'
-        with:
-          projectPath: desktop/native
-          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
-          # No tag/release ID: candidate artifacts only, never public releases.
+        run: tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+        # Direct local packaging only: no release API or signing credentials.
+      - name: Verify Windows resource staging
+        if: runner.os == 'Windows'
+        run: node desktop/scripts/verify-windows-payload.mjs
       - name: Inspect macOS ad-hoc bundle
         if: runner.os == 'macOS'
         run: node desktop/scripts/inspect-macos-bundle.mjs desktop/native/target/${{ matrix.target }}/release/bundle/macos
+      - name: Verify actual packaged Unix engines and executable runtime
+        if: runner.os != 'Windows'
+        run: node desktop/scripts/verify-unix-payload.mjs ${{ matrix.target }}
       - name: Test actual native window lifecycle on macOS
         if: runner.os == 'macOS'
         run: node desktop/scripts/run-native-smoke.mjs 'desktop/native/target/${{ matrix.target }}/release/bundle/macos/SoraFiles Desktop.app/Contents/MacOS/sorafiles-desktop'
@@ -99,6 +114,11 @@ jobs:
             .artifacts/macos-bundle-inspection.json
             .artifacts/native-smoke-*.json
             .artifacts/processing-pack-verification.json
+            .artifacts/ocr-fallback-verification.json
+            .artifacts/processing-pack-size.json
+            .artifacts/native-target-verification.json
+            .artifacts/windows-payload-verification.json
+            .artifacts/unix-payload-verification.json
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 14

@@ -1,0 +1,10 @@
+{
+  "recordedAt": "2026-09-17T17:10:05.813Z",
+  "status": "PASS",
+  "resourceFiles": 1974,
+  "resourceBytes": 315993683,
+  "nativeBytes": 4787712,
+  "totalStagedPayloadBytes": 320781395,
+  "compression": "NSIS solid LZMA",
+  "scope": "NSIS resource staging equals generated pack byte-for-byte; excludes installed allocation, uninstaller, shortcuts and shared WebView2; not installer extraction or installation verification"
+}

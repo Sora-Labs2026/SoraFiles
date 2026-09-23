@@ -1,6 +1,9 @@
 use serde_json::{json,Value};
 use std::{io::{BufRead,BufReader,Read,Write},path::Path,process::{Command,Stdio},sync::{mpsc,atomic::{AtomicBool,Ordering}},time::{Duration,Instant}};
 use crate::{license_host,vault::{self,OsKeyStore,KeyStore}};
+// A bounded batch may include 256 output names and engine warnings. Requests
+// remain limited to 64 KiB; no full output file bytes travel through this pipe.
+const MAX_RESPONSE:u64=4*1024*1024;
 
 pub fn run(directory:&Path,resources:&Path,params:Value,cancel:&AtomicBool,on_progress:impl Fn(Value))->Result<Value,String>{
  let (runtime,entry,config)=license_host::locations(resources)?;
@@ -9,22 +12,35 @@ pub fn run(directory:&Path,resources:&Path,params:Value,cancel:&AtomicBool,on_pr
 pub(crate) fn run_component(directory:&Path,runtime:&Path,entry:&Path,config:Value,params:Value,cancel:&AtomicBool,on_progress:impl Fn(Value),store:&impl KeyStore)->Result<Value,String>{
  let state=vault::load(directory,store)?.ok_or("Start a trial or activate a license first")?;
  let state:Value=serde_json::from_slice(&state).map_err(|_|"Private state is damaged")?;license_host::validate_state(&state)?;
+ if cancel.load(Ordering::SeqCst){return Ok(json!({"state":"cancelled"}));}
+ // Keep these alive until the component has exited, including cancellation and
+ // error cleanup. No renderer-controlled path bypasses this Windows boundary.
+ #[cfg(windows)] let _pins=crate::file_pins::FilePins::for_request(&params)?;
  let mut command=Command::new(runtime);command.arg(entry).env_clear().stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
  for name in ["SystemRoot","WINDIR","TEMP","TMP","TMPDIR"]{if let Some(value)=std::env::var_os(name){command.env(name,value);}}
  #[cfg(windows)] {use std::os::windows::process::CommandExt;command.creation_flags(0x08000000);}
  let mut child=command.spawn().map_err(|_|"Processing component could not start")?;
+ #[cfg(windows)] let process_job=crate::process_job::ProcessJob::attach(&mut child)?;
  let mut input=child.stdin.take().ok_or("Processing connection unavailable")?;let output=child.stdout.take().ok_or("Processing connection unavailable")?;
  let (sender,receiver)=mpsc::sync_channel(2);
- let reader=std::thread::spawn(move||{let mut reader=BufReader::new(output);loop{let mut line=Vec::new();if !matches!(reader.by_ref().take(65537).read_until(b'\n',&mut line),Ok(n) if n>0&&n<=65536){break;}if sender.send(line).is_err(){break;}}});
+ let reader=std::thread::spawn(move||{let mut reader=BufReader::new(output);loop{let mut line=Vec::new();if !matches!(reader.by_ref().take(MAX_RESPONSE+1).read_until(b'\n',&mut line),Ok(n) if n>0&&n<=MAX_RESPONSE as usize){break;}if sender.send(line).is_err(){break;}}});
  let started=Instant::now();let outcome=(||{
-  let mut request=params;request["type"]=json!("process");request["state"]=state;request["config"]=config;write_frame(&mut input,&request)?;
+  let mut request=params;request["type"]=json!("process");request["state"]=state;request["config"]=config;request["nativePublication"]=json!(cfg!(windows));write_frame(&mut input,&request)?;
   let mut cancelled=false;let mut writes=0;
+  #[cfg(windows)]let mut publications=0;
   loop{
    if started.elapsed()>Duration::from_secs(1800){return Err("Processing stopped responding. Check the output folder before trying again.".into());}
    if cancel.load(Ordering::SeqCst)&&!cancelled {write_frame(&mut input,&json!({"type":"cancel"}))?;cancelled=true;}
    let line=match receiver.recv_timeout(Duration::from_millis(100)){Ok(line)=>line,Err(mpsc::RecvTimeoutError::Timeout)=>continue,Err(_)=>return Err("Processing closed unexpectedly. Check the output folder before trying again.".into())};
    let message:Value=serde_json::from_slice(&line).map_err(|_|"Invalid processing response")?;
    match message["type"].as_str(){
+    #[cfg(windows)]Some("publish")=>{
+     publications+=1;if publications>256{return Err("Too many output publications".into());}
+     // The engine has already entered its commit boundary. Do not turn a
+     // successfully published file into a cancelled result.
+     let result=crate::publication::publish(&message,&request).unwrap_or_else(|_|json!({"type":"published","ok":false}));
+     write_frame(&mut input,&result)?;
+    },
     Some("save")=>{writes+=1;if writes>2{return Err("Unexpected private write".into());}let state=&message["state"];license_host::validate_state(state)?;vault::save(directory,&serde_json::to_vec(state).map_err(|_|"Invalid private state")?,store)?;write_frame(&mut input,&json!({"type":"saved","ok":true}))?;},
     Some("progress")=>{if matches!(message["state"].as_str(),Some("queued"|"running"|"completed"|"failed"|"cancelled")){on_progress(json!({"state":message["state"]}));}},
     Some("result")=>{let result=message["result"].clone();validate_result(&result)?;return Ok(result);},
@@ -33,19 +49,43 @@ pub(crate) fn run_component(directory:&Path,runtime:&Path,entry:&Path,config:Val
    }
   }
  })();
- drop(input);let _=child.kill();let _=child.wait();drop(receiver);let _=reader.join();outcome
+ drop(input);
+ #[cfg(windows)] drop(process_job);
+ let _=child.kill();let _=child.wait();drop(receiver);let _=reader.join();outcome
 }
 fn write_frame(writer:&mut impl Write,value:&Value)->Result<(),String>{let bytes=serde_json::to_vec(value).map_err(|_|"Invalid request")?;if bytes.len()>65535{return Err("Choose fewer files for this job".into());}writer.write_all(&bytes).and_then(|_|writer.write_all(b"\n")).and_then(|_|writer.flush()).map_err(|_|"Processing connection closed".into())}
 fn validate_result(value:&Value)->Result<(),String>{
  let fields=value.as_object().ok_or("Invalid processing result")?;
+ if value["state"]=="batch"{
+  let results=value["results"].as_array().ok_or("Invalid batch results")?;
+  if fields.len()!=2||results.is_empty()||results.len()>256{return Err("Invalid batch results".into());}
+  for (index,row) in results.iter().enumerate(){
+   let fields=row.as_object().ok_or("Invalid batch result")?;
+   if row["index"].as_u64()!=Some(index as u64){return Err("Invalid batch index".into());}
+   if matches!(row["state"].as_str(),Some("failed"|"cancelled"))&&fields.len()==2{continue;}
+   if row["state"]!="completed"||fields.keys().any(|key|!matches!(key.as_str(),"index"|"state"|"name"|"bytes"|"warnings"|"cleanupPending"))
+    ||!row["name"].as_str().is_some_and(|name|!name.is_empty()&&name.len()<=1024&&!name.contains(['/', '\\'])&&!name.chars().any(char::is_control))
+    ||!valid_output_details(row){return Err("Invalid batch output".into());}
+  }
+  return Ok(());
+ }
  if value["state"]=="cancelled"&&fields.len()==1{return Ok(());}
  if value["state"]!="completed"||fields.keys().any(|key|!matches!(key.as_str(),"state"|"path"|"bytes"|"warnings"|"cleanupPending"))
   ||!value["path"].as_str().is_some_and(|path|path.len()<32768&&Path::new(path).is_absolute())
-  ||!value["bytes"].as_u64().is_some_and(|size|size>0&&size<=256*1024*1024)
-  ||fields.get("cleanupPending").is_some_and(|flag|!flag.is_boolean())
-  ||fields.get("warnings").is_some_and(|warnings|!warnings.as_array().is_some_and(|list|list.len()<=16&&list.iter().all(|text|text.as_str().is_some_and(|s|s.len()<=512)))) {return Err("Invalid processing result".into());}
+  ||!valid_output_details(value) {return Err("Invalid processing result".into());}
  Ok(())
+}
+fn valid_output_details(value:&Value)->bool{
+ value["bytes"].as_u64().is_some_and(|size|size>0&&size<=256*1024*1024)
+ &&value.get("cleanupPending").is_none_or(Value::is_boolean)
+ &&value.get("warnings").is_none_or(|warnings|warnings.as_array().is_some_and(|list|list.len()<=16&&list.iter().all(|text|text.as_str().is_some_and(|s|s.len()<=512))))
 }
 #[cfg(test)]mod tests{use super::*;
  #[test]fn processing_results_are_bounded(){assert!(validate_result(&json!({"state":"cancelled"})).is_ok());for result in [json!({"state":"completed","path":"relative.pdf","bytes":1}),json!({"state":"completed","path":"/tmp/file.pdf","bytes":1,"licenseKey":"secret"}),json!({"state":"cancelled","bytes":1})]{assert!(validate_result(&result).is_err());}}
+ #[test]fn batch_results_preserve_order_and_reject_paths_and_private_fields(){
+  let valid=json!({"state":"batch","results":[{"index":0,"state":"completed","name":"saved.pdf","bytes":12},{"index":1,"state":"failed"},{"index":2,"state":"cancelled"}]});
+  assert!(validate_result(&valid).is_ok());
+  for row in [json!({"index":1,"state":"failed"}),json!({"index":0,"state":"completed","name":"../saved.pdf","bytes":12}),json!({"index":0,"state":"failed","licenseKey":"secret"}),json!({"index":0,"state":"completed","name":"saved.pdf","bytes":0})]{assert!(validate_result(&json!({"state":"batch","results":[row]})).is_err());}
+  assert!(validate_result(&json!({"state":"batch","results":[]})).is_err());
+ }
 }

@@ -1,7 +1,8 @@
+import {manualAdjustmentKeys} from '../shared/image-adjustments.mjs';
 export function imageOptions(value) {
  if(!value||Object.getPrototypeOf(value)!==Object.prototype)throw Error('Choose image options');
- const {action,format='png',quality=85,width,height,fit='inside',allowEnlargement=false,background='#ffffff',crop,rotation=0,flip=false,flop=false,page}=value;
- const fields=['action','format','quality','width','height','fit','allowEnlargement','background','crop','rotation','flip','flop','page'];
+ const {action,format='png',quality=85,width,height,fit='inside',allowEnlargement=false,background='#ffffff',crop,rotation=0,flip=false,flop=false,page,adjustments}=value;
+ const fields=['action','format','quality','width','height','fit','allowEnlargement','background','crop','rotation','flip','flop','page','adjustments'];
  if(Object.keys(value).some(key=>!fields.includes(key))||!['decode','convert','compress','resize','edit'].includes(action)||!['png','jpeg','webp'].includes(format)
   ||!Number.isInteger(quality)||quality<40||quality>100||!['inside','contain','cover'].includes(fit)||typeof allowEnlargement!=='boolean'
   ||typeof background!=='string'||!/^#[a-f0-9]{6}$/i.test(background)||![0,90,180,270].includes(rotation)||typeof flip!=='boolean'||typeof flop!=='boolean'
@@ -10,5 +11,6 @@ export function imageOptions(value) {
  if(width&&height&&width*height>25_000_000||action==='resize'&&!width&&!height)throw Error('Choose a smaller image size');
  if(['decode','convert','compress'].includes(action)&&[width,height,crop].some(v=>v!==undefined)||action!=='edit'&&(rotation||flip||flop))throw Error('These edits need the image editor');
  if(crop&&(!['left','top','width','height'].every(k=>Number.isSafeInteger(crop[k]))||Object.keys(crop).length!==4||crop.left<0||crop.top<0||crop.width<1||crop.height<1))throw Error('Choose a valid crop');
- return {action,format,quality,width,height,fit,allowEnlargement,background,crop,rotation,flip,flop,page};
+ if(adjustments!==undefined&&(action!=='edit'||!adjustments||Object.getPrototypeOf(adjustments)!==Object.prototype||Object.entries(adjustments).some(([key,value])=>!manualAdjustmentKeys.includes(key)||typeof value!=='number'||!Number.isFinite(value)||value>100||value<(['blackPoint','definition','sharpness','noiseReduction'].includes(key)?0:-100))))throw Error('Choose valid image adjustments');
+ return {action,format,quality,width,height,fit,allowEnlargement,background,crop,rotation,flip,flop,page,...adjustments===undefined?{}:{adjustments}};
 }

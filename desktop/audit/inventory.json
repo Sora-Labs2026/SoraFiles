@@ -1,5 +1,7 @@
 {
-  "recordedAt": "2026-09-13T12:42:19.397Z",
+  "recordedAt": "2026-09-17T12:16:20.332Z",
+  "webToolCount": 26,
+  "desktopEligibleToolCount": 25,
   "status": "RELEASE BLOCKED: source/compliance packs and native-host prototypes incomplete",
   "registryHash": "acc37710516bde0b22558c0cb89ba08cb8bf44cc444e3642d4f272bc4c69bd3e",
   "tools": [
@@ -7,6 +9,10 @@
       "id": "compress-pdf",
       "name": "Compress PDF",
       "route": "/pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "compressPdf",
       "inputFormats": [
         "PDF"
@@ -68,13 +74,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "No guaranteed reduction; signed originals kept; eligible image compression can reduce detail.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "merge-pdf",
       "name": "Merge PDF",
       "route": "/merge-pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "mergePdf",
       "inputFormats": [
         "PDF"
@@ -114,13 +124,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "split-pdf",
       "name": "Split PDF",
       "route": "/split-pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "splitPdf",
       "inputFormats": [
         "PDF"
@@ -173,13 +187,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "rotate-pdf",
       "name": "Rotate PDF",
       "route": "/rotate-pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "rotatePdf",
       "inputFormats": [
         "PDF"
@@ -219,13 +237,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "remove-pages",
       "name": "Remove Pages",
       "route": "/remove-pages",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "removePagesPdf",
       "inputFormats": [
         "PDF"
@@ -265,13 +287,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "pdf-to-jpg",
       "name": "PDF to JPG",
       "route": "/pdf-to-jpg",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "pdfToImages",
       "inputFormats": [
         "PDF"
@@ -324,13 +350,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "jpg-to-pdf",
       "name": "JPG to PDF",
       "route": "/jpg-to-pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "imagesToPdf",
       "inputFormats": [
         "JPG",
@@ -371,13 +401,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "pdf-to-word",
       "name": "PDF to Word",
       "route": "/pdf-to-word",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "pdfToDocx",
       "inputFormats": [
         "PDF"
@@ -453,13 +487,17 @@
       "packaging": "Install chosen OCR language packs before offline use.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Editable reconstruction changes layout; visual output uses page images.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "word-to-pdf",
       "name": "Word to PDF",
       "route": "/word-to-pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "docxToPdf",
       "inputFormats": [
         "DOCX"
@@ -487,13 +525,17 @@
       "packaging": "Optional full Office component pack; native LibreOffice sidecar is a candidate, not yet adopted.",
       "nativeReplacement": "Native LibreOffice may reduce browser constraints; benchmark before choosing.",
       "limitations": "Fonts and unsupported document features can change layout; current runtime is fetched from the ZetaJS CDN.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "watermark-pdf",
       "name": "Watermark PDF",
       "route": "/watermark-pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "watermarkPdf",
       "inputFormats": [
         "PDF"
@@ -533,13 +575,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "page-numbers",
       "name": "Page Numbers",
       "route": "/page-numbers",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "pageNumbersPdf",
       "inputFormats": [
         "PDF"
@@ -579,13 +625,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "sign-pdf",
       "name": "Sign PDF",
       "route": "/sign-pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "signPdf",
       "inputFormats": [
         "PDF"
@@ -625,13 +675,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Visual signature, not a certificate-backed digital signature.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "image-converter",
       "name": "Image Converter",
       "route": "/image-converter",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "convertImages",
       "inputFormats": [
         "JPG",
@@ -769,13 +823,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Selected frame/page only; PSD flattened; exotic codec variants require independent checks.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "compress-image",
       "name": "Compress Image",
       "route": "/compress-image",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "compressImages",
       "inputFormats": [
         "JPG",
@@ -869,13 +927,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "heic-to-jpg",
       "name": "HEIC to JPG",
       "route": "/heic-to-jpg",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "heicToJpg",
       "inputFormats": [
         "HEIC",
@@ -916,13 +978,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "HEVC decoder/license and patent considerations; HDR/color conversion needs validation.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "edit-image",
       "name": "Edit Image",
       "route": "/edit-image",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "Canvas / shared image adjustments",
       "inputFormats": [
         "JPG",
@@ -941,13 +1007,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "remove-background",
       "name": "Remove Background",
       "route": "/remove-background",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "imgly-isnet-quint8",
       "inputFormats": [
         "JPG",
@@ -988,13 +1058,17 @@
       "packaging": "Optional installed model pack; unload worker process after job.",
       "nativeReplacement": "Native ONNX is a candidate; preserve alpha/quality benchmark.",
       "limitations": "Matting has difficult-edge limitations; solid cleanup can remove matching subject colors.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "protect-pdf",
       "name": "Protect PDF",
       "route": "/protect-pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "protectPdf",
       "inputFormats": [
         "PDF"
@@ -1046,13 +1120,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "unlock-pdf",
       "name": "Unlock PDF",
       "route": "/unlock-pdf",
+      "availability": {
+        "web": true,
+        "desktop": false
+      },
       "engine": "unlockPdf",
       "inputFormats": [
         "PDF"
@@ -1116,13 +1194,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "Intentionally excluded from Desktop and Dodo-powered paid offerings for payment-provider compliance. Free Web only.",
       "releaseCleared": false
     },
     {
       "id": "repair-pdf",
       "name": "Repair PDF",
       "route": "/repair-pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "repairPdf",
       "inputFormats": [
         "PDF"
@@ -1162,13 +1244,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Best-effort rewrite cannot reconstruct arbitrary missing bytes.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "metadata-remover",
       "name": "Metadata Remover",
       "route": "/metadata-remover",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "removeMetadata",
       "inputFormats": [
         "PDF",
@@ -1220,13 +1306,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Selected fields only; PDF dates reset; no visible redaction; JPEG orientation can change.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "pdf-to-excel",
       "name": "PDF to Excel",
       "route": "/pdf-to-excel",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "pdfToExcel",
       "inputFormats": [
         "PDF"
@@ -1278,13 +1368,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Inferred tables are not original spreadsheet formulas; visual mode is not editable table reconstruction.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "excel-to-pdf",
       "name": "Excel to PDF",
       "route": "/excel-to-pdf",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "excelToPdf",
       "inputFormats": [
         "XLSX",
@@ -1326,13 +1420,17 @@
       "packaging": "Optional full Office component pack; native LibreOffice sidecar is a candidate, not yet adopted.",
       "nativeReplacement": "Native LibreOffice may reduce browser constraints; benchmark before choosing.",
       "limitations": "Print areas, fonts, pagination and unsupported spreadsheet features require inspection; Office CDN runtime is not bundled.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "pdf-ocr",
       "name": "PDF OCR",
       "route": "/pdf-ocr",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "ocr",
       "inputFormats": [
         "PDF",
@@ -1400,13 +1498,17 @@
       "packaging": "Install chosen OCR language packs before offline use.",
       "nativeReplacement": "Native OCR plus positioned Unicode text layer is a candidate.",
       "limitations": "Recognition errors; current added PDF text has restricted encoding and is not word aligned.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "resize-image",
       "name": "Resize Image",
       "route": "/resize-image",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "jsquashResize",
       "inputFormats": [
         "JPG",
@@ -1438,13 +1540,17 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     },
     {
       "id": "doc-scanner",
       "name": "Doc Scanner",
       "route": "/doc-scanner",
+      "availability": {
+        "web": true,
+        "desktop": true
+      },
       "engine": "scanic",
       "inputFormats": [
         "JPG",
@@ -1488,7 +1594,7 @@
       "packaging": "Bundle local assets; run only within authorized job boundary.",
       "nativeReplacement": "Reuse tested engine first; replace only with measured benefit.",
       "limitations": "Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.",
-      "desktopPath": "Engine extraction and native-host prototype pending; not claimed shipped.",
+      "desktopPath": "See capability-claims.json for current scoped engine evidence; not claimed shipped.",
       "releaseCleared": false
     }
   ],

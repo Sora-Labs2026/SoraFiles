@@ -21,6 +21,10 @@ keyring = "=4.2.0"
 aes-gcm = "=0.10.3"
 getrandom = "=0.3.4"
 zeroize = "=1.8.2"
+sha2 = "=0.10.9"
+
+[target.'cfg(windows)'.dependencies]
+winreg = { version = "=0.55.0", features = ["transactions"] }
 
 [profile.release]
 codegen-units = 1

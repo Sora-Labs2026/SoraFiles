@@ -1,13 +1,12 @@
 {
   "schema": 1,
   "macos": {
-    "signing": "ad-hoc",
-    "notarized": false,
-    "installation": "gatekeeper-approval",
+    "signing": "signed",
+    "notarized": true,
+    "installation": "standard",
     "updaterEligible": false,
-    "approvalInstructions": "https://sorafiles.com/desktop/help#macos-open-anyway",
     "architectures": ["arm64", "x64"],
-    "ownerSteering": "Use Gatekeeper Open Anyway for first launch; do not require an Apple Developer certificate."
+    "ownerSteering": "September 17 recovery prompt: require Developer ID signing, notarization and native validation before publication. Ad-hoc candidates are local/CI tests only."
   },
   "linux": {
     "initialBuildTarget": "ubuntu-22.04",

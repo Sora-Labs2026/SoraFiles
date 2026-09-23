@@ -24,6 +24,6 @@
     "shortDescription": "Local PDF and image tools",
     "icon": ["../../public/icon-192.png", "../../public/favicon.ico"],
     "macOS": {"signingIdentity":"-","minimumSystemVersion":"13.0"},
-    "windows": {"nsis":{"installMode":"currentUser"}}
+    "windows": {"nsis":{"installMode":"currentUser","installerHooks":"installer-hooks.nsh"}}
   }
 }

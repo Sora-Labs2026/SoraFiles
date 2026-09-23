@@ -26,7 +26,7 @@ function stripJpegMetadata(bytes) {
     if (privateSegment) removed += 1; else parts.push(bytes.slice(offset, end));
     offset = end;
   }
-  return { bytes: concatBytes(parts), removed, detail: `Removed ${removed} EXIF/XMP/IPTC/comment ${removed === 1 ? 'segment' : 'segments'} without re-encoding pixels.` };
+  return { bytes: concatBytes(parts), removed, detail: `Removed ${removed} hidden detail ${removed === 1 ? 'group' : 'groups'} without changing the image pixels.` };
 }
 
 function stripPngMetadata(bytes) {
@@ -40,7 +40,7 @@ function stripPngMetadata(bytes) {
     offset = end;
     if (type === 'IEND') break;
   }
-  return { bytes: concatBytes(parts), removed, detail: `Removed ${removed} textual/EXIF/time ${removed === 1 ? 'chunk' : 'chunks'} without re-encoding pixels.` };
+  return { bytes: concatBytes(parts), removed, detail: `Removed ${removed} hidden detail ${removed === 1 ? 'group' : 'groups'} without changing the image pixels.` };
 }
 
 function stripWebpMetadata(bytes) {
@@ -59,7 +59,7 @@ function stripWebpMetadata(bytes) {
   }
   const body = concatBytes(chunks); const header = new Uint8Array(12);
   header.set(new TextEncoder().encode('RIFF'), 0); new DataView(header.buffer).setUint32(4, body.length + 4, true); header.set(new TextEncoder().encode('WEBP'), 8);
-  return { bytes: concatBytes([header, body]), removed, detail: `Removed ${removed} EXIF/XMP ${removed === 1 ? 'chunk' : 'chunks'} without re-encoding pixels.` };
+  return { bytes: concatBytes([header, body]), removed, detail: `Removed ${removed} hidden detail ${removed === 1 ? 'group' : 'groups'} without changing the image pixels.` };
 }
 
 export async function stripImageMeta(file) {

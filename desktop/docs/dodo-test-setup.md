@@ -1,8 +1,8 @@
 # Dodo test setup
 
-The owner created a separate SoraFiles business and completed KYC. Bank verification is pending the owner's support request about Nepal bank codes. Do not guess the bank code or submit the bank form. Continue in Test Mode only until live configuration is ready.
+September 17: Product Info, Identity Verification and Bank Verification are VERIFIED according to the owner. Do not repeat onboarding. Historical test-product observations below have not been independently rechecked on this PC; live products, currency, credentials, webhooks, checkout and email delivery still need separate validation.
 
-The SoraFiles business permits creating Test Mode products and license-key entitlements despite pending bank verification. This does not establish live payment or payout readiness.
+Verified onboarding alone does not establish live payment or payout readiness.
 
 ## Observed test products
 

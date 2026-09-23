@@ -6,7 +6,7 @@ import {imagesToPdf} from './images-pdf.mjs';
 
 // Trusted native-host integration surface. UI submits opaque selection IDs; only the host
 // resolves paths, reads protected entitlement state, selects output folders and writes files.
-// Node writer is a reference adapter; native Windows pinned-handle writer integration pending.
+// Windows native hosting installs pinned, verified-by-handle output publication.
 export function createPdfJobQueue({resolveSelection,readLicenseState,selectOutputFolder=async source=>dirname(source),writer=saveOutput,onChange=()=>{},onProgress=()=>{}}){
  const engines={};
  for(const tool of ['merge-pdf','split-pdf','rotate-pdf','remove-pages','page-numbers','watermark-pdf','sign-pdf','jpg-to-pdf'])engines[tool]=async(request,{signal,commit})=>{

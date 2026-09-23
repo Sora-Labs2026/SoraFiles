@@ -1,6 +1,8 @@
 export interface PdfTextItemLike {
   str: string;
   transform?: number[];
+  width?: number;
+  height?: number;
   hasEOL?: boolean;
 }
 
@@ -12,45 +14,54 @@ export interface ClassifiedPageText {
 
 export function groupTextItems(items: PdfTextItemLike[]): string[] {
   const lines: string[] = [];
-  let currentLine: string[] = [];
+  let currentLine: PdfTextItemLike[] = [];
   let currentY: number | null = null;
 
+  const flush = () => {
+    if (!currentLine.length) return;
+    const ordered = [...currentLine].sort((a, b) => (a.transform?.[4] ?? 0) - (b.transform?.[4] ?? 0));
+    let text = '';
+    let previousEnd: number | null = null;
+    let previousText = '';
+    for (const item of ordered) {
+      const raw = (item.str || '').normalize('NFC');
+      if (!raw.trim()) continue;
+      const x = item.transform?.[4];
+      const height = Math.max(1, Math.abs(item.height || item.transform?.[3] || 8));
+      if (text && typeof x === 'number' && previousEnd !== null) {
+        const gap = x - previousEnd;
+        if (gap > Math.max(14, height * 1.7)) text += '\t';
+        else if (gap > 1 && !/\s$/.test(previousText) && !/^\s/.test(raw)) text += ' ';
+      }
+      text += raw;
+      previousEnd = typeof x === 'number' && typeof item.width === 'number' && item.width > 0 ? x + item.width : null;
+      previousText = raw;
+    }
+    const lineText = text.split('\t').map((part) => part.trim().replace(/\s+/g, ' ')).filter(Boolean).join('\t');
+    if (lineText) lines.push(lineText);
+    currentLine = [];
+  };
+
   for (const item of items) {
-    const rawStr = (item.str || '').normalize('NFC');
     const y = item.transform && item.transform.length >= 6 ? item.transform[5] : null;
 
     if (currentY !== null && y !== null && Math.abs(y - currentY) > 2) {
-      const lineText = currentLine.join('').trim().replace(/\s+/g, ' ');
-      if (lineText.length > 0) {
-        lines.push(lineText);
-      }
-      currentLine = [];
+      flush();
     }
 
     if (y !== null) {
       currentY = y;
     }
 
-    if (rawStr) {
-      currentLine.push(rawStr);
-    }
+    currentLine.push(item);
 
     if (item.hasEOL) {
-      const lineText = currentLine.join('').trim().replace(/\s+/g, ' ');
-      if (lineText.length > 0) {
-        lines.push(lineText);
-      }
-      currentLine = [];
+      flush();
       currentY = null;
     }
   }
 
-  if (currentLine.length > 0) {
-    const lineText = currentLine.join('').trim().replace(/\s+/g, ' ');
-    if (lineText.length > 0) {
-      lines.push(lineText);
-    }
-  }
+  flush();
 
   return lines;
 }

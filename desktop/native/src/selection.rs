@@ -9,7 +9,7 @@ pub struct Selection { entries: Vec<(PathBuf, Selected)> }
 #[derive(Clone, Serialize)]
 pub struct SelectionResult { pub files: Vec<Selected>, pub rejected: bool }
 
-fn local_file(path: &Path) -> Result<(PathBuf, File, u64), &'static str> {
+pub(crate) fn local_file(path: &Path) -> Result<(PathBuf, File, u64), &'static str> {
     if !path.is_absolute() || path.to_string_lossy().starts_with("\\\\") || path.to_string_lossy().starts_with("//") { return Err("Choose a local file"); }
     let mut current = PathBuf::new();
     for part in path.components() {

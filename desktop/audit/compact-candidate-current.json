@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "target": "x86_64-pc-windows-msvc",
+  "version": "0.1.0",
+  "commit": null,
+  "run": null,
+  "builtAt": "2026-09-17T17:08:53Z",
+  "publicRelease": false,
+  "artifacts": [
+    {
+      "file": "nsis/SoraFiles Desktop_0.1.0_x64-setup.exe",
+      "bytes": 114955350,
+      "sha256": "5d72dd18f7e045ea90743614747077ec62d9822021f098e374076b3e16a8656d"
+    }
+  ],
+  "remaining": "Native runtime, full processing, licensing, install/uninstall and release clearance",
+  "verification": {
+    "buildExit": 0,
+    "authenticode": "NotSigned",
+    "installed": false,
+    "published": false,
+    "scope": "Includes image adjustments, OCR WebP and Canvas background update"
+  }
+}

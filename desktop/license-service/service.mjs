@@ -5,7 +5,7 @@ const reconciliationRequired=()=>Object.assign(Error('Activation requires reconc
 // Application layer, deliberately separate from HTTP and deploy-specific identity providers.
 // All public actions require device proof. No client-provided plan/status can issue a grant.
 export class LicenseService {
- constructor({store,guard,dodo,authority,signing,now=()=>Math.floor(Date.now()/1000)}){signEntitlement({configurationCheck:true},signing);store.pinActivationKey(guard.activationFingerprint(''));Object.assign(this,{store,guard,dodo,authority,signing,now});}
+ constructor({store,guard,dodo,authority,signing,now=()=>Math.floor(Date.now()/1000)}){signEntitlement({configurationCheck:true,features:['process']},signing);store.pinActivationKey(guard.activationFingerprint(''));Object.assign(this,{store,guard,dodo,authority,signing,now});}
  challenge(request){return this.guard.issue(request);}
  issue(license,deviceId,trial){return signEntitlement(entitlementClaims({license,deviceId,trial,now:this.now()}),this.signing);}
  async execute(action,request){
@@ -30,8 +30,8 @@ export class LicenseService {
     const state=await this.authority.resolve({customerId:previous.customer_id,licenseRef:previous.license_ref});
     if(state.ref!==previous.license_ref)throw Error('License reference mismatch');
     this.store.sync(state);
-    const license=this.store.activate(state.ref,deviceId,previous.instance_id,this.now(),{existingOnly:true});
-    return {licenseRef:state.ref,instanceId:previous.instance_id,entitlement:this.issue(license,deviceId)};
+    const entitlement=this.store.issueForDevice(state.ref,deviceId,previous.instance_id,this.now(),license=>this.issue(license,deviceId));
+    return {licenseRef:state.ref,instanceId:previous.instance_id,entitlement};
    }
    let activation;
    try{
@@ -51,9 +51,8 @@ export class LicenseService {
     const state=await this.authority.resolve({customerId:activation.customer.customer_id,licenseRef:activation.license_key_id});
     if(state.ref!==activation.license_key_id)throw Error('License reference mismatch');
     this.store.sync(state);this.store.bind(state.ref,activation.customer.customer_id);
-    const license=this.store.activate(state.ref,deviceId,activation.id,this.now(),{provisional:true});registered=true;
-    const entitlement=this.issue(license,deviceId);
-    this.store.finishActivation(fingerprint,deviceId,'complete');
+    this.store.activate(state.ref,deviceId,activation.id,this.now(),{provisional:true});registered=true;
+    const entitlement=this.store.finishActivation(fingerprint,deviceId,'complete',this.now(),current=>this.issue(current,deviceId));
     return {licenseRef:state.ref,instanceId:activation.id,entitlement};
    }catch(error){
     if(registered)this.store.rollbackActivation(activation.license_key_id,deviceId);
@@ -70,8 +69,7 @@ export class LicenseService {
   if(action==='refresh'){
    const valid=await this.dodo.validate(body.licenseKey,body.instanceId);if(valid?.valid!==true)throw Error('License no longer valid');
    this.store.sync(await this.authority.resolve({customerId:binding.customer_id,licenseRef:body.licenseRef}));
-   // Reuse the atomic activation check to enforce current status/period immediately before signing.
-   const license=this.store.activate(body.licenseRef,deviceId,body.instanceId,this.now(),{existingOnly:true});return {entitlement:this.issue(license,deviceId)};
+   const entitlement=this.store.issueForDevice(body.licenseRef,deviceId,body.instanceId,this.now(),license=>this.issue(license,deviceId));return {entitlement};
   }
   throw Error('Unknown license action');
  }

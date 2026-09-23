@@ -1,0 +1,20 @@
+{
+  "scope": "Browser Canvas and installed native Canvas letterbox, fixed synthetic 1600x1000 fixtures; preprocessing only",
+  "results": [
+    {
+      "fixture": "product",
+      "rgbaMAE": 0.000012636184692382812,
+      "maxDifference": 1
+    },
+    {
+      "fixture": "hair",
+      "rgbaMAE": 0.0004978179931640625,
+      "maxDifference": 1
+    },
+    {
+      "fixture": "soft-alpha",
+      "rgbaMAE": 0.002879619598388672,
+      "maxDifference": 1
+    }
+  ]
+}

@@ -23,7 +23,9 @@ public sealed class WindowsDirectoryPin : IDisposable {
     }
     void Pin(string path){
         // Sharing excludes DELETE: every opened ancestor remains in place while pinned.
-        var handle=CreateFile(path,0,3,IntPtr.Zero,3,0x02200000,IntPtr.Zero);
+        // Metadata-only access did not block an empty-directory rename in the
+        // September 17 Rust integration test. Read access enforces sharing.
+        var handle=CreateFile(path,0x80000000,3,IntPtr.Zero,3,0x02200000,IntPtr.Zero);
         if(handle.IsInvalid){handle.Dispose();throw new Win32Exception(Marshal.GetLastWin32Error());}
         handles.Add(handle);Attributes info;
         if(!GetFileInformationByHandleEx(handle,9,out info,8))throw new Win32Exception(Marshal.GetLastWin32Error());

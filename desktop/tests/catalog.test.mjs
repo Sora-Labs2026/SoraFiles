@@ -1,5 +1,12 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {amountInMinorUnits,verifyDodoProduct,fetchVerifiedCatalog} from '../license-service/catalog.mjs';import {plans} from '../shared/plans.mjs';
 const product=(p,currency='EUR')=>({product_id:p.id,is_recurring:p.recurring,price:{currency,tax_inclusive:true,price:amountInMinorUnits(p.amount,currency),type:p.recurring?'recurring_price':'one_time_price',payment_frequency_count:1,payment_frequency_interval:p.interval==='monthly'?'Month':'Year'},entitlements:[{id:'ent-'+p.id,integration_type:'license_key',integration_config:{activations_limit:p.maxDevices,fulfillment_mode:'auto'}}]});
+test('Dodo catalog rejects excluded capabilities in paid product or entitlement copy',()=>{
+ const p=plans['personal-lifetime'],mapping={productId:p.id,entitlementId:'ent-'+p.id};
+ for(const patch of [x=>x.name='Desktop Unlock PDF',x=>x.description='Remove PDF Password',x=>x.metadata={pdf_unlock:true},x=>x.entitlements[0].name='Decrypt PDF',x=>x.entitlements[0].integration_config.features={unlock_pdf:true}]){
+  const item=product(p);patch(item);assert.throws(()=>verifyDodoProduct(p.id,item,mapping),/excluded Desktop capability/);
+ }
+ const item=product(p);item.description='Protect PDF and local file tools';assert.equal(verifyDodoProduct(p.id,item,mapping).plan,p.id);
+});
 test('all approved prices must include tax, including when the provider omits its tax setting',()=>{
  for(const p of Object.values(plans))for(const value of [false,undefined]){
   const item=product(p);item.price.tax_inclusive=value;

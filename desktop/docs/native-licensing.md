@@ -1,5 +1,8 @@
 # Native licensing connection
 
+> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. Production Mac releases require signing and notarization.
+
+
 The native interface now calls a restricted Rust licensing bridge for trial, activation, status, refresh, bound-device listing. An on-demand Node runtime communicates with Rust through private, bounded pipes. It exits after every action. Only public status fields enter the interface; private keys, license keys and signed entitlements remain in the native boundary.
 
 Rust stores a random 32-byte wrapping key in Windows Credential Manager, macOS Keychain or Linux Secret Service through pinned keyring 4.2.0. Device and license state use an authenticated AES-256-GCM encrypted file with a fresh nonce for each atomic replacement. The parent acknowledges a protected write before the child proceeds. Missing, locked or damaged storage fails closed, with no plaintext fallback.
@@ -17,6 +20,14 @@ The production license-service configuration intentionally has no verification k
 
 The encrypted state currently checks its final folder/file against symlinks and reparse points. It does not pin every ancestor against concurrent replacement or prevent restoration of a complete older valid encrypted record. Persistent rollback handling and recovery policy remain unfinished. Accountless trial history follows the device key and does not claim reinstall prevention.
 
-The licensing bridge is connected; the processing bridge is not. Runtime redistribution notices, all-platform secure-storage checks and installer lifecycle checks remain release gates. Candidate packaging alone is not a public release.
+Both licensing and processing bridges are connected. September 17 Windows tests
+cover real offline PDF batches through private pipes and a separate synthetic OS
+credential-store roundtrip. Runtime/OCR notices are included and verified;
+corresponding source/provenance, other platforms' secure storage and installed
+lifecycle checks remain release gates. Candidate packaging is not a public release.
 
-The owner-selected permanent binding policy removes all customer deactivation/transfer actions. A completed binding survives revocation and service restart; the native UI describes this before activation and on the active-license screen. A separate durable binding ledger enforces the total distinct-device cap.
+Ordinary revocation preserves completed bindings. Support can release a seat after
+verified provider deactivation and reserve it for an approved replacement. History
+is retained and future entitlement issuance to the old device is blocked. Existing
+permanently offline Lifetime entitlements cannot be remotely revoked. See
+`device-replacement.md`.

@@ -1,0 +1,400 @@
+{
+  "recordedAt": "2026-09-17T17:10:15.8365707Z",
+  "platform": "windows",
+  "arch": "x64",
+  "binarySha256": "e1fe871368513b763fd124e7b256a6387d5b50cc9b077a77af0465a94b17a5e5",
+  "status": "MEASURED",
+  "firstViewObservedMs": 1910,
+  "totalMs": 7811,
+  "samples": [
+    {
+      "elapsedMs": 150,
+      "workingSetBytes": 9072640,
+      "privateBytes": 1888256,
+      "cpuMs": 15.625
+    },
+    {
+      "elapsedMs": 488,
+      "workingSetBytes": 16060416,
+      "privateBytes": 3313664,
+      "cpuMs": 31.25
+    },
+    {
+      "elapsedMs": 611,
+      "workingSetBytes": 16060416,
+      "privateBytes": 3313664,
+      "cpuMs": 31.25
+    },
+    {
+      "elapsedMs": 721,
+      "workingSetBytes": 16060416,
+      "privateBytes": 3313664,
+      "cpuMs": 31.25
+    },
+    {
+      "elapsedMs": 837,
+      "workingSetBytes": 16060416,
+      "privateBytes": 3313664,
+      "cpuMs": 31.25
+    },
+    {
+      "elapsedMs": 954,
+      "workingSetBytes": 16060416,
+      "privateBytes": 3313664,
+      "cpuMs": 31.25
+    },
+    {
+      "elapsedMs": 1068,
+      "workingSetBytes": 16060416,
+      "privateBytes": 3313664,
+      "cpuMs": 31.25
+    },
+    {
+      "elapsedMs": 1190,
+      "workingSetBytes": 16060416,
+      "privateBytes": 3313664,
+      "cpuMs": 31.25
+    },
+    {
+      "elapsedMs": 1305,
+      "workingSetBytes": 16060416,
+      "privateBytes": 3313664,
+      "cpuMs": 31.25
+    },
+    {
+      "elapsedMs": 1429,
+      "workingSetBytes": 16470016,
+      "privateBytes": 3317760,
+      "cpuMs": 31.25
+    },
+    {
+      "elapsedMs": 1556,
+      "workingSetBytes": 16805888,
+      "privateBytes": 3338240,
+      "cpuMs": 46.875
+    },
+    {
+      "elapsedMs": 1679,
+      "workingSetBytes": 20004864,
+      "privateBytes": 4513792,
+      "cpuMs": 93.75
+    },
+    {
+      "elapsedMs": 1790,
+      "workingSetBytes": 20213760,
+      "privateBytes": 4526080,
+      "cpuMs": 93.75
+    },
+    {
+      "elapsedMs": 1905,
+      "workingSetBytes": 20541440,
+      "privateBytes": 4874240,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 2023,
+      "workingSetBytes": 20541440,
+      "privateBytes": 4874240,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 2137,
+      "workingSetBytes": 20541440,
+      "privateBytes": 4874240,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 2255,
+      "workingSetBytes": 20541440,
+      "privateBytes": 4874240,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 2365,
+      "workingSetBytes": 20541440,
+      "privateBytes": 4874240,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 2468,
+      "workingSetBytes": 20541440,
+      "privateBytes": 4874240,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 2573,
+      "workingSetBytes": 20541440,
+      "privateBytes": 4874240,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 2688,
+      "workingSetBytes": 20733952,
+      "privateBytes": 4919296,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 2805,
+      "workingSetBytes": 20688896,
+      "privateBytes": 4820992,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 2925,
+      "workingSetBytes": 20566016,
+      "privateBytes": 4820992,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 3038,
+      "workingSetBytes": 20566016,
+      "privateBytes": 4820992,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 3155,
+      "workingSetBytes": 20566016,
+      "privateBytes": 4820992,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 3273,
+      "workingSetBytes": 20566016,
+      "privateBytes": 4820992,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 3387,
+      "workingSetBytes": 20566016,
+      "privateBytes": 4820992,
+      "cpuMs": 109.375
+    },
+    {
+      "elapsedMs": 3497,
+      "workingSetBytes": 20619264,
+      "privateBytes": 4775936,
+      "cpuMs": 125
+    },
+    {
+      "elapsedMs": 3609,
+      "workingSetBytes": 20676608,
+      "privateBytes": 4775936,
+      "cpuMs": 125
+    },
+    {
+      "elapsedMs": 3721,
+      "workingSetBytes": 20807680,
+      "privateBytes": 4775936,
+      "cpuMs": 125
+    },
+    {
+      "elapsedMs": 3839,
+      "workingSetBytes": 20811776,
+      "privateBytes": 4775936,
+      "cpuMs": 125
+    },
+    {
+      "elapsedMs": 3951,
+      "workingSetBytes": 20660224,
+      "privateBytes": 4612096,
+      "cpuMs": 140.625
+    },
+    {
+      "elapsedMs": 4065,
+      "workingSetBytes": 20774912,
+      "privateBytes": 4739072,
+      "cpuMs": 156.25
+    },
+    {
+      "elapsedMs": 4173,
+      "workingSetBytes": 20824064,
+      "privateBytes": 4878336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 4289,
+      "workingSetBytes": 20824064,
+      "privateBytes": 4878336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 4404,
+      "workingSetBytes": 20824064,
+      "privateBytes": 4878336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 4509,
+      "workingSetBytes": 20824064,
+      "privateBytes": 4878336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 4620,
+      "workingSetBytes": 20824064,
+      "privateBytes": 4878336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 4757,
+      "workingSetBytes": 20824064,
+      "privateBytes": 4878336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 4874,
+      "workingSetBytes": 20824064,
+      "privateBytes": 4878336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 4998,
+      "workingSetBytes": 20959232,
+      "privateBytes": 5042176,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5115,
+      "workingSetBytes": 20877312,
+      "privateBytes": 4943872,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5226,
+      "workingSetBytes": 20746240,
+      "privateBytes": 4943872,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5346,
+      "workingSetBytes": 20746240,
+      "privateBytes": 4943872,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5454,
+      "workingSetBytes": 20746240,
+      "privateBytes": 4943872,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5563,
+      "workingSetBytes": 20746240,
+      "privateBytes": 4943872,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5671,
+      "workingSetBytes": 20746240,
+      "privateBytes": 4943872,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5787,
+      "workingSetBytes": 20729856,
+      "privateBytes": 4898816,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5896,
+      "workingSetBytes": 20856832,
+      "privateBytes": 4968448,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 6004,
+      "workingSetBytes": 20856832,
+      "privateBytes": 4968448,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 6123,
+      "workingSetBytes": 20987904,
+      "privateBytes": 4968448,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 6237,
+      "workingSetBytes": 20992000,
+      "privateBytes": 4972544,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 6351,
+      "workingSetBytes": 20885504,
+      "privateBytes": 4837376,
+      "cpuMs": 203.125
+    },
+    {
+      "elapsedMs": 6480,
+      "workingSetBytes": 20918272,
+      "privateBytes": 4890624,
+      "cpuMs": 203.125
+    },
+    {
+      "elapsedMs": 6596,
+      "workingSetBytes": 20918272,
+      "privateBytes": 4890624,
+      "cpuMs": 203.125
+    },
+    {
+      "elapsedMs": 6704,
+      "workingSetBytes": 20918272,
+      "privateBytes": 4890624,
+      "cpuMs": 203.125
+    },
+    {
+      "elapsedMs": 6816,
+      "workingSetBytes": 20918272,
+      "privateBytes": 4890624,
+      "cpuMs": 203.125
+    },
+    {
+      "elapsedMs": 6926,
+      "workingSetBytes": 20918272,
+      "privateBytes": 4890624,
+      "cpuMs": 203.125
+    },
+    {
+      "elapsedMs": 7041,
+      "workingSetBytes": 20918272,
+      "privateBytes": 4890624,
+      "cpuMs": 203.125
+    },
+    {
+      "elapsedMs": 7158,
+      "workingSetBytes": 20918272,
+      "privateBytes": 4890624,
+      "cpuMs": 203.125
+    },
+    {
+      "elapsedMs": 7272,
+      "workingSetBytes": 20918272,
+      "privateBytes": 4890624,
+      "cpuMs": 203.125
+    }
+  ],
+  "nativeLifecycle": {
+    "arch": "x86_64",
+    "backgroundJobState": false,
+    "closeReopenCycles": 2,
+    "nativeWindowLoads": 3,
+    "os": "windows",
+    "scope": "Native UI load and WebView destruction/recreation only; no engine, licensing or installer certification",
+    "status": "PASS",
+    "trayOnlyStartup": false,
+    "ui": {
+      "error": null,
+      "heading": "File tools for your desktop.",
+      "layout": {
+        "height": 900,
+        "overflowing": [],
+        "scrollWidth": 1180,
+        "width": 1180
+      },
+      "overflow": false,
+      "tools": 6
+    }
+  },
+  "scope": "Unsigned release candidate, hidden diagnostic window, three loads/two closes; first-view upper bound sampled every 100 ms; host process only, excludes WebView/process tree; not clean install, cold cache or sustained idle measurement"
+}

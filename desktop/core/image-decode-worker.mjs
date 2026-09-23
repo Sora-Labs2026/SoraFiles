@@ -1,5 +1,6 @@
 import sharp from 'sharp';
 import {imageOptions} from './image-options.mjs';
+import {applyManualAdjustments,normalizeManualAdjustments,hasManualAdjustments} from '../shared/image-adjustments.mjs';
 // This process has one job and exits. Disable the reusable image cache because
 // retaining pixels brings no benefit here. SVG/PDF and animated input are refused.
 sharp.cache(false);sharp.concurrency(1);
@@ -24,6 +25,12 @@ process.once('message',async message=>{
   if(options.rotation)image=image.rotate(options.rotation);
   if(options.flip)image=image.flip();if(options.flop)image=image.flop();
   if(options.width||options.height)image=image.resize({width:options.width,height:options.height,fit:options.fit,kernel:'lanczos3',withoutEnlargement:!options.allowEnlargement,background:options.background});
+  if(options.action==='edit'&&hasManualAdjustments(normalizeManualAdjustments(options.adjustments))){
+   const {ImageData}=await import('@napi-rs/canvas');globalThis.ImageData=ImageData;
+   const {data,info}=await image.ensureAlpha().raw().toBuffer({resolveWithObject:true});
+   const adjusted=applyManualAdjustments(new ImageData(new Uint8ClampedArray(data),info.width,info.height),options.adjustments,false);
+   image=sharp(adjusted.data,{raw:{width:info.width,height:info.height,channels:4}}).timeout({seconds:90});
+  }
   const format=options.action==='compress'?metadata.format:decode?'png':options.format;
   if(format==='jpeg')image=image.flatten({background:options.background}).jpeg({quality:options.quality,chromaSubsampling:'4:4:4',mozjpeg:true});
   else if(format==='webp')image=image.webp({quality:options.quality,effort:5});

@@ -1,6 +1,7 @@
 // Standard compact JWS with Ed25519; verification keys only in desktop distribution.
 import {createPublicKey,verify,createHash} from 'node:crypto';
 import {licensePlans as plans} from './license-plans.mjs';
+import {validDesktopFeatures} from './tool-policy.mjs';
 const decode=s=>{if(!/^[A-Za-z0-9_-]+$/.test(s))throw Error('Invalid token');return Buffer.from(s,'base64url');};
 export function deviceIdentity(publicKey){const key=createPublicKey(publicKey);if(key.asymmetricKeyType!=='ed25519')throw Error('Device key algorithm');return createHash('sha256').update(key.export({type:'spki',format:'der'})).digest('base64url');}
 export function verifyEntitlement(token,{keys,deviceId,now=Date.now(),lastTrustedTime=0,feature='process'}){
@@ -12,7 +13,7 @@ export function verifyEntitlement(token,{keys,deviceId,now=Date.now(),lastTruste
  // Separate processes can straddle a clock tick or have small clock offsets.
  // Tolerance applies only to the start boundary, never to expired access.
  if(e.schema!==1||e.iss!=='sorafiles-license-service'||e.aud!=='sorafiles-desktop'||e.deviceId!==deviceId||!e.jti||!Number.isSafeInteger(e.iat)||!Number.isSafeInteger(e.nbf)||e.iat>time+60||e.nbf>time+60)throw Error('Invalid entitlement claims');
- if(!Array.isArray(e.features)||!e.features.includes(feature))throw Error('Feature not authorized');
+ if(!validDesktopFeatures(e.features)||!e.features.includes(feature))throw Error('Feature not authorized');
  if(e.plan==='trial'){if(e.maxDevices!==1||!Number.isSafeInteger(e.exp)||e.exp>e.iat+7*86400)throw Error('Invalid trial');}
  else {const plan=plans[e.plan];if(!plan||e.maxDevices!==plan.maxDevices||e.edition!==plan.edition||!e.licenseRef)throw Error('Invalid plan');if(plan.interval==='lifetime'){if(e.exp!==null)throw Error('Lifetime requires permanent grant');}else if(!Number.isSafeInteger(e.exp))throw Error('Subscription expiry required');}
  if(e.exp!==null&&(!Number.isSafeInteger(e.exp)||e.exp<=time||e.exp<=e.nbf))throw Error('Entitlement expired');

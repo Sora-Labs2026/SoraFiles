@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-09-23T15:17:37.136Z",
+  "status": "PASS",
+  "scenario": "malformed-docx",
+  "native": {
+    "status": "FAILED",
+    "stage": "writer-import",
+    "outputs": 0,
+    "deniedRequests": 2,
+    "scope": "Synthetic local Office component only; no licensed processing route or installer certification"
+  },
+  "documents": [],
+  "failure": "Office component exit 1: ",
+  "scope": "Synthetic Office component with allowlisted local resources and denied external fetch; not a production tool, comprehensive hostile-input test, redistribution clearance or full parity certification"
+}

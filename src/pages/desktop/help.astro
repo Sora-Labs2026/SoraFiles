@@ -1,0 +1,15 @@
+---
+import DesktopLayout from '../../layouts/DesktopLayout.astro';
+---
+<DesktopLayout title="SoraFiles Desktop help" description="Availability, trial and license information for SoraFiles Desktop, currently in development." path="/desktop/help">
+  <section class="mx-auto max-w-3xl px-5 py-14 sm:px-6">
+    <h1 class="text-4xl font-extrabold tracking-tight">Desktop help</h1>
+    <div class="mt-9 space-y-8">
+      <section><h2 class="text-xl font-bold">Looking for an installer?</h2><p class="mt-3 leading-8 text-muted">Desktop has not been released yet. Installation and Quick Actions guides will accompany the tested platform builds.</p></section>
+      <section id="macos-open-anyway"><h2 class="text-xl font-bold">Opening SoraFiles on macOS</h2><p class="mt-3 leading-8 text-muted">The initial Mac build is not notarized by Apple and its developer identity is not verified by Apple. If macOS blocks the first launch, use the following steps only for a SoraFiles download you trust.</p><ol class="mt-4 list-decimal space-y-3 pl-6 leading-7 text-muted"><li>Open the DMG, drag SoraFiles Desktop to Applications, then try opening it.</li><li>Open System Settings, select Privacy &amp; Security, and scroll to the message about SoraFiles Desktop.</li><li>Select Open Anyway, then confirm Open when prompted.</li></ol><p class="mt-4 leading-7 text-muted">This approves this app; it does not notarize it. Managed Macs may require your administrator’s approval. If macOS reports that the app is damaged or will harm your computer, do not override that alert. See <a href="https://support.apple.com/en-us/102445" class="font-semibold text-violet underline underline-offset-4">Apple’s opening instructions</a>.</p></section>
+      <section><h2 class="text-xl font-bold">Trial and activation</h2><p class="mt-3 leading-8 text-muted">A free 7-day trial is planned. After the trial, processing will require a valid license. Personal covers one device; Team covers up to five. Device replacement and recovery are being completed before release. Activation is not open yet.</p></section>
+      <section><h2 class="text-xl font-bold">Where do I enter a promo code?</h2><p class="mt-3 leading-8 text-muted">Enter your discount code in Dodo checkout when purchasing Desktop. Eligible discounts will be applied there before payment.</p></section>
+      <section><h2 class="text-xl font-bold">Need to work on a file now?</h2><p class="mt-3 leading-8 text-muted"><a href="/tools" class="font-semibold text-violet underline underline-offset-4">The free web tools</a> remain available, with no Desktop purchase required.</p></section>
+    </div>
+  </section>
+</DesktopLayout>

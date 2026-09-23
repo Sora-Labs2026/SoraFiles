@@ -1,5 +1,5 @@
 {
-  "recordedAt": "2026-09-13T12:42:18.772Z",
+  "recordedAt": "2026-09-17T14:25:12.035Z",
   "scope": "Implementation evidence, not platform or release certification",
   "tools": [
     {
@@ -17,7 +17,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/pdf-core.test.mjs",
         "desktop/tests/pdf-jobs.test.mjs",
@@ -31,7 +31,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/pdf-core.test.mjs",
         "desktop/tests/pdf-jobs.test.mjs",
@@ -45,7 +45,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/pdf-core.test.mjs",
         "desktop/tests/pdf-jobs.test.mjs",
@@ -59,7 +59,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/pdf-core.test.mjs",
         "desktop/tests/pdf-jobs.test.mjs",
@@ -73,8 +73,11 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "not certified",
-      "evidence": [],
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
+      "evidence": [
+        "desktop/tests/pdf-raster.test.mjs",
+        ".artifacts/processing-pack-verification.json"
+      ],
       "verifiedEngineImprovementOverWeb": false,
       "permittedPublicClaim": "Desktop in development; no superiority claim."
     },
@@ -83,7 +86,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/images-pdf.test.mjs",
         "desktop/tests/pdf-jobs.test.mjs"
@@ -116,7 +119,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/pdf-overlays.test.mjs",
         "desktop/tests/pdf-jobs.test.mjs"
@@ -129,7 +132,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/page-numbers.test.mjs",
         "desktop/tests/pdf-jobs.test.mjs"
@@ -142,7 +145,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/pdf-overlays.test.mjs",
         "desktop/tests/pdf-jobs.test.mjs"
@@ -155,7 +158,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/images.test.mjs",
         "desktop/tests/image-jobs.test.mjs"
@@ -168,7 +171,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/images.test.mjs",
         "desktop/tests/image-jobs.test.mjs"
@@ -191,7 +194,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/images.test.mjs",
         "desktop/tests/image-jobs.test.mjs"
@@ -214,18 +217,10 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "not certified",
-      "evidence": [],
-      "verifiedEngineImprovementOverWeb": false,
-      "permittedPublicClaim": "Desktop in development; no superiority claim."
-    },
-    {
-      "id": "unlock-pdf",
-      "webAvailable": true,
-      "desktopReleased": false,
-      "nativeQuickActionReleased": false,
-      "headlessPort": "not certified",
-      "evidence": [],
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
+      "evidence": [
+        "desktop/tests/protect-pdf.test.mjs"
+      ],
       "verifiedEngineImprovementOverWeb": false,
       "permittedPublicClaim": "Desktop in development; no superiority claim."
     },
@@ -244,8 +239,12 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "not certified",
-      "evidence": [],
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
+      "evidence": [
+        "desktop/tests/metadata.test.mjs",
+        "desktop/tests/processing-host.test.mjs",
+        "desktop/docs/metadata-removal.md"
+      ],
       "verifiedEngineImprovementOverWeb": false,
       "permittedPublicClaim": "Desktop in development; no superiority claim."
     },
@@ -254,8 +253,12 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "not certified",
-      "evidence": [],
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
+      "evidence": [
+        "desktop/tests/pdf-excel.test.mjs",
+        "desktop/tests/processing-host.test.mjs",
+        "desktop/docs/pdf-to-excel.md"
+      ],
       "verifiedEngineImprovementOverWeb": false,
       "permittedPublicClaim": "Desktop in development; no superiority claim."
     },
@@ -274,8 +277,11 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "not certified",
-      "evidence": [],
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
+      "evidence": [
+        "desktop/tests/ocr.test.mjs",
+        ".artifacts/processing-pack-verification.json"
+      ],
       "verifiedEngineImprovementOverWeb": false,
       "permittedPublicClaim": "Desktop in development; no superiority claim."
     },
@@ -284,7 +290,7 @@
       "webAvailable": true,
       "desktopReleased": false,
       "nativeQuickActionReleased": false,
-      "headlessPort": "implemented with scoped output tests; native UI integration pending",
+      "headlessPort": "implemented with scoped output tests; full native workflow and release validation pending",
       "evidence": [
         "desktop/tests/images.test.mjs",
         "desktop/tests/image-jobs.test.mjs"

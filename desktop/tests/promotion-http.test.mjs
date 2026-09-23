@@ -9,3 +9,16 @@ test('redemption HTTP enforces first-party origin, exact route, request bounds a
   assert.equal(buckets[0],buckets[1]);
  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 });
+
+test('redemption session fails closed without identity and rejects caller-owned identity claims',async()=>{
+ for(const configured of [false,true]){
+  let calls=0;const server=createPromotionHttpServer({rateSecret:Buffer.alloc(32,1),promotions:{},...(configured?{issueIdentitySession:async({cookie})=>{calls++;return cookie==='verified=synthetic'?'synthetic-proof':null;}}:{})});
+  server.listen(0,'127.0.0.1');await once(server,'listening');const url='http://127.0.0.1:'+server.address().port+'/api/desktop/redemption-session',headers={'Content-Type':'application/json',Origin:'https://sorafiles.com',Cookie:'verified=synthetic'};
+  try{
+   assert.equal((await fetch(url,{method:'POST',headers:{...headers,Origin:'https://attacker.example'},body:'{}'})).status,403);
+   assert.equal((await fetch(url,{method:'POST',headers,body:JSON.stringify({customerId:'chosen',email:'chosen@example.invalid'})})).status,400);
+   const response=await fetch(url,{method:'POST',headers,body:'{}'});assert.equal(response.status,configured?200:503);assert.equal(response.headers.get('cache-control'),'no-store');
+   if(configured){assert.deepEqual(await response.json(),{identityToken:'synthetic-proof'});assert.equal(calls,1);assert.equal((await fetch(url,{method:'POST',headers:{...headers,Cookie:''},body:'{}'})).status,401);}
+  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+ }
+});

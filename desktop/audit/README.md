@@ -1,6 +1,6 @@
 # Desktop tool and dependency audit
 
-Recorded 2026-09-13T12:42:19.397Z. 26 tools, 30 direct dependencies, 449 production lock entries. 234 local public assets total 63552241 bytes. Remote Office/model payloads are additional; these are not installer-size measurements.
+Recorded 2026-09-17T12:16:20.332Z. 26 Web tools; 25 Desktop-eligible tools, 30 direct dependencies, 449 production lock entries. 234 local public assets total 63552241 bytes. Remote Office/model payloads are additional; these are not installer-size measurements.
 
 RELEASE BLOCKED: source/compliance packs and native-host prototypes incomplete
 
@@ -15,7 +15,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: No guaranteed reduction; signed originals kept; eligible image compression can reduce detail.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Merge PDF — /merge-pdf
 - Engine: mergePdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -26,7 +26,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Split PDF — /split-pdf
 - Engine: splitPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -37,7 +37,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Rotate PDF — /rotate-pdf
 - Engine: rotatePdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -48,7 +48,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Remove Pages — /remove-pages
 - Engine: removePagesPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -59,7 +59,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## PDF to JPG — /pdf-to-jpg
 - Engine: pdfToImages. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -70,7 +70,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## JPG to PDF — /jpg-to-pdf
 - Engine: imagesToPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -81,7 +81,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## PDF to Word — /pdf-to-word
 - Engine: pdfToDocx. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -92,7 +92,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Install chosen OCR language packs before offline use.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Editable reconstruction changes layout; visual output uses page images.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Word to PDF — /word-to-pdf
 - Engine: docxToPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -103,7 +103,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Optional full Office component pack; native LibreOffice sidecar is a candidate, not yet adopted.
 - Replacement assessment: Native LibreOffice may reduce browser constraints; benchmark before choosing.
 - Current limits: Fonts and unsupported document features can change layout; current runtime is fetched from the ZetaJS CDN.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Watermark PDF — /watermark-pdf
 - Engine: watermarkPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -114,7 +114,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Page Numbers — /page-numbers
 - Engine: pageNumbersPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -125,7 +125,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Sign PDF — /sign-pdf
 - Engine: signPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -136,7 +136,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Visual signature, not a certificate-backed digital signature.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Image Converter — /image-converter
 - Engine: convertImages. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -147,7 +147,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Selected frame/page only; PSD flattened; exotic codec variants require independent checks.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Compress Image — /compress-image
 - Engine: compressImages. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -158,7 +158,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## HEIC to JPG — /heic-to-jpg
 - Engine: heicToJpg. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -169,7 +169,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: HEVC decoder/license and patent considerations; HDR/color conversion needs validation.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Edit Image — /edit-image
 - Engine: Canvas / shared image adjustments. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -180,7 +180,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Remove Background — /remove-background
 - Engine: imgly-isnet-quint8. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -191,7 +191,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Optional installed model pack; unload worker process after job.
 - Replacement assessment: Native ONNX is a candidate; preserve alpha/quality benchmark.
 - Current limits: Matting has difficult-edge limitations; solid cleanup can remove matching subject colors.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Protect PDF — /protect-pdf
 - Engine: protectPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -202,7 +202,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Unlock PDF — /unlock-pdf
 - Engine: unlockPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -213,7 +213,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: Intentionally excluded from Desktop and Dodo-powered paid offerings for payment-provider compliance. Free Web only.
 
 ## Repair PDF — /repair-pdf
 - Engine: repairPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -224,7 +224,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Best-effort rewrite cannot reconstruct arbitrary missing bytes.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Metadata Remover — /metadata-remover
 - Engine: removeMetadata. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -235,7 +235,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Selected fields only; PDF dates reset; no visible redaction; JPEG orientation can change.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## PDF to Excel — /pdf-to-excel
 - Engine: pdfToExcel. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -246,7 +246,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Inferred tables are not original spreadsheet formulas; visual mode is not editable table reconstruction.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Excel to PDF — /excel-to-pdf
 - Engine: excelToPdf. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -257,7 +257,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Optional full Office component pack; native LibreOffice sidecar is a candidate, not yet adopted.
 - Replacement assessment: Native LibreOffice may reduce browser constraints; benchmark before choosing.
 - Current limits: Print areas, fonts, pagination and unsupported spreadsheet features require inspection; Office CDN runtime is not bundled.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## PDF OCR — /pdf-ocr
 - Engine: ocr. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -268,7 +268,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Install chosen OCR language packs before offline use.
 - Replacement assessment: Native OCR plus positioned Unicode text layer is a candidate.
 - Current limits: Recognition errors; current added PDF text has restricted encoding and is not word aligned.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Resize Image — /resize-image
 - Engine: jsquashResize. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -279,7 +279,7 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.
 
 ## Doc Scanner — /doc-scanner
 - Engine: scanic. Browser JavaScript/Canvas plus WASM/workers where listed; DOM/workspace coupling must be separated.
@@ -290,4 +290,4 @@ The earlier engine matrix is historical: qpdf and GhostPDL are currently used, d
 - Packaging: Bundle local assets; run only within authorized job boundary.
 - Replacement assessment: Reuse tested engine first; replace only with measured benefit.
 - Current limits: Preserve input; check output structure and rendering; malformed, boundary, cancellation and repeat-run tests required.
-- Desktop path: Engine extraction and native-host prototype pending; not claimed shipped.
+- Desktop path: See capability-claims.json for current scoped engine evidence; not claimed shipped.

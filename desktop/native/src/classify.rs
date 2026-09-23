@@ -61,8 +61,8 @@ fn office(reader: &mut (impl Read + Seek), size: u64) -> Option<&'static str> {
         at = next;
     }
     if at != length || !names.contains("[Content_Types].xml") { return None; }
-    match (names.contains("word/document.xml"), names.contains("xl/workbook.xml")) {
-        (true, false) => Some("DOCX"), (false, true) => Some("XLSX"), _ => None,
+    match (names.contains("word/document.xml"), names.contains("xl/workbook.xml"), names.contains("ppt/presentation.xml")) {
+        (true, false, false) => Some("DOCX"), (false, true, false) => Some("XLSX"), (false, false, true) => Some("PPTX"), _ => None,
     }
 }
 pub fn classify(reader: &mut (impl Read + Seek), size: u64) -> std::io::Result<Option<&'static str>> {
@@ -98,6 +98,8 @@ pub fn classify(reader: &mut (impl Read + Seek), size: u64) -> std::io::Result<O
         end[12..16].copy_from_slice(&(directory.len() as u32).to_le_bytes());end[16..20].copy_from_slice(&4u32.to_le_bytes());bytes.extend(end);bytes
     }
     #[test] fn office_suggestions_require_unambiguous_bounded_directory_names() {
+        assert_eq!(identify(&zip(&["[Content_Types].xml","ppt/presentation.xml"])),Some("PPTX"));
+        assert_eq!(identify(&zip(&["[Content_Types].xml","ppt/presentation.xml","word/document.xml"])),None);
         for (names, result) in [(vec!["[Content_Types].xml","word/document.xml"],Some("DOCX")),(vec!["[Content_Types].xml","xl/workbook.xml"],Some("XLSX")),(vec!["word/document.xml"],None),(vec!["[Content_Types].xml","word/document.xml","xl/workbook.xml"],None)] { assert_eq!(identify(&zip(&names)),result); }
         for name in ["../secret", "/absolute", "C:/drive", "dir\\file", "word/document.xml"] {
             assert_eq!(identify(&zip(&["[Content_Types].xml","word/document.xml",name])),None);

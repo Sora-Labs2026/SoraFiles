@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "target": "x86_64-pc-windows-msvc",
+  "version": "0.1.0",
+  "baseCommit": "8385e8c",
+  "dirtyWorkspace": true,
+  "builtAt": "2026-09-23T15:33:37.282Z",
+  "publicRelease": false,
+  "artifacts": [
+    {
+      "file": "nsis/SoraFiles Desktop_0.1.0_x64-setup.exe",
+      "bytes": 115025320,
+      "sha256": "ba41e14a9539eca5b00acfebafe7ef9cb3eb86d94d585a2b43037fead89b65e1"
+    }
+  ],
+  "verification": {
+    "buildExit": 0,
+    "authenticode": "NotSigned",
+    "installed": false,
+    "published": false,
+    "resourceFiles": 1989,
+    "resourceBytes": 316228434,
+    "nativeBytes": 4804096,
+    "totalStagedPayloadBytes": 321032530,
+    "nativeLifecycle": {
+      "arch": "x86_64",
+      "backgroundJobState": false,
+      "closeReopenCycles": 2,
+      "nativeWindowLoads": 3,
+      "os": "windows",
+      "scope": "Native UI load and WebView destruction/recreation only; no engine, licensing or installer certification",
+      "status": "PASS",
+      "trayOnlyStartup": false,
+      "ui": {
+        "error": null,
+        "heading": "File tools for your desktop.",
+        "layout": {
+          "height": 900,
+          "overflowing": [],
+          "scrollWidth": 1180,
+          "width": 1180
+        },
+        "overflow": false,
+        "tools": 6
+      }
+    },
+    "scope": "Watermark/page-number controls and opt-in Explorer implementation included; development Office WebView component excluded. Staging and lifecycle verified; installed integration unverified."
+  }
+}

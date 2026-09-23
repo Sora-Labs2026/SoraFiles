@@ -1,0 +1,21 @@
+---
+import DesktopLayout from '../../layouts/DesktopLayout.astro';
+---
+<DesktopLayout title="SoraFiles Desktop downloads — release status" description="Check availability of tested SoraFiles Desktop installers. No public desktop build is available yet." path="/desktop/download">
+  <section class="mx-auto max-w-4xl px-5 py-14 sm:px-6"><p class="text-sm font-semibold text-violet">In development</p><h1 class="mt-4 text-4xl font-extrabold tracking-tight">Desktop downloads</h1><p class="mt-5 max-w-2xl text-lg leading-8 text-muted">We’re testing Desktop before making installers available. There is nothing to install yet.</p>
+    <div class="mt-10 grid gap-5 sm:grid-cols-3">{[['Windows', 'Intel and AMD 64-bit candidates are undergoing processing, packaging and installation checks.'], ['macOS', 'Separate Apple Silicon and Intel builds are being prepared. Initial builds are not notarized by Apple and require first-launch approval in System Settings → Privacy & Security.'], ['Linux', 'Ubuntu 64-bit is the initial target. The current processing package and file-manager integration still need native testing.']].map(([title, status]) => <article class="rounded-3xl border border-line bg-surface p-6"><h2 class="text-xl font-bold">{title}</h2><p class="mt-3 text-sm leading-7 text-muted">{status}</p><p class="mt-5 text-sm font-semibold">Not available yet</p></article>)}</div>
+    <p class="mt-5 text-sm text-muted"><a href="/desktop/help#macos-open-anyway" class="font-semibold text-violet underline underline-offset-4">macOS first-launch instructions</a></p>
+    <section id="requirements" aria-labelledby="requirements-heading" class="mt-12 rounded-3xl border border-line bg-surface p-6 sm:p-8">
+      <h2 id="requirements-heading" class="text-2xl font-bold tracking-tight">System requirements</h2>
+      <p class="mt-3 leading-7 text-muted">These are our launch targets, not yet verified minimums. We’ll confirm them with the finished app before downloads open.</p>
+      <div class="mt-6 grid gap-5 sm:grid-cols-2">
+        <article class="rounded-2xl border border-line p-5"><h3 class="text-lg font-bold">Minimum target</h3><p class="mt-2 text-sm leading-6 text-muted">For everyday PDF and image tasks, one job at a time.</p><dl class="mt-5 space-y-4 text-sm"><div><dt class="font-semibold">Memory</dt><dd class="mt-1 text-muted">8 GB RAM</dd></div><div><dt class="font-semibold">Processor</dt><dd class="mt-1 text-muted">64-bit processor with 2 or more cores</dd></div><div><dt class="font-semibold">Free storage</dt><dd class="mt-1 text-muted">3 GB, plus space for your files and results</dd></div></dl></article>
+        <article class="rounded-2xl border border-line p-5"><h3 class="text-lg font-bold">Recommended target</h3><p class="mt-2 text-sm leading-6 text-muted">For larger files, OCR, Office documents and background removal.</p><dl class="mt-5 space-y-4 text-sm"><div><dt class="font-semibold">Memory</dt><dd class="mt-1 text-muted">16 GB RAM or more</dd></div><div><dt class="font-semibold">Processor</dt><dd class="mt-1 text-muted">64-bit processor with 4 or more cores</dd></div><div><dt class="font-semibold">Free storage</dt><dd class="mt-1 text-muted">10 GB on an SSD, plus room for large batches</dd></div></dl></article>
+      </div>
+      <h3 class="mt-7 font-bold">Operating system targets</h3><ul class="mt-3 space-y-2 text-sm leading-7 text-muted"><li>Windows 11, 64-bit Intel or AMD.</li><li>macOS 13 or later, Apple Silicon or Intel.</li><li>Ubuntu 22.04 or later, 64-bit Intel or AMD. Other Linux distributions are not yet validated.</li></ul>
+      <p class="mt-6 text-sm leading-7 text-muted">Internet is required to start a trial, activate a license, refresh a subscription and download updates. Once activated, supported tools process your files on your device. Large scans and batches may need more memory and temporary storage.</p>
+      <p class="mt-3 text-sm leading-7 text-muted">Windows uses Microsoft Edge WebView2. If this shared runtime is missing, installation will need an internet connection to obtain it from Microsoft. Required processing engines and model files will be disclosed with each release.</p>
+    </section>
+    <a href="/tools" class="mt-9 inline-flex min-h-12 items-center rounded-full bg-action px-6 font-bold text-action-contrast">Use free web tools</a>
+  </section>
+</DesktopLayout>

@@ -9,7 +9,7 @@ process.once('message',async({bytes,options})=>{
   if(warning){process.send({ok:false,code:oversizedImage?'image':'content'},()=>process.exit(1));return;}
   process.send({ok:true,pages},()=>process.exit(0));
  }catch(error){
-  const message=String(error?.message||'');const code=message.includes('resolution')?'resolution':message.includes('maximum allowed size')||oversizedImage?'image':'invalid';
+  const message=String(error?.message||'');const code=message.includes('Page selection')?'selection':message.includes('processing budget')?'budget':message.includes('resolution')?'resolution':message.includes('maximum allowed size')||oversizedImage?'image':'invalid';
   process.send({ok:false,code},()=>process.exit(1));
  }
 });

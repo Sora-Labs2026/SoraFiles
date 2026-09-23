@@ -11,7 +11,7 @@ function setup({file=':memory:',secret=randomBytes(32)}={}){let now=1800000000,c
  const verify=(token,device)=>verifyEntitlement(token,{keys:{test:signing.publicKey},deviceId:deviceIdentity(device.publicKey),now:now*1000});
  return {store,service,dodo,calls,state,execute,verify,activationCount:()=>counter,advance:seconds=>now+=seconds};
 }
-test('paid activation binds the device permanently and refuses transfer requests',async()=>{const s=setup(),device=keys(),other=keys();try{
+test('paid activation binds the device and refuses unapproved transfer requests',async()=>{const s=setup(),device=keys(),other=keys();try{
  const activated=await s.execute('activate',{licenseKey:'key'},device);assert.equal(s.verify(activated.entitlement,device).maxDevices,1);
  await assert.rejects(s.execute('activate',{licenseKey:'key'},other),/limit/);assert.equal(s.calls.length,1);
  const body={licenseKey:'key',licenseRef:activated.licenseRef,instanceId:activated.instanceId};
@@ -28,6 +28,16 @@ test('revocation rejects refresh and existing offline grant remains independentl
  // Offline machines cannot receive immediate revocation. This is an explicit lease limitation.
  assert.ok(s.verify(activation.entitlement,device));s.advance(86400);assert.throws(()=>s.verify(activation.entitlement,device),/expired/);
  }finally{s.store.close();}});
+
+test('revocation between provisional registration and final signing issues no entitlement or permanent binding',async()=>{
+ const s=setup(),device=keys();try{
+  const finish=s.store.finishActivation.bind(s.store),issue=s.service.issue.bind(s.service);let signed=0;
+  s.service.issue=(...args)=>{signed++;return issue(...args);};
+  s.store.finishActivation=(...args)=>{if(args[2]==='complete')s.store.sync({...s.state,status:'revoked',observedAt:1800000001});return finish(...args);};
+  await assert.rejects(s.execute('activate',{licenseKey:'synthetic-key'},device),/inactive/);
+  assert.equal(signed,0);assert.equal(s.store.db.prepare('SELECT COUNT(*) AS n FROM permanent_devices').get().n,0);assert.equal(s.calls.length,1);
+ }finally{s.store.close();}
+});
 test('device trial retry preserves its original deadline without a sign-in provider',async()=>{const s=setup(),device=keys();try{
  const first=s.verify((await s.execute('trial',{},device)).entitlement,device);s.advance(3600);
  const retry=s.verify((await s.execute('trial',{},device)).entitlement,device);assert.equal(first.exp,retry.exp);

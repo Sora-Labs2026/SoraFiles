@@ -1,4 +1,16 @@
+September 23 owner clarification: proceed with Windows/macOS/Linux builds and launch without waiting for Apple notarization. Mac users may approve the app through System Settings → Privacy & Security → Open Anyway. This supersedes the September 17 notarization-only release policy. Ad-hoc Mac releases must disclose their signing status, include the first-party instructions and disable automatic updates. Functional results and pending platform checks remain reported separately.
+
 # Native candidate builds
+
+September 23 diagnostic correction: `run-native-smoke.mjs` now requires the
+requested background or startup mode to be present in the native report, as well
+as three loads and two close/reopen cycles. A release executable omits the
+development-only background fixture and cannot certify background processing
+merely by completing normal lifecycle checks. The regression test is
+`desktop/tests/native-smoke-report.test.mjs` (one passing test).
+
+> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. Production Mac releases require signing and notarization.
+
 
 These builds evaluate the native host. They are not finished processing apps or approved public downloads. The release manifest stays empty until product, engine, licensing and platform checks pass.
 
@@ -32,12 +44,12 @@ The `Desktop native candidate builds` GitHub Actions workflow uses separate nati
 
 An authenticated account with write access to the repository is needed to push the workflow and run it. Public build success alone is insufficient: packaged installation, file dialogs, drag-and-drop, tray support, shell actions, engines, permissions, accessibility and uninstall still need platform checks. Linux support is initially scoped to tested Ubuntu x64; additional distributions require their own checks.
 
-## macOS distribution selected by the owner
+## Historical macOS candidate distribution (superseded for production)
 
 Both architectures use `signingIdentity: "-"` for an ad-hoc signature. The build checks that signature with `codesign --verify --deep --strict` and records Gatekeeper assessment. A Gatekeeper rejection of an unnotarized candidate is expected and must not be relabeled as notarization or OS certification.
 
 For a verified published build, the installation help explains moving the app into Applications, trying to open it, then using System Settings → Privacy & Security → Open Anyway and confirming Open. This is a per-app approval; no global Gatekeeper disabling command is used. A damaged/harmful-app warning or managed-Mac restriction must not be bypassed by these instructions.
 
-The release policy accepts this route only with `signing: "ad-hoc"`, `notarized: false`, `installation: "gatekeeper-approval"`, `updaterEligible: false` and the exact first-party approval help link. Compatibility, supported architecture, independently verified hashes, security blocking and actual testing still apply. Signed automatic updater policy stays separate.
+The previous release policy accepted this route with `signing: "ad-hoc"`, `notarized: false`, `installation: "gatekeeper-approval"`, `updaterEligible: false` and the exact first-party approval help link. Compatibility, supported architecture, independently verified hashes, security blocking and actual testing still apply. Signed automatic updater policy stays separate.
 
 References: [Apple's opening-app guidance](https://support.apple.com/en-us/102445), [Tauri macOS signing](https://v2.tauri.app/distribute/sign/macos/), [GitHub hosted runner platforms](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).

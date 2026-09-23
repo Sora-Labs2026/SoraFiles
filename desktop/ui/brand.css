@@ -34,6 +34,28 @@ main { container-type:inline-size; }
  .section-title { flex-wrap:wrap; }
  .primary,.secondary { max-width:100%; overflow-wrap:anywhere; }
 }
+/* CSS zoom reduces the content box without changing viewport media queries. */
+@container(max-width:440px) {
+ .tool-grid { grid-template-columns:1fr; }
+ .dropzone.compact { padding:16px; }
+ .compact .drop-icon { position:static; }
+ .section-title { flex-wrap:wrap; }
+ .option-fields { grid-template-columns:minmax(0,1fr); }
+}
+@supports not (container-type:inline-size) {
+ /* Older WebViews cannot adapt using container queries. Keep controls inside
+    the content column when the user enlarges text or applies browser zoom. */
+ .dropzone.compact { padding:16px; }
+ .compact .drop-icon { position:static; }
+ .primary,.secondary { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+ .section-title { flex-wrap:wrap; }
+ .search-box input { min-width:0; }
+ @media(max-width:950px) {
+  .tool-grid,.option-fields { grid-template-columns:minmax(0,1fr); }
+  .tool-card { gap:8px; padding:10px; }
+  .tool-card .card-arrow { display:none; }
+ }
+}
 @media(max-width:680px) { .quit { display:flex; justify-content:center; padding:12px 0; } .quit span { display:none; } .sidebar-bottom { padding-top:16px; } }
 @media(max-width:420px) { main { padding:24px 12px; } .dropzone,.panel { padding:18px; } .section-title,.setting-row { flex-wrap:wrap; } }
 @media(prefers-reduced-transparency:reduce) { .sidebar { background:var(--surface); } main { background:var(--canvas); } }
@@ -46,5 +68,15 @@ main { container-type:inline-size; }
 input { caret-color:var(--purple); }
 ::selection { background:var(--tint); color:var(--text); }
 .selected li>span small,.result-count { font-variant-numeric:tabular-nums; }
+.support-device-id { overflow-wrap:anywhere; user-select:all; }
 h1,h2 { text-wrap:balance; }
 @media(hover:hover) and (pointer:fine) { .text-button:hover { text-decoration:underline; text-underline-offset:4px; } }
+[aria-label="Batch results"] li { overflow-wrap: anywhere; margin-block: .75rem; }
+.output-actions { display:flex; flex-wrap:wrap; gap:.75rem; margin-top:.75rem; }
+.selected li { flex-wrap:wrap; }
+.selected li>span:not(.selection-order) { flex:1 1 140px; }
+.selection-order { display:flex; flex:0 0 auto; gap:2px; }
+.workspace-output { flex-wrap:wrap; }
+.workspace-output>div { min-width:0; overflow-wrap:anywhere; }
+.option-fields [data-split-option] { grid-column:1 / -1; }
+@media(max-width:680px) { .selected li { flex-wrap:wrap; } .selected li>span:not(.selection-order) { min-width:100px; } }

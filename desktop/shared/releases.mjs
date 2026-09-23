@@ -6,9 +6,9 @@ export function validateManifest(manifest){
   if(!['windows','macos','linux'].includes(r.platform)||!['x64','arm64'].includes(r.arch)||!['active','maintenance','unsupported','blocked'].includes(r.status)||!['clear','blocked'].includes(r.security))throw Error('Invalid release scope');
   const u=new URL(r.url);if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash||!Number.isSafeInteger(r.bytes)||r.bytes<=0||!/^[a-f0-9]{64}$/.test(r.sha256)||!r.releaseDate||!r.notes||r.tested!==true)throw Error('Incomplete artifact evidence');
   if(r.platform==='macos'){
-   const notarized=r.signing==='signed'&&r.notarized===true;
+   const notarized=r.signing==='signed'&&r.notarized===true&&r.installation!=='gatekeeper-approval';
    const manual=r.signing==='ad-hoc'&&r.notarized===false&&r.installation==='gatekeeper-approval'&&r.updaterEligible===false&&r.approvalInstructions==='https://sorafiles.com/desktop/help#macos-open-anyway';
-   if(!notarized&&!manual)throw Error('Mac release requires notarization or explicit manual Gatekeeper approval');
+   if(!notarized&&!manual)throw Error('Mac release requires notarization or explicit manual approval instructions');
   }
   if(r.platform==='windows'&&r.signing!=='signed')throw Error('Windows release not signed');
   if(r.updaterEligible&&(!r.updateSignature||r.signing!=='signed'))throw Error('Unsigned update');

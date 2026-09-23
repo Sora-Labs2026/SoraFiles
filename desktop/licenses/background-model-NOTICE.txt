@@ -1,0 +1,24 @@
+SoraFiles Desktop background processing
+
+Model: ISNET quantized uint8, supplied by IMG.LY background-removal-data 1.7.0
+Source project cited by the supplier: https://github.com/xuebinqin/DIS
+License reported by supplier: MIT (see background-model-ThirdPartyLicenses.json)
+Model bytes: 44348940
+SHA-256: d1ca3535c21b53d08fa3b640e5949389f82e764f6376a0502d44982c35cae482
+Resource manifest SHA-256:
+4e2a359d0436f1e55cb0e4e29a1c943f5d86d639ba4f4b5ea874a699b1f742d3
+
+The local pipeline follows the installed AGPL IMG.LY preprocessing convention
+(1024x1024, (channel-128)/256, BCHW float tensor) and SoraFiles' existing
+letterboxing/alpha-preservation workflow. SoraFiles and this adaptation remain
+AGPL-3.0; the full supplied license is included separately. ONNX Runtime is MIT
+and retains its installed package notices.
+
+RELEASE GATE: the supplier's model license declaration is not full provenance.
+Obtain the exact model copyright/license text, quantization/export source/build
+details, and corresponding-source/redistribution clearance before distribution.
+Do not treat successful checksum validation as legal clearance.
+
+Current upstream DIS LICENSE.md is Apache-2.0; the installed IMG.LY declaration
+says MIT. Both records are retained. The exact license applicable to the supplied
+quantized model and its export/quantization provenance remain unresolved.

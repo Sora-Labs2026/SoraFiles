@@ -1,0 +1,36 @@
+{
+  "status": "MEASURED",
+  "scope": "Actual Web/desktop workers, CPU ISNET uint8, cleanup disabled, existing local synthetic fixtures. Default fp16 Web model, GPU, real photos and full parity are not certified.",
+  "results": [
+    {
+      "fixture": "product",
+      "sha256": "596109c1d3c1740a9c66c7079be7bc40616321db2293e40410ebd8144fe223b7",
+      "width": 1600,
+      "height": 1000,
+      "alphaMAE": 0.0905975,
+      "maxAlphaDifference": 124,
+      "foregroundIoU": 0.9982962287119344,
+      "sourceAlphaIncreasePixels": 0
+    },
+    {
+      "fixture": "hair",
+      "sha256": "f9ee9d88b2ee97f4e09b484b3c5428e5d4ab1bd0ca0e35c10c0b29b435f04408",
+      "width": 1600,
+      "height": 1000,
+      "alphaMAE": 0.186700625,
+      "maxAlphaDifference": 128,
+      "foregroundIoU": 0.9962543394847433,
+      "sourceAlphaIncreasePixels": 0
+    },
+    {
+      "fixture": "soft-alpha",
+      "sha256": "b257bdf5be1ad33306360625d610499728dc59a77784f7982d03a7c1b7bc1eff",
+      "width": 1600,
+      "height": 1000,
+      "alphaMAE": 0.74673375,
+      "maxAlphaDifference": 160,
+      "foregroundIoU": 0.991845574897799,
+      "sourceAlphaIncreasePixels": 0
+    }
+  ]
+}

@@ -19,7 +19,7 @@ if ($Command -eq 'package') {
     $soraCli=Join-Path $soraRoot '.artifacts/desktop-tauri-cli/node_modules/@tauri-apps/cli/tauri.js'
     if (!(Test-Path -LiteralPath $soraCli)) { throw 'Install the pinned Tauri CLI in .artifacts/desktop-tauri-cli first.' }
     Push-Location (Join-Path $soraRoot 'desktop/native')
-    try { & node $soraCli build --target x86_64-pc-windows-msvc --bundles nsis -- --locked }
+    try { & node $soraCli build --target x86_64-pc-windows-msvc --bundles nsis -- --locked; $soraBuildExitCode=$LASTEXITCODE }
     finally { Pop-Location }
-} else { & $soraCargo $Command --manifest-path $soraManifest @ExtraArgs }
-exit $LASTEXITCODE
+} else { & $soraCargo $Command --manifest-path $soraManifest @ExtraArgs; $soraBuildExitCode=$LASTEXITCODE }
+exit $soraBuildExitCode

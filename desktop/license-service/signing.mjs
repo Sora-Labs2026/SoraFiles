@@ -1,9 +1,10 @@
 import {createPrivateKey,createPublicKey,sign,verify,randomUUID,createHmac,timingSafeEqual} from 'node:crypto';
 import {deviceIdentity} from '../shared/entitlement.mjs';
 import {licensePlans as plans} from '../shared/license-plans.mjs';
-export function signEntitlement(payload,{privateKey,kid}){const key=createPrivateKey(privateKey);if(key.asymmetricKeyType!=='ed25519'||!kid)throw Error('Invalid signing configuration');const data=[{alg:'EdDSA',typ:'sf-entitlement+jwt',kid},payload].map(x=>Buffer.from(JSON.stringify(x)).toString('base64url')).join('.');return data+'.'+sign(null,Buffer.from(data),key).toString('base64url');}
+import {desktopEntitlementFeatures,validDesktopFeatures} from '../shared/tool-policy.mjs';
+export function signEntitlement(payload,{privateKey,kid}){if(!validDesktopFeatures(payload?.features))throw Error('Feature not authorized');const key=createPrivateKey(privateKey);if(key.asymmetricKeyType!=='ed25519'||!kid)throw Error('Invalid signing configuration');const data=[{alg:'EdDSA',typ:'sf-entitlement+jwt',kid},payload].map(x=>Buffer.from(JSON.stringify(x)).toString('base64url')).join('.');return data+'.'+sign(null,Buffer.from(data),key).toString('base64url');}
 export function entitlementClaims({license,deviceId,now,trial}){
- const base={schema:1,iss:'sorafiles-license-service',aud:'sorafiles-desktop',jti:randomUUID(),deviceId,iat:now,nbf:now,features:['process']};
+ const base={schema:1,iss:'sorafiles-license-service',aud:'sorafiles-desktop',jti:randomUUID(),deviceId,iat:now,nbf:now,features:[...desktopEntitlementFeatures]};
  if(trial)return {...base,plan:'trial',edition:'Trial',maxDevices:1,exp:trial.exp};
  const plan=plans[license.plan];if(!plan||license.status!=='active')throw Error('Inactive license');const exp=plan.interval==='lifetime'?null:Math.min(license.period_end,now+31*86400);if(exp!==null&&(!Number.isSafeInteger(exp)||exp<=now))throw Error('Subscription expired');
  return {...base,plan:plan.id,edition:plan.edition,maxDevices:plan.maxDevices,licenseRef:license.ref,exp};

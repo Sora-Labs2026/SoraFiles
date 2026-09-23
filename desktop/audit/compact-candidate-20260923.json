@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "target": "x86_64-pc-windows-msvc",
+  "version": "0.1.0",
+  "baseCommit": "8385e8c",
+  "dirtyWorkspace": true,
+  "builtAt": "2026-09-23T14:59:02.397Z",
+  "publicRelease": false,
+  "artifacts": [
+    {
+      "file": "nsis/SoraFiles Desktop_0.1.0_x64-setup.exe",
+      "bytes": 115034145,
+      "sha256": "e953d13937333ec4dbf86441c38f21cd5b9fef86c799de4046f703f7f3560fcb"
+    }
+  ],
+  "verification": {
+    "installed": false,
+    "resourceBytes": 316228434,
+    "authenticode": "NotSigned",
+    "scope": "Office metadata and publication fixes; resource staging and lifecycle only, not installation, shell integration or production licensing",
+    "totalStagedPayloadBytes": 321016146,
+    "published": false,
+    "resourceFiles": 1989,
+    "nativeLifecycle": {
+      "arch": "x86_64",
+      "backgroundJobState": false,
+      "closeReopenCycles": 2,
+      "nativeWindowLoads": 3,
+      "os": "windows",
+      "scope": "Native UI load and WebView destruction/recreation only; no engine, licensing or installer certification",
+      "status": "PASS",
+      "trayOnlyStartup": false,
+      "ui": {
+        "error": null,
+        "heading": "File tools for your desktop.",
+        "layout": {
+          "height": 900,
+          "overflowing": [],
+          "scrollWidth": 1180,
+          "width": 1180
+        },
+        "overflow": false,
+        "tools": 6
+      }
+    },
+    "buildExit": 0
+  }
+}

@@ -1,5 +1,8 @@
 # Desktop security boundaries and unfinished gates
 
+> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. Production Mac releases require signing and notarization.
+
+
 ## Implemented reference boundaries
 
 Offline entitlements use Ed25519 compact JWS with an allowlisted algorithm/header, signing-key ID, issuer, audience, feature, device and exact plan/device-cap claims. Verification uses public keys and makes no network call. Trials last at most seven days; subscription leases end at the earlier of the paid period and 31 days. Lifetime has no expiry. A caller can supply the last trusted time for rollback checks.
@@ -18,18 +21,20 @@ The reference writer creates an exclusive staging file, validates it, and publis
 
 Once publication succeeds, temporary-file cleanup failures cannot report the save as failed. The result carries `cleanupPending` and the writer makes a final best-effort cleanup attempt. The queue retains the actual committed result if subsequent engine housekeeping throws. Failed publication still fails the job; an existing destination is never removed. A temporary copy may remain when the OS denies cleanup, and native cleanup/recovery integration remains pending.
 
+Windows license/processing components and their descendants now use a kill-on-close Job Object for process-tree cleanup; see `process-cleanup.md`. This is not an OS sandbox.
+
 ## Still release-blocking
 
 - The native licensing bridge now stores device/license state in an authenticated encrypted file with an OS-held wrapping key. Windows credential-store roundtrip and the synthetic native-pipe trial/offline lifecycle pass. macOS/Linux credential-store checks, ancestor pinning and rollback/restore handling remain unfinished. See `native-licensing.md`. Editable preferences do not hold license material.
-- The portable writer does not pin every ancestor with native directory handles. The Windows prototype does pin local ancestors and renames the validated open staging file by handle; concurrent collision, cancellation and ancestor-rename tests pass. Production integration, reparse-point adversarial coverage, non-NTFS volume testing and equivalent macOS/Linux implementations are pending. Portable hard-link publication fails safely on unsupported filesystems.
+- Windows Rust processing holds every input and source/output folder ancestor until the child exits. Actual tests cover rename/write denial, hard links, junctions, existing writers and cleanup. Metadata-only directory access proved insufficient; the guard requests read access. See `windows-file-pins.md`. Windows publication now locks the staged file, verifies its size and SHA-256 against validated output, then renames that same open file without replacement. See `native-publication.md`. Non-NTFS testing and equivalent macOS/Linux protection remain unfinished. Portable hard-link publication fails safely on unsupported filesystems.
 - Signature classification establishes likely content type, not full file validity. Full bounded decoding remains mandatory. Legacy/ambiguous formats currently fall back to opening in the app; not every production format has a desktop classifier.
 - The native IPC allowlist, request ownership, shell argument handling, file-handle passing, symlink/junction/network-path behavior and native update authorization require production implementation and adversarial tests.
 - HTTP routing, strict body limits, socket-address rate keys, verified catalog fetching and durable webhook reconciliation have tests. Device-bound trial issuance needs no sign-in provider. Production deployment, native paid-license integration testing, cross-replica ingress abuse limits and reconciliation scheduling remain unfinished.
 - Update manifest and artifact signatures, freshness, monotonic manifest sequence and installer hashes are verified cryptographically by reference modules. Native updater integration, protected rollback state, platform signature verification, signing pipeline and installers remain unfinished.
-- All 26 processing tools, permission failures, batch output groups, accessibility and OS shell paths still require end-to-end testing.
+- All 25 eligible processing tools, permission failures, batch output groups, accessibility and OS shell paths still require end-to-end testing.
 
 ## Unavoidable offline limits
 
-Paid seats are permanently device-bound and cannot be deactivated or transferred. A durable binding ledger retains each successfully activated device even after revocation, so revocation cannot free a seat for a replacement device. Provider compensation is limited to activation attempts that did not complete. A valid offline entitlement still cannot learn about remote refunds or revocation while disconnected. Subscription leases bound that delay; a permanent Lifetime grant cannot be forcibly revoked on a disconnected device.
+Paid seats remain device-bound until support approves a replacement. Ordinary revocation does not free a seat; the audited support workflow verifies provider release and reserves that seat for a specific replacement device. Provider compensation is limited to activation attempts that did not complete. A valid offline entitlement still cannot learn about remote refunds or revocation while disconnected. Subscription leases bound that delay; a permanent Lifetime grant cannot be forcibly revoked on a disconnected device.
 
 The owner selected accountless, device-bound trials. Server trial history prevents restarting the trial for the same proved device key. A newly generated key can represent a new device; the implementation makes no reinstall/crack-prevention or invasive hardware-fingerprinting claim. The challenge HMAC secret also derives trial ledger subjects and must remain stable across replicas and restores. Paid distribution also does not remove applicable source and redistribution obligations.

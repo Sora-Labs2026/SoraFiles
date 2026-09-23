@@ -1,12 +1,12 @@
 {
-  "id": "launch-personal-30",
-  "name": "Personal 30-day giveaway",
+  "id": "launch-personal-lifetime",
+  "name": "Personal lifetime launch giveaway",
   "tier": "Personal",
-  "duration": "30-days",
+  "duration": "lifetime",
   "productId": "REPLACE_WITH_VERIFIED_DODO_PROMOTION_PRODUCT_ID",
   "quantity": 10,
   "starts": 0,
   "ends": 0,
   "enabled": false,
-  "notes": "Replace redemption dates with UTC epoch seconds. Verify the Dodo product before enabling."
+  "notes": "Disabled template only, not an issued campaign. Owner approval is required to create or issue the ten licenses. Replace redemption dates with UTC epoch seconds and verify the Dodo product before enabling."
 }

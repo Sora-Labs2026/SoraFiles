@@ -1,5 +1,8 @@
 # Promotions implementation and release requirements
 
+> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. Production Mac releases require signing and notarization.
+
+
 ## Checkout discounts
 
 `DodoClient.checkout(productId, currency)` enables Dodo's hosted discount field. Amounts, percentage/fixed discounts, product eligibility, redemption caps, expiration and subscription cycles remain Dodo's responsibility. The six paid plans and their exact decimal amounts are unchanged. The request explicitly sets the verified billing currency and disables currency selection; launch still requires reading and verifying the actual configured catalog and checking API-created sessions.
@@ -20,7 +23,7 @@ A SQLite `BEGIN IMMEDIATE` transaction assigns each code to one verified subject
 
 Dodo's current import endpoint accepts a supplied key; it does not generate one or send an email. Responses explicitly use `emailSent: false`. The current imported-license lookup uses the documented deprecated `/license_keys` API, narrowed to the registered customer, product and import source. Normal paid authority still uses customer grants. Verify imported-key behavior against Dodo test mode and migrate the fallback when an equivalent supported lookup is available; this is a release gate.
 
-Both tiers support 30 days, 90 days, 365 days (one year), and Lifetime. The campaign chooses the entitlement; a browser cannot submit a plan, duration, device cap or Lifetime flag. Personal permits one permanently bound device, Team five. Activated seats cannot be deactivated or transferred. Temporary offline grants remain bounded to 31 days and the campaign access deadline. Lifetime has no expiration. An already-issued permanent offline grant cannot be recalled from a disconnected device; local administrative revocation blocks future SoraFiles activation/refresh, but does not erase old offline grants or currently modify Dodo's imported-key status.
+Both tiers support 30 days, 90 days, 365 days (one year), and Lifetime. The campaign chooses the entitlement; a browser cannot submit a plan, duration, device cap or Lifetime flag. Personal permits one active device, Team five. Support-approved replacement applies to promotional licenses too; see device-replacement.md. Temporary offline grants remain bounded to 31 days and the campaign access deadline. Lifetime has no expiration. An already-issued permanent offline grant cannot be recalled from a disconnected device; local administrative revocation blocks future SoraFiles activation/refresh, but does not erase old offline grants or currently modify Dodo's imported-key status.
 
 Disabling a campaign prevents new claims. It preserves recovery of claims already accepted. Revoking a redemption blocks both recovery and new authority. Redemption timing is UTC epoch seconds. Campaign definitions are immutable except the enable switch; edits to tier/duration require a new campaign.
 
@@ -33,8 +36,8 @@ Create a campaign from `desktop/config/promotion-campaign.example.json` after re
 ```text
 node desktop/scripts/promotions-admin.mjs create campaign.json /private/campaign-codes.csv
 node desktop/scripts/promotions-admin.mjs list
-node desktop/scripts/promotions-admin.mjs enable launch-personal-30
-node desktop/scripts/promotions-admin.mjs disable launch-personal-30
+node desktop/scripts/promotions-admin.mjs enable launch-personal-lifetime
+node desktop/scripts/promotions-admin.mjs disable launch-personal-lifetime
 node desktop/scripts/promotions-admin.mjs revoke REDEMPTION_ID
 ```
 
@@ -48,7 +51,25 @@ CLI listings contain campaign IDs and counts, not codes, customer emails or keys
 
 The runtime returns a separate `promotionServer`; bind it privately behind HTTPS on `/api/desktop/redeem` at the first-party origin. It accepts only JSON POSTs from `https://sorafiles.com`, has request/header limits, rejects extra campaign fields through the domain service, ignores forged forwarded IP headers, uses persistent rate limits and sends `Cache-Control: no-store`. Configure trusted ingress limiting before deployment; do not expose a private listener directly or trust arbitrary proxy headers. Native license endpoints keep their existing origin policy.
 
-The September 13 owner steering removes Redeem from the public site. Normal promo/discount codes belong in Dodo checkout. The previously requested giveaway backend is retained but remains unexposed and unconfigured. There is no `/desktop/redeem` page or navigation link. Any future giveaway UI needs a new owner decision plus deployed identity integration, real Dodo import/recovery tests and artifact downloads. No giveaway campaigns or production keys were created by implementation tests.
+The September 17 recovery prompt restores secure redemption. `/desktop/redeem`
+now has an honest prelaunch state with no code collection while
+`releases/redemption.json` is disabled. It has no analytics, clears URL parameters,
+and bypasses Worker and service-worker caching. No public navigation advertises an
+active campaign. Normal purchase discounts still belong in Dodo checkout.
+
+The enabled flow obtains a short-lived identity proof from the same-origin
+`POST /api/desktop/redemption-session`, then sends only code and proof to the
+existing redemption endpoint. The deployment must supply `issueIdentitySession`
+to verify its HttpOnly account cookie and mint a proof accepted by `verifyIdentity`.
+The session endpoint fails closed when this adapter is absent and ignores browser
+email, customer, plan and device-limit claims. It is rate-limited and accepts only
+empty JSON from the first-party origin. The actual identity provider is still
+unconfigured; no permissive fallback exists.
+
+The browser keeps returned keys in memory, offers explicit reveal/copy, clears
+them on departure, and explains that no email was sent. Issuance remains disabled
+until identity integration, real Dodo import/recovery tests and owner-approved
+campaign creation pass. No actual campaign or production key was created.
 
 ## Validation
 

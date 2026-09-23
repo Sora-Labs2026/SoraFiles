@@ -1,5 +1,8 @@
 # SoraFiles Web and Desktop design review
 
+> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. Production Mac releases require signing and notarization.
+
+
 Reviewed September 13, 2026 using Apple-HIG-derived cross-platform design principles. This is a scoped implementation review, not an Apple HIG or WCAG conformance certificate. The existing SoraFiles brand and free Web workflows remain the design authority.
 
 Purchase-return follow-up: reused the Desktop layout, site typography, semantic colors, rounded controls and card treatment. Inspected the built page at the default desktop viewport and 320px width in light/dark modes. Key visibility is explicit, Copy is the primary action, feedback uses a polite status region, clipboard denial offers manual selection, and button targets remain 48px high. Keyboard focus and empty reload were checked; no horizontal overflow was observed. Only synthetic license data was displayed. This does not certify completed payment, native activation or email delivery.
@@ -33,7 +36,7 @@ No new animation, framework, font, telemetry or visual-effect dependency was add
 
 ## Scope and evidence
 
-- Independent desktop Home, all 26 workspace entry points, tool search, file selection, License, Settings, Updates/About and Quit were reviewed. Opening a workspace does not establish that its engine is connected.
+- Independent desktop Home, the historical 26 workspace entry points (now 25 eligible Desktop tools), tool search, file selection, License, Settings, Updates/About and Quit were reviewed. Opening a workspace does not establish that its engine is connected.
 - Browser UI contract checks exercise delayed replies, folder cancellation, escaped filenames, native selection release calls, startup failure rollback, masked/cleared license keys, keyboard focus, empty search and light/dark layouts at 380, 640, 800, 1180 and 1920 CSS pixels. The bridge in this test is explicitly synthetic.
 - Five normal-text token pairs meet 4.5:1 in both themes. The lowest measured pair was 6.13:1. This is token-pair evidence, not a claim about every composited pixel or disabled control.
 - Real Windows WebView2 capture at a 760×600 outer window and 200% native zoom checks five screens. Effective viewport was 372×280 CSS pixels; horizontal overflow was absent and Quit remained available in the scrollable navigation.
@@ -46,6 +49,6 @@ Machine-readable/local evidence: `.artifacts/desktop-ui-qa/results.json`, `.arti
 
 ## Remaining review and implementation
 
-Real processing/result/cancellation UI is not connected to the production native host. Active-license, expired-trial, activation-limit recovery and offline engine installation need real service/host integration before end-to-end design sign-off. Screen-reader testing, native high-DPI monitor changes, real macOS/Linux windows, menus, secure storage, updater/install/uninstall flows and translated desktop layouts remain pending. macOS shortcut rendering is implemented but is not evidence of a working macOS app.
+September 17: processing/results/cancellation, sequential batches and saved-output actions connect through the Rust host. There are 16 engine workflows and 15 basic UI workflows; full visual editors remain incomplete. Current UI tests use a synthetic bridge, while Rust tests exercise real offline processing separately. Active paid-license and live-service lifecycle, screen-reader testing, native high-DPI monitor changes, macOS/Linux integration, updater/install/uninstall and translated desktop layouts remain pending. Current marketing uses a labeled original illustration; the historical Windows capture was removed because it claimed all 26 tools.
 
 The native classifier now recognizes PDF, PNG, JPG, WebP, GIF, TIFF, PSD, HEIC/HEIF and bounded DOCX/XLSX container names. Unknown or ambiguous inputs receive no format-specific suggestion. Complete decoding, resource limits and validation are still required before processing. Engine and shell screenshots/tutorials must follow actual implementation. No Critical issue was established within this review's tested UI scope; unresolved launch/security gates are tracked separately and remain release-blocking.
