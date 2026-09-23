@@ -27,7 +27,8 @@ if (process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url)
   const notice=notices[process.version];
   if (!notice) throw Error('No reviewed license notice for bundled Node '+process.version);
   const bytes=await readFile(new URL('desktop/licenses/runtime/'+notice.file,root));
-  if (createHash('sha256').update(bytes).digest('hex')!==notice.sha256) throw Error('Node license notice checksum mismatch');
+  if (createHash('sha256').update(bytes).digest('hex')!==notice.sha256)
+    throw Error('Node license notice checksum mismatch: '+notice.file+(bytes.includes(Buffer.from('\r\n'))?' (CRLF checkout detected; restore the pinned LF bytes using .gitattributes)':''));
   await mkdir(new URL('.artifacts/',root),{recursive:true});
   const result={...report,status:'PASS',node:process.version,recordedAt:new Date().toISOString(),scope:'Runner/Node architecture and reviewed runtime notice; not OS compatibility certification'};
   await writeFile(new URL('.artifacts/native-target-verification.json',root),JSON.stringify(result,null,2));

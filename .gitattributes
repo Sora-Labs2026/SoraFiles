@@ -13,3 +13,7 @@
 *.wasm binary
 *.webp binary
 *.zip binary
+# These reviewed notices are hashed byte-for-byte against upstream LF content.
+desktop/licenses/runtime/*-LICENSE.txt text eol=lf
+# OCR provenance also pins the exact notice bytes on every build host.
+public/ocr/licenses/*.txt text eol=lf

@@ -1,4 +1,4 @@
-import {cp,mkdir,readFile,readdir,copyFile,writeFile,realpath,rm} from 'node:fs/promises';
+import {cp,mkdir,readFile,readdir,copyFile,writeFile,realpath,rm,unlink} from 'node:fs/promises';
 import {join,relative,dirname,sep} from 'node:path';import {createRequire} from 'node:module';import {fileURLToPath} from 'node:url';import {existsSync} from 'node:fs';
 import {desktopToolIds} from '../shared/tool-policy.mjs';
 import {processingTools} from '../native-host/processing-host.mjs';
@@ -35,6 +35,23 @@ for(const directory of ['core','shared','native-host']){
 // Copy only the installed processing dependency closure for the current target.
 // Missing platform optional packages are expected; required packages fail builds.
 const copied=new Set();
+const generatedRoot=await realpath(out);
+// npm's nested .bin launchers are installation-time conveniences, not imported
+// engine modules. On Unix they are symlinks back into the source installation;
+// copying them would make the resource package depend on that checkout.
+const npmBinDirectory=path=>relative(fileURLToPath(out),path).split(sep).some((part,index,parts)=>part==='.bin'&&parts[index-1]==='node_modules');
+async function removeOldBinDirectories(directory){
+ for(const entry of await readdir(directory,{withFileTypes:true})){
+  const path=join(directory,entry.name);
+  if(npmBinDirectory(path)){
+   // This path is an entry discovered beneath the generated package only.
+   const parent=await realpath(dirname(path));if(!parent.startsWith(generatedRoot+sep))throw Error('Generated launcher path escaped output');
+   if(entry.isSymbolicLink())await unlink(path);
+   else {const target=await realpath(path);if(!target.startsWith(generatedRoot+sep))throw Error('Generated launcher target escaped output');await rm(target,{recursive:true,force:true});}
+  }else if(entry.isDirectory()&&!entry.isSymbolicLink())await removeOldBinDirectories(path);
+ }
+}
+const previousModules=new URL('node_modules/',out);if(existsSync(previousModules))await removeOldBinDirectories(fileURLToPath(previousModules));
 async function include(name,from=require,optional=false){
  // Package dependencies can share names with Node built-ins (string_decoder).
  // The trailing slash requests package search paths instead of a null built-in
@@ -47,7 +64,9 @@ async function include(name,from=require,optional=false){
  copied.add(packagePath);
  const source=dirname(packagePath),destination=relative(fileURLToPath(new URL('node_modules/',root)),source);
  if(destination.startsWith('..'))throw Error('Processing dependency outside installed tree');
- await cp(source,join(fileURLToPath(out),'node_modules',destination),{recursive:true,errorOnExist:false});
+ await cp(source,join(fileURLToPath(out),'node_modules',destination),{recursive:true,errorOnExist:false,filter:path=>{
+  const parts=relative(source,path).split(sep);return !parts.some((part,index)=>part==='.bin'&&parts[index-1]==='node_modules');
+ }});
  const resolveFrom=createRequire(packagePath);
  for(const dependency of Object.keys(metadata.dependencies||{}))if(!Object.hasOwn(metadata.optionalDependencies||{},dependency))await include(dependency,resolveFrom);
  for(const dependency of Object.keys(metadata.optionalDependencies||{}))await include(dependency,resolveFrom,true);
