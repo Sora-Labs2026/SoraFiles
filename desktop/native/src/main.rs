@@ -334,13 +334,15 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
 }
 
 fn main() {
+    // Generate once: macOS embeds a single Info.plist symbol per executable.
+    let context=tauri::generate_context!();
     let early:Vec<String>=std::env::args().skip(1).collect();
     if early.first().is_some_and(|arg|arg=="--shell-menu"){
         if early.len()!=3{std::process::exit(2);}
         let input=std::path::PathBuf::from(&early[1]);let output=std::path::PathBuf::from(&early[2]);
         // Separate, windowless process: never forward file-manager discovery to
         // the interactive instance or load any processing engine.
-        let result=tauri::Builder::default().build(tauri::generate_context!());
+        let result=tauri::Builder::default().build(context);
         let code=match result {Ok(app)=>if shell_broker::run(app.handle(),&input,&output).is_ok(){0}else{1},Err(_)=>1};
         std::process::exit(code);
     }
@@ -354,7 +356,7 @@ fn main() {
         if args.len()==1 && args[0]=="--sync-explorer-entry" {
             // Installer runs after files are in place, without showing a window
             // or replacing the user's saved opt-out on upgrades.
-            let result=tauri::Builder::default().build(tauri::generate_context!())
+            let result=tauri::Builder::default().build(context)
                 .map_err(|_|"Desktop setup unavailable".to_string()).and_then(|app|{
                     let directory=app.path().app_config_dir().map_err(|_|"Settings unavailable".to_string())?;
                     let settings=preferences::load(&directory).map_err(str::to_owned)?.value();
@@ -440,7 +442,7 @@ fn main() {
                 });
             }
             Ok(())
-        }).build(tauri::generate_context!()).expect("Unable to initialize SoraFiles Desktop");
+        }).build(context).expect("Unable to initialize SoraFiles Desktop");
     app.run(|app,event| match event {
         RunEvent::ExitRequested { api, .. } => { let state=app.state::<HostState>();
             if state.processing_busy.load(Ordering::SeqCst) {api.prevent_exit();if state.quitting.swap(false,Ordering::SeqCst)||!state.tray_available.load(Ordering::SeqCst){let _=open_window(app);let _=app.emit_to("main","native-notice","Wait for processing to finish, or cancel it before quitting.");}}

@@ -89,7 +89,7 @@ pub fn publish(message:&Value,request:&Value)->Result<Value,String>{
             let (base,_source,stage,request)=fixture();let pins=FilePins::for_request(&request).unwrap();
             let target=base.join(format!("{stem}.{extension}"));std::fs::write(&target,b"existing document").unwrap();
             let result=publish(&message(&stage,&target),&request).unwrap();let saved=PathBuf::from(result["path"].as_str().unwrap());
-            assert_eq!(saved,base.join(format!("{stem} (1).{extension}")));
+            assert_eq!(saved.canonicalize().unwrap(),base.join(format!("{stem} (1).{extension}")).canonicalize().unwrap());
             assert_eq!(std::fs::read(&target).unwrap(),b"existing document");
             assert_eq!(std::fs::read(&saved).unwrap(),b"verified bytes");
             let mut outputs=crate::outputs::Outputs::default();let id=outputs.register(&saved).unwrap();

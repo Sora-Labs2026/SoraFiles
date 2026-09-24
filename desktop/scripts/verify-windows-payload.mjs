@@ -14,7 +14,11 @@ const actualShell=await readFile(join(release,'sorafiles-explorer.dll'));
 if(!actualShell.equals(expectedShell))throw Error('Explorer component staging differs from tested DLL');
 const script=await readFile(join(release,'nsis/x64/installer.nsi'),'utf8');
 if(!script.includes('SetCompressor /SOLID "lzma"'))throw Error('Unexpected installer compression');
-if(!script.includes('sorafiles-explorer.dll')||!script.includes('--sync-explorer-entry')||!script.includes('--remove-explorer-entry'))throw Error('Installer omits native menu component or lifecycle hooks');
+const hookPath=resolve('desktop/native/installer-hooks.nsh');
+const hooks=await readFile(hookPath,'utf8');
+if(!script.includes('sorafiles-explorer.dll')||!script.includes(`!include "${hookPath}"`)
+ ||!script.includes('!insertmacro NSIS_HOOK_POSTINSTALL')||!script.includes('!insertmacro NSIS_HOOK_PREUNINSTALL')
+ ||!hooks.includes('--sync-explorer-entry')||!hooks.includes('--remove-explorer-entry'))throw Error('Installer omits native menu component or lifecycle hooks');
 const shellComponent={bytes:actualShell.length,sha256:hash(actualShell)};
 const report={recordedAt:new Date().toISOString(),status:'PASS',resourceFiles:entries.length,resourceBytes,nativeBytes,shellComponent,totalStagedPayloadBytes:resourceBytes+nativeBytes+shellComponent.bytes,compression:'NSIS solid LZMA',scope:'NSIS resource staging equals generated pack byte-for-byte; excludes installed allocation, uninstaller, shortcuts and shared WebView2; not installer extraction or installation verification',entries};
 await writeFile('.artifacts/windows-payload-verification.json',JSON.stringify(report,null,2));console.log(JSON.stringify({...report,entries:undefined}));

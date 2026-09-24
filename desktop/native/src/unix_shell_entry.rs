@@ -1,6 +1,22 @@
-use std::{path::Path,process::{Command,Stdio},time::{Instant,Duration}};
+use std::{path::{Path,PathBuf},process::{Command,Stdio},time::{Instant,Duration}};
+fn launcher(executable:PathBuf)->Result<PathBuf,String>{
+ #[cfg(target_os="linux")]
+ if let (Some(image),Some(mount))=(std::env::var_os("APPIMAGE"),std::env::var_os("APPDIR")){
+  use std::io::Read;
+  let image=PathBuf::from(image);let mount=PathBuf::from(mount);
+  if !image.is_absolute()||!mount.is_absolute(){return Err("AppImage location unavailable".into());}
+  let mount=mount.canonicalize().map_err(|_|"AppImage location unavailable")?;
+  if !executable.canonicalize().map_err(|_|"Application location unavailable")?.starts_with(&mount){return Ok(executable);}
+  let mut header=[0u8;11];std::fs::File::open(&image).and_then(|mut file|file.read_exact(&mut header)).map_err(|_|"AppImage location unavailable")?;
+  if &header[..4]!=b"\x7fELF"||&header[8..]!=b"AI\x02"{return Err("AppImage location unavailable".into());}
+  // The mount disappears on Quit; the persistent AppImage must receive future
+  // file-manager actions so it can recreate the mount and restart the helper.
+  return Ok(image);
+ }
+ Ok(executable)
+}
 pub fn set_enabled(resources:&Path,enabled:bool)->Result<bool,String>{
- let executable=std::env::current_exe().map_err(|_|"Application location unavailable")?;
+ let executable=launcher(std::env::current_exe().map_err(|_|"Application location unavailable")?)?;
  let (runtime,_,_)=crate::license_host::locations(resources)?;
  let helper=runtime.parent().ok_or("Desktop components unavailable")?.join("desktop/scripts/unix-shell-integration.mjs");
  let mut command=Command::new(runtime);command.arg(helper).arg(if enabled{"enable"}else{"disable"}).arg(executable).env_clear().stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());

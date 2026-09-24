@@ -75,11 +75,14 @@ jobs:
         run: cargo test --locked --manifest-path desktop/native/Cargo.toml --target ${{ matrix.target }}
       - name: Install pinned native packaging CLI
         run: npm install --global @tauri-apps/cli@2.11.4
+      - name: Preserve verified Linux processing binaries during AppImage packaging
+        if: runner.os == 'Linux'
+        run: chmod +x desktop/scripts/appimage-patchelf.sh
       - name: Build platform package
         working-directory: desktop/native
         env:
           APPLE_SIGNING_IDENTITY: '-'
-          PATCHELF: ${{ runner.os == 'Linux' && '/usr/bin/patchelf' || '' }}
+          PATCHELF: ${{ runner.os == 'Linux' && format('{0}/desktop/scripts/appimage-patchelf.sh', github.workspace) || '' }}
         run: tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
         # Direct local packaging only: no release API or signing credentials.
       - name: Verify Windows resource staging
