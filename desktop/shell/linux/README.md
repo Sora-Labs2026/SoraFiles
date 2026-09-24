@@ -12,4 +12,10 @@ dynamic broker menu. Both KDE 5 and KDE 6 service locations are installed.
 
 Users may need to install their distribution's Nautilus Python extension package
 and restart the file manager. The helper does not install packages or change global
-settings. Actual Nautilus/Dolphin interaction remains unverified on Linux.
+settings. The app's startup setting writes a per-user XDG autostart entry at
+`$XDG_CONFIG_HOME/autostart/com.soralabs.sorafiles.desktop.desktop` (falling back
+to `~/.config/autostart`). It starts the current executable with `--background`,
+uses an ownership marker, and refuses to overwrite another application's entry;
+it never installs a system service or requests root. The writer and ownership
+rules have source unit tests. Actual Nautilus/Dolphin interaction, desktop-session
+startup, Secret Service access and clean uninstall remain unverified on Linux.

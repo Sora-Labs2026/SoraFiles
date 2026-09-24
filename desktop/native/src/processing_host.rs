@@ -19,11 +19,13 @@ pub(crate) fn run_component(directory:&Path,runtime:&Path,entry:&Path,config:Val
  let mut command=Command::new(runtime);command.arg(entry).env_clear().stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
  for name in ["SystemRoot","WINDIR","TEMP","TMP","TMPDIR"]{if let Some(value)=std::env::var_os(name){command.env(name,value);}}
  #[cfg(windows)] {use std::os::windows::process::CommandExt;command.creation_flags(0x08000000);}
- let mut child=command.spawn().map_err(|_|"Processing component could not start")?;
+ #[cfg(unix)] let mut child=crate::unix_process_group::ProcessGroup::spawn(&mut command).map_err(|_|"Processing component could not start")?;
+ #[cfg(not(unix))] let mut child=command.spawn().map_err(|_|"Processing component could not start")?;
  #[cfg(windows)] let process_job=crate::process_job::ProcessJob::attach(&mut child)?;
  let mut input=child.stdin.take().ok_or("Processing connection unavailable")?;let output=child.stdout.take().ok_or("Processing connection unavailable")?;
- let (sender,receiver)=mpsc::sync_channel(2);
- let reader=std::thread::spawn(move||{let mut reader=BufReader::new(output);loop{let mut line=Vec::new();if !matches!(reader.by_ref().take(MAX_RESPONSE+1).read_until(b'\n',&mut line),Ok(n) if n>0&&n<=MAX_RESPONSE as usize){break;}if sender.send(line).is_err(){break;}}});
+ #[cfg(not(unix))] let (sender,receiver)=mpsc::sync_channel(2);
+ #[cfg(unix)] let (receiver,reader)=crate::unix_process_group::FrameReader::start(output,MAX_RESPONSE as usize);
+ #[cfg(not(unix))] let reader=std::thread::spawn(move||{let mut reader=BufReader::new(output);loop{let mut line=Vec::new();if !matches!(reader.by_ref().take(MAX_RESPONSE+1).read_until(b'\n',&mut line),Ok(n) if n>0&&n<=MAX_RESPONSE as usize){break;}if sender.send(line).is_err(){break;}}});
  let started=Instant::now();let outcome=(||{
   let mut request=params;request["type"]=json!("process");request["state"]=state;request["config"]=config;request["nativePublication"]=json!(cfg!(windows));write_frame(&mut input,&request)?;
   let mut cancelled=false;let mut writes=0;
@@ -51,7 +53,13 @@ pub(crate) fn run_component(directory:&Path,runtime:&Path,entry:&Path,config:Val
  })();
  drop(input);
  #[cfg(windows)] drop(process_job);
- let _=child.kill();let _=child.wait();drop(receiver);let _=reader.join();outcome
+ #[cfg(unix)] child.cleanup();
+ #[cfg(not(unix))] let _=child.kill();
+ #[cfg(not(unix))] let _=child.wait();
+ drop(receiver);
+ #[cfg(unix)] drop(reader);
+ #[cfg(not(unix))] let _=reader.join();
+ outcome
 }
 fn write_frame(writer:&mut impl Write,value:&Value)->Result<(),String>{let bytes=serde_json::to_vec(value).map_err(|_|"Invalid request")?;if bytes.len()>65535{return Err("Choose fewer files for this job".into());}writer.write_all(&bytes).and_then(|_|writer.write_all(b"\n")).and_then(|_|writer.flush()).map_err(|_|"Processing connection closed".into())}
 fn validate_result(value:&Value)->Result<(),String>{

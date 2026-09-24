@@ -1,17 +1,19 @@
 {
   "schema": 1,
   "macos": {
-    "signing": "signed",
-    "notarized": true,
-    "installation": "standard",
+    "signing": "ad-hoc",
+    "notarized": false,
+    "installation": "gatekeeper-approval",
     "updaterEligible": false,
     "architectures": ["arm64", "x64"],
-    "ownerSteering": "September 17 recovery prompt: require Developer ID signing, notarization and native validation before publication. Ad-hoc candidates are local/CI tests only."
+    "runtimeValidation": "pending-native-macOS",
+    "ownerSteering": "September 23 owner clarification: ad-hoc macOS candidates may be distributed with first-party Open Anyway guidance. Developer ID signing and notarization remain future publication work; automatic updates stay disabled until trust and runtime checks pass."
   },
   "linux": {
     "initialBuildTarget": "ubuntu-22.04",
     "architectures": ["x64"],
     "packages": ["deb", "AppImage"],
+    "runtimeValidation": "pending-native-linux",
     "otherDistributions": "Publish compatibility only after actual installation and runtime tests."
   },
   "publication": "No artifact becomes downloadable merely because it builds. Require native runtime, engine, licensing and installer checks."

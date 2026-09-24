@@ -18,7 +18,9 @@ mod checkout;
 #[cfg(windows)] mod publication;
 #[cfg(windows)] mod startup;
 #[cfg(windows)] mod shell_entry;
-#[cfg(unix)] mod unix_shell_entry;
+#[cfg(any(target_os = "macos", target_os = "linux"))] mod unix_shell_entry;
+#[cfg(unix)] mod unix_process_group;
+#[cfg(any(target_os = "macos", target_os = "linux"))] mod unix_startup;
 use bridge_policy::{DialogLease, local_navigation, valid_request};
 use selection::Selection;
 use serde_json::{json, Value};
@@ -89,13 +91,14 @@ fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
     value["platform"] = json!(std::env::consts::OS);
     // License status has its own verified action. Preference responses must not
     // reset an already activated renderer to the initial unactivated state.
-    value["version"] = json!("Development build 0.1.0");
-    value["startupAvailable"]=json!(cfg!(windows));
+    value["version"] = json!("SoraFiles Desktop 0.1.0");
+    value["startupAvailable"]=json!(cfg!(windows) || cfg!(target_os = "macos") || cfg!(target_os = "linux"));
     value["shellEntryAvailable"]=json!(false);
     value["shellEntry"]=json!(false);
-    #[cfg(unix)] {value["shellEntryAvailable"]=json!(true);value["shellEntry"]=json!(state.settings.lock().map_err(|_|"Settings unavailable")?.get("shellEntry").and_then(Value::as_bool).unwrap_or(true));}
+    #[cfg(any(target_os = "macos", target_os = "linux"))] {value["shellEntryAvailable"]=json!(true);value["shellEntry"]=json!(state.settings.lock().map_err(|_|"Settings unavailable")?.get("shellEntry").and_then(Value::as_bool).unwrap_or(true));}
     #[cfg(windows)] {value["shellEntryAvailable"]=json!(shell_entry::capability());if smoke_output().is_none(){value["shellEntry"]=json!(shell_entry::enabled().unwrap_or(false));}}
     #[cfg(windows)] {if smoke_output().is_none(){value["startup"]=json!(startup::enabled().unwrap_or(false));}}
+    #[cfg(any(target_os = "macos", target_os = "linux"))] {if smoke_output().is_none(){value["startup"]=json!(unix_startup::enabled().unwrap_or(false));}}
     value["launchIntent"]=state.launch_intent.lock().map_err(|_|"Selection unavailable")?.clone();
     value["files"] = json!(state.selection.lock().map_err(|_| "Selection unavailable")?.list());
     value["job"] = state.job.lock().map_err(|_|"Job status unavailable")?.snapshot(state.processing_busy.load(Ordering::SeqCst));
@@ -264,7 +267,7 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                     *settings=next;drop(settings);
                     return state_value(&app);
                 }
-                #[cfg(unix)] {
+                #[cfg(any(target_os = "macos", target_os = "linux"))] {
                     if smoke_output().is_some(){return Err("File-manager changes are disabled in diagnostics".into());}
                     let enabled=value.as_bool().ok_or("Invalid file-manager setting")?;
                     let resources=app.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
@@ -283,7 +286,12 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                     startup::set(enabled)?;
                     return state_value(&app);
                 }
-                #[cfg(not(windows))] return Err("Sign-in startup is not available on this platform yet".into());
+                #[cfg(any(target_os = "macos", target_os = "linux"))] {
+                    let enabled=value.as_bool().ok_or("Invalid sign-in setting")?;
+                    if smoke_output().is_some(){return Err("Sign-in changes are disabled in diagnostics".into());}
+                    unix_startup::set(enabled)?;
+                    return state_value(&app);
+                }
             }
             let valid=match key.as_str() { "output"=>matches!(value.as_str(),Some("source"|"downloads"|"custom"|"ask")), "theme"=>matches!(value.as_str(),Some("system"|"light"|"dark")), _=>false };
             if !valid { return Err("This setting is not available in this build.".into()); }
@@ -400,7 +408,7 @@ fn main() {
                     let enabled=value.get("shellEntry").and_then(Value::as_bool).unwrap_or(true);
                     if shell_entry::set_enabled(enabled).is_err(){value["notice"]=json!("File-manager actions could not be updated. Try changing the setting in Settings.");}
                 }
-                #[cfg(unix)] if readable {
+                #[cfg(any(target_os = "macos", target_os = "linux"))] if readable {
                     let enabled=value.get("shellEntry").and_then(Value::as_bool).unwrap_or(true);
                     let result=app.path().resource_dir().map_err(|_|"Desktop components unavailable".to_string()).and_then(|resources|unix_shell_entry::set_enabled(&resources,enabled));
                     if result.is_err(){value["notice"]=json!("File-manager actions could not be updated. Try changing the setting in Settings.");}

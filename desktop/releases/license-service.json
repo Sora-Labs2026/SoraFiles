@@ -1,4 +1,6 @@
 {
   "origin": "https://license.sorafiles.com",
-  "keys": {}
+  "keys": {
+    "production": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAQgQedXEsOMJkhEZXlARLmqb+yjnRHdrmpGzRzqBANfQ=\n-----END PUBLIC KEY-----\n"
+  }
 }

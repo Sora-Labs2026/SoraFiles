@@ -1,0 +1,34 @@
+name: Desktop platform lifecycle checks
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/desktop-*']
+    paths: ['desktop/native/src/**', 'desktop/platform-checks/**', '.github/workflows/desktop-platform-checks.yml']
+  pull_request:
+    paths: ['desktop/native/src/**', 'desktop/platform-checks/**', '.github/workflows/desktop-platform-checks.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  platform:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, macos-15, macos-15-intel, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.21.0'
+      - name: Select pinned Rust compiler
+        run: rustup toolchain install 1.98.1 --profile minimal
+      - name: Test actual startup writer and Unix child lifecycle
+        run: cargo +1.98.1 test --locked --manifest-path desktop/platform-checks/Cargo.toml
+      # These tests do not certify Finder/file-manager UI, login sessions,
+      # installed packages, or access to the user's credential store.
