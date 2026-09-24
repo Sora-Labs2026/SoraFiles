@@ -83,7 +83,9 @@ jobs:
         env:
           APPLE_SIGNING_IDENTITY: '-'
           PATCHELF: ${{ runner.os == 'Linux' && format('{0}/desktop/scripts/appimage-patchelf.sh', github.workspace) || '' }}
-        run: tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+        # Invoke Node directly: the Windows PowerShell npm shim consumes the
+        # argument separator before Cargo's --locked flag.
+        run: node "$(npm root --global)/@tauri-apps/cli/tauri.js" build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
         # Direct local packaging only: no release API or signing credentials.
       - name: Verify Windows resource staging
         if: runner.os == 'Windows'

@@ -220,6 +220,22 @@ mod windows {
         }
         fn expected() -> &'static str { r#""C:\Synthetic App\sorafiles.exe" --edit "%1""# }
         const TEST_DLL: &str = r"C:\Synthetic App\sorafiles-explorer.dll";
+        #[test]
+        fn dynamic_menu_transaction_works_inside_per_user_classes_hive() {
+            let root=RegKey::predef(HKEY_CURRENT_USER);
+            let base=format!(r"Software\Classes\SoraFilesTests-{}",uuid::Uuid::new_v4());
+            let (_,disposition)=root.create_subkey(&base).unwrap();assert_eq!(disposition,REG_CREATED_NEW_KEY);
+            let classes=format!(r"{base}\CLSID");
+            let result=(||{
+                update(&root,&base,expected(),true,None)?;
+                dynamic_update(&root,&base,&classes,expected(),TEST_DLL,true,false,None)?;
+                assert!(dynamic_state(&root,&base,&classes,expected(),TEST_DLL)?);
+                dynamic_update(&root,&base,&classes,expected(),TEST_DLL,false,false,None)?;
+                Ok::<(),String>(())
+            })();
+            assert!(base.starts_with(r"Software\Classes\SoraFilesTests-"));
+            root.delete_subkey_all(&base).unwrap();result.unwrap();
+        }
         fn dynamic(sandbox: &Sandbox, enable: bool, uninstall: bool, fail: Option<usize>) -> Result<bool, String> {
             dynamic_update(&sandbox.root, &sandbox.base, &format!(r"{}\CLSID", sandbox.base), expected(), TEST_DLL, enable, uninstall, fail)
         }
