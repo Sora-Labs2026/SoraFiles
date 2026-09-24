@@ -11,6 +11,7 @@ mod shell_broker;
 mod processing_host;
 mod outputs;
 mod job_status;
+mod checkout;
 #[cfg(debug_assertions)] mod background_smoke;
 #[cfg(windows)] mod file_pins;
 #[cfg(windows)] mod process_job;
@@ -309,13 +310,15 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                 Ok(json!({"selected":false}))
             }).await.map_err(|_| "Folder picker unavailable")?
         }
-        "startTrial"|"activate"|"licenseStatus"|"refreshLicense"|"licenseDevices"|"supportDetails" => {
+        "startTrial"|"activate"|"licenseStatus"|"refreshLicense"|"licenseDevices"|"supportDetails"|"replacementEmailStart"|"replacementEmailVerify"|"replacementRequest"|"replacementStatus"|"replacementState"|"replacementCheckout" => {
             let handle=app.clone();tauri::async_runtime::spawn_blocking(move||{
                 let state=handle.state::<HostState>();let _lease=DialogLease::acquire(&state.dialog_busy)?;
                 let directory=handle.path().app_config_dir().map_err(|_|"Private storage folder unavailable")?;
                 let resources=handle.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
-                let action=match method.as_str(){"startTrial"=>"trial","activate"=>"activate","refreshLicense"=>"refresh","licenseDevices"=>"devices","supportDetails"=>"support",_=>"status"};
-                license_host::run(&directory,&resources,action,params)
+                let action=match method.as_str(){"startTrial"=>"trial","activate"=>"activate","refreshLicense"=>"refresh","licenseDevices"=>"devices","supportDetails"=>"support",name if name.starts_with("replacement")=>name,_=>"status"};
+                let result=license_host::run(&directory,&resources,action,params)?;
+                if action=="replacementCheckout"{checkout::open(result["checkoutUrl"].as_str().ok_or("Checkout unavailable")?)?;return Ok(json!({"opened":true}));}
+                Ok(result)
             }).await.map_err(|_|"License action could not finish")?
         },
         "cancelProcessing" => {state.processing_cancel.store(true,Ordering::SeqCst);Ok(json!({"requested":true}))},
@@ -342,9 +345,15 @@ fn main() {
         let input=std::path::PathBuf::from(&early[1]);let output=std::path::PathBuf::from(&early[2]);
         // Separate, windowless process: never forward file-manager discovery to
         // the interactive instance or load any processing engine.
-        let result=tauri::Builder::default().build(context);
-        let code=match result {Ok(app)=>if shell_broker::run(app.handle(),&input,&output).is_ok(){0}else{1},Err(_)=>1};
-        std::process::exit(code);
+        // Resolve the same paths as Tauri without initializing a GUI runtime.
+        // GTK/WebKit initialization can block in a headless file-manager query.
+        let result=(||{
+            let directory=dirs::config_dir().ok_or("Settings unavailable".to_string())?.join(&context.config().identifier);
+            let resources=tauri::utils::platform::resource_dir(context.package_info(),&tauri::utils::Env::default()).map_err(|_|"Desktop components unavailable".to_string())?;
+            shell_broker::run(&directory,&resources,&input,&output)
+        })();
+        if let Err(message)=&result {eprintln!("SoraFiles menu: {message}");}
+        std::process::exit(if result.is_ok(){0}else{1});
     }
     // Uninstaller cleanup is handled before single-instance forwarding. Only
     // entries owned by this exact executable may be changed by the module.

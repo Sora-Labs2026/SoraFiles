@@ -11,5 +11,5 @@
     "bindings": [{"name": "LICENSE_LEDGER", "class_name": "LicenseLedgerObject"}]
   },
   "migrations": [{"tag": "v1", "new_sqlite_classes": ["LicenseLedgerObject"]}],
-  "vars": {"DODO_MODE": "test_mode", "REDEMPTION_ENABLED": "false"}
+  "vars": {"DODO_MODE": "test_mode", "REDEMPTION_ENABLED": "false", "REPLACEMENTS_ENABLED": "false"}
 }

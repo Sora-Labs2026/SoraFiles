@@ -6,11 +6,15 @@ const reconciliationRequired=()=>Object.assign(Error('Activation requires reconc
 // Application layer, deliberately separate from HTTP and deploy-specific identity providers.
 // All public actions require device proof. No client-provided plan/status can issue a grant.
 export class LicenseService {
- constructor({store,guard,dodo,authority,signing,replacements=null,now=()=>Math.floor(Date.now()/1000)}){signEntitlement({configurationCheck:true,features:['process']},signing);store.pinActivationKey(guard.activationFingerprint(''));Object.assign(this,{store,guard,dodo,authority,signing,replacements,now});}
+ constructor({store,guard,dodo,authority,signing,replacements=null,replacementEmail=null,now=()=>Math.floor(Date.now()/1000)}){signEntitlement({configurationCheck:true,features:['process']},signing);store.pinActivationKey(guard.activationFingerprint(''));Object.assign(this,{store,guard,dodo,authority,signing,replacements,replacementEmail,now});}
  challenge(request){return this.guard.issue(request);}
  issue(license,deviceId,trial){return signEntitlement(entitlementClaims({license,deviceId,trial,now:this.now()}),this.signing);}
  async execute(action,request){
   const deviceId=this.guard.verify({...request,action}),body=request.body;
+  if(action==='replacementEmailStart'||action==='replacementEmailVerify'){
+   if(!this.replacementEmail)throw Object.assign(Error('Email verification is unavailable'),{code:'providerUnavailable'});
+   return this.replacementEmail[action==='replacementEmailStart'?'start':'verify'](body,deviceId);
+  }
   if(action==='replacementRequest'||action==='replacementStatus'){
    if(!this.replacements)throw Object.assign(Error('Replacement configuration required'),{code:'providerUnavailable'});
    return this.replacements[action==='replacementRequest'?'request':'status'](body,deviceId);

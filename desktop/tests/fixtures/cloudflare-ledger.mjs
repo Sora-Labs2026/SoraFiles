@@ -6,6 +6,8 @@ import {prepareReplacement,completeReplacement} from '../../license-service/repl
 import {PromotionStore} from '../../license-service/promotions.mjs';
 import {LicenseLedgerObject} from '../../license-service/cloudflare/worker.mjs';
 import {PaidReplacementService} from '../../license-service/paid-replacements.mjs';
+import {ReplacementEmailService} from '../../license-service/replacement-email.mjs';
+import {RequestGuard} from '../../license-service/request-guard.mjs';
 const id=n=>Buffer.alloc(32,n).toString('base64url');
 export class Probe {
  constructor(ctx){this.ctx=ctx;this.store=new DurableLicenseStore(ctx.storage);}
@@ -13,6 +15,16 @@ export class Probe {
   const s=this.store,db=s.db,now=1800000000;
   try {
    switch(new URL(request.url).pathname){
+    case '/replacement-email': {
+     const guard=new RequestGuard({store:s,secret:Buffer.alloc(32,17),now:()=>now}),keyHash=guard.activationFingerprint('synthetic-key');
+     const state={ref:'email-license',plan:'personal-lifetime',status:'active',periodEnd:null,observedAt:now};s.sync(state);s.bind(state.ref,'email-customer');s.activate(state.ref,id(1),'old',now);
+     db.prepare("INSERT INTO activation_attempts VALUES(?,?,'complete',?,'old','email-customer',?)").run(keyHash,id(1),state.ref,now);
+     let code;const email=new ReplacementEmailService({store:s,guard,now:()=>now,authority:{resolve:async()=>state},dodo:{validate:async()=>({valid:true}),customer:async()=>({customer_id:'email-customer',email:'customer@example.com'})},sendCode:async row=>{code=row.code;}});
+     const issued=await email.start({licenseKey:'synthetic-key'},id(2));let limited=false;try{await email.start({licenseKey:'synthetic-key'},id(3));}catch{limited=true;}
+     const verified=email.verify({verificationId:issued.verificationId,code},id(2));let replay=false;try{email.verify({verificationId:issued.verificationId,code},id(2));}catch{replay=true;}
+     const identity=email.identity(verified.identityToken,{licenseRef:state.ref,deviceId:id(2),oldDeviceId:id(1),keyHash});
+     return Response.json({masked:issued.maskedEmail,limited,replay,verified:identity.verified,rows:db.prepare('SELECT COUNT(*) n FROM replacement_email').get().n});
+    }
     case '/rollback': {
      try{s.transaction(()=>{s.sync({ref:'rollback',plan:'personal-lifetime',status:'active',observedAt:now});throw Error('rollback');});}catch{}
      let foreignKey=false;try{db.prepare('INSERT INTO devices VALUES(?,?,?,1)').run('absent','device','instance');}catch{foreignKey=true;}

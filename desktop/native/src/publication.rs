@@ -93,7 +93,7 @@ pub fn publish(message:&Value,request:&Value)->Result<Value,String>{
             assert_eq!(std::fs::read(&target).unwrap(),b"existing document");
             assert_eq!(std::fs::read(&saved).unwrap(),b"verified bytes");
             let mut outputs=crate::outputs::Outputs::default();let id=outputs.register(&saved).unwrap();
-            assert_eq!(outputs.resolve(&id).unwrap(),saved);
+            assert_eq!(outputs.resolve(&id).unwrap().canonicalize().unwrap(),saved.canonicalize().unwrap());
             drop(pins);std::fs::remove_dir_all(base).unwrap();
         }
     }

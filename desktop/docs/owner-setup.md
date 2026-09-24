@@ -37,8 +37,8 @@ HTTP endpoints and a durable webhook inbox/reconciliation worker exist and have 
 
 ## Signing and releases
 
-Provision Windows Authenticode signing and the selected Linux/repository signing identity. The September 17 recovery prompt requires Developer ID signing, hardened runtime, notarization and appropriate stapling for production Mac artifacts. Ad-hoc builds are local/CI candidates only. Provision isolated release storage/CDN credentials and updater signing keys. Untested prototypes must not enter the release manifest.
+The owner authorized unsigned Windows/Linux releases and ad-hoc macOS releases without waiting for notarization. Mac installation instructions must explain System Settings → Privacy & Security → Open Anyway and disclose the signing status. Automatic updates remain disabled for this release channel. Provision isolated release storage/CDN credentials; artifact verification and honest compatibility metadata are still required.
 
 Actual installers must be tested on their declared OS/architecture/minimum OS. Unknown OS versions require manual confirmation; unsupported or security-blocked builds cannot become automatic fallbacks. Release notes, immutable artifacts, checksums, updater signatures and compatibility metadata must come from tested builds.
 
-Support-approved device replacement is available through the authenticated server CLI in device-replacement.md. Preserve both activation and replacement ledgers. The old activation is revoked server-side; an existing permanently offline Lifetime entitlement cannot be remotely disabled.
+Paid device replacement uses purchaser email verification without a general account system; see [paid-device-replacement.md](paid-device-replacement.md) for the flow, fixed fees and server configuration. Support-approved exceptions remain available through the authenticated server CLI in device-replacement.md. Preserve the activation, verification and replacement ledgers. An existing permanently offline Lifetime entitlement cannot be remotely disabled.

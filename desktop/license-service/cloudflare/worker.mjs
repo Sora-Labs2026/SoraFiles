@@ -1,4 +1,6 @@
 import {PaidReplacementService,queueReplacementEvent} from '../paid-replacements.mjs';
+import {ReplacementEmailService} from '../replacement-email.mjs';
+import {createReplacementMailer} from '../replacement-mailer.mjs';
 import {createHmac} from 'node:crypto';
 import {DurableObject,WorkerEntrypoint} from 'cloudflare:workers';
 import {DurableLicenseStore} from './store.mjs';
@@ -72,9 +74,10 @@ export class LicenseLedgerObject extends DurableObject {
    }}):null;
    const authority=new DodoAuthority({dodo,catalog,promotions});
    const guard=new RequestGuard({store:this.store,secret:secret(env.CHALLENGE_HMAC_SECRET)});
-   const replacements=env.REPLACEMENTS_ENABLED==='true'?new PaidReplacementService({store:this.store,guard,dodo,authority,products:JSON.parse(env.REPLACEMENT_PRODUCTS_JSON),verifyIdentity:async token=>{if(!env.REPLACEMENT_IDENTITY)throw Error('Original customer verification required');return env.REPLACEMENT_IDENTITY.verify({token});}}):null;
-   const service=new LicenseService({store:this.store,guard,dodo,authority,replacements,signing:{privateKey:env.ENTITLEMENT_ED25519_PRIVATE_KEY,kid:env.ENTITLEMENT_KEY_ID}});
-   return this.cached={service,authority,dodo,guard,promotions,replacements,until:Date.now()+300000};
+   const replacementEmail=env.REPLACEMENTS_ENABLED==='true'?new ReplacementEmailService({store:this.store,guard,dodo,authority,sendCode:createReplacementMailer({apiKey:env.REPLACEMENT_EMAIL_API_KEY,from:env.REPLACEMENT_EMAIL_FROM})}):null;
+   const replacements=replacementEmail?new PaidReplacementService({store:this.store,guard,dodo,authority,products:JSON.parse(env.REPLACEMENT_PRODUCTS_JSON),verifyIdentity:(token,context)=>replacementEmail.identity(token,context)}):null;
+   const service=new LicenseService({store:this.store,guard,dodo,authority,replacements,replacementEmail,signing:{privateKey:env.ENTITLEMENT_ED25519_PRIVATE_KEY,kid:env.ENTITLEMENT_KEY_ID}});
+   return this.cached={service,authority,dodo,guard,promotions,replacements,replacementEmail,until:Date.now()+300000};
   })();
   try{return await this.loading;}finally{this.loading=null;}
  }

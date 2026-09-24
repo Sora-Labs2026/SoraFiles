@@ -61,20 +61,25 @@ pub(crate) fn locations(resources:&Path)->Result<(PathBuf,PathBuf,Value),String>
 }
 pub(crate) fn validate_state(value:&Value)->Result<(),String>{
  let object=value.as_object().ok_or("Invalid private state")?;
- if object.len()!=3||value["schema"]!=1||!object.contains_key("license"){return Err("Invalid private state".into());}
+ if !(object.len()==3||object.len()==4&&object.contains_key("replacement"))||value["schema"]!=1||!object.contains_key("license"){return Err("Invalid private state".into());}
  let device=value["device"].as_object().ok_or("Invalid private device")?;
  if device.len()!=2||!["publicKey","privateKey"].iter().all(|key|device.get(*key).and_then(Value::as_str).is_some_and(|text|!text.is_empty()&&text.len()<=2048)){return Err("Invalid private device".into());}
  if !value["license"].is_null(){let license=value["license"].as_object().ok_or("Invalid private license")?;if license.keys().any(|key|!matches!(key.as_str(),"licenseKey"|"licenseRef"|"instanceId"|"entitlement"|"lastTrustedTime"|"deactivationPending")){return Err("Invalid private license".into());}}
+ if !value["replacement"].is_null(){let flow=value["replacement"].as_object().ok_or("Invalid private replacement")?;
+  if flow.keys().any(|key|!matches!(key.as_str(),"stage"|"licenseKey"|"verificationId"|"maskedEmail"|"expiresAt"|"resendAfter"|"identityToken"|"licenseRef"|"plan"|"devices"|"oldDeviceId"|"orderId"|"status"|"checkoutUrl"))||value["replacement"].to_string().len()>24576{return Err("Invalid private replacement".into());}
+ }
  Ok(())
 }
 fn validate_result(value:&Value)->Result<(),String>{
  let result=value.as_object().ok_or("Invalid license result")?;
- if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"devices"|"activationAvailable"|"supportDeviceId"|"actions"|"action")){return Err("Private fields cannot enter the interface".into());}
+ if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"devices"|"activationAvailable"|"supportDeviceId"|"actions"|"action"|"replacement"|"checkoutUrl")){return Err("Private fields cannot enter the interface".into());}
  for (key,value) in result {let valid=match key.as_str(){
   "license"=>matches!(value.as_str(),Some("not-activated"|"trial"|"active"|"needs-verification")),
   "plan"=>value.as_str().is_some_and(|s|s.len()<64&&s.bytes().all(|b|b.is_ascii_lowercase()||b.is_ascii_digit()||b==b'-')),
   "expiresAt"=>value.is_null()||value.as_u64().is_some(),"maxDevices"=>matches!(value.as_u64(),Some(1|5)),
   "activationAvailable"=>value.is_boolean(),
+  "replacement"=>valid_replacement(value),
+  "checkoutUrl"=>trusted_checkout(value.as_str().unwrap_or("")),
   "actions"=>value.as_array().is_some_and(|rows|rows.len()<=32&&rows.iter().all(valid_native_action)),
   "action"=>valid_native_action(value),
   "supportDeviceId"=>value.as_str().is_some_and(|s|s.len()==43&&s.bytes().all(|b|b.is_ascii_alphanumeric()||b==b'-'||b==b'_')),
@@ -82,6 +87,21 @@ fn validate_result(value:&Value)->Result<(),String>{
   if !valid{return Err("Invalid public license response".into());}
  }
  Ok(())
+}
+pub(crate) fn trusted_checkout(value:&str)->bool{
+ value.len()<=4096&&tauri::Url::parse(value).is_ok_and(|url|url.scheme()=="https"&&matches!(url.host_str(),Some("checkout.dodopayments.com"|"test.checkout.dodopayments.com"))&&url.username().is_empty()&&url.password().is_none()&&url.port().is_none())
+}
+fn valid_replacement(value:&Value)->bool{
+ let Some(row)=value.as_object()else{return false;};
+ row.keys().all(|key|matches!(key.as_str(),"stage"|"maskedEmail"|"expiresAt"|"resendAfter"|"plan"|"devices"|"fee"|"status"|"checkoutAvailable"))
+ &&matches!(value["stage"].as_str(),Some("idle"|"email"|"verified"|"payment"|"complete"))
+ &&(value["maskedEmail"].is_null()||value["maskedEmail"].as_str().is_some_and(|s|s.len()<=254&&s.contains('*')&&!s.chars().any(char::is_control)))
+ &&(value["expiresAt"].is_null()||value["expiresAt"].as_u64().is_some())&&(value["resendAfter"].is_null()||value["resendAfter"].as_u64().is_some())
+ &&(value["plan"].is_null()||matches!(value["plan"].as_str(),Some("personal-monthly"|"personal-annual"|"personal-lifetime"|"team-monthly"|"team-annual"|"team-lifetime")))
+ &&(value["devices"].is_null()||validate_result(&json!({"devices":value["devices"]})).is_ok())
+ &&(value["status"].is_null()||matches!(value["status"].as_str(),Some("payment-pending"|"payment-confirmed"|"payment-failed"|"complete")))
+ &&(value["checkoutAvailable"].is_null()||value["checkoutAvailable"].is_boolean())
+ &&(value["fee"].is_null()||value["fee"].as_object().is_some_and(|fee|fee.len()==5&&fee.keys().all(|key|matches!(key.as_str(),"plan"|"amount"|"currency"|"formatted"|"perSeat"))&&value["fee"]["plan"]==value["plan"]&&matches!(value["fee"]["amount"].as_u64(),Some(99|999|4999|399|3999|19999))&&value["fee"]["currency"]=="USD"&&value["fee"]["formatted"].as_str().is_some_and(|s|s.len()<=16)&&value["fee"]["perSeat"].is_boolean()))
 }
 fn valid_native_action(value:&Value)->bool{
  let Some(row)=value.as_object() else{return false;};
@@ -92,6 +112,12 @@ fn valid_native_action(value:&Value)->bool{
  &&value["options"].is_object()&&value["options"].to_string().len()<=8192&&value["direct"].is_boolean()&&value["requiresUI"].is_boolean()
 }
 #[cfg(test)] mod tests{use super::*;
+ #[test]fn replacement_snapshot_cannot_expose_purchaser_proof(){
+  assert!(validate_result(&json!({"replacement":{"stage":"email","maskedEmail":"j***@example.com","expiresAt":1900000000,"resendAfter":1800000000}})).is_ok());
+  for key in ["identityToken","licenseKey","verificationId","checkoutUrl"]{assert!(validate_result(&json!({"replacement":{"stage":"email",key:"private"}})).is_err());}
+  assert!(trusted_checkout("https://checkout.dodopayments.com/session"));
+  for url in ["http://checkout.dodopayments.com/a","https://checkout.dodopayments.com.evil.example/a","https://user@checkout.dodopayments.com/a"]{assert!(!trusted_checkout(url));}
+ }
  #[test]fn renderer_results_cannot_contain_private_state(){for key in ["entitlement","licenseKey","privateKey","state"]{assert!(validate_result(&json!({key:"secret"})).is_err());}assert!(validate_result(&json!({"license":"trial","plan":"trial","expiresAt":1})).is_ok());}
  #[test]fn support_identity_accepts_only_a_bounded_public_identifier(){
   assert!(validate_result(&json!({"supportDeviceId":"a".repeat(43)})).is_ok());

@@ -6,8 +6,8 @@ import {resolveNativeActions,resolveNativeActionRequest,implementedNativeToolIds
 // Trusted native parent supplies state/config and acknowledges every protected
 // write before execution continues. Renderer fields cannot configure this host.
 export async function runLicenseAction({action,params={},state,config,saveState,fetchImpl}) {
- if(!['support','status','trial','activate','refresh','devices','validate','nativeActions'].includes(action)||!params||typeof params!=='object'
-  ||Object.keys(params).some(key=>action==='nativeActions'?!['files','platform','actionId','outputMode'].includes(key):action!=='activate'||key!=='licenseKey'))throw Error('Invalid license action');
+ const fields={support:[],status:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],validate:[],nativeActions:['files','platform','actionId','outputMode'],replacementState:[],replacementEmailStart:['licenseKey'],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCheckout:[]};
+ if(!fields[action]||!params||typeof params!=='object'||Object.keys(params).some(key=>!fields[action].includes(key)))throw Error('Invalid license action');
  if(action==='nativeActions'){
   if(!Array.isArray(params.files)||params.files.length>256)throw Error('Invalid selection');
   let authorized=false;
@@ -30,10 +30,15 @@ export async function runLicenseAction({action,params={},state,config,saveState,
  if(action==='support')return {supportDeviceId:deviceIdentity(current.device.publicKey)};
  const client=new LicenseClient({origin:config.origin,keys:config.keys,allowLocalTesting:config.allowLocalTesting===true,
   readDevice:async()=>current.device,readLicense:async()=>current.license,
+  readReplacement:async()=>current.replacement||null,saveReplacement:async replacement=>{const next={...current,replacement};await saveState(next);current=next;},
   saveLicense:async license=>{const next={...current,license};await saveState(next);current=next;},...(fetchImpl?{fetchImpl}:{})});
  // This display hint never grants access. Paid activation still requires a
  // device proof, provider validation and a signed entitlement in LicenseClient.
  const activationAvailable=!current.license?.licenseRef&&!current.license?.licenseKey;
+ if(action.startsWith('replacement')){
+  try{return await (action==='replacementEmailStart'?client[action](params.licenseKey):action==='replacementEmailVerify'?client[action](params.code):action==='replacementRequest'?client[action](params.oldDeviceId):client[action]());}
+  catch(error){if(/^(Request a new email code\.|Enter the eight-digit email code\.|Verify your email again to continue\.|Choose an active device to replace\.|Check your existing replacement payment first\.|Please wait a moment and try again\.)$/.test(error.message))throw error;throw Error('Device replacement could not finish. Check your code or payment and try again.');}
+ }
  if(action==='validate'){
   const result=await client.validateOnline();
   if(!result.checked)return {};

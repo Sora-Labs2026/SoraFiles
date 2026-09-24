@@ -9,6 +9,7 @@ export class DodoClient {
  validate(licenseKey,instanceId){return this.call('/licenses/validate',{body:{license_key:licenseKey.trim(),license_key_instance_id:instanceId}});}
  deactivate(licenseKey,instanceId){return this.call('/licenses/deactivate',{body:{license_key:licenseKey.trim(),license_key_instance_id:instanceId}});}
  subscription(id){return this.call('/subscriptions/'+encodeURIComponent(id),{privileged:true});}
+ customer(id){return this.call('/customers/'+encodeURIComponent(id),{privileged:true});}
  product(id){return this.call('/products/'+encodeURIComponent(id),{privileged:true});}
  async customerGrants(customerId){const items=[];for(let page=0;page<100;page++){
   const result=await this.call('/customers/'+encodeURIComponent(customerId)+'/entitlement-grants?integration_type=license_key&page_size=100&page_number='+page,{privileged:true});

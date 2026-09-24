@@ -1,7 +1,7 @@
 import {mkdir,copyFile,chmod,readFile,writeFile} from 'node:fs/promises';import {join} from 'node:path';import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 const root=fileURLToPath(new URL('../../',import.meta.url)),out=join(root,'.artifacts/desktop-license-host');
-const files=['native-host/main.mjs','native-host/license-host.mjs','core/license-client.mjs','shared/entitlement.mjs','shared/tool-policy.mjs','shared/license-request.mjs','shared/license-plans.mjs','shared/plans.mjs','shared/validation-proof.mjs','shared/native-actions.mjs','shared/tool-metadata.json'];
+const files=['native-host/main.mjs','native-host/license-host.mjs','core/license-client.mjs','shared/entitlement.mjs','shared/tool-policy.mjs','shared/license-request.mjs','shared/license-plans.mjs','shared/plans.mjs','shared/validation-proof.mjs','shared/native-actions.mjs','shared/tool-metadata.json','shared/replacement-prices.mjs'];
 await mkdir(out,{recursive:true});
 for(const file of files){const target=join(out,'desktop',file);await mkdir(join(target,'..'),{recursive:true});await copyFile(join(root,'desktop',file),target);}
 const runtime=join(out,process.platform==='win32'?'node.exe':'node');await copyFile(process.execPath,runtime);if(process.platform!=='win32')await chmod(runtime,0o755);

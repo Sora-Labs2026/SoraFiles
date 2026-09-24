@@ -16,6 +16,7 @@ test('real workerd SQLite rolls back, preserves replacement seats/history, encry
   const call=async path=>{const r=await mf.dispatchFetch('https://local.invalid/'+path);const b=await r.json();assert.equal(r.status,200,JSON.stringify(b));return b;};
   assert.deepEqual(await call('rollback'),{rolledBack:true,foreignKey:true});
   assert.deepEqual(await call('replacement'),{reserved:true,revoked:true,history:1});
+  assert.deepEqual(await call('replacement-email'),{masked:'c***@example.com',limited:true,replay:true,verified:true,rows:1});
   assert.deepEqual(await call('caps'),{limits:Array(6).fill(true)});
   assert.deepEqual(await call('promotion'),{codes:2,roundTrip:true});
   assert.deepEqual(await call('rate'),{allowed:true});assert.deepEqual(await call('rate'),{allowed:false});

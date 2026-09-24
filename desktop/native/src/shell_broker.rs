@@ -1,6 +1,5 @@
 use std::{fs::{self,OpenOptions},io::{Read,Write},path::{Path,PathBuf}};
 use serde_json::{json,Value};
-use tauri::Manager;
 
 fn ordinary(path:&Path,directory:bool)->Result<(),String>{
  let meta=fs::symlink_metadata(path).map_err(|_|"Menu request unavailable")?;
@@ -26,15 +25,13 @@ fn request(input:&Path,output:&Path)->Result<Vec<PathBuf>,String>{
  let mut args=vec!["--edit".into()];args.extend(files);
  crate::launch::selected_paths(&args).map_err(String::from)
 }
-pub fn run(app:&tauri::AppHandle,input:&Path,output:&Path)->Result<(),String>{
+pub fn run(directory:&Path,resources:&Path,input:&Path,output:&Path)->Result<(),String>{
  let paths=request(input,output)?;
  let mut selected=crate::selection::Selection::default();let selection=selected.add(paths);
  if selection.rejected||selection.files.is_empty(){return Err("Selection unavailable".into());}
- let directory=app.path().app_config_dir().map_err(|_|"Settings unavailable")?;
- let resources=app.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
- let settings=crate::preferences::load(&directory).map_err(String::from)?.value();
+ let settings=crate::preferences::load(directory).map_err(String::from)?.value();
  if settings.get("shellEntry").and_then(Value::as_bool)==Some(false){return Err("File-manager actions disabled".into());}
- let result=crate::license_host::run(&directory,&resources,"nativeActions",json!({"files":selection.files,"platform":std::env::consts::OS,"outputMode":settings["output"]}))?;
+ let result=crate::license_host::run(directory,resources,"nativeActions",json!({"files":selection.files,"platform":std::env::consts::OS,"outputMode":settings["output"]}))?;
  let mut text=String::new();
  for action in result["actions"].as_array().ok_or("Menu unavailable")?{
   let id=action["id"].as_str().ok_or("Menu unavailable")?;let label=action["label"].as_str().ok_or("Menu unavailable")?;

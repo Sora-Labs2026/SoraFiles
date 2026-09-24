@@ -1,5 +1,9 @@
 # First-party license service deployment
 
+Purchaser email verification and paid device replacement configuration are
+documented in [paid-device-replacement.md](paid-device-replacement.md). The
+Cloudflare flow uses the existing ledger and does not require a sign-in service.
+
 The service has a Node 24 entry point and a container definition. It has not been deployed or verified behind production HTTPS. Dodo Test Mode remains separate from live sales. Product Info, Identity and Bank onboarding are verified per the owner. Product/checkout/webhook configuration is a separate gate.
 
 A separate Cloudflare Workers/SQLite Durable Object adapter is now tested locally.

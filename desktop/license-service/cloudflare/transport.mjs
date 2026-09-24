@@ -1,5 +1,5 @@
 const fail=(status)=>Object.assign(Error('Request rejected'),{httpStatus:status});
-const actions=new Set(['trial','activate','refresh','validate','devices','replacementRequest','replacementStatus']);
+const actions=new Set(['trial','activate','refresh','validate','devices','replacementRequest','replacementStatus','replacementEmailStart','replacementEmailVerify']);
 const exact=(value,keys)=>{if(!value||Array.isArray(value)||Object.getPrototypeOf(value)!==Object.prototype||Object.keys(value).length!==keys.length||keys.some(k=>!Object.hasOwn(value,k)))throw fail(400);};
 export function json(status,body){return new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; frame-ancestors 'none'",'Referrer-Policy':'no-referrer'}});}
 export function failure(error){const status=error.httpStatus||(error.code==='providerUnavailable'?503:400);return json(status,{error:error.code==='activationReconciliation'?'Your activation needs to be checked before another attempt. Contact SoraFiles support if it remains pending.':status===503?'License verification is temporarily unavailable. Please try again later.':status===429?'Please wait a moment and try again.':status===413?'The request is too large.':'The request could not be completed. Check your details and try again.'});}
@@ -23,7 +23,7 @@ export async function handleLicenseRequest(request,{service,webhooks,limiter,buc
   const url=new URL(request.url),path=url.pathname+url.search;
   if(path==='/health'&&request.method==='GET')return json(200,{status:'ok'});
   if(request.method!=='POST')throw fail(405);
-  const route=path.match(/^\/v1\/(challenge|trial|activate|refresh|validate|devices|replacementRequest|replacementStatus)$/),webhook=path==='/webhooks/dodo';
+  const route=path.match(/^\/v1\/(challenge|trial|activate|refresh|validate|devices|replacementRequest|replacementStatus|replacementEmailStart|replacementEmailVerify)$/),webhook=path==='/webhooks/dodo';
   if(!route&&!webhook)throw fail(404);
   if(!/^[a-f0-9]{64}$/.test(bucket||''))throw fail(403);
   try{limiter.take((webhook?'webhook:':'license:')+bucket);}catch{throw fail(429);}

@@ -29,8 +29,8 @@ export class PaidReplacementService {
  }
  row(orderId){return this.store.db.prepare('SELECT * FROM paid_replacements WHERE id=?').get(orderId);}
  public(row){return {orderId:row.id,status:row.status==='complete'?'complete':row.status==='paid'?'payment-confirmed':row.status==='failed'?'payment-failed':'payment-pending',fee:replacementPrice(row.plan),...(row.checkout_url?{checkoutUrl:row.checkout_url}:{}),...(row.status==='complete'?{replacementAuthorized:true}:{} )};}
- async owner(token,ref){
-  const identity=await this.verifyIdentity(token),binding=this.store.binding(ref);
+ async owner(token,ref,context){
+  const identity=await this.verifyIdentity(token,{licenseRef:ref,...context}),binding=this.store.binding(ref);
   if(!binding||identity?.customerId!==binding.customer_id||identity?.verified!==true)throw Error('License ownership required');
   const state=await this.authority.resolve({customerId:binding.customer_id,licenseRef:ref});
   if(state.ref!==ref||state.status!=='active')throw Error('License is not active');this.store.sync(state);
@@ -41,7 +41,8 @@ export class PaidReplacementService {
  async request(body,newDevice){
   const {licenseRef,oldDeviceId,licenseKey,identityToken}=body;
   if(!id(licenseRef)||!device(oldDeviceId)||!device(newDevice)||oldDeviceId===newDevice)throw Error('Invalid replacement');
-  const {license,customerId}=await this.owner(identityToken,licenseRef),keyHash=this.guard.activationFingerprint(licenseKey);
+  const keyHash=this.guard.activationFingerprint(licenseKey);
+  const {license,customerId}=await this.owner(identityToken,licenseRef,{deviceId:newDevice,oldDeviceId,keyHash});
   const price=verifyReplacementProduct(license.plan,await this.dodo.product(this.products[license.plan]),this.products[license.plan]);
   const result=this.store.transaction(()=>{
    const previous=this.store.db.prepare('SELECT * FROM paid_replacements WHERE license_ref=? AND old_device=?').get(licenseRef,oldDeviceId);
@@ -98,7 +99,7 @@ export class PaidReplacementService {
  async status(body,newDevice){
   const {orderId,identityToken,licenseKey}=body;if(!id(orderId))throw Error('Invalid replacement');
   const row=this.row(orderId);if(!row||row.new_device!==newDevice||row.key_hash!==this.guard.activationFingerprint(licenseKey))throw Error('Replacement unavailable');
-  await this.owner(identityToken,row.license_ref);
+  await this.owner(identityToken,row.license_ref,{deviceId:newDevice,oldDeviceId:row.old_device,keyHash:row.key_hash});
   if(row.status==='creating')throw pending();
   const checkout=await this.dodo.checkoutStatus(row.checkout_id);
   if(checkout?.session_id!==row.checkout_id)throw Error('Checkout identity mismatch');

@@ -1,19 +1,22 @@
 import {spawn} from 'node:child_process';
-import {mkdtemp,writeFile,readFile,copyFile,rm} from 'node:fs/promises';
+import {realpath,writeFile,readFile,copyFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {mkdir} from 'node:fs/promises';
 const binary=resolve(process.argv[2]||'');if(!process.argv[2])throw Error('Supply the packaged native executable');
 async function run(args){
- const start=performance.now();const child=spawn(binary,args,{stdio:'ignore',windowsHide:true});
+ const start=performance.now();const child=spawn(binary,args,{stdio:['ignore','ignore','pipe'],windowsHide:true});
+ let stderr='';child.stderr.on('data',chunk=>stderr=(stderr+chunk).slice(-2000));
  const timeout=setTimeout(()=>child.kill(),10000);
- try{return await new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',(code,signal)=>resolve({code,signal,milliseconds:Math.round(performance.now()-start)}));});}
+ try{return await new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',(code,signal)=>resolve({code,signal,milliseconds:Math.round(performance.now()-start),...(code===0?{}:{stderr})}));});}
  finally{clearTimeout(timeout);}
 }
 const reports=[];
 for(const count of [1,2]){
- const directory=join(tmpdir(),'sorafiles-shell-'+randomUUID());await mkdir(directory);
+ // macOS /var is a symlink to /private/var. Fixtures must use the original
+ // location, matching the native boundary that refuses symlink selections.
+ const directory=join(await realpath(tmpdir()),'sorafiles-shell-'+randomUUID());await mkdir(directory);
  try{
   const files=[];for(let i=0;i<count;i++){const file=join(directory,`Selected 日本語 space ${i}.png`);await copyFile(resolve('public/icon-192.png'),file);files.push(file);}
   const request=join(directory,'request.json'),response=join(directory,'response.tsv');

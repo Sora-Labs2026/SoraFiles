@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-const fields={trial:[],activate:['licenseKey'],refresh:['licenseKey','licenseRef','instanceId'],validate:['licenseKey','licenseRef','instanceId','nonce'],devices:['licenseRef'],replacementRequest:['licenseRef','oldDeviceId','licenseKey','identityToken'],replacementStatus:['orderId','licenseKey','identityToken']};
+const fields={trial:[],activate:['licenseKey'],refresh:['licenseKey','licenseRef','instanceId'],validate:['licenseKey','licenseRef','instanceId','nonce'],devices:['licenseRef'],replacementEmailStart:['licenseKey'],replacementEmailVerify:['verificationId','code'],replacementRequest:['licenseRef','oldDeviceId','licenseKey','identityToken'],replacementStatus:['orderId','licenseKey','identityToken']};
 export function requestContext(action,body){
  const permitted=fields[action];
  if(!permitted||!body||Object.getPrototypeOf(body)!==Object.prototype||Object.keys(body).length!==permitted.length)throw Error('Invalid request fields');

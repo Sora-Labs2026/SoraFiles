@@ -2,7 +2,7 @@ import {createServer} from 'node:http';
 import {createHmac} from 'node:crypto';
 import {RateLimiter} from './request-guard.mjs';
 
-const actions=new Set(['trial','activate','refresh','validate','devices','replacementRequest','replacementStatus']);
+const actions=new Set(['trial','activate','refresh','validate','devices','replacementRequest','replacementStatus','replacementEmailStart','replacementEmailVerify']);
 const fail=(status,code)=>Object.assign(Error(code),{httpStatus:status});
 function exact(value,keys){if(!value||Array.isArray(value)||Object.getPrototypeOf(value)!==Object.prototype||Object.keys(value).length!==keys.length||keys.some(k=>!Object.hasOwn(value,k)))throw fail(400,'Invalid request');}
 async function readBody(req,maxBytes){
@@ -22,7 +22,7 @@ export function createLicenseHttpServer({service,webhooks,rateSecret,limiter=new
    const url=req.url;if(req.headers.origin)throw fail(403,'Origin not allowed');
    if(url==='/health'&&req.method==='GET'){json(res,200,{status:'ok'});return;}
    if(req.method!=='POST')throw fail(405,'Method not allowed');
-   const route=url?.match(/^\/v1\/(challenge|trial|activate|refresh|validate|devices|replacementRequest|replacementStatus)$/);
+   const route=url?.match(/^\/v1\/(challenge|trial|activate|refresh|validate|devices|replacementRequest|replacementStatus|replacementEmailStart|replacementEmailVerify)$/);
    if(!route&&url!=='/webhooks/dodo')throw fail(404,'Not found');
    // Hash transient socket addresses; never persist address or raw request data.
    const rateKey=createHmac('sha256',rateSecret).update(req.socket.remoteAddress||'unknown').digest('hex');

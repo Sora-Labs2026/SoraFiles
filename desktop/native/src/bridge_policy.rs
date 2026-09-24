@@ -15,7 +15,11 @@ pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
         "processFiles" => fields.len()==3 && params["options"].is_object()
             && matches!(params["tool"].as_str(),Some("remove-background"|"doc-scanner"|"repair-pdf"|"compress-pdf"|"heic-to-jpg"|"pdf-to-word"|"pdf-to-excel"|"metadata-remover"|"protect-pdf"|"pdf-ocr"|"pdf-to-jpg"|"merge-pdf"|"split-pdf"|"rotate-pdf"|"remove-pages"|"page-numbers"|"watermark-pdf"|"sign-pdf"|"jpg-to-pdf"|"image-converter"|"compress-image"|"resize-image"|"edit-image"))
             && params["selectionIds"].as_array().is_some_and(|ids|!ids.is_empty()&&ids.len()<=256&&ids.iter().all(|id|id.as_str().is_some_and(|text|text.len()==32&&text.bytes().all(|b|b.is_ascii_hexdigit())))),
-        "activate" => fields.len() == 1 && params["licenseKey"].as_str()
+        "replacementState" | "replacementStatus" | "replacementCheckout" => fields.is_empty(),
+        "replacementEmailVerify" => fields.len()==1 && params["code"].as_str().is_some_and(|code|code.len()==8&&code.bytes().all(|b|b.is_ascii_digit())),
+        "replacementRequest" => fields.len()==1 && params["oldDeviceId"].as_str().is_some_and(|id|id.len()==43&&id.bytes().all(|b|b.is_ascii_alphanumeric()||b==b'-'||b==b'_')),
+        "replacementEmailStart" if fields.is_empty() => true,
+        "activate" | "replacementEmailStart" => fields.len() == 1 && params["licenseKey"].as_str()
             .is_some_and(|key| !key.trim().is_empty() && key.len() <= 4096 && !key.chars().any(char::is_control)),
         "openOutput"|"revealOutput"=>fields.len()==1&&params["id"].as_str().is_some_and(|id|id.len()==32&&id.bytes().all(|b|b.is_ascii_hexdigit())),
         "releaseSelection" => fields.len() == 1 && params["ids"].as_array().is_some_and(|ids|
@@ -73,6 +77,14 @@ impl Drop for DialogLease<'_> { fn drop(&mut self) { self.0.store(false, Orderin
         drop(first);
         assert!(DialogLease::acquire(&busy).is_ok());
         assert!(!busy.load(Ordering::SeqCst));
+    }
+    #[test] fn replacement_bridge_keeps_proof_and_checkout_location_native() {
+        assert!(valid_request("replacementEmailStart",&json!({"licenseKey":"purchase-key"}),false));
+        assert!(valid_request("replacementEmailStart",&json!({}),false));
+        assert!(valid_request("replacementEmailVerify",&json!({"code":"12345678"}),false));
+        assert!(valid_request("replacementRequest",&json!({"oldDeviceId":"a".repeat(43)}),false));
+        assert!(valid_request("replacementCheckout",&json!({}),false));
+        for (method,params) in [("replacementEmailStart",json!({"email":"other@example.com"})),("replacementEmailVerify",json!({"code":"12345678","identityToken":"forged"})),("replacementRequest",json!({"oldDeviceId":"a".repeat(43),"amount":1})),("replacementCheckout",json!({"url":"https://elsewhere.example"}))]{assert!(!valid_request(method,&params,false));}
     }
     #[test] fn processing_accepts_only_known_tools_and_opaque_selection_ids() {
         let valid=json!({"tool":"pdf-to-jpg","selectionIds":["b".repeat(32)],"options":{"dpi":150}});
