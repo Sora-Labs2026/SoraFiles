@@ -1,0 +1,12 @@
+[package]
+name = "sorafiles-platform-checks"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+dirs = "=6.0.0"
+uuid = { version = "=1.26.1", features = ["v4"] }
+
+[lib]
+path = "checks.rs"
