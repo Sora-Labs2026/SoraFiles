@@ -6,6 +6,8 @@ test('deployment fails closed for incorrect origin, ephemeral storage, invalid k
  for(const bad of [{...config,publicOrigin:'https://elsewhere.example'},{...config,databasePath:':memory:'},{...config,mode:'live'},{...config,promotionConfig:{}}])assert.throws(()=>deploymentSettings(bad,env));
  assert.throws(()=>deploymentSettings(config,{...env,ENTITLEMENT_ED25519_PRIVATE_KEY:'not-a-key'}),/signing key/);
  assert.throws(()=>deploymentSettings(config,{...env,RATE_HMAC_SECRET:env.CHALLENGE_HMAC_SECRET}),/different/);
+ assert.equal(deploymentSettings(config,{...env,DODO_WEBHOOK_SECRET:'whsec_'+randomBytes(24).toString('base64')}).runtime.mode,'test_mode');
+ assert.throws(()=>deploymentSettings(config,{...env,DODO_WEBHOOK_SECRET:'whsec_'+randomBytes(23).toString('base64')}),/webhook secret/);
 });
 test('published configuration template contains only supported settings',async()=>{
  const config=JSON.parse(await readFile(new URL('../license-service/config.example.json',import.meta.url),'utf8'));

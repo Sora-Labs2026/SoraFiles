@@ -18,10 +18,19 @@ export function verifyDeviceProof({publicKey,signature,challenge,expectedContext
  if(!verify(null,message,key,Buffer.from(signature,'base64url')))throw Error('Invalid device proof');consume(challenge.id,challenge.expires,now);return deviceIdentity(publicKey);
 }
 // Standard Webhooks HMAC-SHA256 framing; raw request bytes, not reserialized JSON.
+export function decodeWebhookSecret(secret){
+ if(typeof secret!=='string')throw Error('Invalid webhook secret');
+ const encoded=secret.replace(/^whsec_/,'');
+ if(!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded))throw Error('Invalid webhook secret');
+ const key=Buffer.from(encoded,'base64');
+ // Standard Webhooks permits 24–64 bytes; Dodo currently issues 24-byte keys.
+ if(key.length<24||key.length>64||key.toString('base64').replace(/=+$/,'')!==encoded.replace(/=+$/,''))throw Error('Invalid webhook secret');
+ return key;
+}
 export function verifyDodoWebhook(raw,headers,secret,{now=Math.floor(Date.now()/1000)}={}){
  const id=headers['webhook-id'],timestamp=headers['webhook-timestamp'],signatures=headers['webhook-signature'];
  if(!id||id.length>200||!/^\d+$/.test(timestamp||'')||Math.abs(now-Number(timestamp))>300||typeof signatures!=='string'||signatures.length>4096||raw.length>1024*1024)throw Error('Invalid webhook');
- const key=Buffer.from(secret.replace(/^whsec_/,''),'base64');if(key.length<32)throw Error('Invalid webhook secret');
+ const key=decodeWebhookSecret(secret);
  const expected=createHmac('sha256',key).update(`${id}.${timestamp}.`).update(raw).digest();
  const valid=signatures.split(' ').some(s=>{const [version,value]=s.split(',');if(version!=='v1'||!value)return false;const actual=Buffer.from(value,'base64');return actual.length===expected.length&&timingSafeEqual(actual,expected);});
  if(!valid)throw Error('Invalid webhook signature');const event=JSON.parse(raw.toString('utf8'));return {id,event};

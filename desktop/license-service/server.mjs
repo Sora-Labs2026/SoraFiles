@@ -1,13 +1,15 @@
 import {readFile,mkdir} from 'node:fs/promises';import {isAbsolute,dirname,resolve} from 'node:path';import {fileURLToPath} from 'node:url';import {createPrivateKey} from 'node:crypto';
 import {createLicenseRuntime} from './runtime.mjs';
+import {decodeWebhookSecret} from './signing.mjs';
 
 export function deploymentSettings(config,env){
  if(!config||Object.getPrototypeOf(config)!==Object.prototype||Object.keys(config).some(key=>!['mode','listenHost','listenPort','databasePath','publicOrigin','catalogConfig'].includes(key)))throw Error('Invalid service configuration');
  if(!['test_mode','live_mode'].includes(config.mode)||config.publicOrigin!=='https://license.sorafiles.com'||!['127.0.0.1','0.0.0.0'].includes(config.listenHost)
   ||!Number.isInteger(config.listenPort)||config.listenPort<1024||config.listenPort>65535||typeof config.databasePath!=='string'||!isAbsolute(config.databasePath)||config.databasePath.includes('\0'))throw Error('Invalid service configuration');
  const apiKey=env.DODO_API_KEY,webhookSecret=env.DODO_WEBHOOK_SECRET,kid=env.ENTITLEMENT_KEY_ID,privateKey=env.ENTITLEMENT_ED25519_PRIVATE_KEY;
- if(typeof apiKey!=='string'||!apiKey.trim()||apiKey.length>4096||typeof webhookSecret!=='string'||!/^whsec_[A-Za-z0-9+/]+={0,2}$/.test(webhookSecret)||Buffer.from(webhookSecret.slice(6),'base64').length<32
+ if(typeof apiKey!=='string'||!apiKey.trim()||apiKey.length>4096||typeof webhookSecret!=='string'||!webhookSecret.startsWith('whsec_')
   ||typeof kid!=='string'||!/^[a-zA-Z0-9_-]{1,64}$/.test(kid)||typeof privateKey!=='string'||privateKey.length>4096)throw Error('Service secrets are missing or invalid');
+ decodeWebhookSecret(webhookSecret);
  try{if(createPrivateKey(privateKey).asymmetricKeyType!=='ed25519')throw Error();}catch{throw Error('Service signing key is invalid');}
  const secrets=['CHALLENGE_HMAC_SECRET','RATE_HMAC_SECRET'].map(name=>{const value=env[name];if(typeof value!=='string'||!/^[a-f0-9]{64}$/i.test(value))throw Error('Service HMAC secrets must each contain 32 random bytes encoded as hex');return Buffer.from(value,'hex');});
  if(secrets[0].equals(secrets[1]))throw Error('Challenge and rate-limit secrets must be different');
