@@ -80,3 +80,55 @@ Snapshots use isolated GIT_INDEX_FILE; newest local index is
 .artifacts/candidate-email-20260924.index based on9d5e680790ceddddcacdb1b55117ed0de52768df.
 Build: desktop/scripts/native-cargo.ps1 package (private Rust and MSVC setup).
 Tests: node --test desktop/tests/*.test.mjs; native-cargo.ps1 test.
+## Later verification checkpoint
+
+Candidate2dbe7c2ff05514fc8a6f0bd6a48e9d8da4bda740 / run35956151036:
+macOS Intel, macOS Apple Silicon and Linux jobs all PASS, including packages,
+exact engine payload/runtime, native window lifecycle and menu broker. Windows
+passed237Node tests and55Rust tests but its PowerShell npm shim consumed the
+Cargo argument separator. Workflow now invokes the pinned Tauri entrypoint with
+Node directly. Latest candidate3453e39e4063cce2aecd3123d37bf3690cd4c2bf,
+run35976479337, is in progress. Its only changes are the Windows invocation and
+a passing isolated Classes-hive registry test; runtime source is unchanged.
+
+Local Windows email/broker installer finished successfully:115132484bytes,
+SHA-2565efa7a12afc2ac2d6e2c77f33eba00349d0f864271854b621b888dc4c930d6c1.
+File:desktop/native/target/x86_64-pc-windows-msvc/release/bundle/nsis/SoraFiles Desktop_0.1.0_x64-setup.exe.
+Payload equality PASS1990files; native window lifecycle PASS3loads/2reopens at
+1180x900; actual Windows credential-store synthetic roundtrip PASS. Isolated
+processing pack and replacement renderer QA PASS. Logs replacement-*.log.
+
+Actual installer hooks migrated all14existing legacy Explorer entries, removed
+only owned entries/class, reinstalled and repeated installation successfully.
+Evidence:.artifacts/replacement-explorer-hooks.json. One earlier startup attempt
+reported an update failure while packaging; it did not reproduce after packaging.
+Do not conflate registry/COM/broker checks with real Explorer menu interaction.
+Computer-use text observation worked; screenshot failed SetIsBorderRequired /
+E_NOINTERFACE and Explorer keyboard navigation did not reliably take effect.
+No complete native menu UI certification was obtained through that helper.
+
+Three successful Unix artifact downloads were started under
+.artifacts/replacement-platform-candidates-2dbe7c2/. AppleSilicon completed and
+its DMG checksum matches the CI manifest; Intel/Linux downloads still in progress
+at this checkpoint. Their current exec sessions87545and52425may need polling.
+
+Pending user question: which email-delivery provider and verified sender to use,
+and existing configuration location/secret name (never request raw secret text).
+Default implemented adapter is Resend; no live mail or deployment has occurred.
+
+## Final local handoff for this continuation
+
+All five installer files are downloaded/built locally and their SHA-256 values
+are verified. Index:.artifacts/desktop-candidates-20260924.md; machine-readable
+manifest:.artifacts/desktop-candidates-20260924.json. All download sessions ended.
+
+Latest run35976479337 for3453e39e4063cce2aecd3123d37bf3690cd4c2bf:
+Windows, Linux and macOS Apple Silicon jobs PASS. Intel macOS is still running
+its repeated native-test/build job. Its previous run35956151036 passed using the
+same application runtime source; newest changes are workflow invocation and a
+Windows-only registry test. No active local build or download remains.
+
+Windows CI now confirms installer packaging, resource equality, native window
+lifecycle and menu broker. Production email delivery/deployed activation/payment
+checks remain blocked on server environment values, verified sender and products.
+No release was published. The pending email-provider question remains unanswered.
