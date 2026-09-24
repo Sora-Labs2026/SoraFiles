@@ -1,3 +1,4 @@
+import {PaidReplacementService,queueReplacementEvent} from '../paid-replacements.mjs';
 import {createHmac} from 'node:crypto';
 import {DurableObject,WorkerEntrypoint} from 'cloudflare:workers';
 import {DurableLicenseStore} from './store.mjs';
@@ -71,16 +72,18 @@ export class LicenseLedgerObject extends DurableObject {
    }}):null;
    const authority=new DodoAuthority({dodo,catalog,promotions});
    const guard=new RequestGuard({store:this.store,secret:secret(env.CHALLENGE_HMAC_SECRET)});
-   const service=new LicenseService({store:this.store,guard,dodo,authority,signing:{privateKey:env.ENTITLEMENT_ED25519_PRIVATE_KEY,kid:env.ENTITLEMENT_KEY_ID}});
-   return this.cached={service,authority,dodo,guard,promotions,until:Date.now()+300000};
+   const replacements=env.REPLACEMENTS_ENABLED==='true'?new PaidReplacementService({store:this.store,guard,dodo,authority,products:JSON.parse(env.REPLACEMENT_PRODUCTS_JSON),verifyIdentity:async token=>{if(!env.REPLACEMENT_IDENTITY)throw Error('Original customer verification required');return env.REPLACEMENT_IDENTITY.verify({token});}}):null;
+   const service=new LicenseService({store:this.store,guard,dodo,authority,replacements,signing:{privateKey:env.ENTITLEMENT_ED25519_PRIVATE_KEY,kid:env.ENTITLEMENT_KEY_ID}});
+   return this.cached={service,authority,dodo,guard,promotions,replacements,until:Date.now()+300000};
   })();
   try{return await this.loading;}finally{this.loading=null;}
  }
  async acceptWebhook(_webhooks,raw,headers){
   // Invalid public input must not throw inside blockConcurrencyWhile: Cloudflare
   // resets the object on that failure, interrupting unrelated activations.
-  const {id}=verifyDodoWebhook(raw,headers,this.env.DODO_WEBHOOK_SECRET);
+  const {id,event}=verifyDodoWebhook(raw,headers,this.env.DODO_WEBHOOK_SECRET);
   return this.ctx.blockConcurrencyWhile(()=>this.ctx.storage.transaction(async()=>{
+   if(this.env.REPLACEMENTS_ENABLED==='true')queueReplacementEvent(this.store,id,event,Math.floor(Date.now()/1000));
    const receipt={accepted:true,duplicate:!this.store.queueWebhook(id,Math.floor(Date.now()/1000))};
    if(await this.ctx.storage.getAlarm()===null)await this.ctx.storage.setAlarm(Date.now()+30000);
    return receipt;
@@ -103,7 +106,7 @@ export class LicenseLedgerObject extends DurableObject {
  async alarm(){
   // Schedule before external I/O so exhaustion/crash cannot lose retry work.
   await this.ctx.storage.setAlarm(Date.now()+30000);
-  try {const {authority}=await this.runtime();await reconcileBatch(this.store,authority);await this.ctx.blockConcurrencyWhile(async()=>{if(this.store.pendingWebhookBoundary()===null)await this.ctx.storage.deleteAlarm();});}
+  try {const {authority,replacements}=await this.runtime();await replacements?.reconcile();await reconcileBatch(this.store,authority);await this.ctx.blockConcurrencyWhile(async()=>{if(this.store.pendingWebhookBoundary()===null&&!this.store.db.prepare('SELECT 1 FROM replacement_payment_events WHERE completed IS NULL LIMIT 1').get())await this.ctx.storage.deleteAlarm();});}
   catch { /* Receipt/cursor remain durable. No payloads or keys are logged. */ }
  }
 }

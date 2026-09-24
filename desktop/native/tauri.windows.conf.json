@@ -1,0 +1,8 @@
+{
+  "bundle": {
+    "resources": {
+      "../../.artifacts/desktop-license-host/": "license-host/",
+      "../../.artifacts/windows-shell/sorafiles-explorer.dll": "sorafiles-explorer.dll"
+    }
+  }
+}

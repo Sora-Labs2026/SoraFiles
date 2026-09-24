@@ -1,6 +1,7 @@
 // Extract candidate packages without installing them. Every packaged resource
 // must match the generated pack; end-user installation remains a separate check.
-import {mkdir,mkdtemp,readdir,writeFile,lstat} from 'node:fs/promises';
+import {mkdir,mkdtemp,readdir,writeFile,lstat,copyFile,readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {resolve,join,relative} from 'node:path';
 import {spawn} from 'node:child_process';
 import {inventoryResources,compareResources,findResourceTree,readRuntimeManifest} from './unix-payload-core.mjs';
@@ -50,14 +51,39 @@ if(process.platform==='darwin'){
 }
 const verified=[];
 for(const item of packages){
- const actual=await inventoryResources(item.pack);compareResources(generated,actual);
+ let expected=generated;const packagingChanges=[];
+ if(item.format==='appimage'){
+  // linuxdeploy appends $ORIGIN to these four ELF resources. Reproduce that
+  // exact transformation on independent originals with the same explicitly
+  // selected tool; never use the packaged file to define expected bytes.
+  // All other resources, and all DEB/DMG bytes, retain exact comparison.
+  const known=['node','node_modules/@img/sharp-linux-x64/lib/sharp-linux-x64-0.35.4.node',
+   'node_modules/@img/sharp-libvips-linux-x64/lib/libvips-cpp.so.8.18.6',
+   'node_modules/@napi-rs/canvas-linux-x64-gnu/skia.linux-x64-gnu.node'];
+  const directory=await mkdtemp(join(root,'.artifacts/appimage-expected-'));
+  const entries=generated.entries.map(entry=>({...entry}));
+  for(const [index,path] of known.entries()){
+   const entry=entries.find(entry=>entry.path===path);if(!entry)throw Error('Expected AppImage native resource missing: '+path);
+   const source=join(root,'.artifacts/desktop-license-host',path),copy=join(directory,'elf-'+index);
+   await copyFile(source,copy);
+   const original=await run('/usr/bin/patchelf',['--print-rpath',copy],directory);
+   const rpath=[...new Set([...original.split(':').filter(Boolean),'$ORIGIN'])].join(':');
+   await run('/usr/bin/patchelf',['--set-rpath',rpath,copy],directory);
+   const bytes=await readFile(copy);entry.bytes=bytes.length;entry.sha256=createHash('sha256').update(bytes).digest('hex');
+   packagingChanges.push({path,rpath,sha256:entry.sha256,bytes:entry.bytes});
+  }
+  expected={...generated,entries};
+ }
+ const actual=await inventoryResources(item.pack);compareResources(expected,actual);
  const runtime=await readRuntimeManifest(item.pack,expectedTarget),node=join(item.pack,'node');
  if(await run(node,['--version'],item.pack)!==runtime.node)throw Error('Packaged Node version differs from manifest');
  const identity=JSON.parse(await run(node,['-p','JSON.stringify({platform:process.platform,arch:process.arch})'],item.pack));
  if(identity.platform!==runtime.platform||identity.arch!==runtime.arch)throw Error('Packaged Node architecture differs from manifest');
- verified.push({format:item.format,package:relative(root,item.package).replaceAll('\\','/'),resources:relative(root,item.pack).replaceAll('\\','/'),resourceFiles:actual.files,resourceBytes:actual.bytes,runtime:{node:runtime.node,...identity},entries:actual.entries});
+ const engines=await run(node,['--input-type=commonjs','-e',`(async()=>{const sharp=require('sharp'),{createCanvas}=require('@napi-rs/canvas');const canvas=createCanvas(2,3);const input=canvas.toBuffer('image/png');const result=await sharp(input).resize(4,6).png().toBuffer();const info=await sharp(result).metadata();if(info.width!==4||info.height!==6)throw Error('Packaged codec failure');console.log('PASS')})().catch(()=>process.exit(1))`],item.pack);
+ if(engines!=='PASS')throw Error('Packaged native image engines did not run');
+ verified.push({format:item.format,package:relative(root,item.package).replaceAll('\\','/'),resources:relative(root,item.pack).replaceAll('\\','/'),resourceFiles:actual.files,resourceBytes:actual.bytes,runtime:{node:runtime.node,...identity},nativeImageEngines:'PASS',packagingChanges,entries:actual.entries});
 }
-const report={schema:1,recordedAt:new Date().toISOString(),status:'PASS',target,scope:'Resources extracted from actual candidate packages equal generated pack; packaged Node executable, version and architecture verified. No installation, end-user launch, OS credential store or signing/notarization certification.',packages:verified};
+const report={schema:1,recordedAt:new Date().toISOString(),status:'PASS',target,scope:'Resources extracted from actual candidate packages equal generated pack (AppImage: four independently reproduced RPATH patches); packaged Node and native image codecs run successfully. No installation, end-user launch, OS credential store or signing/notarization certification.',packages:verified};
 await writeFile(join(root,'.artifacts/unix-payload-verification.json'),JSON.stringify(report,null,2));
 console.log(JSON.stringify({...report,packages:verified.map(({entries,...row})=>row)}));
 // Keep only newly created extraction folders as inspectable evidence; no broad

@@ -20,6 +20,22 @@ try{
  const claims=entitlementClaims({license:{ref:'synthetic',plan:'personal-lifetime',status:'active'},deviceId:deviceIdentity(device.publicKey),now:Math.floor(Date.now()/1000)});
  let state={schema:1,device,license:{entitlement:signEntitlement(claims,{privateKey:pair.privateKey.export({type:'pkcs8',format:'pem'}),kid:'test'}),lastTrustedTime:Date.now()}};
  const config={origin:'https://license.sorafiles.com',keys:{test:pair.publicKey.export({type:'spki',format:'pem'})}};
+ async function menu(files,licenseState=state){
+  const child=spawn(join(pack,process.platform==='win32'?'node.exe':'node'),[join(pack,'desktop/native-host/main.mjs')],{cwd:directory,env:Object.fromEntries(Object.entries(process.env).filter(([key])=>['systemroot','windir','temp','tmp','tmpdir'].includes(key.toLowerCase()))),stdio:['pipe','pipe','pipe'],windowsHide:true});
+  const exit=new Promise((done,fail)=>{child.once('error',fail);child.once('exit',done);});
+  const timer=setTimeout(()=>child.kill(),10000);let result,stderr='';child.stderr.on('data',chunk=>stderr=(stderr+chunk).slice(-2000));
+  try{
+   child.stdin.write(JSON.stringify({type:'request',action:'nativeActions',params:{files,platform:process.platform==='win32'?'windows':process.platform==='darwin'?'macos':'linux',outputMode:'source'},state:licenseState,config})+'\n');
+   for await(const line of createInterface({input:child.stdout})){
+    const message=JSON.parse(line);if(message.type!=='result')throw Error('Menu discovery attempted a write or failed');result=message.result;
+   }
+   if(await exit!==0||!Array.isArray(result?.actions))throw Error('Isolated native menu failed: '+stderr);
+   return result.actions.map(action=>action.id);
+  }finally{clearTimeout(timer);child.kill();await exit;}
+ }
+ const jpgMenu=await menu([{format:'JPG',validated:true}]),pdfMenu=await menu([{format:'PDF',validated:true},{format:'PDF',validated:true}]);
+ if(!jpgMenu.includes('convert-to-png')||jpgMenu.includes('merge-pdf')||!pdfMenu.includes('merge-pdf')||pdfMenu.includes('convert-to-png')||[...jpgMenu,...pdfMenu].some(id=>/unlock|decrypt|unprotect/.test(id)))throw Error('Bundled native resolver selection mismatch');
+ if((await menu([{format:'JPG'}],null)).join()!=='activate')throw Error('Unlicensed menu exposed runnable tools');
  async function run(tool,source,options){
   const child=spawn(join(pack,process.platform==='win32'?'node.exe':'node'),[join(pack,'desktop/native-host/process-main.mjs')],{cwd:directory,env:Object.fromEntries(Object.entries(process.env).filter(([key])=>['systemroot','windir','temp','tmp','tmpdir'].includes(key.toLowerCase()))),stdio:['pipe','pipe','pipe'],windowsHide:true});
   let result,error,stderr='';child.stderr.on('data',chunk=>{stderr+=chunk.toString().slice(0,2048);});

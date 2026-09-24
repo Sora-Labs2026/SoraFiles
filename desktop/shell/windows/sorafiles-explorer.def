@@ -1,0 +1,4 @@
+LIBRARY sorafiles-explorer
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE

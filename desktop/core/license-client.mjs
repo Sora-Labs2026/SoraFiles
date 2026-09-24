@@ -1,4 +1,5 @@
-import {sign} from 'node:crypto';
+import {sign,randomBytes} from 'node:crypto';
+import {verifyValidationProof} from '../shared/validation-proof.mjs';
 import {deviceIdentity,verifyEntitlement} from '../shared/entitlement.mjs';
 import {requestContext} from '../shared/license-request.mjs';
 
@@ -63,6 +64,22 @@ export class LicenseClient {
   const response=await this.request('devices',{licenseRef:saved.licenseRef},device);
   if(!Array.isArray(response.devices)||response.devices.length>256||response.devices.some(row=>!row||typeof row.id!=='string'||row.id.length>128||typeof row.current!=='boolean'||typeof row.active!=='boolean'))throw Error('Invalid device list');
   return response.devices.map(({id,current,active})=>({id,current,active}));
+ });}
+ async validateOnline(){return this.exclusive(async()=>{
+  const device=await this.readDevice(),saved=await this.readLicense();
+  if(!saved?.licenseRef||!saved.instanceId||!saved.licenseKey)return {checked:false};
+  const nonce=randomBytes(32).toString('base64url');
+  const body={licenseKey:saved.licenseKey,licenseRef:saved.licenseRef,instanceId:saved.instanceId,nonce};
+  const response=await this.request('validate',body,device);
+  const proof=verifyValidationProof(response.validation,{keys:this.keys,deviceId:deviceIdentity(device.publicKey),licenseRef:saved.licenseRef,instanceId:saved.instanceId,nonce,now:this.now()});
+  if(proof.status==='inactive'){
+   await this.saveLicense({...saved,deactivationPending:true,lastTrustedTime:Math.max(saved.lastTrustedTime||0,this.now())});
+   return {checked:true,active:false};
+  }
+  const claims=this.verify(proof.entitlement,device,saved.lastTrustedTime||0);
+  if(claims.plan==='trial'||claims.licenseRef!==saved.licenseRef)throw Error('Invalid validation entitlement');
+  await this.saveLicense({...saved,deactivationPending:false,entitlement:proof.entitlement,lastTrustedTime:Math.max(saved.lastTrustedTime||0,this.now())});
+  return {checked:true,active:true,plan:claims.plan,expiresAt:claims.exp};
  });}
  async authorize(){return this.exclusive(async()=>{const device=await this.readDevice(),saved=await this.readLicense();if(!saved)throw Error('Start a trial or activate a license');if(saved.deactivationPending)throw Error('This saved license needs online verification');const claims=this.verify(saved.entitlement,device,saved.lastTrustedTime||0);await this.saveLicense({...saved,lastTrustedTime:Math.max(saved.lastTrustedTime||0,this.now())});return {plan:claims.plan,expiresAt:claims.exp};});}
 }

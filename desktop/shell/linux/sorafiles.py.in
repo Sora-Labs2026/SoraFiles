@@ -1,0 +1,87 @@
+"""SoraFiles Nautilus menu; the app owns all capability and entitlement decisions."""
+import json
+import os
+import re
+import shutil
+import stat
+import subprocess
+import tempfile
+import uuid
+from gi.repository import GObject, Nautilus
+
+APP = __SORAFILES_APP_JSON__
+
+
+def launch(action, paths):
+    # Never send file names through a command shell.
+    args = [APP, "--edit", "--"] if action is None else [APP, "--action", action, "--"]
+    subprocess.Popen(args + paths, close_fds=True, start_new_session=True,
+                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def resolve_actions(paths):
+    if not paths or len(paths) > 256 or any(not os.path.isabs(p) or "\x00" in p for p in paths):
+        return []
+    request = json.dumps({"version": 1, "files": paths}, ensure_ascii=False).encode("utf-8")
+    if len(request) > 65536:
+        return []
+    directory = os.path.join(tempfile.gettempdir(), "sorafiles-shell-" + str(uuid.uuid4()))
+    os.mkdir(directory, 0o700)
+    try:
+        input_path = os.path.join(directory, "request.json")
+        output_path = os.path.join(directory, "response.tsv")
+        with open(input_path, "xb") as output:
+            output.write(request)
+        result = subprocess.run([APP, "--shell-menu", input_path, output_path], timeout=1.5,
+                                check=False, stdin=subprocess.DEVNULL,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if result.returncode != 0:
+            return []
+        info = os.lstat(output_path)
+        if not stat.S_ISREG(info.st_mode) or info.st_size > 65536:
+            return []
+        with open(output_path, "r", encoding="utf-8") as output:
+            lines = output.read(65537).splitlines()
+        if len(lines) > 32:
+            return []
+        actions, seen = [], set()
+        for line in lines:
+            parts = line.split("\t")
+            if len(parts) != 2:
+                return []
+            action, label = parts
+            if (not re.fullmatch(r"[a-z][a-z0-9-]{0,79}", action) or action in seen
+                    or not label or len(label) > 100 or any(ord(c) < 32 for c in label)):
+                return []
+            seen.add(action)
+            actions.append((action, label))
+        return actions
+    except (OSError, ValueError, UnicodeError, subprocess.TimeoutExpired):
+        return []
+    finally:
+        # Only the freshly created UUID directory, never a user-selected path.
+        shutil.rmtree(directory)
+
+
+class SoraFilesMenu(GObject.GObject, Nautilus.MenuProvider):
+    def get_file_items(self, *args):
+        files = args[-1]
+        if not files or len(files) > 256:
+            return []
+        paths = []
+        for item in files:
+            path = item.get_location().get_path()
+            if not path or item.is_directory():
+                return []
+            paths.append(path)
+        actions = resolve_actions(paths)
+        if not actions:
+            return []
+        parent = Nautilus.MenuItem(name="SoraFiles::edit", label="Edit with SoraFiles", tip="")
+        menu = Nautilus.Menu()
+        for action, label in actions:
+            item = Nautilus.MenuItem(name="SoraFiles::" + action, label=label, tip="")
+            item.connect("activate", lambda _item, selected=action: launch(selected, paths))
+            menu.append_item(item)
+        parent.set_submenu(menu)
+        return [parent]

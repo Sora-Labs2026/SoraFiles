@@ -13,9 +13,12 @@ pub struct Preferences {
     theme: String,
     #[serde(rename = "customFolder", default, skip_serializing_if = "Option::is_none")]
     custom_folder: Option<PathBuf>,
+    // None means the user has never chosen; preserve explicit false on upgrades.
+    #[serde(rename = "shellEntry", default, skip_serializing_if = "Option::is_none")]
+    shell_entry: Option<bool>,
 }
 impl Default for Preferences {
-    fn default() -> Self { Self { version: 1, output: "source".into(), theme: "system".into(), custom_folder: None } }
+    fn default() -> Self { Self { version: 1, output: "source".into(), theme: "system".into(), custom_folder: None, shell_entry: None } }
 }
 impl Preferences {
     fn validate(&self) -> Result<(), &'static str> {
@@ -32,10 +35,11 @@ impl Preferences {
     pub fn value(&self) -> Value {
         let mut value = json!({"output":self.output,"theme":self.theme,"startup":false});
         if let Some(folder) = &self.custom_folder { value["customFolder"] = json!(folder); }
+        if let Some(enabled) = self.shell_entry { value["shellEntry"] = json!(enabled); }
         value
     }
     pub fn from_value(value: &Value) -> Result<Self, &'static str> {
-        let settings: Self = serde_json::from_value(json!({"version":1,"output":value["output"],"theme":value["theme"],"customFolder":value.get("customFolder")})).map_err(|_| "Invalid settings")?;
+        let settings: Self = serde_json::from_value(json!({"version":1,"output":value["output"],"theme":value["theme"],"customFolder":value.get("customFolder"),"shellEntry":value.get("shellEntry")})).map_err(|_| "Invalid settings")?;
         settings.validate()?; Ok(settings)
     }
 }
@@ -100,5 +104,19 @@ pub fn save(directory: &Path, value: &Preferences) -> Result<(), &'static str> {
         let dir=directory();let destination=dir.join("preferences.json");fs::create_dir(&destination).unwrap();
         assert!(save(&dir,&Preferences::default()).is_err());assert!(destination.is_dir());assert_eq!(fs::read_dir(&dir).unwrap().count(),1);
         fs::remove_dir(destination).unwrap();fs::remove_dir(dir).unwrap();
+    }
+    #[test] fn integration_preference_distinguishes_unset_from_explicit_disabled() {
+        let dir=directory();
+        assert!(load(&dir).unwrap().value().get("shellEntry").is_none());
+        fs::write(dir.join("preferences.json"),br#"{"version":1,"output":"source","theme":"system"}"#).unwrap();
+        assert!(load(&dir).unwrap().value().get("shellEntry").is_none());
+        let mut value=load(&dir).unwrap().value();value["shellEntry"]=json!(false);
+        save(&dir,&Preferences::from_value(&value).unwrap()).unwrap();
+        assert_eq!(load(&dir).unwrap().value()["shellEntry"],false);
+        value["theme"]=json!("dark");save(&dir,&Preferences::from_value(&value).unwrap()).unwrap();
+        assert_eq!(load(&dir).unwrap().value()["shellEntry"],false);
+        value["shellEntry"]=json!(true);save(&dir,&Preferences::from_value(&value).unwrap()).unwrap();
+        assert_eq!(load(&dir).unwrap().value()["shellEntry"],true);
+        fs::remove_file(dir.join("preferences.json")).unwrap();fs::remove_dir(dir).unwrap();
     }
 }

@@ -6,6 +6,8 @@ mod preferences;
 mod classify;
 mod vault;
 mod license_host;
+mod license_schedule;
+mod shell_broker;
 mod processing_host;
 mod outputs;
 mod job_status;
@@ -15,6 +17,7 @@ mod job_status;
 #[cfg(windows)] mod publication;
 #[cfg(windows)] mod startup;
 #[cfg(windows)] mod shell_entry;
+#[cfg(unix)] mod unix_shell_entry;
 use bridge_policy::{DialogLease, local_navigation, valid_request};
 use selection::Selection;
 use serde_json::{json, Value};
@@ -22,21 +25,61 @@ use std::sync::{Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}};
 use tauri::{Manager, Emitter, WebviewUrl, WebviewWindowBuilder, RunEvent, DragDropEvent, menu::{Menu, MenuItem}, tray::TrayIconBuilder};
 use tauri_plugin_dialog::DialogExt;
 
-struct HostState { #[cfg(debug_assertions)] smoke_fixture:Mutex<Option<background_smoke::Fixture>>, window_closing:Mutex<bool>, retain_job:AtomicBool, job:Mutex<job_status::JobStatus>, selection: Mutex<Selection>, outputs: Mutex<outputs::Outputs>, settings: Mutex<Value>, quitting: AtomicBool, tray_available: AtomicBool, smoke_count: AtomicUsize, window_generation: AtomicUsize, dialog_busy: AtomicBool, processing_busy: AtomicBool, processing_cancel: AtomicBool }
+struct HostState { launch_busy:AtomicBool, launch_intent:Mutex<Value>, #[cfg(debug_assertions)] smoke_fixture:Mutex<Option<background_smoke::Fixture>>, window_closing:Mutex<bool>, retain_job:AtomicBool, job:Mutex<job_status::JobStatus>, selection: Mutex<Selection>, outputs: Mutex<outputs::Outputs>, settings: Mutex<Value>, quitting: AtomicBool, tray_available: AtomicBool, smoke_count: AtomicUsize, window_generation: AtomicUsize, dialog_busy: AtomicBool, processing_busy: AtomicBool, processing_cancel: AtomicBool }
 impl Default for HostState {
-    fn default() -> Self { Self { #[cfg(debug_assertions)] smoke_fixture:Mutex::new(None), window_closing:Mutex::new(false), retain_job:AtomicBool::new(false), job:Mutex::new(job_status::JobStatus::default()), selection: Mutex::new(Selection::default()), outputs:Mutex::new(outputs::Outputs::default()), settings: Mutex::new(json!({"output":"source","theme":"system","startup":false})), quitting: AtomicBool::new(false), tray_available: AtomicBool::new(false), smoke_count:AtomicUsize::new(0), window_generation:AtomicUsize::new(0), dialog_busy:AtomicBool::new(false), processing_busy:AtomicBool::new(false), processing_cancel:AtomicBool::new(false) } }
+    fn default() -> Self { Self { launch_busy:AtomicBool::new(false), launch_intent:Mutex::new(Value::Null), #[cfg(debug_assertions)] smoke_fixture:Mutex::new(None), window_closing:Mutex::new(false), retain_job:AtomicBool::new(false), job:Mutex::new(job_status::JobStatus::default()), selection: Mutex::new(Selection::default()), outputs:Mutex::new(outputs::Outputs::default()), settings: Mutex::new(json!({"output":"source","theme":"system","startup":false})), quitting: AtomicBool::new(false), tray_available: AtomicBool::new(false), smoke_count:AtomicUsize::new(0), window_generation:AtomicUsize::new(0), dialog_busy:AtomicBool::new(false), processing_busy:AtomicBool::new(false), processing_cancel:AtomicBool::new(false) } }
 }
 fn smoke_output() -> Option<std::path::PathBuf> { let args:Vec<_>=std::env::args().collect();let index=args.iter().position(|arg| arg=="--native-smoke")?;args.get(index+1).map(std::path::PathBuf::from) }
 fn background_smoke() -> bool { cfg!(debug_assertions) && smoke_output().is_some() && std::env::args().any(|arg|arg=="--background-job") }
 fn startup_smoke() -> bool { cfg!(debug_assertions) && smoke_output().is_some() && std::env::args().any(|arg|arg=="--startup-helper") }
 fn diagnostic_step(step: &str) { if smoke_output().is_some() { eprintln!("Native diagnostic: {step}"); } }
-fn receive_launch(app: &tauri::AppHandle, args: &[String]) {
-    let Ok(paths)=launch::selected_paths(args) else { return; };
-    if paths.is_empty() { return; }
+fn receive_launch(app: &tauri::AppHandle, args: &[String]) -> bool {
+    let Ok(paths)=launch::selected_paths(args) else { return false; };
+    if paths.is_empty() { return false; }
+    if app.state::<HostState>().processing_busy.load(Ordering::SeqCst)||app.state::<HostState>().launch_busy.load(Ordering::SeqCst){let _=app.emit_to("main","native-notice","Finish the current action before editing another selection.");return false;}
     if let Ok(mut selection)=app.state::<HostState>().selection.lock() {
+        selection.clear();
         let result=selection.add(paths);
+        if result.rejected{selection.clear();let _=app.emit_to("main","native-notice","The whole selection could not be opened. Choose readable supported files and try again.");return false;}
         let _=app.emit_to("main","native-selection",result);
+        return true;
     }
+    false
+}
+fn route_native_launch(app:&tauri::AppHandle,args:&[String])->bool{
+    if !args.first().is_some_and(|arg|matches!(arg.as_str(),"--edit"|"--action")){return false;}
+    let state=app.state::<HostState>();
+    if launch::selected_paths(args).is_err()||state.processing_busy.load(Ordering::SeqCst){return true;}
+    if state.launch_busy.swap(true,Ordering::SeqCst){return true;}
+    let action_id=launch::action(args).map(String::from);let handle=app.clone();
+    std::thread::spawn(move||{
+        let state=handle.state::<HostState>();
+        let result=(||->Result<bool,String>{
+            let files=state.selection.lock().map_err(|_|"Selection unavailable")?.list();
+            if files.is_empty(){return Err("Choose readable files to edit.".into());}
+            let directory=handle.path().app_config_dir().map_err(|_|"Private storage unavailable")?;
+            let resources=handle.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
+            let output=state.settings.lock().map_err(|_|"Settings unavailable")?["output"].clone();
+            let mut params=json!({"files":files,"platform":std::env::consts::OS,"outputMode":output});
+            if let Some(action)=action_id{params["actionId"]=json!(action);}
+            let resolved={let _lease=DialogLease::acquire(&state.dialog_busy)?;license_host::run(&directory,&resources,"nativeActions",params)?};
+            *state.launch_intent.lock().map_err(|_|"Selection unavailable")?=resolved.clone();
+            let action=&resolved["action"];
+            if action["direct"]==true&&action["tool"].is_string(){
+                let ids:Vec<_>=files.iter().map(|file|file.id.clone()).collect();
+                run_processing(&handle,json!({"tool":action["tool"],"options":action["options"],"selectionIds":ids}),None)?;
+                state.retain_job.store(true,Ordering::SeqCst);
+                return Ok(false);
+            }
+            Ok(true)
+        })();
+        state.launch_busy.store(false,Ordering::SeqCst);
+        if let Err(error)=&result{if let Ok(mut settings)=state.settings.lock(){settings["notice"]=json!(error);}}
+        if !matches!(result,Ok(false)){
+            let copy=handle.clone();let _=handle.run_on_main_thread(move||{let _=open_window(&copy);let _=copy.emit_to("main","native-launch",json!({}));});
+        }
+    });
+    true
 }
 fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
     let state = app.state::<HostState>();
@@ -49,8 +92,10 @@ fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
     value["startupAvailable"]=json!(cfg!(windows));
     value["shellEntryAvailable"]=json!(false);
     value["shellEntry"]=json!(false);
+    #[cfg(unix)] {value["shellEntryAvailable"]=json!(true);value["shellEntry"]=json!(state.settings.lock().map_err(|_|"Settings unavailable")?.get("shellEntry").and_then(Value::as_bool).unwrap_or(true));}
     #[cfg(windows)] {value["shellEntryAvailable"]=json!(shell_entry::capability());if smoke_output().is_none(){value["shellEntry"]=json!(shell_entry::enabled().unwrap_or(false));}}
     #[cfg(windows)] {if smoke_output().is_none(){value["startup"]=json!(startup::enabled().unwrap_or(false));}}
+    value["launchIntent"]=state.launch_intent.lock().map_err(|_|"Selection unavailable")?.clone();
     value["files"] = json!(state.selection.lock().map_err(|_| "Selection unavailable")?.list());
     value["job"] = state.job.lock().map_err(|_|"Job status unavailable")?.snapshot(state.processing_busy.load(Ordering::SeqCst));
     Ok(value)
@@ -100,6 +145,40 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         _ => {}
     });
     Ok(())
+}
+
+fn run_processing(handle:&tauri::AppHandle,params:Value,generation:Option<usize>)->Result<Value,String>{
+                let state=handle.state::<HostState>();
+                let _processing={
+                    let closing=state.window_closing.lock().map_err(|_|"Window state unavailable")?;
+                    if state.quitting.load(Ordering::SeqCst)||generation.is_some_and(|generation|*closing||state.window_generation.load(Ordering::SeqCst)!=generation){return Err("The original window was closed. Choose files again.".into());}
+                    let lease=DialogLease::acquire(&state.processing_busy)?;
+                    state.processing_cancel.store(false,Ordering::SeqCst);
+                    state.job.lock().map_err(|_|"Job status unavailable")?.start(params["tool"].as_str().ok_or("Unknown tool")?,vec![]);
+                    lease
+                };
+                let outcome=(||{
+                let _private=DialogLease::acquire(&state.dialog_busy)?;
+                let ids:Vec<String>=serde_json::from_value(params["selectionIds"].clone()).map_err(|_|"Choose files first")?;
+                let paths=state.selection.lock().map_err(|_|"Selection unavailable")?.resolve(&ids)?;
+                let settings=state.settings.lock().map_err(|_|"Settings unavailable")?.clone();
+                let folder=match settings["output"].as_str().unwrap_or("source") {
+                    "downloads"=>Some(handle.path().download_dir().map_err(|_|"Downloads folder unavailable")?),
+                    "custom"=>Some(std::path::PathBuf::from(settings["customFolder"].as_str().ok_or("Choose an output folder in Settings")?)),
+                    "ask"=>handle.dialog().file().set_title("Save SoraFiles results").blocking_pick_folder().and_then(|file|file.into_path().ok()),
+                    _=>None
+                };
+                if settings["output"]=="ask"&&folder.is_none(){return Ok(json!({"state":"cancelled"}));}
+                if generation.is_some_and(|generation|state.window_generation.load(Ordering::SeqCst)!=generation){return Err("The original window was closed. Choose files again.".into());}
+                let directory=handle.path().app_config_dir().map_err(|_|"Private storage folder unavailable")?;
+                let resources=handle.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
+                state.job.lock().map_err(|_|"Job status unavailable")?.sources(paths.iter().map(|path|path.file_name().unwrap_or_default().to_string_lossy().into_owned()).collect());
+                    let result=processing_host::run(&directory,&resources,json!({"tool":params["tool"],"options":params["options"],"paths":paths,"folder":folder}),&state.processing_cancel,|progress|{let _=handle.emit_to("main","processing-progress",progress);})?;
+                    let mut outputs=state.outputs.lock().map_err(|_|"Outputs unavailable")?;
+                    outputs::public_result(result,&paths,folder.as_deref(),&mut outputs)
+                })();
+                state.job.lock().map_err(|_|"Job status unavailable")?.finish(&outcome);
+                outcome
 }
 
 #[tauri::command]
@@ -176,10 +255,25 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                 #[cfg(windows)] {
                     let enabled=value.as_bool().ok_or("Invalid Explorer setting")?;
                     if smoke_output().is_some(){return Err("Explorer changes are disabled in diagnostics".into());}
+                    let previous=shell_entry::enabled()?;
                     shell_entry::set_enabled(enabled)?;
+                    let mut settings=state.settings.lock().map_err(|_| "Settings unavailable")?;
+                    let mut next=settings.clone();next["shellEntry"]=json!(enabled);
+                    if let Err(error)=persist_preferences(&app,&next){let _=shell_entry::set_enabled(previous);return Err(error);}
+                    *settings=next;drop(settings);
                     return state_value(&app);
                 }
-                #[cfg(not(windows))] return Err("Explorer integration is not available on this platform".into());
+                #[cfg(unix)] {
+                    if smoke_output().is_some(){return Err("File-manager changes are disabled in diagnostics".into());}
+                    let enabled=value.as_bool().ok_or("Invalid file-manager setting")?;
+                    let resources=app.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
+                    let mut settings=state.settings.lock().map_err(|_|"Settings unavailable")?;
+                    let previous=settings.get("shellEntry").and_then(Value::as_bool).unwrap_or(true);
+                    unix_shell_entry::set_enabled(&resources,enabled)?;
+                    let mut next=settings.clone();next["shellEntry"]=json!(enabled);
+                    if let Err(error)=persist_preferences(&app,&next){let _=unix_shell_entry::set_enabled(&resources,previous);return Err(error);}
+                    *settings=next;drop(settings);return state_value(&app);
+                }
             }
             if key=="startup" {
                 #[cfg(windows)] {
@@ -231,39 +325,7 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
             outputs::open(&path,method=="revealOutput")?;Ok(json!({"opened":true}))
         },
         "processFiles" => {
-            let handle=app.clone();tauri::async_runtime::spawn_blocking(move||{
-                let state=handle.state::<HostState>();
-                let _processing={
-                    let closing=state.window_closing.lock().map_err(|_|"Window state unavailable")?;
-                    if *closing||state.quitting.load(Ordering::SeqCst)||state.window_generation.load(Ordering::SeqCst)!=generation{return Err("The original window was closed. Choose files again.".into());}
-                    let lease=DialogLease::acquire(&state.processing_busy)?;
-                    state.processing_cancel.store(false,Ordering::SeqCst);
-                    state.job.lock().map_err(|_|"Job status unavailable")?.start(params["tool"].as_str().ok_or("Unknown tool")?,vec![]);
-                    lease
-                };
-                let outcome=(||{
-                let _private=DialogLease::acquire(&state.dialog_busy)?;
-                let ids:Vec<String>=serde_json::from_value(params["selectionIds"].clone()).map_err(|_|"Choose files first")?;
-                let paths=state.selection.lock().map_err(|_|"Selection unavailable")?.resolve(&ids)?;
-                let settings=state.settings.lock().map_err(|_|"Settings unavailable")?.clone();
-                let folder=match settings["output"].as_str().unwrap_or("source") {
-                    "downloads"=>Some(handle.path().download_dir().map_err(|_|"Downloads folder unavailable")?),
-                    "custom"=>Some(std::path::PathBuf::from(settings["customFolder"].as_str().ok_or("Choose an output folder in Settings")?)),
-                    "ask"=>handle.dialog().file().set_title("Save SoraFiles results").blocking_pick_folder().and_then(|file|file.into_path().ok()),
-                    _=>None
-                };
-                if settings["output"]=="ask"&&folder.is_none(){return Ok(json!({"state":"cancelled"}));}
-                if state.window_generation.load(Ordering::SeqCst)!=generation{return Err("The original window was closed. Choose files again.".into());}
-                let directory=handle.path().app_config_dir().map_err(|_|"Private storage folder unavailable")?;
-                let resources=handle.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
-                state.job.lock().map_err(|_|"Job status unavailable")?.sources(paths.iter().map(|path|path.file_name().unwrap_or_default().to_string_lossy().into_owned()).collect());
-                    let result=processing_host::run(&directory,&resources,json!({"tool":params["tool"],"options":params["options"],"paths":paths,"folder":folder}),&state.processing_cancel,|progress|{let _=handle.emit_to("main","processing-progress",progress);})?;
-                    let mut outputs=state.outputs.lock().map_err(|_|"Outputs unavailable")?;
-                    outputs::public_result(result,&paths,folder.as_deref(),&mut outputs)
-                })();
-                state.job.lock().map_err(|_|"Job status unavailable")?.finish(&outcome);
-                outcome
-            }).await.map_err(|_|"Processing could not finish")?
+            let handle=app.clone();tauri::async_runtime::spawn_blocking(move||run_processing(&handle,params,Some(generation))).await.map_err(|_|"Processing could not finish")?
         },
         "checkUpdates" => Ok(json!({"message":"No Desktop releases are published yet."})),
         "quit" => { if state.processing_busy.load(Ordering::SeqCst) {return Err("Wait for processing to finish, or cancel it before quitting.".into());} state.quitting.store(true,Ordering::SeqCst);app.exit(0);Ok(json!({"quitting":true})) }
@@ -272,6 +334,16 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
 }
 
 fn main() {
+    let early:Vec<String>=std::env::args().skip(1).collect();
+    if early.first().is_some_and(|arg|arg=="--shell-menu"){
+        if early.len()!=3{std::process::exit(2);}
+        let input=std::path::PathBuf::from(&early[1]);let output=std::path::PathBuf::from(&early[2]);
+        // Separate, windowless process: never forward file-manager discovery to
+        // the interactive instance or load any processing engine.
+        let result=tauri::Builder::default().build(tauri::generate_context!());
+        let code=match result {Ok(app)=>if shell_broker::run(app.handle(),&input,&output).is_ok(){0}else{1},Err(_)=>1};
+        std::process::exit(code);
+    }
     // Uninstaller cleanup is handled before single-instance forwarding. Only
     // entries owned by this exact executable may be changed by the module.
     #[cfg(windows)] {
@@ -279,12 +351,23 @@ fn main() {
         if args.len()==1 && args[0]=="--remove-explorer-entry" {
             std::process::exit(if shell_entry::remove_owned_entries().is_ok(){0}else{1});
         }
+        if args.len()==1 && args[0]=="--sync-explorer-entry" {
+            // Installer runs after files are in place, without showing a window
+            // or replacing the user's saved opt-out on upgrades.
+            let result=tauri::Builder::default().build(tauri::generate_context!())
+                .map_err(|_|"Desktop setup unavailable".to_string()).and_then(|app|{
+                    let directory=app.path().app_config_dir().map_err(|_|"Settings unavailable".to_string())?;
+                    let settings=preferences::load(&directory).map_err(str::to_owned)?.value();
+                    shell_entry::set_enabled(settings["shellEntry"].as_bool().unwrap_or(true))
+                });
+            std::process::exit(if result.is_ok(){0}else{1});
+        }
     }
     let app=tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app,args,_| {
             let args:Vec<_>=args.into_iter().skip(1).collect();
             if args.len()==1&&args[0]=="--background"{return;}
-            receive_launch(app,&args);let _=open_window(app);
+            let accepted=receive_launch(app,&args);if !accepted||!route_native_launch(app,&args){let _=open_window(app);}
         }))
         .plugin(tauri_plugin_dialog::init()).manage(HostState::default())
         .invoke_handler(tauri::generate_handler![host_request])
@@ -297,10 +380,20 @@ fn main() {
         .setup(|app| {
             if smoke_output().is_none() {
                 let loaded=app.path().app_config_dir().map_err(|_| "Settings folder unavailable").and_then(|directory| preferences::load(&directory));
-                let value=match loaded { Ok(settings)=>settings.value(),Err(_)=>{
+                let readable=loaded.is_ok();
+                let mut value=match loaded { Ok(settings)=>settings.value(),Err(_)=>{
                     let mut defaults=preferences::Preferences::default().value();
                     defaults["notice"]=json!("Saved settings could not be read. Default settings are in use; choose your preferences in Settings.");defaults
                 }};
+                #[cfg(windows)] if readable {
+                    let enabled=value.get("shellEntry").and_then(Value::as_bool).unwrap_or(true);
+                    if shell_entry::set_enabled(enabled).is_err(){value["notice"]=json!("File-manager actions could not be updated. Try changing the setting in Settings.");}
+                }
+                #[cfg(unix)] if readable {
+                    let enabled=value.get("shellEntry").and_then(Value::as_bool).unwrap_or(true);
+                    let result=app.path().resource_dir().map_err(|_|"Desktop components unavailable".to_string()).and_then(|resources|unix_shell_entry::set_enabled(&resources,enabled));
+                    if result.is_err(){value["notice"]=json!("File-manager actions could not be updated. Try changing the setting in Settings.");}
+                }
                 *app.state::<HostState>().settings.lock().map_err(|_| "Settings unavailable")?=value;
             }
             let open=MenuItem::with_id(app,"open","Open SoraFiles",true,None::<&str>)?;
@@ -312,10 +405,28 @@ fn main() {
                     "quit"=>{app.state::<HostState>().quitting.store(true,Ordering::SeqCst);app.exit(0);},_=>{}
                 }).build(app);
             app.state::<HostState>().tray_available.store(tray.is_ok(),Ordering::SeqCst);
-            receive_launch(app.handle(),&std::env::args().skip(1).collect::<Vec<_>>());
+            if smoke_output().is_none(){
+                let handle=app.handle().clone();
+                std::thread::spawn(move||{
+                    let mut initial=true;
+                    loop {
+                        std::thread::sleep(license_schedule::delay(initial));initial=false;
+                        let state=handle.state::<HostState>();
+                        if state.quitting.load(Ordering::SeqCst){break;}
+                        if state.processing_busy.load(Ordering::SeqCst){continue;}
+                        let Ok(_lease)=DialogLease::acquire(&state.dialog_busy) else {continue;};
+                        let (Ok(directory),Ok(resources))=(handle.path().app_config_dir(),handle.path().resource_dir()) else {continue;};
+                        // Network failure is deliberately silent and leaves the
+                        // signed offline authorization intact. No engine loads.
+                        let _=license_host::run(&directory,&resources,"validate",json!({}));
+                    }
+                });
+            }
+            let accepted=receive_launch(app.handle(),&std::env::args().skip(1).collect::<Vec<_>>());
             let args:Vec<_>=std::env::args().skip(1).collect();
             let background=(args.len()==1&&args[0]=="--background")||startup_smoke();
-            if !background||!app.state::<HostState>().tray_available.load(Ordering::SeqCst){open_window(app.handle())?;}
+            let routed=accepted&&route_native_launch(app.handle(),&args);
+            if !routed&&(!background||!app.state::<HostState>().tray_available.load(Ordering::SeqCst)){open_window(app.handle())?;}
             if startup_smoke(){
                 let handle=app.handle().clone();
                 std::thread::spawn(move||{

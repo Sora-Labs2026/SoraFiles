@@ -1,5 +1,10 @@
-; Per-user startup is opt-in in Settings. Uninstall removes only this install's
-; exact command, preserving an entry owned by another SoraFiles installation.
+; File-manager actions default on; native preference loading preserves opt-out.
+; Sign-in startup remains opt-in. Registry changes are owned and transactional.
+!macro NSIS_HOOK_POSTINSTALL
+  ExecWait '"$INSTDIR\sorafiles-desktop.exe" --sync-explorer-entry' $R1
+  StrCmp $R1 0 +2
+  DetailPrint "File-manager actions could not be updated. Try enabling them in SoraFiles Settings."
+!macroend
 !macro NSIS_HOOK_PREUNINSTALL
   ; The native module checks exact executable ownership and transacts removal.
   ; Unfamiliar entries are preserved. A failed transaction aborts uninstall.

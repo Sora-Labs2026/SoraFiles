@@ -79,6 +79,7 @@ jobs:
         working-directory: desktop/native
         env:
           APPLE_SIGNING_IDENTITY: '-'
+          PATCHELF: ${{ runner.os == 'Linux' && '/usr/bin/patchelf' || '' }}
         run: tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
         # Direct local packaging only: no release API or signing credentials.
       - name: Verify Windows resource staging
@@ -99,6 +100,15 @@ jobs:
       - name: Test actual native window lifecycle on Windows
         if: runner.os == 'Windows'
         run: node desktop/scripts/run-native-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop.exe
+      - name: Test packaged Windows menu broker
+        if: runner.os == 'Windows'
+        run: node desktop/scripts/run-shell-broker-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop.exe
+      - name: Test packaged macOS menu broker
+        if: runner.os == 'macOS'
+        run: node desktop/scripts/run-shell-broker-smoke.mjs 'desktop/native/target/${{ matrix.target }}/release/bundle/macos/SoraFiles Desktop.app/Contents/MacOS/sorafiles-desktop'
+      - name: Test packaged Linux menu broker
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node desktop/scripts/run-shell-broker-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop
       - name: Collect immutable artifact hashes
         run: node desktop/scripts/record-native-artifacts.mjs ${{ matrix.target }}
       - uses: actions/upload-artifact@v4
@@ -113,6 +123,7 @@ jobs:
             .artifacts/native-candidate-${{ matrix.target }}.json
             .artifacts/macos-bundle-inspection.json
             .artifacts/native-smoke-*.json
+            .artifacts/shell-broker-smoke-*.json
             .artifacts/processing-pack-verification.json
             .artifacts/ocr-fallback-verification.json
             .artifacts/processing-pack-size.json

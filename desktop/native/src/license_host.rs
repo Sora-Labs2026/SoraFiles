@@ -11,6 +11,7 @@ pub(crate) fn run_component(directory:&Path,runtime:&Path,entry:&Path,config:Val
  let state=match vault::load(directory,store)? {Some(bytes)=>serde_json::from_slice::<Value>(&bytes).map_err(|_|"Private state is damaged")?,None=>Value::Null};
  if !state.is_null(){validate_state(&state)?;}
  if action=="status"&&state["license"].is_null(){return Ok(json!({"license":"not-activated"}));}
+ if action=="validate"&&state["license"]["licenseRef"].is_null(){return Ok(json!({}));}
  let mut command=Command::new(runtime);command.arg(entry).env_clear().stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
  for name in ["SystemRoot","WINDIR","TEMP","TMP","TMPDIR"]{if let Some(value)=std::env::var_os(name){command.env(name,value);}}
  #[cfg(windows)] {use std::os::windows::process::CommandExt;command.creation_flags(0x08000000);}
@@ -68,17 +69,27 @@ pub(crate) fn validate_state(value:&Value)->Result<(),String>{
 }
 fn validate_result(value:&Value)->Result<(),String>{
  let result=value.as_object().ok_or("Invalid license result")?;
- if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"devices"|"activationAvailable"|"supportDeviceId")){return Err("Private fields cannot enter the interface".into());}
+ if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"devices"|"activationAvailable"|"supportDeviceId"|"actions"|"action")){return Err("Private fields cannot enter the interface".into());}
  for (key,value) in result {let valid=match key.as_str(){
   "license"=>matches!(value.as_str(),Some("not-activated"|"trial"|"active"|"needs-verification")),
   "plan"=>value.as_str().is_some_and(|s|s.len()<64&&s.bytes().all(|b|b.is_ascii_lowercase()||b.is_ascii_digit()||b==b'-')),
   "expiresAt"=>value.is_null()||value.as_u64().is_some(),"maxDevices"=>matches!(value.as_u64(),Some(1|5)),
   "activationAvailable"=>value.is_boolean(),
+  "actions"=>value.as_array().is_some_and(|rows|rows.len()<=32&&rows.iter().all(valid_native_action)),
+  "action"=>valid_native_action(value),
   "supportDeviceId"=>value.as_str().is_some_and(|s|s.len()==43&&s.bytes().all(|b|b.is_ascii_alphanumeric()||b==b'-'||b==b'_')),
   "devices"=>value.as_array().is_some_and(|rows|rows.len()<=256&&rows.iter().all(|row|row.as_object().is_some_and(|r|r.len()==3&&r.get("id").and_then(Value::as_str).is_some_and(|id|id.len()<=128)&&r.get("current").is_some_and(Value::is_boolean)&&r.get("active").is_some_and(Value::is_boolean)))),_=>false};
   if !valid{return Err("Invalid public license response".into());}
  }
  Ok(())
+}
+fn valid_native_action(value:&Value)->bool{
+ let Some(row)=value.as_object() else{return false;};
+ row.len()<=6&&row.keys().all(|key|matches!(key.as_str(),"id"|"label"|"tool"|"options"|"direct"|"requiresUI"))
+ &&value["id"].as_str().is_some_and(|s|!s.is_empty()&&s.len()<=64&&s.bytes().all(|b|b.is_ascii_lowercase()||b.is_ascii_digit()||b==b'-'))
+ &&(value["label"].is_null()||value["label"].as_str().is_some_and(|s|s.len()<=100&&!s.chars().any(char::is_control)))
+ &&(value["tool"].is_null()||value["tool"].as_str().is_some_and(|s|s.len()<=64))
+ &&value["options"].is_object()&&value["options"].to_string().len()<=8192&&value["direct"].is_boolean()&&value["requiresUI"].is_boolean()
 }
 #[cfg(test)] mod tests{use super::*;
  #[test]fn renderer_results_cannot_contain_private_state(){for key in ["entitlement","licenseKey","privateKey","state"]{assert!(validate_result(&json!({key:"secret"})).is_err());}assert!(validate_result(&json!({"license":"trial","plan":"trial","expiresAt":1})).is_ok());}

@@ -5,6 +5,7 @@ await import('./sync-tool-metadata.mjs');
 // UI-only refresh reuses a previously verified engine pack. Release/default
 // builds always regenerate the complete dependencies and public configuration.
 if(!process.argv.includes('--ui-only')){
+ if(process.platform==='win32')await import('./build-windows-shell.mjs');
  await import('./build-license-host.mjs');
  await import('./build-processing-host.mjs');
 }

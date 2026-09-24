@@ -27,7 +27,8 @@ export function prepareReplacement(store, request, now) {
     if (!plan || license.status !== 'active' || (plan.interval !== 'lifetime' && license.period_end <= now)) throw Error('License is not active');
     const old = store.db.prepare('SELECT * FROM devices WHERE license_ref=? AND device_id=?').get(licenseRef, oldDeviceId);
     if (!old || !store.db.prepare('SELECT 1 FROM permanent_devices WHERE license_ref=? AND device_id=?').get(licenseRef, oldDeviceId)) throw Error('Completed activation required');
-    if (store.db.prepare('SELECT 1 FROM support_replacements WHERE license_ref=? AND (old_device=? OR new_device=?)').get(licenseRef, oldDeviceId, newDeviceId)
+    if (store.db.prepare('SELECT 1 FROM paid_replacements WHERE license_ref=? AND (old_device=? OR new_device=?)').get(licenseRef,oldDeviceId,newDeviceId)
+      || store.db.prepare('SELECT 1 FROM support_replacements WHERE license_ref=? AND (old_device=? OR new_device=?)').get(licenseRef, oldDeviceId, newDeviceId)
       || store.db.prepare('SELECT 1 FROM devices WHERE license_ref=? AND device_id=?').get(licenseRef, newDeviceId)) throw Error('Device already used in a replacement');
     const {count} = store.db.prepare('SELECT COUNT(*) AS count FROM support_replacements WHERE license_ref=? AND created>?').get(licenseRef, now-365*86400);
     if (count >= plan.maxDevices*2 && !overrideTicket) throw Error('Additional support review required for replacement limit');

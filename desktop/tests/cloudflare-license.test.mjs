@@ -11,7 +11,7 @@ const localRuntime=options=>new Miniflare({...convertV4MiniflareOptions({...opti
 
 test('real workerd SQLite rolls back, preserves replacement seats/history, encrypts promotions and resumes reconciliation',async()=>{
  const script=await bundle('desktop/tests/fixtures/cloudflare-ledger.mjs');
- const mf=localRuntime({...options,script,durableObjects:{PROBE:{className:'Probe',useSQLite:true},ALARM:{className:'AlarmProbe',useSQLite:true}},outboundService:()=>{throw Error('Network forbidden');}});
+ const mf=localRuntime({...options,script,durableObjects:{PROBE:{className:'Probe',useSQLite:true},ALARM:{className:'AlarmProbe',useSQLite:true},PAID_ALARM:{className:'PaidAlarmProbe',useSQLite:true}},outboundService:()=>{throw Error('Network forbidden');}});
  try {
   const call=async path=>{const r=await mf.dispatchFetch('https://local.invalid/'+path);const b=await r.json();assert.equal(r.status,200,JSON.stringify(b));return b;};
   assert.deepEqual(await call('rollback'),{rolledBack:true,foreignKey:true});
@@ -20,6 +20,9 @@ test('real workerd SQLite rolls back, preserves replacement seats/history, encry
   assert.deepEqual(await call('promotion'),{codes:2,roundTrip:true});
   assert.deepEqual(await call('rate'),{allowed:true});assert.deepEqual(await call('rate'),{allowed:false});
   assert.deepEqual(await call('reconcile'),{cursor:'r0',olderComplete:true,laterPending:true});
+  const paidAlarm=await mf.dispatchFetch('https://local.invalid/paid-alarm',{method:'POST'});
+  assert.deepEqual(await paidAlarm.json(),{pending:1,alarm:true});
+  assert.deepEqual(await call('paid-alarm'),{pending:0,alarm:false});
   await mf.dispatchFetch('https://local.invalid/alarm',{method:'POST'});
   let alarm;const deadline=Date.now()+10000;
   do{await new Promise(r=>setTimeout(r,100));alarm=await call('alarm');}while((alarm.pending||alarm.alarm!==null)&&Date.now()<deadline);

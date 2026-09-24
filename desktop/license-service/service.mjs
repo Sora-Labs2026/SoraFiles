@@ -1,15 +1,21 @@
-import {entitlementClaims,signEntitlement} from './signing.mjs';
+import {entitlementClaims,signEntitlement,signValidation} from './signing.mjs';
+import {licensePlans} from '../shared/license-plans.mjs';
 
 const reconciliationRequired=()=>Object.assign(Error('Activation requires reconciliation'),{code:'activationReconciliation',httpStatus:409});
 
 // Application layer, deliberately separate from HTTP and deploy-specific identity providers.
 // All public actions require device proof. No client-provided plan/status can issue a grant.
 export class LicenseService {
- constructor({store,guard,dodo,authority,signing,now=()=>Math.floor(Date.now()/1000)}){signEntitlement({configurationCheck:true,features:['process']},signing);store.pinActivationKey(guard.activationFingerprint(''));Object.assign(this,{store,guard,dodo,authority,signing,now});}
+ constructor({store,guard,dodo,authority,signing,replacements=null,now=()=>Math.floor(Date.now()/1000)}){signEntitlement({configurationCheck:true,features:['process']},signing);store.pinActivationKey(guard.activationFingerprint(''));Object.assign(this,{store,guard,dodo,authority,signing,replacements,now});}
  challenge(request){return this.guard.issue(request);}
  issue(license,deviceId,trial){return signEntitlement(entitlementClaims({license,deviceId,trial,now:this.now()}),this.signing);}
  async execute(action,request){
   const deviceId=this.guard.verify({...request,action}),body=request.body;
+  if(action==='replacementRequest'||action==='replacementStatus'){
+   if(!this.replacements)throw Object.assign(Error('Replacement configuration required'),{code:'providerUnavailable'});
+   return this.replacements[action==='replacementRequest'?'request':'status'](body,deviceId);
+  }
+  if(action==='validate')return this.validate(body,deviceId);
   if(action==='trial'){
    // Owner-selected accountless trial: only the proved device key determines the
    // ledger subject. A new key can represent a new device; no hardware tracking.
@@ -72,5 +78,26 @@ export class LicenseService {
    const entitlement=this.store.issueForDevice(body.licenseRef,deviceId,body.instanceId,this.now(),license=>this.issue(license,deviceId));return {entitlement};
   }
   throw Error('Unknown license action');
+ }
+ async validate(body,deviceId){
+  const {licenseRef,instanceId,nonce,licenseKey}=body,keyHash=this.guard.activationFingerprint(licenseKey);
+  const history=this.store.db.prepare('SELECT 1 FROM activation_attempts WHERE key_hash=? AND device_id=? AND license_ref=? AND instance_id=?').get(keyHash,deviceId,licenseRef,instanceId);
+  const replaced=()=>this.store.db.prepare("SELECT 1 FROM paid_replacements WHERE license_ref=? AND old_device=? AND instance_id=? AND key_hash=? AND status IN ('paid','complete') UNION SELECT 1 FROM support_replacements WHERE license_ref=? AND old_device=? AND instance_id=? AND key_hash=?").get(licenseRef,deviceId,instanceId,keyHash,licenseRef,deviceId,instanceId,keyHash);
+  const binding=this.store.binding(licenseRef);if(!binding||(!history&&!replaced()))throw Error('Activation history required');
+  const answer=(status,reason,entitlement)=>{const now=this.now();return {validation:signValidation({schema:1,iss:'sorafiles-license-service',aud:'sorafiles-desktop',deviceId,licenseRef,instanceId,nonce,iat:now,exp:now+300,status,...(reason?{reason}:{}),...(entitlement?{entitlement}:{})},this.signing)};};
+  if(replaced())return answer('inactive','device-replaced');
+  // Provider/authority failures propagate without a signed revocation. Offline
+  // access changes only after an authenticated, request-bound authoritative reply.
+  const valid=await this.dodo.validate(licenseKey,instanceId);
+  if(typeof valid?.valid!=='boolean')throw Object.assign(Error('Invalid provider response'),{code:'providerUnavailable'});
+  const state=await this.authority.resolve({customerId:binding.customer_id,licenseRef});
+  if(state.ref!==licenseRef)throw Error('License reference mismatch');this.store.sync(state);
+  return this.store.transaction(()=>{
+   if(replaced())return answer('inactive','device-replaced');
+   const license=this.store.db.prepare('SELECT * FROM licenses WHERE ref=?').get(licenseRef);
+   if(license.status!=='active'||!valid.valid||!this.store.active(licenseRef,deviceId))return answer('inactive','license-inactive');
+   if(licensePlans[license.plan].interval!=='lifetime'&&license.period_end<=this.now())return answer('inactive','subscription-expired');
+   return answer('active',null,this.issue(this.store.currentLicense(licenseRef,deviceId,instanceId,this.now()),deviceId));
+  });
  }
 }

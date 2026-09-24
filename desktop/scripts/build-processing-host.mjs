@@ -32,6 +32,11 @@ for(const directory of ['core','shared','native-host']){
  const source=new URL('desktop/'+directory+'/',root),target=new URL('desktop/'+directory+'/',out);await mkdir(target,{recursive:true});
  for(const name of await readdir(source))if(name.endsWith('.mjs')||['heif-decoder.cjs','heif-decoder-LICENSE.txt','heif-decoder-provenance.json'].includes(name))await copyFile(new URL(name,source),new URL(name,target));
 }
+if(process.platform!=='win32'){
+ for(const file of ['scripts/unix-shell-integration.mjs','shell/linux/sorafiles.py.in']){
+  const target=new URL('desktop/'+file,out);await mkdir(dirname(fileURLToPath(target)),{recursive:true});await copyFile(new URL('desktop/'+file,root),target);
+ }
+}
 // Copy only the installed processing dependency closure for the current target.
 // Missing platform optional packages are expected; required packages fail builds.
 const copied=new Set();
@@ -82,6 +87,6 @@ await mkdir(new URL('assets/ocr/lang/',out),{recursive:true});
 await copyFile(new URL('public/ocr/manifest.json',root),new URL('assets/ocr/manifest.json',out));
 await cp(new URL('public/ocr/licenses/',root),new URL('assets/ocr/licenses/',out),{recursive:true});
 for(const name of await readdir(new URL('public/ocr/lang/',root)))if(name.endsWith('.traineddata.gz'))await copyFile(new URL('public/ocr/lang/'+name,root),new URL('assets/ocr/lang/'+name,out));
-await writeFile(new URL('processing-pack.json',out),JSON.stringify({platform:process.platform,arch:process.arch,packages:[...copied].map(path=>relative(fileURLToPath(root),path).replaceAll('\\','/')).sort(),scope:`${processingTools.length} initial processing workflows; ${desktopToolIds.length} eligible Desktop tools require release validation`},null,2));
+await writeFile(new URL('processing-pack.json',out),JSON.stringify({platform:process.platform,arch:process.arch,tools:processingTools,packages:[...copied].map(path=>relative(fileURLToPath(root),path).replaceAll('\\','/')).sort(),scope:`${processingTools.length} initial processing workflows; ${desktopToolIds.length} eligible Desktop tools require release validation`},null,2));
 await import('./prune-processing-pack.mjs');
 console.log('Prepared on-demand processing dependencies:',copied.size);

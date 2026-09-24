@@ -5,6 +5,7 @@ import {reconcileBatch} from '../../license-service/cloudflare/reconcile.mjs';
 import {prepareReplacement,completeReplacement} from '../../license-service/replacements.mjs';
 import {PromotionStore} from '../../license-service/promotions.mjs';
 import {LicenseLedgerObject} from '../../license-service/cloudflare/worker.mjs';
+import {PaidReplacementService} from '../../license-service/paid-replacements.mjs';
 const id=n=>Buffer.alloc(32,n).toString('base64url');
 export class Probe {
  constructor(ctx){this.ctx=ctx;this.store=new DurableLicenseStore(ctx.storage);}
@@ -82,4 +83,12 @@ export class AlarmProbe extends LicenseLedgerObject {
   return Response.json({pending:this.store.pendingWebhookBoundary()!==null,status:this.store.db.prepare("SELECT status FROM licenses WHERE ref='alarm-license'").get()?.status,failedOnce:!!this.store.db.prepare("SELECT 1 FROM service_metadata WHERE name='test-alarm-failed'").get(),alarm:await this.ctx.storage.getAlarm()});
  }
 }
-export default {fetch(request,env){const path=new URL(request.url).pathname,binding=path==='/alarm'?env.ALARM:env.PROBE;const stub=binding.get(binding.idFromName(path));return stub.fetch(request);}};
+export class PaidAlarmProbe extends LicenseLedgerObject {
+ async runtime(){return {authority:{resolve:async()=>{throw Error('No license sweep expected');}},replacements:{reconcile:()=>PaidReplacementService.prototype.reconcile.call({store:this.store,dodo:{payment:async payment_id=>({payment_id})},applyPayment:()=>false,now:()=>1800000000})}};}
+ async fetch(request){
+  if(request.method==='POST')for(let n=0;n<21;n++)this.store.db.prepare('INSERT INTO replacement_payment_events(id,payment_id,received) VALUES(?,?,?)').run('event-'+n,'payment-'+n,1800000000);
+  await super.alarm();
+  return Response.json({pending:this.store.db.prepare('SELECT COUNT(*) n FROM replacement_payment_events WHERE completed IS NULL').get().n,alarm:await this.ctx.storage.getAlarm()!==null});
+ }
+}
+export default {fetch(request,env){const path=new URL(request.url).pathname,binding=path==='/alarm'?env.ALARM:path==='/paid-alarm'?env.PAID_ALARM:env.PROBE;const stub=binding.get(binding.idFromName(path));return stub.fetch(request);}};

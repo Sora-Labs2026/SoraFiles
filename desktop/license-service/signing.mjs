@@ -6,7 +6,7 @@ export function signEntitlement(payload,{privateKey,kid}){if(!validDesktopFeatur
 export function entitlementClaims({license,deviceId,now,trial}){
  const base={schema:1,iss:'sorafiles-license-service',aud:'sorafiles-desktop',jti:randomUUID(),deviceId,iat:now,nbf:now,features:[...desktopEntitlementFeatures]};
  if(trial)return {...base,plan:'trial',edition:'Trial',maxDevices:1,exp:trial.exp};
- const plan=plans[license.plan];if(!plan||license.status!=='active')throw Error('Inactive license');const exp=plan.interval==='lifetime'?null:Math.min(license.period_end,now+31*86400);if(exp!==null&&(!Number.isSafeInteger(exp)||exp<=now))throw Error('Subscription expired');
+ const plan=plans[license.plan];if(!plan||license.status!=='active')throw Error('Inactive license');const exp=plan.interval==='lifetime'?null:license.period_end;if(exp!==null&&(!Number.isSafeInteger(exp)||exp<=now))throw Error('Subscription expired');
  return {...base,plan:plan.id,edition:plan.edition,maxDevices:plan.maxDevices,licenseRef:license.ref,exp};
 }
 // Server-issued random challenge is consumed transactionally. Context includes action and
@@ -25,4 +25,10 @@ export function verifyDodoWebhook(raw,headers,secret,{now=Math.floor(Date.now()/
  const expected=createHmac('sha256',key).update(`${id}.${timestamp}.`).update(raw).digest();
  const valid=signatures.split(' ').some(s=>{const [version,value]=s.split(',');if(version!=='v1'||!value)return false;const actual=Buffer.from(value,'base64');return actual.length===expected.length&&timingSafeEqual(actual,expected);});
  if(!valid)throw Error('Invalid webhook signature');const event=JSON.parse(raw.toString('utf8'));return {id,event};
+}
+
+export function signValidation(payload,{privateKey,kid}){
+ const key=createPrivateKey(privateKey);if(key.asymmetricKeyType!=='ed25519'||!kid)throw Error('Invalid signing configuration');
+ const data=[{alg:'EdDSA',typ:'sf-validation+jwt',kid},payload].map(x=>Buffer.from(JSON.stringify(x)).toString('base64url')).join('.');
+ return data+'.'+sign(null,Buffer.from(data),key).toString('base64url');
 }

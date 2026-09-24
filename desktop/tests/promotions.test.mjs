@@ -36,7 +36,8 @@ test('all eight Personal/Team duration campaigns produce signed device-limited e
    assert.equal(state.periodEnd,days===null?null:time+days*86400);f.db.sync(state);f.db.bind(state.ref,identity.customerId);
    const cap=tier==='Personal'?1:5;for(let i=0;i<cap;i++)f.db.activate(state.ref,'d'+i,'i'+i,time);assert.throws(()=>f.db.activate(state.ref,'extra','x',time),/limit/);
    const claims=entitlementClaims({license:f.db.activate(state.ref,'d0','i0',time),deviceId:'d0',now:time});
-   const token=signEntitlement(claims,{privateKey,kid:'test'}),verified=verifyEntitlement(token,{keys:{test:publicKey},deviceId:'d0',now:time*1000});assert.equal(verified.maxDevices,cap);assert.equal(verified.exp,days===null?null:time+Math.min(days,31)*86400);
+   const token=signEntitlement(claims,{privateKey,kid:'test'}),verified=verifyEntitlement(token,{keys:{test:publicKey},deviceId:'d0',now:time*1000});assert.equal(verified.maxDevices,cap);assert.equal(verified.exp,days===null?null:time+days*86400);
+   if(days!==null){verifyEntitlement(token,{keys:{test:publicKey},deviceId:'d0',now:(time+days*86400-1)*1000});assert.throws(()=>verifyEntitlement(token,{keys:{test:publicKey},deviceId:'d0',now:(time+days*86400)*1000}));}
    assert.throws(()=>verifyEntitlement(code,{keys:{test:publicKey},deviceId:'d0',now:time*1000}));
    const row=f.store.registered(state.ref);f.store.revoke(row.id,time+1);assert.equal((await f.service.resolve({customerId:identity.customerId,licenseRef:state.ref})).status,'revoked');
    await assert.rejects(f.service.redeem({code,identityToken:'verified'},bucket),{code:'redemptionUnavailable'});

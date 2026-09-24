@@ -1,4 +1,4 @@
-//! Explicit, per-user Explorer opt-in. No registration at startup or installation.
+//! Per-user Explorer registration governed by the persisted application preference.
 //! Every mutation is one Windows registry transaction; unfamiliar data is untouched.
 pub const fn capability() -> bool { cfg!(windows) }
 
@@ -19,7 +19,8 @@ mod windows {
     const BASE: &str = r"Software\Classes\SystemFileAssociations";
     const VERB: &str = "SoraFilesDesktop";
     const OWNER: &str = "SoraFilesDesktop.Explorer.v1";
-    const LABEL: &str = "Open in SoraFiles";
+    const LABEL: &str = "Edit with SoraFiles";
+    const LEGACY_LABEL: &str = "Open in SoraFiles";
     // Suggestions only: file contents are revalidated by the normal import path.
     const EXTENSIONS: &[&str] = &[".pdf", ".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".tif", ".tiff", ".psd", ".docx", ".xlsx", ".pptx", ".gif"];
     const UNAVAILABLE: &str = "Explorer setting could not be read or saved";
@@ -30,7 +31,7 @@ mod windows {
         if !executable.is_absolute() || path.contains('"') || path.chars().any(char::is_control) {
             return Err("Application location is not supported".into());
         }
-        Ok(format!("\"{path}\" --open \"%1\""))
+        Ok(format!("\"{path}\" --edit \"%1\""))
     }
     fn entry_path(base: &str, extension: &str) -> String {
         format!(r"{base}\{extension}\shell\{VERB}")
@@ -52,25 +53,42 @@ mod windows {
         let names = key.enum_keys().collect::<io::Result<Vec<_>>>().map_err(|_| UNAVAILABLE)?;
         Ok(names.len() == expected.len() && names.iter().all(|name| expected.iter().any(|wanted| name.eq_ignore_ascii_case(wanted))))
     }
-    fn owned(key: &RegKey, expected: &str, tx: &Transaction) -> Result<bool, String> {
-        if !exact_values(key, &[("", LABEL), ("SoraFilesOwner", OWNER), ("MultiSelectModel", "Single")])?
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum Entry { Current, Legacy }
+    fn matches_entry(key: &RegKey, label: &str, expected: &str, tx: &Transaction) -> Result<bool, String> {
+        if !exact_values(key, &[("", label), ("SoraFilesOwner", OWNER), ("MultiSelectModel", "Single")])?
             || !exact_children(key, &["command"])? { return Ok(false); }
         let Some(child) = open(key, "command", tx)? else { return Ok(false); };
         Ok(exact_values(&child, &[("", expected)])? && exact_children(&child, &[])?)
     }
+    fn owned(key: &RegKey, expected: &str, tx: &Transaction) -> Result<Option<Entry>, String> {
+        if matches_entry(key, LABEL, expected, tx)? { return Ok(Some(Entry::Current)); }
+        // Only the known previous command for this exact executable may migrate.
+        // Never accept an arbitrary matching owner marker or another install path.
+        if let Some(executable) = expected.strip_suffix(" --edit \"%1\"") {
+            let legacy = format!("{executable} --open \"%1\"");
+            if matches_entry(key, LEGACY_LABEL, &legacy, tx)? { return Ok(Some(Entry::Legacy)); }
+        }
+        Ok(None)
+    }
+    #[cfg(test)]
     fn state(root: &RegKey, base: &str, expected: &str) -> Result<bool, String> {
         let tx = Transaction::new().map_err(|_| UNAVAILABLE)?;
         let mut all = true;
         for extension in EXTENSIONS {
             match open(root, &entry_path(base, extension), &tx)? {
-                Some(key) if owned(&key, expected, &tx)? => {},
-                Some(_) => return Err(CONFLICT.into()),
+                Some(key) => match owned(&key, expected, &tx)? {
+                    Some(Entry::Current) => {},
+                    Some(Entry::Legacy) => all = false,
+                    None => return Err(CONFLICT.into()),
+                },
                 None => all = false,
             }
         }
         Ok(all)
     }
     // fail_after supports deterministic failure after real writes in isolated tests.
+    #[cfg(test)]
     fn update(root: &RegKey, base: &str, expected: &str, value: bool, fail_after: Option<usize>) -> Result<bool, String> {
         let tx = Transaction::new().map_err(|_| UNAVAILABLE)?;
         let result = (|| {
@@ -79,15 +97,14 @@ mod windows {
             for extension in EXTENSIONS {
                 let path = entry_path(base, extension);
                 let found = match open(root, &path, &tx)? {
-                    Some(key) if owned(&key, expected, &tx)? => true,
-                    Some(_) => return Err(CONFLICT.to_string()),
-                    None => false,
+                    Some(key) => Some(owned(&key, expected, &tx)?.ok_or_else(|| CONFLICT.to_string())?),
+                    None => None,
                 };
                 present.push((path, found));
             }
             let mut writes = 0;
             for (path, found) in present {
-                if value && !found {
+                if value && found.is_none() {
                     let (key, disposition) = root.create_subkey_transacted(&path, &tx).map_err(|_| UNAVAILABLE)?;
                     if disposition != REG_CREATED_NEW_KEY { return Err(CONFLICT.into()); }
                     key.set_value("", &LABEL).map_err(|_| UNAVAILABLE)?;
@@ -97,7 +114,13 @@ mod windows {
                     if disposition != REG_CREATED_NEW_KEY { return Err(CONFLICT.into()); }
                     child.set_value("", &expected).map_err(|_| UNAVAILABLE)?;
                     writes += 1;
-                } else if !value && found {
+                } else if value && found == Some(Entry::Legacy) {
+                    let key = root.open_subkey_transacted_with_flags(&path, &tx, KEY_READ | KEY_WRITE).map_err(|_| UNAVAILABLE)?;
+                    key.set_value("", &LABEL).map_err(|_| UNAVAILABLE)?;
+                    let child = key.open_subkey_transacted_with_flags("command", &tx, KEY_SET_VALUE).map_err(|_| UNAVAILABLE)?;
+                    child.set_value("", &expected).map_err(|_| UNAVAILABLE)?;
+                    writes += 1;
+                } else if !value && found.is_some() {
                     // Never recursively remove shared parents or unknown contents.
                     root.delete_subkey_transacted(format!(r"{path}\command"), &tx).map_err(|_| UNAVAILABLE)?;
                     root.delete_subkey_transacted(&path, &tx).map_err(|_| UNAVAILABLE)?;
@@ -117,9 +140,10 @@ mod windows {
             },
         }
     }
+    include!("explorer_registration.rs");
     pub fn enabled() -> Result<bool, String> {
         let expected = command(&std::env::current_exe().map_err(|_| "Application location unavailable")?)?;
-        state(&RegKey::predef(HKEY_CURRENT_USER), BASE, &expected)
+        dynamic_state(&RegKey::predef(HKEY_CURRENT_USER), BASE, r"Software\Classes\CLSID", &expected, &dll_path()?)
     }
     fn notify_explorer() {
         // Ask Explorer to refresh associations after the complete commit.
@@ -129,10 +153,13 @@ mod windows {
     }
     pub fn set_enabled(value: bool) -> Result<bool, String> {
         let expected = command(&std::env::current_exe().map_err(|_| "Application location unavailable")?)?;
-        let saved = update(&RegKey::predef(HKEY_CURRENT_USER), BASE, &expected, value, None)?;
+        let dll = dll_path()?;
+        if value && !Path::new(&dll).is_file() { return Err("File-manager component is missing. Reinstall SoraFiles.".into()); }
+        let saved = dynamic_update(&RegKey::predef(HKEY_CURRENT_USER), BASE, r"Software\Classes\CLSID", &expected, &dll, value, false, None)?;
         notify_explorer();
         Ok(saved)
     }
+    #[cfg(test)]
     fn remove_owned(root: &RegKey, base: &str, expected: &str, fail_after: Option<usize>) -> Result<(), String> {
         let tx = Transaction::new().map_err(|_| UNAVAILABLE)?;
         let result = (|| {
@@ -142,7 +169,7 @@ mod windows {
                 if let Some(key) = open(root, &path, &tx)? {
                     // Uninstall skips other installations and augmented entries;
                     // it must not prevent removal of this installation's files.
-                    if owned(&key, expected, &tx)? { owned_paths.push(path); }
+                    if owned(&key, expected, &tx)?.is_some() { owned_paths.push(path); }
                 }
             }
             for (index, path) in owned_paths.iter().enumerate() {
@@ -160,7 +187,7 @@ mod windows {
     /// Uninstaller-only cleanup: remove exact-current entries, skip foreign ones.
     pub fn remove_owned_entries() -> Result<(), String> {
         let expected = command(&std::env::current_exe().map_err(|_| "Application location unavailable")?)?;
-        remove_owned(&RegKey::predef(HKEY_CURRENT_USER), BASE, &expected, None)?;
+        dynamic_update(&RegKey::predef(HKEY_CURRENT_USER), BASE, r"Software\Classes\CLSID", &expected, &dll_path()?, false, true, None)?;
         notify_explorer();
         Ok(())
     }
@@ -191,7 +218,110 @@ mod windows {
                 self.root.delete_subkey_all(&self.base).unwrap();
             }
         }
-        fn expected() -> &'static str { r#""C:\Synthetic App\sorafiles.exe" --open "%1""# }
+        fn expected() -> &'static str { r#""C:\Synthetic App\sorafiles.exe" --edit "%1""# }
+        const TEST_DLL: &str = r"C:\Synthetic App\sorafiles-explorer.dll";
+        fn dynamic(sandbox: &Sandbox, enable: bool, uninstall: bool, fail: Option<usize>) -> Result<bool, String> {
+            dynamic_update(&sandbox.root, &sandbox.base, &format!(r"{}\CLSID", sandbox.base), expected(), TEST_DLL, enable, uninstall, fail)
+        }
+        fn dynamic_status(sandbox: &Sandbox) -> Result<bool, String> {
+            dynamic_state(&sandbox.root, &sandbox.base, &format!(r"{}\CLSID", sandbox.base), expected(), TEST_DLL)
+        }
+        #[test]
+        fn dynamic_menu_migrates_both_previous_versions_and_removes_class() {
+            let sandbox = Sandbox::new();
+            sandbox.update(true).unwrap(); make_legacy(&sandbox, ".pdf");
+            assert!(!dynamic_status(&sandbox).unwrap());
+            assert!(dynamic(&sandbox, true, false, Some(3)).is_err());
+            assert_eq!(sandbox.verb(".pdf").get_value::<String,_>("").unwrap(), LEGACY_LABEL);
+            assert!(sandbox.root.open_subkey(format!(r"{}\CLSID\{CLSID}", sandbox.base)).is_err());
+            dynamic(&sandbox, true, false, None).unwrap();
+            dynamic(&sandbox, true, false, None).unwrap();
+            assert!(dynamic_status(&sandbox).unwrap());
+            for extension in EXTENSIONS {
+                assert_eq!(sandbox.verb(extension).get_value::<String,_>("MultiSelectModel").unwrap(), "Player");
+                assert!(sandbox.verb(extension).open_subkey("command").is_err());
+            }
+            assert!(dynamic(&sandbox, false, false, Some(4)).is_err());
+            assert!(dynamic_status(&sandbox).unwrap());
+            dynamic(&sandbox, false, false, None).unwrap();
+            assert!(!dynamic_status(&sandbox).unwrap());
+            assert!(sandbox.root.open_subkey(format!(r"{}\CLSID\{CLSID}", sandbox.base)).is_err());
+        }
+        #[test]
+        fn dynamic_menu_preserves_augmented_verbs_and_foreign_classes() {
+            let sandbox = Sandbox::new();
+            dynamic(&sandbox, true, false, None).unwrap();
+            sandbox.verb(".gif").set_value("Keep", &"Unrelated").unwrap();
+            assert!(dynamic(&sandbox, false, false, None).is_err());
+            dynamic(&sandbox, false, true, None).unwrap();
+            assert_eq!(sandbox.verb(".gif").get_value::<String,_>("Keep").unwrap(), "Unrelated");
+            assert!(sandbox.root.open_subkey(format!(r"{}\CLSID\{CLSID}", sandbox.base)).is_ok());
+            assert!(sandbox.root.open_subkey(entry_path(&sandbox.base, ".pdf")).is_err());
+            let other = Sandbox::new();
+            let path = format!(r"{}\CLSID\{CLSID}", other.base);
+            other.root.create_subkey(&path).unwrap().0.set_value("", &"Foreign").unwrap();
+            assert!(dynamic(&other, true, false, None).is_err());
+            dynamic(&other, false, true, None).unwrap();
+            assert_eq!(other.root.open_subkey(path).unwrap().get_value::<String,_>("").unwrap(), "Foreign");
+            assert!(other.root.open_subkey(entry_path(&other.base, ".pdf")).is_err());
+        }
+        fn make_legacy(sandbox: &Sandbox, extension: &str) {
+            let key = sandbox.verb(extension);
+            key.set_value("", &LEGACY_LABEL).unwrap();
+            key.open_subkey_with_flags("command", KEY_SET_VALUE).unwrap()
+                .set_value("", &r#""C:\Synthetic App\sorafiles.exe" --open "%1""#).unwrap();
+        }
+        #[test]
+        fn explorer_migrates_exact_legacy_entries_atomically() {
+            let sandbox = Sandbox::new();
+            sandbox.update(true).unwrap();
+            for extension in EXTENSIONS { make_legacy(&sandbox, extension); }
+            assert!(!sandbox.state().unwrap());
+            assert!(update(&sandbox.root, &sandbox.base, expected(), true, Some(4)).is_err());
+            for extension in EXTENSIONS {
+                assert_eq!(sandbox.verb(extension).get_value::<String, _>("").unwrap(), LEGACY_LABEL);
+                assert!(sandbox.verb(extension).open_subkey("command").unwrap().get_value::<String, _>("").unwrap().contains(" --open "));
+            }
+            sandbox.update(true).unwrap();
+            assert!(sandbox.state().unwrap());
+            for extension in EXTENSIONS {
+                assert_eq!(sandbox.verb(extension).get_value::<String, _>("").unwrap(), LABEL);
+                assert_eq!(sandbox.verb(extension).open_subkey("command").unwrap().get_value::<String, _>("").unwrap(), expected());
+            }
+        }
+        #[test]
+        fn explorer_legacy_conflicts_block_migration_without_touching_siblings() {
+            for augmented in [false, true] {
+                let sandbox = Sandbox::new();
+                sandbox.update(true).unwrap();
+                for extension in EXTENSIONS { make_legacy(&sandbox, extension); }
+                let foreign = sandbox.verb(".gif");
+                if augmented { foreign.set_value("Extra", &"Keep").unwrap(); }
+                else { foreign.open_subkey_with_flags("command", KEY_SET_VALUE).unwrap().set_value("", &r#""C:\Other\sorafiles.exe" --open "%1""#).unwrap(); }
+                assert!(sandbox.update(true).is_err());
+                assert!(sandbox.update(false).is_err());
+                assert_eq!(sandbox.verb(".pdf").get_value::<String, _>("").unwrap(), LEGACY_LABEL);
+                remove_owned(&sandbox.root, &sandbox.base, expected(), None).unwrap();
+                assert!(sandbox.root.open_subkey(entry_path(&sandbox.base, ".pdf")).is_err());
+                assert!(sandbox.root.open_subkey(entry_path(&sandbox.base, ".gif")).is_ok());
+            }
+        }
+        #[test]
+        fn explorer_disable_and_uninstall_remove_mixed_owned_versions() {
+            let sandbox = Sandbox::new();
+            sandbox.update(true).unwrap();
+            make_legacy(&sandbox, ".pdf");
+            assert!(update(&sandbox.root, &sandbox.base, expected(), false, Some(4)).is_err());
+            assert_eq!(sandbox.verb(".pdf").get_value::<String, _>("").unwrap(), LEGACY_LABEL);
+            sandbox.update(false).unwrap();
+            for extension in EXTENSIONS { assert!(sandbox.root.open_subkey(entry_path(&sandbox.base, extension)).is_err()); }
+            sandbox.update(true).unwrap();
+            make_legacy(&sandbox, ".pdf");
+            assert!(remove_owned(&sandbox.root, &sandbox.base, expected(), Some(4)).is_err());
+            assert_eq!(sandbox.verb(".pdf").get_value::<String, _>("").unwrap(), LEGACY_LABEL);
+            remove_owned(&sandbox.root, &sandbox.base, expected(), None).unwrap();
+            for extension in EXTENSIONS { assert!(sandbox.root.open_subkey(entry_path(&sandbox.base, extension)).is_err()); }
+        }
         #[test]
         fn explorer_command_quotes_literals_and_rejects_unsafe_paths() {
             assert_eq!(command(Path::new(r"C:\Synthetic App\sorafiles.exe")).unwrap(), expected());

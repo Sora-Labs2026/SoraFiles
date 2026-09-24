@@ -1,4 +1,5 @@
 import {verifyDodoWebhook} from './signing.mjs';
+import {queueReplacementEvent} from './paid-replacements.mjs';
 
 // A verified webhook invalidates cached authority. Persist only its delivery ID/time;
 // customer names, email addresses, payment details and raw payload are not retained.
@@ -6,11 +7,11 @@ import {verifyDodoWebhook} from './signing.mjs';
 // directly from Dodo on activation, so a webhook never itself creates a device grant.
 export class WebhookInbox {
  #running=false;
- constructor({store,authority,secret,now=()=>Math.floor(Date.now()/1000)}){Object.assign(this,{store,authority,secret,now});}
- accept(raw,headers){const {id}=verifyDodoWebhook(raw,headers,this.secret,{now:this.now()});return {accepted:true,duplicate:!this.store.queueWebhook(id,this.now())};}
+ constructor({store,authority,secret,replacements=null,now=()=>Math.floor(Date.now()/1000)}){Object.assign(this,{store,authority,secret,replacements,now});}
+ accept(raw,headers){const {id,event}=verifyDodoWebhook(raw,headers,this.secret,{now:this.now()});return this.store.transaction(()=>{if(this.replacements)queueReplacementEvent(this.store,id,event,this.now());return {accepted:true,duplicate:!this.store.queueWebhook(id,this.now())};});}
  async reconcile({signal}={}){
   if(this.#running)return {busy:true};this.#running=true;
-  try{const boundary=this.store.pendingWebhookBoundary();if(boundary===null)return {updated:0};
+  try{await this.replacements?.reconcile();const boundary=this.store.pendingWebhookBoundary();if(boundary===null)return {updated:0};
    let after='',updated=0;
    while(true){signal?.throwIfAborted();const rows=this.store.bindingPage(after,100);if(!rows.length)break;
     for(const row of rows){signal?.throwIfAborted();const state=await this.authority.resolve({customerId:row.customer_id,licenseRef:row.license_ref});this.store.sync(state);updated++;after=row.license_ref;}

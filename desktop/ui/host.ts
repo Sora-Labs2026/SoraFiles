@@ -13,3 +13,5 @@ export function host(method:string,params:Record<string,unknown>={},files?:File[
   try{const message={protocol:1,id,method,params};if(files){if(!bridge.postMessageWithAdditionalObjects)throw Error('File drop is unavailable. Use Choose files.');bridge.postMessageWithAdditionalObjects(message,files);}else bridge.postMessage(message);}catch(error){clearTimeout(timer);pending.delete(id);reject(error);}
  });
 }
+
+export function onNativeLaunch(callback:()=>void){if(native)void native.event.listen('native-launch',callback);}

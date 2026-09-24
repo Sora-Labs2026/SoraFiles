@@ -17,3 +17,5 @@
 desktop/licenses/runtime/*-LICENSE.txt text eol=lf
 # OCR provenance also pins the exact notice bytes on every build host.
 public/ocr/licenses/*.txt text eol=lf
+desktop/shared/image-metadata.mjs text eol=lf
+src/lib/metadata-strip.js text eol=lf
