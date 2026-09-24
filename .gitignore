@@ -65,3 +65,5 @@ English Sub-links/
 
 # jetbrains setting folder
 .idea/
+
+desktop/platform-checks/target/
