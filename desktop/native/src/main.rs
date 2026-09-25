@@ -320,7 +320,9 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
         }
         "startTrial"|"activate"|"licenseStatus"|"refreshLicense"|"licenseDevices"|"supportDetails"|"replacementEmailStart"|"replacementEmailVerify"|"replacementRequest"|"replacementStatus"|"replacementState"|"replacementCheckout" => {
             let handle=app.clone();tauri::async_runtime::spawn_blocking(move||{
-                let state=handle.state::<HostState>();let _lease=DialogLease::acquire(&state.dialog_busy)?;
+                let state=handle.state::<HostState>();
+                let deadline=std::time::Instant::now()+std::time::Duration::from_secs(90);
+                let _lease=loop{match DialogLease::acquire(&state.dialog_busy){Ok(lease)=>break lease,Err(_) if method=="licenseStatus"&&std::time::Instant::now()<deadline=>std::thread::sleep(std::time::Duration::from_millis(100)),Err(error)=>return Err(error.to_string())}};
                 let directory=handle.path().app_config_dir().map_err(|_|"Private storage folder unavailable")?;
                 let resources=handle.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
                 let action=match method.as_str(){"startTrial"=>"trial","activate"=>"activate","refreshLicense"=>"refresh","licenseDevices"=>"devices","supportDetails"=>"support",name if name.starts_with("replacement")=>name,_=>"status"};
@@ -348,6 +350,14 @@ fn main() {
     // Generate once: macOS embeds a single Info.plist symbol per executable.
     let context=tauri::generate_context!();
     let early:Vec<String>=std::env::args().skip(1).collect();
+    if early.len()==1&&early[0]=="--initialize-trial" {
+        let result=(||{
+            let directory=dirs::config_dir().ok_or("Settings unavailable".to_string())?.join(&context.config().identifier);
+            let resources=tauri::utils::platform::resource_dir(context.package_info(),&tauri::utils::Env::default()).map_err(|_|"Desktop components unavailable".to_string())?;
+            license_host::run(&directory,&resources,"initializeTrial",json!({}))
+        })();
+        std::process::exit(if result.is_ok(){0}else{1});
+    }
     if early.first().is_some_and(|arg|arg=="--shell-menu"){
         if early.len()!=3{std::process::exit(2);}
         let input=std::path::PathBuf::from(&early[1]);let output=std::path::PathBuf::from(&early[2]);
@@ -414,6 +424,12 @@ fn main() {
                     if result.is_err(){value["notice"]=json!("File-manager actions could not be updated. Try changing the setting in Settings.");}
                 }
                 *app.state::<HostState>().settings.lock().map_err(|_| "Settings unavailable")?=value;
+                // Record first launch locally before exposing actions. Network
+                // initialization follows on the worker thread, under the same lease.
+                if let (Ok(directory),Ok(resources))=(app.path().app_config_dir(),app.path().resource_dir()) {
+                    let state=app.state::<HostState>();
+                    if let Ok(_lease)=DialogLease::acquire(&state.dialog_busy){let _=license_host::run(&directory,&resources,"prepareTrial",json!({}));};
+                }
             }
             let open=MenuItem::with_id(app,"open","Open SoraFiles",true,None::<&str>)?;
             let quit=MenuItem::with_id(app,"quit","Quit SoraFiles",true,None::<&str>)?;
@@ -427,14 +443,22 @@ fn main() {
             if smoke_output().is_none(){
                 let handle=app.handle().clone();
                 std::thread::spawn(move||{
-                    let mut initial=true;
+                    let mut initial=true;let mut initialize=true;
                     loop {
-                        std::thread::sleep(license_schedule::delay(initial));initial=false;
+                        if !initialize{std::thread::sleep(license_schedule::delay(initial));initial=false;}
                         let state=handle.state::<HostState>();
                         if state.quitting.load(Ordering::SeqCst){break;}
-                        if state.processing_busy.load(Ordering::SeqCst){continue;}
-                        let Ok(_lease)=DialogLease::acquire(&state.dialog_busy) else {continue;};
+                        if state.processing_busy.load(Ordering::SeqCst){std::thread::sleep(std::time::Duration::from_secs(1));continue;}
+                        let Ok(_lease)=DialogLease::acquire(&state.dialog_busy) else {std::thread::sleep(std::time::Duration::from_secs(1));continue;};
                         let (Ok(directory),Ok(resources))=(handle.path().app_config_dir(),handle.path().resource_dir()) else {continue;};
+                        if initialize {
+                            let result=license_host::run(&directory,&resources,"initializeTrial",json!({}));
+                            initialize=result.as_ref().map_or(true,|value|value["trialPending"]==true);
+                            drop(_lease);
+                            if let Ok(value)=result{let _=handle.emit_to("main","license-updated",value);}
+                            if initialize{std::thread::sleep(std::time::Duration::from_secs(60));}
+                            continue;
+                        }
                         // Network failure is deliberately silent and leaves the
                         // signed offline authorization intact. No engine loads.
                         let _=license_host::run(&directory,&resources,"validate",json!({}));

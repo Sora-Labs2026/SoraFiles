@@ -47,6 +47,7 @@ test('Worker fetch transport issues verified offline grants, persists replay/sea
    return Response.json({valid});
   }
   if(url.pathname==='/licenses/deactivate'){released.add((await request.json()).license_key_instance_id);return new Response(null,{status:204});}
+  if(url.pathname==='/checkouts')return Response.json({checkout_url:'https://checkout.dodopayments.com/session/synthetic-checkout'});
   if(url.pathname==='/customers/customer/entitlement-grants')return Response.json({items:[{customer_id:'customer',integration_type:'license_key',entitlement_id:'ent-personal-lifetime',status:'Delivered',license_key:{id:'license',activations_limit:1,status:'active'}}]});
   throw Error('Unexpected network request');
  };
@@ -62,6 +63,12 @@ test('Worker fetch transport issues verified offline grants, persists replay/sea
  const proof=async(action,body,key=device)=>{const r=await post('/v1/challenge',{action,body,publicKey:key.publicKey});const c=await r.json();assert.equal(r.status,200,JSON.stringify(c));return {body,publicKey:key.publicKey,token:c.token,signature:sign(null,Buffer.from(`sorafiles-device-v1\n${c.challenge.id}\n${c.challenge.context}\n${c.challenge.expires}`),key.privateKey).toString('base64url')};};
  const verify=token=>verifyEntitlement(token,{keys:{test:signing.publicKey},deviceId:deviceIdentity(device.publicKey)});
  try {
+  const checkout=await mf.dispatchFetch('https://license.invalid/v1/checkout?plan=personal-lifetime',{redirect:'manual',headers:{'CF-Connecting-IP':'192.0.2.'+(sequence++)}});
+  assert.equal(checkout.status,303);assert.equal(checkout.headers.get('location'),'https://checkout.dodopayments.com/session/synthetic-checkout');
+  assert.equal(checkout.headers.get('cache-control'),'no-store');assert.equal(checkout.headers.get('referrer-policy'),'no-referrer');
+  const installedDevice=keys(),installedAt=now-86400;
+  const installedTrial=await post('/v1/trial',await proof('trial',{installedAt},installedDevice));assert.equal(installedTrial.status,200);
+  assert.equal(verifyEntitlement((await installedTrial.json()).entitlement,{keys:{test:signing.publicKey},deviceId:deviceIdentity(installedDevice.publicKey)}).exp,installedAt+7*86400);
   const trialProof=await proof('trial',{}),trial=await post('/v1/trial',trialProof);assert.equal(trial.status,200);const original=verify((await trial.json()).entitlement);assert.equal(original.exp-original.iat,604800);
   assert.equal((await post('/v1/trial',trialProof)).status,400);
   const activation=await post('/v1/activate',await proof('activate',{licenseKey:'synthetic-key'}));const paid=await activation.json();assert.equal(activation.status,200,JSON.stringify(paid));assert.equal(verify(paid.entitlement).exp,null);

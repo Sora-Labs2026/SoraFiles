@@ -10,7 +10,7 @@ pub fn run(directory:&Path,resources:&Path,action:&str,params:Value)->Result<Val
 pub(crate) fn run_component(directory:&Path,runtime:&Path,entry:&Path,config:Value,action:&str,params:Value,store:&impl KeyStore)->Result<Value,String>{
  let state=match vault::load(directory,store)? {Some(bytes)=>serde_json::from_slice::<Value>(&bytes).map_err(|_|"Private state is damaged")?,None=>Value::Null};
  if !state.is_null(){validate_state(&state)?;}
- if action=="status"&&state["license"].is_null(){return Ok(json!({"license":"not-activated"}));}
+ if action=="status"&&state["license"].is_null()&&state["installedAt"].is_null(){return Ok(json!({"license":"not-activated"}));}
  if action=="validate"&&state["license"]["licenseRef"].is_null(){return Ok(json!({}));}
  let mut command=Command::new(runtime);command.arg(entry).env_clear().stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
  for name in ["SystemRoot","WINDIR","TEMP","TMP","TMPDIR"]{if let Some(value)=std::env::var_os(name){command.env(name,value);}}
@@ -69,7 +69,8 @@ pub(crate) fn locations(resources:&Path)->Result<(PathBuf,PathBuf,Value),String>
 }
 pub(crate) fn validate_state(value:&Value)->Result<(),String>{
  let object=value.as_object().ok_or("Invalid private state")?;
- if !(object.len()==3||object.len()==4&&object.contains_key("replacement"))||value["schema"]!=1||!object.contains_key("license"){return Err("Invalid private state".into());}
+ if object.keys().any(|key|!matches!(key.as_str(),"schema"|"device"|"license"|"replacement"|"installedAt"))||value["schema"]!=1||!object.contains_key("license"){return Err("Invalid private state".into());}
+ if object.contains_key("installedAt")&&!value["installedAt"].as_u64().is_some_and(|time|time>0&&time<=9007199254740991){return Err("Invalid installation time".into());}
  let device=value["device"].as_object().ok_or("Invalid private device")?;
  if device.len()!=2||!["publicKey","privateKey"].iter().all(|key|device.get(*key).and_then(Value::as_str).is_some_and(|text|!text.is_empty()&&text.len()<=2048)){return Err("Invalid private device".into());}
  if !value["license"].is_null(){let license=value["license"].as_object().ok_or("Invalid private license")?;if license.keys().any(|key|!matches!(key.as_str(),"licenseKey"|"licenseRef"|"instanceId"|"entitlement"|"lastTrustedTime"|"deactivationPending")){return Err("Invalid private license".into());}}
@@ -80,12 +81,12 @@ pub(crate) fn validate_state(value:&Value)->Result<(),String>{
 }
 fn validate_result(value:&Value)->Result<(),String>{
  let result=value.as_object().ok_or("Invalid license result")?;
- if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"devices"|"activationAvailable"|"supportDeviceId"|"actions"|"action"|"replacement"|"checkoutUrl")){return Err("Private fields cannot enter the interface".into());}
+ if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"devices"|"activationAvailable"|"trialPending"|"supportDeviceId"|"actions"|"action"|"replacement"|"checkoutUrl")){return Err("Private fields cannot enter the interface".into());}
  for (key,value) in result {let valid=match key.as_str(){
   "license"=>matches!(value.as_str(),Some("not-activated"|"trial"|"active"|"needs-verification")),
   "plan"=>value.as_str().is_some_and(|s|s.len()<64&&s.bytes().all(|b|b.is_ascii_lowercase()||b.is_ascii_digit()||b==b'-')),
   "expiresAt"=>value.is_null()||value.as_u64().is_some(),"maxDevices"=>matches!(value.as_u64(),Some(1|5)),
-  "activationAvailable"=>value.is_boolean(),
+  "activationAvailable"|"trialPending"=>value.is_boolean(),
   "replacement"=>valid_replacement(value),
   "checkoutUrl"=>trusted_checkout(value.as_str().unwrap_or("")),
   "actions"=>value.as_array().is_some_and(|rows|rows.len()<=32&&rows.iter().all(valid_native_action)),
@@ -133,6 +134,12 @@ fn valid_native_action(value:&Value)->bool{
   assert!(validate_result(&json!({"supportDeviceId":"a".repeat(43),"privateKey":"secret"})).is_err());
  }
  #[test]fn vault_boundary_rejects_unknown_state_fields(){assert!(validate_state(&json!({"schema":1,"device":{"publicKey":"public","privateKey":"private"},"license":null})).is_ok());assert!(validate_state(&json!({"schema":1,"device":{"publicKey":"public","privateKey":"private"},"license":{"url":"elsewhere"}})).is_err());}
+ #[test]fn installation_time_is_private_bounded_and_backward_compatible(){
+  let state=json!({"schema":1,"device":{"publicKey":"public","privateKey":"private"},"license":null,"installedAt":1800000000});assert!(validate_state(&state).is_ok());
+  for time in [json!(0),json!(-1),json!(1.5),json!("1800000000"),json!(null),json!(9007199254740992u64)]{let mut bad=state.clone();bad["installedAt"]=time;assert!(validate_state(&bad).is_err());}
+  assert!(validate_result(&json!({"installedAt":1800000000})).is_err());
+  assert!(validate_result(&json!({"license":"needs-verification","trialPending":true,"expiresAt":1800604800,"activationAvailable":true})).is_ok());
+ }
  #[test]fn native_pipe_trial_survives_process_restart_and_offline_service(){
   use std::cell::RefCell;use zeroize::Zeroizing;
   #[derive(Default)]struct TestStore(RefCell<Option<Vec<u8>>>);
@@ -148,7 +155,9 @@ fn valid_native_action(value:&Value)->bool{
   assert_eq!(invoke("status",json!({})).unwrap()["license"],"not-activated");
   let support=invoke("support",json!({})).unwrap();validate_result(&support).unwrap();assert_eq!(support.as_object().unwrap().len(),1);
   assert_eq!(invoke("support",json!({})).unwrap(),support);
-  let trial=invoke("trial",json!({})).unwrap();assert_eq!(trial["license"],"trial");assert!(trial["expiresAt"].as_u64().unwrap()>0);validate_result(&trial).unwrap();
+  let trial=invoke("initializeTrial",json!({})).unwrap();assert_eq!(trial["license"],"trial");assert!(trial["expiresAt"].as_u64().unwrap()>0);validate_result(&trial).unwrap();
+  let saved=vault::load(&cleanup.directory,&store).unwrap().unwrap();let saved:Value=serde_json::from_slice(&saved).unwrap();assert!(saved["installedAt"].as_u64().unwrap()>0);
+  assert_eq!(invoke("initializeTrial",json!({})).unwrap()["expiresAt"],trial["expiresAt"]);
   let encrypted=std::fs::read(cleanup.directory.join("private-state.sealed")).unwrap();assert!(!encrypted.windows(11).any(|w|w==b"PRIVATE KEY"));
   assert_eq!(invoke("status",json!({})).unwrap()["license"],"trial");
   cleanup.child.kill().unwrap();cleanup.child.wait().unwrap();

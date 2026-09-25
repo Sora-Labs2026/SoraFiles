@@ -19,9 +19,24 @@ export async function readBody(request,max){
 // Entry called only by the binding-owning Worker, which supplies its HMAC bucket.
 export async function handleLicenseRequest(request,{service,webhooks,limiter,bucket,getRuntime,acceptWebhook}){
  try {
-  if(request.headers.has('origin'))throw fail(403);
   const url=new URL(request.url),path=url.pathname+url.search;
   if(path==='/health'&&request.method==='GET')return json(200,{status:'ok'});
+  // Public plan checkout is a top-level redirect. It deliberately accepts
+  // GET only so the browser never receives provider credentials or a CORS API.
+  if(request.method==='GET'&&url.pathname==='/v1/checkout'){
+   if(request.headers.has('origin'))throw fail(403);
+   if(!/^[a-z]+-(?:monthly|annual|lifetime)$/.test(url.searchParams.get('plan')||''))throw fail(400);
+   if(!/^[a-f0-9]{64}$/.test(bucket||''))throw fail(403);
+   try{limiter.take('checkout:'+bucket);}catch{throw fail(429);}
+   const {authority,dodo}=await getRuntime();
+   const plan=url.searchParams.get('plan');const row=authority.catalog.find(item=>item.id===plan);
+   if(!row)throw fail(400);
+   const checkout=await dodo.checkout(row.productId,row.currency);
+   let target;try{target=new URL(checkout?.checkout_url);}catch{throw fail(503);}
+   if(target.protocol!=='https:'||!['checkout.dodopayments.com','test.checkout.dodopayments.com'].includes(target.hostname)||target.username||target.password||target.port)throw fail(503);
+   return new Response(null,{status:303,headers:{Location:target.href,'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
+  }
+  if(request.headers.has('origin'))throw fail(403);
   if(request.method!=='POST')throw fail(405);
   const route=path.match(/^\/v1\/(challenge|trial|activate|refresh|validate|devices|replacementRequest|replacementStatus|replacementEmailStart|replacementEmailVerify)$/),webhook=path==='/webhooks/dodo';
   if(!route&&!webhook)throw fail(404);

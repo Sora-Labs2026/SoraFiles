@@ -44,6 +44,15 @@ test('device trial retry preserves its original deadline without a sign-in provi
  const other=keys();assert.ok(s.verify((await s.execute('trial',{},other)).entitlement,other));s.advance(7*86400);await assert.rejects(s.execute('trial',{},device),/expired/);
  }finally{s.store.close();}});
 
+test('installation trial time can only shorten a new trial and never changes an existing deadline',async()=>{const s=setup();try{
+ const device=keys(),first=s.verify((await s.execute('trial',{installedAt:1800000000-2*86400},device)).entitlement,device);
+ assert.equal(first.exp,1800000000+5*86400);s.advance(3600);
+ for(const body of [{},{installedAt:1900000000},{installedAt:1}])assert.equal(s.verify((await s.execute('trial',body,device)).entitlement,device).exp,first.exp);
+ const future=keys();assert.equal(s.verify((await s.execute('trial',{installedAt:1900000000},future)).entitlement,future).exp,1800003600+7*86400);
+ const expired=keys();await assert.rejects(s.execute('trial',{installedAt:1800000000-8*86400},expired),/expired/);await assert.rejects(s.execute('trial',{},expired),/expired/);
+ for(const installedAt of [-1,0,1.5,'1800000000',null,Number.MAX_SAFE_INTEGER+1])await assert.rejects(s.execute('trial',{installedAt},keys()),/fields/);
+ }finally{s.store.close();}});
+
 test('device trial survives a service restart and never accepts client identity or duration fields',async()=>{
  const directory=mkdtempSync(join(tmpdir(),'sf-device-trial-')),file=join(directory,'licenses.sqlite'),secret=randomBytes(32),device=keys();let s=setup({file,secret});
  try{

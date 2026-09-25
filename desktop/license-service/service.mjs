@@ -24,7 +24,8 @@ export class LicenseService {
    // Owner-selected accountless trial: only the proved device key determines the
    // ledger subject. A new key can represent a new device; no hardware tracking.
    const subject=this.guard.trialSubject(deviceId);
-   const trial=this.store.existingTrial(subject,deviceId)||this.store.trial(subject,deviceId,this.now());if(trial.exp<=this.now())throw Error('Trial expired');return {entitlement:this.issue(null,deviceId,trial)};
+   const startedAt=Math.min(body.installedAt??this.now(),this.now());
+   const trial=this.store.existingTrial(subject,deviceId)||this.store.trial(subject,deviceId,startedAt);if(trial.exp<=this.now())throw Error('Trial expired');return {entitlement:this.issue(null,deviceId,trial)};
   }
   if(action==='activate'){
    const fingerprint=this.guard.activationFingerprint(body.licenseKey);

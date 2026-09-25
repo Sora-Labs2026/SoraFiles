@@ -34,10 +34,10 @@ export class LicenseClient {
  }
  async exclusive(run){if(this.busy)throw Error('Finish the current license action first');this.busy=true;try{return await run();}finally{this.busy=false;}}
  verify(token,device,lastTrustedTime=0){return verifyEntitlement(token,{keys:this.keys,deviceId:deviceIdentity(device.publicKey),now:this.now(),lastTrustedTime});}
- async trial(){return this.exclusive(async()=>{
+ async trial(installedAt){return this.exclusive(async()=>{
   const device=await this.readDevice(),saved=await this.readLicense();
   if(saved?.licenseRef)throw Error('A paid license is already configured');
-  const response=await this.request('trial',{},device);
+  const response=await this.request('trial',installedAt===undefined?{}:{installedAt},device);
   const claims=this.verify(response.entitlement,device,saved?.lastTrustedTime||0);if(claims.plan!=='trial')throw Error('Invalid trial response');
   // Starting a trial cannot silently replace an existing paid activation.
   await this.saveLicense({entitlement:response.entitlement,lastTrustedTime:this.now()});

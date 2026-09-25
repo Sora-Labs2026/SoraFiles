@@ -8,14 +8,14 @@ const browser=await chromium.launch({...process.env.SORA_BROWSER_EXECUTABLE?{exe
 await page.addInitScript(()=>{
  const listeners=[],calls=[];window.__hostCalls=calls;
  const settings={platform:'windows',output:'source',theme:'light',startup:false,startupAvailable:true,shellEntry:false,shellEntryAvailable:true,license:'not-activated',version:'Development build'};
- window.__hostDelay=0;window.__folderSelected=true;window.__selectionRejected=false;window.__allowSyntheticTrial=false;
+ window.__hostDelay=0;window.__folderSelected=true;window.__selectionRejected=false;window.__allowSyntheticActivation=false;
  const deliver=data=>listeners.forEach(fn=>fn({data}));
  const reply=message=>{calls.push(message);let result,ok=true,error;
   switch(message.method){case 'supportDetails':result={supportDeviceId:'a'.repeat(43)};break;case 'getState':result=settings;break;case 'selectFiles':result=[{id:'pdf-a',name:'Invoice <private> & sample.pdf',format:'PDF',validated:true,bytes:12345},{id:'pdf-b',name:'Second document.pdf',format:'PDF',validated:true,bytes:12345}];break;case 'saveSettings':Object.assign(settings,message.params);result=settings;break;case 'chooseFolder':result={selected:true};break;case 'activate':case 'startTrial':ok=false;error='License activation is not configured in this development build.';break;case 'checkUpdates':result={message:'No Desktop releases are published yet.'};break;default:ok=false;error='Unavailable';}
   if(message.method==='releaseSelection'){ok=true;error=undefined;result={released:true};}
   if(message.method==='chooseFolder')result={selected:window.__folderSelected};
   if(message.method==='selectFiles')result={files:result,rejected:window.__selectionRejected};
-  if(message.method==='startTrial'&&window.__allowSyntheticTrial){ok=true;error=undefined;result={license:'trial',plan:'trial',expiresAt:1900000000};}
+  if(message.method==='activate'&&window.__allowSyntheticActivation){ok=true;error=undefined;result={license:'active',plan:'personal-lifetime',expiresAt:null};}
   if(message.method==='processFiles'){ok=true;error=undefined;result={state:'batch',results:[{index:0,state:'completed',name:'Invoice <output>.pdf',bytes:123,outputId:'b'.repeat(32)},{index:1,state:'failed'}]};}
   if(['openOutput','revealOutput'].includes(message.method)){ok=true;error=undefined;result={opened:true};}
   setTimeout(()=>deliver({protocol:1,id:message.id,ok,result,error}),window.__hostDelay);
@@ -54,10 +54,10 @@ try{
  checks.push('Remove and Clear release native selection IDs before updating the view');
  await page.evaluate(()=>window.__selectionRejected=true);await page.getByRole('button',{name:'Choose files',exact:true}).click();await page.getByRole('alert').waitFor();assert.match(await page.getByRole('alert').innerText(),/Some files could not be added/);await page.getByRole('heading',{name:'2 files selected'}).waitFor();await page.evaluate(()=>window.__selectionRejected=false);
  checks.push('Partially rejected selections explain file limits while keeping accepted files');
- await page.getByRole('button',{name:'License',exact:true}).click();await page.getByRole('button',{name:'Start free trial',exact:true}).click();await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('retain me');await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);assert.equal(await page.getByRole('searchbox').inputValue(),'retain me');
+ await page.getByRole('button',{name:'License',exact:true}).click();await page.getByLabel('License key',{exact:true}).fill('synthetic-key');await page.getByRole('button',{name:'Activate license',exact:true}).click();await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('retain me');await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);assert.equal(await page.getByRole('searchbox').inputValue(),'retain me');
  checks.push('Late native responses preserve text entered on a different screen');
  await page.evaluate(()=>window.__hostDelay=0);
- await page.evaluate(()=>window.__allowSyntheticTrial=true);await page.getByRole('button',{name:'License',exact:true}).click();await page.getByRole('button',{name:'Start free trial',exact:true}).click();await page.getByRole('heading',{name:'Your trial is active',exact:true}).waitFor();
+ await page.evaluate(()=>window.__allowSyntheticActivation=true);await page.getByRole('button',{name:'License',exact:true}).click();await page.getByLabel('License key',{exact:true}).fill('synthetic-key');await page.getByRole('button',{name:'Activate license',exact:true}).click();await page.getByRole('heading',{name:'Desktop is activated',exact:true}).waitFor();
  await page.getByRole('button',{name:'Home',exact:true}).click();await page.locator('[data-tool="rotate-pdf"]').click();await page.getByRole('button',{name:'Process files',exact:true}).click();
  await page.getByText('1 saved, 1 failed, 0 cancelled. Saved outputs are kept.',{exact:true}).waitFor();
  assert.equal(await page.locator('[aria-label="Batch results"] li').count(),2);assert.equal(await page.locator('output').count(),0);
@@ -178,7 +178,7 @@ try{
   await page.setViewportSize({width,height:900});await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByLabel('Appearance').selectOption(theme);await page.waitForFunction(value=>document.documentElement.dataset.theme===value,theme);
   for(const nav of ['Home','All tools','License','Settings','Updates & about']){await page.getByRole('button',{name:nav,exact:true}).click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${width}/${theme}/${nav} overflow`);}
   // Mock settings responses above restore the fixture's unactivated state.
-  await page.getByRole('button',{name:'License',exact:true}).click();await page.getByRole('button',{name:'Start free trial',exact:true}).click();await page.getByRole('heading',{name:'Your trial is active',exact:true}).waitFor();
+  await page.getByRole('button',{name:'License',exact:true}).click();await page.getByLabel('License key',{exact:true}).fill('synthetic-key');await page.getByRole('button',{name:'Activate license',exact:true}).click();await page.getByRole('heading',{name:'Desktop is activated',exact:true}).waitFor();
   await page.keyboard.press('Control+k');await page.getByRole('searchbox').fill('edit image');await page.keyboard.press('Enter');await page.locator('summary',{hasText:'Colour and detail'}).click();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${width}/${theme}/adjustments overflow`);
   if([1180,380].includes(width))await page.screenshot({path:resolve(out,`adjustments-${width}-${theme}.png`),fullPage:true});
@@ -250,5 +250,37 @@ try{
  assert.equal(await page.getByLabel('Keep quick actions available after sign-in').isDisabled(),true);
  assert.equal(await page.getByLabel('Show SoraFiles actions in the file manager').isDisabled(),true);
  checks.push('Unavailable sign-in integration remains disabled after native state restoration');
+ const trialPage=await browser.newPage({viewport:{width:1180,height:900}});trialPage.on('pageerror',error=>errors.push(error.message));
+ try{
+  await trialPage.addInitScript(()=>{
+   const callbacks=new Map();window.__trialCalls=[];
+   window.__trialStatus={license:'needs-verification',activationAvailable:true,trialPending:true,expiresAt:1900000000};
+   window.__publishTrial=status=>{window.__trialStatus=status;callbacks.get('license-updated')?.({payload:status});};
+   window.__TAURI__={core:{invoke:async(command,{method})=>{
+    if(command!=='host_request')throw Error('Unexpected native command');window.__trialCalls.push(method);
+    if(method==='getState')return {platform:'windows',theme:'light',output:'source',files:[],...window.__trialStatus};
+    if(method==='licenseStatus')return window.__trialStatus;
+    throw Error('Unexpected trial UI request: '+method);
+   }},event:{listen:async(name,callback)=>{callbacks.set(name,callback);return ()=>callbacks.delete(name);}}};
+  });
+  await trialPage.goto('http://127.0.0.1:'+server.address().port);
+  await trialPage.getByRole('button',{name:'License',exact:true}).click();
+  await trialPage.getByRole('heading',{name:'Setting up your trial',exact:true}).waitFor();
+  await trialPage.getByText('Connect to the internet to finish setting up your trial. We will retry automatically.',{exact:true}).waitFor();
+  assert.equal(await trialPage.getByRole('button',{name:'Start free trial',exact:true}).count(),0);
+  assert.ok((await trialPage.locator('main').innerText()).includes('Trial ends: '+new Intl.DateTimeFormat('en',{dateStyle:'medium'}).format(1900000000000)));
+  await trialPage.evaluate(()=>window.__publishTrial({license:'trial',plan:'trial',activationAvailable:true,expiresAt:1900000000}));
+  await trialPage.getByRole('heading',{name:'Your trial is active',exact:true}).waitFor();
+  assert.equal(await trialPage.getByText(/We will retry automatically/).count(),0);
+  await trialPage.screenshot({path:resolve(out,'automatic-trial-active.png')});
+  await trialPage.evaluate(()=>window.__publishTrial({license:'needs-verification',activationAvailable:true}));
+  await trialPage.getByRole('heading',{name:'Your trial needs a check',exact:true}).waitFor();
+  await trialPage.getByText('Trial ends: Check required',{exact:true}).waitFor();
+  await trialPage.getByText('Your trial may have ended, or this device could not verify it. You can activate a purchased license below.',{exact:true}).waitFor();
+  assert.equal(await trialPage.getByRole('button',{name:'Activate license',exact:true}).isVisible(),true);
+  assert.equal(await trialPage.getByText(/We will retry automatically/).count(),0);
+  const calls=await trialPage.evaluate(()=>window.__trialCalls);assert.deepEqual(calls,['getState','licenseStatus']);
+  checks.push('Native license-updated automatically changes pending trial to active, preserves its deadline, clears retry messaging after expiry and never calls startTrial');
+ }finally{await trialPage.close();}
  assert.deepEqual(errors,[]);await writeFile(resolve(out,'results.json'),JSON.stringify({status:'PASS',scope:'Browser UI with explicit fake native bridge',desktopOnly,widths,scaledViewport,checks,contrast},null,2));console.log(JSON.stringify({status:'PASS',desktopOnly,checks}));
 }catch(error){await page.screenshot({path:resolve(out,'failure.png'),fullPage:true}).catch(()=>{});throw error;}finally{await browser.close();await new Promise(r=>server.close(r));}

@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <shobjidl.h>
 #include <shlwapi.h>
+#include <shlguid.h>
 #include <atomic>
 #include <algorithm>
 #include <mutex>
@@ -76,7 +77,11 @@ bool broker(const std::vector<std::wstring>& files, std::vector<Entry>& entries)
     if (!CreateProcessW(exe.c_str(), command.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW | CREATE_SUSPENDED, nullptr, nullptr, &startup, &info)) return false;
     Handle process(info.hProcess), thread(info.hThread);
     if (!AssignProcessToJobObject(job.value, process.value)) { TerminateProcess(process.value, 1); WaitForSingleObject(process.value, 100); return false; }
-    if (ResumeThread(thread.value) == static_cast<DWORD>(-1) || WaitForSingleObject(process.value, 1400) != WAIT_OBJECT_0) {
+    // Explorer can ask for the menu on a cold install.  Starting the bundled
+    // Node host and loading the local license state can take a few seconds;
+    // the old 1.4s cutoff made a transient startup delay look like an empty
+    // menu and the failed result was then cached by the command instance.
+    if (ResumeThread(thread.value) == static_cast<DWORD>(-1) || WaitForSingleObject(process.value, 10000) != WAIT_OBJECT_0) {
         TerminateJobObject(job.value, 1); WaitForSingleObject(process.value, 100); return false;
     }
     DWORD code{}; if (!GetExitCodeProcess(process.value, &code) || code != 0) return false;
@@ -125,39 +130,91 @@ public:
         next->position = position; *out = next; return S_OK;
     }
 };
-class Command final : public IExplorerCommand {
+class Command final : public IExplorerCommand, public IObjectWithSite {
     std::atomic<ULONG> references{1}; bool root; Entry entry; std::mutex mutex;
+    std::mutex broker_mutex;
+    IUnknown* site = nullptr;
     std::vector<std::wstring> files; std::vector<Entry> entries; bool resolved = false;
+    ULONGLONG failed_at = 0;
+    void capture(IShellItemArray* items) {
+        if (!root || !items) return;
+        std::vector<std::wstring> next; selected(items, next);
+        std::lock_guard<std::mutex> lock(mutex);
+        if (files != next) { files = std::move(next); entries.clear(); resolved = false; failed_at = 0; }
+    }
+    void capture_site() {
+        IUnknown* current{};
+        { std::lock_guard<std::mutex> lock(mutex); current = site; if (current) current->AddRef(); }
+        if (!current) return;
+        IServiceProvider* services{}; IFolderView* view{};
+        if (SUCCEEDED(current->QueryInterface(IID_PPV_ARGS(&services)))) {
+            services->QueryService(SID_SFolderView, IID_PPV_ARGS(&view)); services->Release();
+        }
+        current->Release();
+        if (!view) return;
+        IShellItemArray* items{};
+        HRESULT hr = view->Items(SVGIO_SELECTION, IID_PPV_ARGS(&items)); view->Release();
+        if (SUCCEEDED(hr) && items) { capture(items); items->Release(); }
+    }
+    void resolve() {
+        // Only one broker call per command may run at a time. Selection changes
+        // invalidate results; failed starts may retry after a short cooldown.
+        std::lock_guard<std::mutex> broker_lock(broker_mutex);
+        std::vector<std::wstring> next;
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            if (files.empty() || resolved || (failed_at && GetTickCount64() - failed_at < 500)) return;
+            next = files;
+        }
+        std::vector<Entry> result; bool success = broker(next, result);
+        std::lock_guard<std::mutex> lock(mutex);
+        if (files == next) {
+            entries = std::move(result); resolved = success;
+            failed_at = success ? 0 : GetTickCount64();
+        }
+    }
 public:
     explicit Command(bool is_root = true, Entry item = {}, std::vector<std::wstring> paths = {}) : root(is_root), entry(std::move(item)), files(std::move(paths)) { ++objects; }
-    ~Command() { --objects; }
+    ~Command() { if (site) site->Release(); --objects; }
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void** out) override {
         if (!out) return E_POINTER; *out = nullptr;
-        if (iid == IID_IUnknown || iid == IID_IExplorerCommand) { *out = static_cast<IExplorerCommand*>(this); AddRef(); return S_OK; } return E_NOINTERFACE;
+        if (iid == IID_IUnknown || iid == IID_IExplorerCommand) *out = static_cast<IExplorerCommand*>(this);
+        else if (iid == IID_IObjectWithSite) *out = static_cast<IObjectWithSite*>(this);
+        else return E_NOINTERFACE;
+        AddRef(); return S_OK;
     }
     ULONG STDMETHODCALLTYPE AddRef() override { return ++references; }
     ULONG STDMETHODCALLTYPE Release() override { ULONG n = --references; if (!n) delete this; return n; }
-    HRESULT STDMETHODCALLTYPE GetTitle(IShellItemArray*, LPWSTR* out) override { if (!out) return E_POINTER; return SHStrDupW(root ? L"Edit with SoraFiles" : entry.label.c_str(), out); }
+    HRESULT STDMETHODCALLTYPE SetSite(IUnknown* next) override {
+        if (next) next->AddRef();
+        IUnknown* previous{};
+        { std::lock_guard<std::mutex> lock(mutex); previous = site; site = next;
+          if (root) { files.clear(); entries.clear(); resolved = false; failed_at = 0; } }
+        if (previous) previous->Release(); return S_OK;
+    }
+    HRESULT STDMETHODCALLTYPE GetSite(REFIID iid, void** out) override {
+        if (!out) return E_POINTER; *out = nullptr;
+        IUnknown* current{};
+        { std::lock_guard<std::mutex> lock(mutex); current = site; if (current) current->AddRef(); }
+        if (!current) return E_FAIL;
+        HRESULT hr = current->QueryInterface(iid, out); current->Release(); return hr;
+    }
+    HRESULT STDMETHODCALLTYPE GetTitle(IShellItemArray* items, LPWSTR* out) override {
+        if (!out) return E_POINTER; *out = nullptr;
+        try { capture(items); return SHStrDupW(root ? L"Edit with SoraFiles" : entry.label.c_str(), out); }
+        catch (...) { return E_FAIL; }
+    }
     HRESULT STDMETHODCALLTYPE GetIcon(IShellItemArray*, LPWSTR* out) override { if (!out) return E_POINTER; *out = nullptr; return E_NOTIMPL; }
     HRESULT STDMETHODCALLTYPE GetToolTip(IShellItemArray*, LPWSTR* out) override { if (!out) return E_POINTER; *out = nullptr; return E_NOTIMPL; }
     HRESULT STDMETHODCALLTYPE GetCanonicalName(GUID* out) override { if (!out) return E_POINTER; *out = root ? CLSID_SoraFiles : GUID_NULL; return S_OK; }
     HRESULT STDMETHODCALLTYPE GetState(IShellItemArray* items, BOOL slow, EXPCMDSTATE* state) override {
         if (!state) return E_POINTER; *state = ECS_ENABLED;
         if (!root) return S_OK;
-        // E_PENDING explicitly requests Explorer's background state callback.
-        if (!slow) return E_PENDING;
         try {
-            std::vector<std::wstring> next;
-            if (!selected(items, next)) { *state = ECS_DISABLED; return S_OK; }
-            {
-                std::lock_guard<std::mutex> lock(mutex);
-                if (next == files && resolved) return S_OK;
-                files = next; entries.clear(); resolved = true;
-            }
-            std::vector<Entry> result; broker(next, result);
-            // Do not hold a lock across the broker wait: Explorer can enumerate
-            // the fallback immediately while a background callback is pending.
-            { std::lock_guard<std::mutex> lock(mutex); if (files == next) entries = std::move(result); }
+            if (items) capture(items); else capture_site();
+            if (slow) resolve();
+            std::lock_guard<std::mutex> lock(mutex);
+            if (files.empty()) *state = ECS_DISABLED;
             return S_OK;
         } catch (...) { return E_FAIL; }
     }
@@ -170,6 +227,10 @@ public:
         if (!out) return E_POINTER; *out = nullptr; if (!root) return E_NOTIMPL;
         std::vector<IExplorerCommand*> children;
         try {
+            // Explorer may enumerate without calling the slow GetState path.
+            // GetTitle supplies selection on some hosts; the site supplies it
+            // on others. Resolve here so callback order cannot empty the menu.
+            capture_site(); resolve();
             std::lock_guard<std::mutex> lock(mutex);
             for (auto& item : entries) if (item.id != L"open") children.push_back(new Command(false, item, files));
             children.push_back(new Command(false, {L"", L"More options"}, files));

@@ -10,7 +10,8 @@ export function validateManifest(manifest){
    const manual=r.signing==='ad-hoc'&&r.notarized===false&&r.installation==='gatekeeper-approval'&&r.updaterEligible===false&&r.approvalInstructions==='https://sorafiles.com/desktop/help#macos-open-anyway';
    if(!notarized&&!manual)throw Error('Mac release requires notarization or explicit manual approval instructions');
   }
-  if(r.platform==='windows'&&r.signing!=='signed')throw Error('Windows release not signed');
+  const unsignedWindows=r.platform==='windows'&&r.signing==='unsigned'&&r.notarized===false&&r.installation==='manual'&&r.updaterEligible===false&&r.approvalInstructions==='https://sorafiles.com/desktop/help#windows-unsigned';
+  if(r.platform==='windows'&&r.signing!=='signed'&&!unsignedWindows)throw Error('Windows release requires signing or explicit manual unsigned approval');
   if(r.updaterEligible&&(!r.updateSignature||r.signing!=='signed'))throw Error('Unsigned update');
   const packages={windows:['msi','exe','msix'],macos:['dmg','pkg'],linux:['deb','rpm','AppImage','tar.gz']};if(!packages[r.platform].includes(r.package)||!['stable','beta'].includes(r.channel))throw Error('Invalid package or release channel');
   if(r.platform==='linux'){if(!/^[a-z][a-z0-9-]{1,30}$/.test(r.distro||'')||r.distro==='universal'||!['glibc','musl'].includes(r.libc))throw Error('Tested Linux distribution/runtime required');versionParts(r.minLibc);}

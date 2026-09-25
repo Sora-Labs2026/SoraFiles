@@ -31,3 +31,31 @@ test('an unverifiable trial offers paid activation without granting access or re
   assert.equal(JSON.stringify(status).includes('saved-paid-key'),false);
  }
 });
+
+test('automatic trial saves its installation deadline offline and retries without resetting it',async()=>{
+ const signing=generateKeyPairSync('ed25519'),publicKey=signing.publicKey.export({type:'spki',format:'pem'}),privateKey=signing.privateKey.export({type:'pkcs8',format:'pem'});
+ let now=1800000000000,saved=null,online=false,writes=0,requests=0;
+ const store=new LicenseStore(':memory:'),guard=new RequestGuard({store,secret:randomBytes(32),now:()=>Math.floor(now/1000)});
+ const service=new LicenseService({store,guard,signing:{privateKey,kid:'test'},dodo:{},authority:{},now:()=>Math.floor(now/1000)});
+ const server=createLicenseHttpServer({service,webhooks:{},rateSecret:randomBytes(32)});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const config={origin:'http://127.0.0.1:'+server.address().port,allowLocalTesting:true,keys:{test:publicKey}};
+ const run=action=>runLicenseAction({action,state:saved,config,now:()=>now,saveState:async value=>{saved=structuredClone(value);writes++;},fetchImpl:(...args)=>{requests++;assert.equal(saved.installedAt,1800000000);if(!online)throw Error('offline');return fetch(...args);}});
+ try{
+  await run('prepareTrial');assert.equal(requests,0);assert.equal(writes,1);const device=structuredClone(saved.device);
+  assert.equal((await run('initializeTrial')).trialPending,true);assert.equal(saved.license,null);
+  now+=2*86400000;online=true;const trial=await run('initializeTrial');assert.equal(trial.license,'trial');assert.equal(trial.expiresAt,1800000000+7*86400);assert.deepEqual(saved.device,device);
+  const snapshot=structuredClone(saved),before=requests,beforeWrites=writes;
+  assert.equal((await run('initializeTrial')).license,'trial');assert.deepEqual(saved,snapshot);assert.equal(requests,before);assert.equal(writes,beforeWrites);
+  now+=6*86400000;assert.equal((await run('initializeTrial')).license,'needs-verification');assert.deepEqual(saved,snapshot);assert.equal(requests,before);
+ }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));store.close();}
+});
+
+test('automatic initialization preserves paid state and never networks before protected storage succeeds',async()=>{
+ const pair=generateKeyPairSync('ed25519'),device={publicKey:pair.publicKey.export({type:'spki',format:'pem'}),privateKey:pair.privateKey.export({type:'pkcs8',format:'pem'})};
+ const state={schema:1,device,license:{licenseKey:'paid',licenseRef:'binding',entitlement:'unverifiable'}};
+ const options={config:{keys:{test:device.publicKey}},saveState:async()=>assert.fail('Existing paid state must not change'),fetchImpl:()=>assert.fail('No network for paid state')};
+ assert.deepEqual(await runLicenseAction({...options,action:'initializeTrial',state}),{license:'needs-verification',activationAvailable:false});
+ await assert.rejects(runLicenseAction({...options,action:'initializeTrial',state:null,saveState:async()=>{throw Error('vault unavailable');}}),/vault/);
+ const expired={schema:1,device,license:null,installedAt:1800000000};
+ assert.deepEqual(await runLicenseAction({...options,action:'initializeTrial',state:expired,now:()=>1800000000000+8*86400000}),{license:'needs-verification',activationAvailable:true,trialPending:false,expiresAt:1800000000+7*86400});
+});
