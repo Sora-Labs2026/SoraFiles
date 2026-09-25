@@ -83,7 +83,9 @@ impl Temp {
     fn new() -> Self {
         let path = std::env::temp_dir().join(format!("sorafiles-startup-test-{}", nonce()));
         fs::create_dir(&path).unwrap();
-        Self(fs::canonicalize(path).unwrap())
+        #[cfg(unix)]
+        let path = fs::canonicalize(path).unwrap();
+        Self(path)
     }
 }
 impl Drop for Temp {
