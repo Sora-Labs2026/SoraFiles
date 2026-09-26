@@ -18,8 +18,9 @@ const hookPath=resolve('desktop/native/installer-hooks.nsh');
 const hooks=await readFile(hookPath,'utf8');
 if(!script.includes('sorafiles-explorer.dll')||!script.includes(`!include "${hookPath}"`)
  ||!script.includes('!insertmacro NSIS_HOOK_PREINSTALL')||!script.includes('!insertmacro NSIS_HOOK_POSTINSTALL')||!script.includes('!insertmacro NSIS_HOOK_PREUNINSTALL')
- ||!hooks.includes('--initialize-trial')||!hooks.includes('--sync-explorer-entry')||!hooks.includes('--remove-explorer-entry')
+ ||!hooks.includes('--sync-explorer-entry')||!hooks.includes('--remove-explorer-entry')
  ||!hooks.includes('Call SoraFilesVerifyExplorerPayload')||!hooks.includes('SetErrorLevel 3010'))throw Error('Installer omits native menu component, verified replacement, or lifecycle hooks');
+if(hooks.includes('--initialize-trial'))throw Error('Installation must not start the first-launch trial');
 const shellComponent={bytes:actualShell.length,sha256:hash(actualShell)};
 const report={recordedAt:new Date().toISOString(),status:'PASS',resourceFiles:entries.length,resourceBytes,nativeBytes,shellComponent,totalStagedPayloadBytes:resourceBytes+nativeBytes+shellComponent.bytes,compression:'NSIS solid LZMA',scope:'NSIS resource staging equals generated pack byte-for-byte; excludes installed allocation, uninstaller, shortcuts and shared WebView2; not installer extraction or installation verification',entries};
 await writeFile('.artifacts/windows-payload-verification.json',JSON.stringify(report,null,2));console.log(JSON.stringify({...report,entries:undefined}));
