@@ -1,4 +1,4 @@
 {
-  "homepagePromotionEnabled": false,
-  "reason": "Launch targets Windows, macOS and Linux together. Enable only after tested signed installers, working licensing and the release checklist pass."
+  "homepagePromotionEnabled": true,
+  "reason": "SoraFiles Desktop 0.1.0 is published for Windows x64, macOS Apple Silicon/Intel and Ubuntu 22.04 x64. Automatic updates remain disabled; macOS ad-hoc builds require Open Anyway."
 }

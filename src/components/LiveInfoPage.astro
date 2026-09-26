@@ -51,7 +51,7 @@ const iconPaths: Record<InfoSlug, string[]> = {
 };
 ---
 
-<main id="main" data-testid={`info-page-${slug}`} class="mx-auto max-w-3xl px-4 py-14 sm:px-6 lg:py-20">
+<main id="main" data-testid={`info-page-${slug}`} class:list={['v10-info sf-container',slug === 'contact' && 'v10-contact']}>
   <div class="sf-enter">
     <span class="text-xs font-extrabold uppercase tracking-[0.25em] text-violet-500">{page.overline}</span>
     <h1 class="mt-3 text-4xl font-extrabold leading-[1.12] tracking-[-0.03em] text-slate-900 sm:text-5xl dark:text-white">{page.title}</h1>
@@ -87,7 +87,10 @@ const iconPaths: Record<InfoSlug, string[]> = {
     </form>
   </section>}
 
-  {page.sections?.map((section, index) => <section data-reveal class="sf-reveal mt-12"><h2 class="flex items-baseline gap-3 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white"><span class="text-gradient text-sm font-extrabold">{String(index + 1).padStart(2, '0')}</span>{section.h.replace(/^\d+\.\s*/, '')}</h2><p class="mt-3 text-[15px] font-medium leading-relaxed text-slate-500 dark:text-slate-400">{section.p}</p></section>)}
+  <div class="v10-info-content">
+    <nav aria-label={page.title} class="v10-info-toc"><ul>{page.sections?.map((section,index)=><li><a href={`#section-${index+1}`}>{section.h.replace(/^\d+\.\s*/, '')}</a></li>)}</ul></nav>
+    <article>{page.sections?.map((section,index)=><section id={`section-${index+1}`} class="v10-info-section"><h2><span aria-hidden="true">{String(index+1).padStart(2,'0')}</span>{section.h.replace(/^\d+\.\s*/, '')}</h2><p>{section.p}</p></section>)}</article>
+  </div>
 </main>
 
 <script is:inline define:vars={{ sending: contact.sending }}>
@@ -112,3 +115,12 @@ const iconPaths: Record<InfoSlug, string[]> = {
   if (new URLSearchParams(location.search).get('sent') === '1') document.querySelector('[data-contact-success]')?.removeAttribute('hidden');
   form?.addEventListener('submit', () => { const button = form.querySelector('button[type="submit"]'); if (button) { button.disabled = true; button.querySelector('span').textContent = sending; } });
 </script>
+<style>
+.v10-info{padding-block:clamp(2rem,1rem + 3vw,3.75rem) 5rem}.v10-info>div:first-child{max-width:42rem}.v10-info>div:first-child>span{color:var(--ink-3);font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow)}.v10-info h1{font-size:var(--fs-h1);line-height:var(--lh-h1);letter-spacing:var(--ls-h1)}.v10-info>div:first-child p{font-size:var(--fs-lead);font-weight:400;color:var(--ink-2)}
+.v10-info :global([data-testid^=info-card]){background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;padding:1.5rem 0;box-shadow:none;backdrop-filter:none}.v10-info :global([data-testid^=info-card] svg){display:none}.v10-info :global([data-testid^=info-card] h2){font-size:var(--fs-h3)}.v10-info :global([data-testid^=info-card] p){font-size:14px;line-height:1.6;font-weight:400}
+.v10-info-content{display:grid;grid-template-columns:13rem minmax(0,42rem);gap:4rem;margin-top:3rem;align-items:start}.v10-info-toc{position:sticky;top:6rem;border-inline-start:1px solid var(--line);padding-inline-start:1.25rem;font-size:13px;line-height:1.5;color:var(--ink-2)}.v10-info-toc li+li{margin-top:1rem}.v10-info-toc a:hover{text-decoration:underline;color:var(--ink)}
+.v10-info-section{scroll-margin-top:6rem;padding-bottom:2.5rem}.v10-info-section h2{display:flex;align-items:baseline;gap:1rem;font-size:var(--fs-h3);color:var(--ink)}.v10-info-section h2 span{font-size:12px;font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}.v10-info-section p{margin-top:1rem;font-size:1rem;line-height:1.8;color:var(--ink-2);font-weight:400}
+.v10-contact{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,36rem);gap:0 5rem}.v10-contact>div:first-child{grid-column:1/-1}.v10-contact>div:nth-child(2){display:block}.v10-contact .v10-info-content{grid-column:1/-1}
+.v10-contact :global([data-testid=contact-form-card]){padding:2rem;border:1px solid var(--line);border-radius:var(--r-xl);background:var(--surface);box-shadow:none;backdrop-filter:none}.v10-contact :global(input:not([type=hidden])),.v10-contact :global(textarea){background:var(--surface);border-color:var(--line-strong);color:var(--ink)}.v10-contact :global(input:focus-visible),.v10-contact :global(textarea:focus-visible){outline:2px solid var(--focus);outline-offset:2px}.v10-contact :global(button[type=submit]){background:var(--action);color:var(--on-action);box-shadow:none}
+@media(max-width:800px){.v10-info-content{grid-template-columns:1fr;gap:2rem}.v10-info-toc{position:static}.v10-contact{display:block}}
+</style>

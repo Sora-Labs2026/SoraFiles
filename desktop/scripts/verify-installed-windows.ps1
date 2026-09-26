@@ -9,7 +9,8 @@ Set-StrictMode -Version Latest
 if ($env:OS -ne 'Windows_NT') { throw 'Windows is required.' }
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $release = Join-Path $repo 'desktop\native\target\x86_64-pc-windows-msvc\release'
-$installer = Join-Path $release 'bundle\nsis\SoraFiles Desktop_0.1.0_x64-setup.exe'
+$appVersion = (Get-Content -LiteralPath (Join-Path $repo 'desktop/native/tauri.conf.json') -Raw | ConvertFrom-Json).version
+$installer = Join-Path $release "bundle\nsis\SoraFiles Desktop_${appVersion}_x64-setup.exe"
 $template = Join-Path $release 'nsis\x64\installer.nsi'
 $validationRoot = Join-Path $repo '.artifacts\windows-install-validation'
 $target = [IO.Path]::GetFullPath((Join-Path $validationRoot "$RunId\app"))

@@ -76,13 +76,9 @@ FunctionEnd
 
 !macro NSIS_HOOK_POSTINSTALL
   Call SoraFilesVerifyExplorerPayload
-  ClearErrors
-  StrCpy $R1 1
-  ExecWait '"$INSTDIR\sorafiles-desktop.exe" --initialize-trial' $R1
-  IfErrors 0 +2
-  StrCpy $R1 1
-  StrCmp $R1 0 +2
-  DetailPrint "Your trial will finish setting up when SoraFiles can connect to the internet."
+  ; Installation only registers file-manager integration. The app records its
+  ; automatic seven-day trial on first launch, consistently across platforms.
+  ; Existing local trial deadlines are preserved by prepareTrial on upgrades.
   ClearErrors
   StrCpy $R1 1
   ExecWait '"$INSTDIR\sorafiles-desktop.exe" --sync-explorer-entry' $R1

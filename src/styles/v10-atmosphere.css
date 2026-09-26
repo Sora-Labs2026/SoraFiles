@@ -1,0 +1,120 @@
+/* Warm atmosphere: a static, page-level wash taken from LaunchIt's amber (rgb 251,191,36).
+   It sits behind the header and page top only. Never on tool cards, workspaces, tables or long text. */
+
+.page {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page > main {
+  flex: 1;
+}
+
+.atmos {
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--atmos-h, 30rem);
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.atmos::before,
+.atmos::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.atmos::before {
+  background: var(--atmos-bg, none);
+}
+
+/* Faint dot grid, fading out before the content below the intro */
+.atmos::after {
+  display: var(--atmos-dots, none);
+  background-image: radial-gradient(circle at 1px 1px, var(--dot-grid) 1px, transparent 0);
+  background-size: 26px 26px;
+  -webkit-mask-image: var(--atmos-mask);
+  mask-image: var(--atmos-mask);
+}
+
+/* Homepage and Desktop overview: wash anchored top-right, a pale field, dots */
+[data-atmos="hero"] {
+  --atmos-h: 44rem;
+  --atmos-dots: block;
+  --atmos-bg:
+    radial-gradient(55% 60% at 80% 5%, var(--surface-warm), transparent 70%),
+    radial-gradient(34% 44% at 84% 0%, var(--surface-warm-field), transparent 72%),
+    radial-gradient(40% 46% at 6% 100%, var(--surface-warm-field-2), transparent 70%);
+  --atmos-mask: radial-gradient(ellipse 70% 72% at 62% 18%, #000 25%, transparent 76%);
+}
+
+/* Pricing: centred wash over the intro, like a lit stage */
+[data-atmos="pricing"] {
+  --atmos-h: 40rem;
+  --atmos-dots: block;
+  --atmos-bg:
+    radial-gradient(60% 58% at 50% -12%, var(--surface-warm), transparent 72%),
+    radial-gradient(30% 34% at 50% 0%, var(--surface-warm-field), transparent 72%);
+  --atmos-mask: radial-gradient(ellipse 58% 64% at 50% 0%, #000 22%, transparent 74%);
+}
+
+/* Directory, Desktop subpages, contact, 404 */
+[data-atmos="page"],
+[data-atmos="page-dots"] {
+  --atmos-h: 30rem;
+  --atmos-bg:
+    radial-gradient(48% 72% at 86% 0%, var(--surface-warm), transparent 70%),
+    radial-gradient(28% 40% at 88% 0%, var(--surface-warm-field), transparent 72%);
+}
+
+[data-atmos="page-dots"] {
+  --atmos-dots: block;
+  --atmos-mask: radial-gradient(ellipse 52% 80% at 82% 0%, #000 18%, transparent 72%);
+}
+
+/* Tool pages: the wash ends above the workspace */
+[data-atmos="tool"] {
+  --atmos-h: 24rem;
+  --atmos-bg:
+    radial-gradient(44% 76% at 88% 0%, var(--surface-warm), transparent 70%),
+    radial-gradient(26% 42% at 90% 0%, var(--surface-warm-field), transparent 72%);
+}
+
+/* Guides, About, Open Source: a small top wash */
+[data-atmos="doc"] {
+  --atmos-h: 22rem;
+  --atmos-bg: radial-gradient(44% 80% at 90% 0%, var(--surface-warm), transparent 70%);
+}
+
+/* Privacy and Terms: barely there, never behind legal text */
+[data-atmos="legal"] {
+  --atmos-h: 16rem;
+  --atmos-bg: radial-gradient(40% 80% at 94% 0%, var(--surface-warm-subtle), transparent 70%);
+}
+
+@media (max-width: 47.99rem) {
+  [data-atmos="hero"] {
+    --atmos-h: 36rem;
+    --atmos-bg:
+      radial-gradient(90% 40% at 88% 0%, var(--surface-warm), transparent 72%),
+      radial-gradient(60% 30% at 90% 0%, var(--surface-warm-field), transparent 72%);
+    --atmos-mask: radial-gradient(ellipse 90% 45% at 70% 0%, #000 20%, transparent 78%);
+  }
+
+  [data-atmos="pricing"] {
+    --atmos-bg: radial-gradient(100% 40% at 50% -6%, var(--surface-warm), transparent 72%);
+    --atmos-mask: radial-gradient(ellipse 90% 40% at 50% 0%, #000 20%, transparent 76%);
+  }
+
+  [data-atmos="page"],
+  [data-atmos="page-dots"],
+  [data-atmos="tool"],
+  [data-atmos="doc"] {
+    --atmos-bg: radial-gradient(90% 60% at 92% 0%, var(--surface-warm), transparent 70%);
+  }
+}

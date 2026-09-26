@@ -7,6 +7,7 @@ import type { LocalePath } from '../i18n/config';
 import { getSpreadsheetToolMessages } from '../i18n/spreadsheetTools';
 import { getBackgroundRemovalMessages } from '../i18n/backgroundRemoval';
 import { getBrandPositioning } from '../i18n/brandPositioning';
+import { offlineAvailability } from '../i18n/offline';
 
 type Dictionary = Record<string, unknown>;
 const compactDictionaries: Record<string, Dictionary> = { en, ...latin, ...asia, ...arRu };
@@ -38,6 +39,7 @@ export function liveRaw<T>(locale: LocalePath, path: string): T {
 }
 
 export function liveText(locale: LocalePath, path: string, vars?: Record<string, string | number>): string {
+  if (['common.offline', 'trust.t5s', 'feat.f4s'].includes(path)) return offlineAvailability[locale];
   const spreadsheet = getSpreadsheetToolMessages(locale);
   const background = getBackgroundRemovalMessages(locale);
   const brand = getBrandPositioning(locale);
@@ -45,7 +47,7 @@ export function liveText(locale: LocalePath, path: string, vars?: Record<string,
   if (path === 'page.about.title') return brand.aboutTitle;
   if (path === 'page.about.intro') return brand.aboutIntro;
   if (path === 'footer.tagline') return brand.footerTagline;
-  if (path === 'lim.pdfToExcel') return spreadsheet.exactHelp;
+  if (path === 'lim.pdfToExcel') return spreadsheet.editableHelp;
   if (path === 'lim.excelToPdf') return spreadsheet.excelResult;
   if (path === 'tool.remove-background.n') return background.name;
   if (path === 'tool.remove-background.d') return background.tagline;

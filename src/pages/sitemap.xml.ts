@@ -1,4 +1,5 @@
 import { publishedLocales, localizedRoutePaths, localizedPath } from '../i18n/config';
+import { guideSitemapUrls } from '../data/guides';
 
 export const prerender = true;
 
@@ -25,6 +26,7 @@ export function GET() {
 
     return alternates.map(({ href }) => ({ url: href, alternateLinks }));
   });
+  entries.push(...guideSitemapUrls().map(url => ({ url, alternateLinks: [] })));
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${entries
     .map(({ url, alternateLinks }) => `  <url>\n    <loc>${escapeXml(url)}</loc>\n${alternateLinks

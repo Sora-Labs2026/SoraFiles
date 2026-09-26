@@ -2,9 +2,13 @@
 import type { LocalizedToolCopy } from '../i18n/types';
 import type { LocalePath } from '../i18n/config';
 import { getWorkbenchMessages } from '../i18n/workbench';
+import { liveText } from '../data/liveI18n';
+import AdaptiveWorkspace from './AdaptiveWorkspace.astro';
 interface Props { locale?: LocalePath; copy?: LocalizedToolCopy; }
 const { locale = 'en', copy = { title: 'Image Converter', description: 'Convert supported image formats to JPG, PNG, or WebP locally.', note: 'Pixel dimensions are preserved. Animated or multipage files use the first frame or page; metadata, layers, animation, and camera data are not copied.' } as LocalizedToolCopy } = Astro.props;
 const m = getWorkbenchMessages(locale);
+const uploadCopy = { drop: liveText(locale, 'wb.dropOne'), click: liveText(locale, 'wb.orClick') };
+const converterActionLabel = locale === 'en' ? 'Convert image' : m.process;
 ---
 <section data-workbench id="image-converter" aria-labelledby="converter-heading" class="relative mx-auto max-w-5xl scroll-mt-24 px-5 sm:px-6" data-localized={locale !== 'en' ? 'true' : 'false'} data-copy-description={copy.description} data-copy-note={copy.note}>
   <div class="overflow-hidden rounded-card bg-surface shadow-card">
@@ -22,36 +26,36 @@ const m = getWorkbenchMessages(locale);
     </div>
 
     <div id="converter-empty" class="p-4 sm:p-7">
-      <div id="converter-drop-zone" class="group flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-line-strong bg-canvas px-5 py-12 text-center transition-colors hover:border-blue/60 hover:bg-surface sm:min-h-80">
-        <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-surface text-green shadow-small transition-transform group-hover:-translate-y-0.5 motion-reduce:transform-none">
+      <div id="converter-drop-zone" class="sf-upload-dropzone group flex min-h-72 flex-col items-center justify-center px-5 py-12 text-center sm:min-h-80">
+        <div class="sf-upload-dropzone__icon flex h-14 w-14 items-center justify-center rounded-xl bg-surface text-green shadow-small motion-reduce:transform-none">
           <svg aria-hidden="true" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="12" height="12" rx="2"></rect><circle cx="7" cy="8" r="1"></circle><path d="m5 14 3-3 2.5 2 2-1.5L15 14M18 9v11M15 17l3 3 3-3"></path>
           </svg>
         </div>
-        <h3 class="mt-5 text-xl font-semibold tracking-tight">{m.chooseImage}</h3>
+        <h3 class="mt-5 text-xl font-semibold tracking-tight">{uploadCopy.drop}</h3>
         <p class="mt-2 max-w-xl text-sm leading-6 text-muted">JPG, PNG, WebP, GIF, BMP, AVIF, SVG, HEIC, HEIF, TIFF, PSD</p>
         <button id="converter-choose" type="button" class="mt-6 inline-flex min-h-12 items-center justify-center rounded-control bg-action px-6 text-sm font-medium text-action-contrast shadow-small transition-colors hover:bg-action-hover">{m.chooseImage}</button>
-        <p class="mt-3 hidden text-xs text-muted sm:block">{m.dragDrop}</p>
+        <p class="mt-3 text-xs text-muted">{uploadCopy.click}</p>
         <input id="converter-input" name="imageFile" autocomplete="off" class="sr-only" tabindex="-1" type="file" accept="image/*,.heic,.heif,.tif,.tiff,.psd,.jfif,.pjpeg,.pjp,.ico,.jp2,.j2k,.jpf,.jpx,.dng,.cr2,.cr3,.nef,.arw,.raf,.orf,.rw2,.indd" aria-label={m.chooseImage} aria-describedby="converter-help converter-error" />
         <p id="converter-help" class="sr-only">{copy.description}</p>
         <p id="converter-error" hidden role="alert" tabindex="-1" class="mt-4 max-w-xl break-words rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
       </div>
     </div>
 
-    <div id="converter-work" hidden class="grid lg:grid-cols-[1.12fr_0.88fr]">
-      <div class="border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
+    <AdaptiveWorkspace id="converter-work" mode="preview" title={copy.title} resetTarget="#converter-clear" class="converter-preview-workspace">
+      <div data-workspace-source class="border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
         <div class="flex items-start gap-4">
           <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-green-soft text-green">
             <svg aria-hidden="true" viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"></rect><circle cx="9" cy="10" r="1.5"></circle><path d="m5 17 4.5-4 3.2 2.8 2.3-2 4 3.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
           </div>
-          <div class="min-w-0 flex-1"><p id="converter-file-name" class="truncate text-sm font-semibold"></p><p id="converter-file-meta" class="mt-1 text-xs text-muted"></p></div>
+          <div class="min-w-0 flex-1"><p id="converter-file-name" data-workspace-source-name class="truncate text-sm font-semibold"></p><p id="converter-file-meta" class="mt-1 text-xs text-muted"></p></div>
           <button id="converter-clear" type="button" class="inline-flex min-h-10 items-center rounded-control px-3 text-sm text-muted transition-colors hover:bg-canvas hover:text-ink">{m.remove}</button>
         </div>
         <div class="mt-6 overflow-hidden rounded-xl border border-line bg-canvas"><canvas id="converter-preview" width="1600" height="900" role="img" aria-label={copy.title} class="h-64 w-full object-contain sm:h-80"></canvas></div>
         <p id="converter-note" class="mt-4 rounded-control bg-blue-soft px-4 py-3 text-sm leading-6 text-blue-strong"></p>
       </div>
 
-      <form data-workbench-controls id="converter-form" class="p-5 sm:p-7">
+      <form data-workspace-inspector data-workbench-controls id="converter-form" class="overflow-y-auto p-5 sm:p-7">
         <label for="converter-format" class="text-sm font-medium">{m.convertTo}</label>
         <select id="converter-format" name="outputFormat" autocomplete="off" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink focus:border-blue focus:ring-2 focus:ring-blue/15">
           <option value="image/jpeg">JPG</option>
@@ -70,10 +74,10 @@ const m = getWorkbenchMessages(locale);
           <summary class="cursor-pointer text-sm font-medium">{m.whatPreserved}</summary>
           <p class="mt-3 text-sm leading-6 text-muted">{copy.note}</p>
         </details>
-        <button id="converter-submit" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-60">{m.process}</button>
+        <button id="converter-submit" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-60">{converterActionLabel}</button>
         <p data-workbench-status id="converter-status" class="mt-3 min-h-5 text-center text-xs text-muted" aria-live="polite"></p>
       </form>
-    </div>
+    </AdaptiveWorkspace>
 
     <div data-workbench-result id="converter-result" hidden class="border-t border-line bg-canvas p-5 sm:p-7">
       <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
@@ -85,10 +89,26 @@ const m = getWorkbenchMessages(locale);
   <p class="mt-4 text-center text-xs leading-5 text-muted">{copy.note}</p>
 </section>
 
+<style is:global>
+  .converter-preview-workspace [data-workspace-body] { display: grid; grid-template-columns: minmax(0,1fr) clamp(18rem,30vw,25rem); }
+  .converter-preview-workspace [data-workspace-source] { display: grid; align-content: center; min-height: 0; background: var(--color-canvas); }
+  .converter-preview-workspace [data-workspace-inspector] { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .converter-preview-workspace #converter-preview { height: min(58vh,42rem); }
+  @media (max-width: 767px) {
+    .converter-preview-workspace [data-workspace-body] { display: block; overflow: hidden; }
+    .converter-preview-workspace [data-workspace-source], .converter-preview-workspace [data-workspace-inspector] { width: 100%; height: 100%; border: 0; padding: .9rem; }
+    .converter-preview-workspace [data-workspace-source] { overflow-y: auto; align-content: center; }
+    .converter-preview-workspace [data-workspace-inspector] { display: flex; flex-direction: column; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    .converter-preview-workspace #converter-preview { height: min(56dvh, 30rem); }
+    .converter-preview-workspace #converter-submit { position: sticky; bottom: 0; z-index: 3; margin-top: auto; box-shadow: 0 -10px 24px var(--color-surface); }
+  }
+</style>
+
 <script type="application/json" id="converter-workbench-messages" is:inline set:html={JSON.stringify(m).replace(/</g, '\\u003c')}></script>
 
 <script>
   import { safeOutputStem, setDisplayedFilename } from '../utils/filename';
+  import { encodePremiumCanvas } from '../lib/image/premium-codecs';
   import type { WorkbenchMessages } from '../i18n/workbench';
 
   const converterMessages = JSON.parse(document.querySelector('#converter-workbench-messages')?.textContent || '{}') as WorkbenchMessages;
@@ -130,6 +150,8 @@ const m = getWorkbenchMessages(locale);
   let sourceKind: SourceKind | null = null;
   let resultUrl: string | null = null;
   let transparency = false;
+  let generation = 0;
+  let cancelDecode: (() => void) | undefined;
 
   const formatNumber = (value: number, digits: number) => new Intl.NumberFormat(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
   const formatBytes = (bytes: number) => bytes < 1000 ? `${formatNumber(bytes, 0)} B` : bytes < 1_000_000 ? `${formatNumber(bytes / 1000, bytes < 100_000 ? 1 : 0)} KB` : `${formatNumber(bytes / 1_000_000, 2)} MB`;
@@ -215,6 +237,9 @@ const m = getWorkbenchMessages(locale);
     const UTIF = (await import('utif')).default;
     const pages = UTIF.decode(buffer);
     if (!pages.length) throw new Error('No image page was found in this TIFF file.');
+    const tags = pages[0] as { t256?: number[]; t257?: number[] };
+    const declaredWidth = Number(tags.t256?.[0]), declaredHeight = Number(tags.t257?.[0]);
+    if (!declaredWidth || !declaredHeight || declaredWidth * declaredHeight > 32_000_000) throw new Error('This TIFF is empty or larger than 32 megapixels.');
     UTIF.decodeImage(buffer, pages[0]);
     const rgba = UTIF.toRGBA8(pages[0]);
     const canvas = makeCanvas(pages[0].width, pages[0].height);
@@ -226,7 +251,9 @@ const m = getWorkbenchMessages(locale);
 
   const psdToCanvas = async (file: File) => {
     const { readPsd } = await import('ag-psd');
-    const psd = readPsd(await file.arrayBuffer(), { useImageData: true, skipLayerImageData: true, skipThumbnail: true, skipLinkedFilesData: true, totalMemoryLimit: 350_000_000 });
+    const buffer = await file.arrayBuffer(), header = new DataView(buffer);
+    if (buffer.byteLength < 26 || !header.getUint32(14) || !header.getUint32(18) || header.getUint32(14) * header.getUint32(18) > 32_000_000) throw new Error('This PSD is empty or larger than 32 megapixels.');
+    const psd = readPsd(buffer, { useImageData: true, skipLayerImageData: true, skipThumbnail: true, skipLinkedFilesData: true, totalMemoryLimit: 350_000_000 });
     if (!psd.imageData) throw new Error('This PSD does not contain a readable flattened composite image.');
     const canvas = makeCanvas(psd.width, psd.height);
     const context = canvas.getContext('2d', { alpha: true });
@@ -237,10 +264,25 @@ const m = getWorkbenchMessages(locale);
   };
 
   const loadImage = async (file: File, kind: SourceKind): Promise<LoadedImage> => {
-    if (kind === 'heic') return { canvas: await heicToCanvas(file), kind, detail: 'The primary HEIC/HEIF still image was decoded locally.' };
-    if (kind === 'tiff') { const decoded = await tiffToCanvas(file); return { canvas: decoded.canvas, kind, detail: decoded.pageCount > 1 ? `The first of ${decoded.pageCount} TIFF pages is ready.` : 'The TIFF image was decoded locally.' }; }
+    if (kind === 'jp2') {
+      const decoded = await new Promise<{ width: number; height: number; pixels: Uint8Array }>((resolve, reject) => {
+        const worker = new Worker(new URL('../workers/jpeg2000.worker.ts', import.meta.url), { type: 'module' });
+        const release = () => { clearTimeout(timer); worker.terminate(); if (cancelDecode === fail) cancelDecode = undefined; };
+        const fail = () => { release(); reject(new Error('This JPEG 2000 image could not be decoded. Try a smaller file or export it as PNG.')); };
+        const timer = setTimeout(fail, 60_000);
+        cancelDecode = fail;
+        worker.onerror = fail;
+        worker.onmessage = ({ data }) => { if (data.error) { fail(); return; } release(); resolve(data); };
+        worker.postMessage({ file, wasmUrl: `${location.origin}/pdfjs/wasm/` });
+      });
+      const canvas = makeCanvas(decoded.width, decoded.height);
+      canvas.getContext('2d')!.putImageData(new ImageData(new Uint8ClampedArray(decoded.pixels), decoded.width, decoded.height), 0, 0);
+      return { canvas, kind, detail: 'The JPEG 2000 image is ready.' };
+    }
+    if (kind === 'heic') return { canvas: await heicToCanvas(file), kind, detail: 'The main HEIC/HEIF image is ready.' };
+    if (kind === 'tiff') { const decoded = await tiffToCanvas(file); return { canvas: decoded.canvas, kind, detail: decoded.pageCount > 1 ? `The first of ${decoded.pageCount} TIFF pages is ready.` : 'The TIFF image is ready.' }; }
     if (kind === 'psd') return { canvas: await psdToCanvas(file), kind, detail: 'The PSD flattened composite is ready; editable layers remain only in the original.' };
-    const details: Partial<Record<SourceKind, string>> = { gif: 'The first GIF frame is ready; animation is not included in the converted file.', avif: 'The AVIF still image was decoded by this browser.', svg: 'The SVG was rendered to pixels locally.', ico: 'The ICO image was decoded by this browser.', jp2: 'The JPEG 2000 image was decoded by this browser.' };
+    const details: Partial<Record<SourceKind, string>> = { gif: 'The first GIF frame is ready; animation is not included in the converted file.', avif: 'The AVIF image is ready.', svg: 'The SVG image is ready.', ico: 'The ICO image is ready.', jp2: 'The JPEG 2000 image is ready.' };
     return { canvas: await nativeToCanvas(file), kind, detail: details[kind] ?? 'The image is ready to convert locally.' };
   };
 
@@ -264,25 +306,33 @@ const m = getWorkbenchMessages(locale);
   };
 
   const reset = () => {
+    generation++; cancelDecode?.();
+    converterRoot.removeAttribute('aria-busy'); submit.disabled = false; submit.textContent = submitLabel;
+    work.dispatchEvent(new CustomEvent('workspace-clean'));
     if (resultUrl) URL.revokeObjectURL(resultUrl);
     resultUrl = null; selectedFile = null; sourceCanvas = null; sourceKind = null; transparency = false;
+    download.removeAttribute('href'); preview.width = 0; preview.height = 0;
     input.value = ''; input.removeAttribute('aria-invalid'); empty.hidden = false; work.hidden = true; result.hidden = true; errorBox.hidden = true; errorBox.textContent = ''; status.textContent = '';
   };
 
   const loadFile = async (file: File) => {
     reset();
+    const token = generation;
     try {
       if (file.size > 50_000_000) throw new Error('Choose a file smaller than 50\u00a0MB to protect browser memory.');
       const kind = await detectKind(file);
+      if (token !== generation) return;
       const loaded = await loadImage(file, kind);
+      if (token !== generation) { loaded.canvas.width = 0; loaded.canvas.height = 0; return; }
       selectedFile = file; sourceCanvas = loaded.canvas; sourceKind = kind; transparency = hasTransparency(loaded.canvas);
       drawPreview(loaded.canvas);
       setDisplayedFilename($('#converter-file-name'), file.name);
       $('#converter-file-meta').textContent = `${formatBytes(file.size)} · ${loaded.canvas.width} × ${loaded.canvas.height} · ${kind.toUpperCase()}`;
       $('#converter-note').textContent = localizedConverter ? (converterRoot.dataset.copyDescription || '') : `${loaded.detail} Pixel dimensions will stay ${loaded.canvas.width} × ${loaded.canvas.height}.`;
       format.value = transparency ? 'image/png' : kind === 'png' ? 'image/png' : 'image/jpeg';
-      updateFormat(); empty.hidden = true; work.hidden = false;
+      updateFormat(); empty.hidden = true; work.hidden = false; work.dispatchEvent(new CustomEvent('workspace-clean'));
     } catch (error) {
+      if (token !== generation) return;
       const detail = error instanceof Error ? error.message : '';
       errorBox.textContent = localizedConverter ? (/50|32|memory|large/i.test(detail) ? converterMessages.tooLarge : converterMessages.invalidFile) : (detail || converterMessages.invalidFile);
       errorBox.hidden = false;
@@ -298,9 +348,11 @@ const m = getWorkbenchMessages(locale);
     warning.textContent = localizedConverter && message ? converterMessages.review : message; warning.hidden = !message;
   };
 
-  const canvasToBlob = (canvas: HTMLCanvasElement, mime: OutputMime, amount: number) => new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(blob => blob && blob.type === mime ? resolve(blob) : reject(new Error(`This browser could not encode ${mime.replace('image/', '').toUpperCase()}.`)), mime, amount);
-  });
+  const canvasToBlob = async (canvas: HTMLCanvasElement, mime: OutputMime, amount: number) => {
+    const blob = await encodePremiumCanvas(canvas, mime, amount);
+    if (blob.type !== mime) throw new Error(`This browser could not encode ${mime.replace('image/', '').toUpperCase()}.`);
+    return blob;
+  };
 
   const validateOutput = async (blob: Blob, mime: OutputMime, width: number, height: number) => {
     const bytes = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
@@ -320,7 +372,8 @@ const m = getWorkbenchMessages(locale);
   form.addEventListener('submit', event => {
     event.preventDefault();
     void (async () => {
-      if (!selectedFile || !sourceCanvas || !sourceKind) return;
+      if (!selectedFile || !sourceCanvas || !sourceKind || submit.disabled) return;
+      const token = generation;
       submit.disabled = true; converterRoot.setAttribute('aria-busy', 'true'); submit.textContent = converterMessages.processing; result.hidden = true; status.textContent = converterMessages.processing;
       try {
         const mime = format.value as OutputMime;
@@ -331,18 +384,20 @@ const m = getWorkbenchMessages(locale);
         context.drawImage(sourceCanvas, 0, 0);
         const blob = await canvasToBlob(outputCanvas, mime, Number(quality.value) / 100);
         await validateOutput(blob, mime, outputCanvas.width, outputCanvas.height);
+        if (token !== generation) return;
         if (resultUrl) URL.revokeObjectURL(resultUrl);
         resultUrl = URL.createObjectURL(blob);
         const extension = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1];
         const base = safeOutputStem(selectedFile.name, 'image');
         download.href = resultUrl; download.download = `${base}-converted.${extension}`;
         $('#converter-stats').textContent = `${sourceKind.toUpperCase()} → ${extension.toUpperCase()} · ${formatBytes(selectedFile.size)} → ${formatBytes(blob.size)} · ${outputCanvas.width} × ${outputCanvas.height}`;
-        result.hidden = false; status.textContent = converterMessages.finished;
+        result.hidden = false; status.textContent = converterMessages.finished; work.dispatchEvent(new CustomEvent('workspace-complete'));
         result.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
       } catch (error) {
+        if (token !== generation) return;
         const detail = error instanceof Error ? error.message : '';
         status.textContent = localizedConverter ? converterMessages.failed : (detail || converterMessages.failed);
-      } finally { converterRoot.removeAttribute('aria-busy'); submit.disabled = false; submit.textContent = submitLabel; }
+      } finally { if (token === generation) { converterRoot.removeAttribute('aria-busy'); submit.disabled = false; submit.textContent = submitLabel; } }
     })();
   });
 
@@ -351,8 +406,8 @@ const m = getWorkbenchMessages(locale);
   $('#converter-clear').addEventListener('click', reset);
   format.addEventListener('change', updateFormat);
   quality.addEventListener('input', () => { const value = `${quality.value}%`; quality.setAttribute('aria-valuetext', value); qualityValue.value = value; });
-  for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, event => { event.preventDefault(); dropZone.classList.add('border-blue', 'bg-blue-soft', 'select-none'); });
-  for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, event => { event.preventDefault(); dropZone.classList.remove('border-blue', 'bg-blue-soft', 'select-none'); });
+  for (const eventName of ['dragenter', 'dragover']) dropZone.addEventListener(eventName, event => { event.preventDefault(); dropZone.dataset.dragActive = 'true'; dropZone.classList.add('border-blue', 'bg-blue-soft', 'select-none'); });
+  for (const eventName of ['dragleave', 'drop']) dropZone.addEventListener(eventName, event => { event.preventDefault(); delete dropZone.dataset.dragActive; dropZone.classList.remove('border-blue', 'bg-blue-soft', 'select-none'); });
   dropZone.addEventListener('drop', event => { const file = event.dataTransfer?.files[0]; if (file) void loadFile(file); });
-  window.addEventListener('beforeunload', () => { if (resultUrl) URL.revokeObjectURL(resultUrl); });
+  window.addEventListener('pagehide', () => { generation++; cancelDecode?.(); if (resultUrl) URL.revokeObjectURL(resultUrl); });
 </script>

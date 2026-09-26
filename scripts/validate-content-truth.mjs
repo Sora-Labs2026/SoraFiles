@@ -3,7 +3,7 @@ import { extname, join } from 'node:path';
 import { liveTools } from '../src/data/liveTools.ts';
 import { BOOTSTRAP_POPULAR_TOOL_IDS, PUBLISHED_TOOL_IDS } from '../src/data/popularityRegistry.generated.js';
 import { localizedPath, publishedLocales } from '../src/i18n/config.ts';
-import { getHardReductionMessage, getPdfPageLimit, workbenchMessages } from '../src/i18n/workbench.ts';
+import { getPdfPageLimit, workbenchMessages } from '../src/i18n/workbench.ts';
 
 const failures = [];
 const toolIds = new Set(liveTools.map((tool) => tool.id));
@@ -27,11 +27,7 @@ for (const extension of ['heic', 'tiff', 'psd']) {
 
 for (const { path: locale } of publishedLocales) {
   const messages = workbenchMessages[locale];
-  if (!messages?.approximateReduction) failures.push(`${locale}: missing reduction-limit label.`);
-  if (/approx|ungefähr|geschätz|przybliż|yaklaşık|ước tính|โดยประมาณ|예상|おおよそ|预计|預計|अनुमानित|تقريبي|примерн|perkiraan/i.test(messages?.approximateReduction ?? '')) {
-    failures.push(`${locale}: hard reduction control is still labelled as approximate.`);
-  }
-  if (!getHardReductionMessage(locale)) failures.push(`${locale}: missing hard-reduction explanation.`);
+  if (!messages?.compressionLevel) failures.push(`${locale}: missing compression-level label.`);
   if (!getPdfPageLimit(locale)) failures.push(`${locale}: missing PDF page-limit copy.`);
 }
 
@@ -70,11 +66,14 @@ if (!process.argv.includes('--source-only') && existsSync('dist/index.html')) {
     const homepage = join('dist', ...(locale === 'en' ? [] : [locale]), 'index.html');
     const html = readFileSync(homepage, 'utf8');
     const renderedTools = (html.match(/\sdata-tool-search-item(?:\s|>)/g) ?? []).length;
-    const renderedPopular = (html.match(/data-popular="true"/g) ?? []).length;
     if (renderedTools !== liveTools.length) failures.push(`${locale}: rendered ${renderedTools} tools; registry has ${liveTools.length}.`);
-    if (renderedPopular !== 10) failures.push(`${locale}: rendered ${renderedPopular} popular tools; exactly 10 are required.`);
-    if (!html.includes(`data-tool-results-status`) || !html.includes(`: 10</p>`)) failures.push(`${locale}: Popular Tools count is not rendered as 10.`);
-    if (!html.includes(`data-popularity-ranking`) || !html.includes(`data-tool-id=`)) failures.push(`${locale}: runtime popularity bootstrap contract is missing.`);
+    if (!html.includes('data-tool-results-status') || !html.includes('aria-live="polite"')) failures.push(`${locale}: accessible tool-result count is missing.`);
+    if (!html.includes('data-home-filter="all"') || !html.includes('data-live-tool-search')) failures.push(`${locale}: V10 search/filter controls are missing.`);
+    for (const tool of liveTools) {
+      if (!html.includes(`data-tool-id="${tool.id}"`)) failures.push(`${locale}: homepage omits ${tool.id}.`);
+      const href = localizedPath(locale, `/${tool.slug}`);
+      if (!html.includes(`href="${href}"`)) failures.push(`${locale}: real tool link ${href} is missing.`);
+    }
 
     const contactFile = join('dist', ...(locale === 'en' ? [] : [locale]), 'contact', 'index.html');
     const contactHtml = readFileSync(contactFile, 'utf8');
@@ -84,7 +83,12 @@ if (!process.argv.includes('--source-only') && existsSync('dist/index.html')) {
     for (const route of ['/pdf', '/compress-image']) {
       const file = join('dist', ...localizedPath(locale, route).split('/').filter(Boolean), 'index.html');
       const toolHtml = readFileSync(file, 'utf8');
-      if (!toolHtml.includes(getHardReductionMessage(locale))) failures.push(`${locale}${route}: missing hard byte-limit explanation.`);
+      if (!toolHtml.includes('Compression strength')) failures.push(`${locale}${route}: missing quality-first compression strength control.`);
+      if (!toolHtml.includes('data-preserves-dimensions="true"')) failures.push(`${locale}${route}: missing dimension-preservation contract.`);
+      if (locale === 'en') {
+        const dimensionPromise = route === '/pdf' ? 'page content or dimensions' : 'original format and dimensions';
+        if (!toolHtml.includes(dimensionPromise)) failures.push(`${locale}${route}: missing plain-language dimension-preservation explanation.`);
+      }
       if (route === '/pdf' && !toolHtml.includes(getPdfPageLimit(locale))) failures.push(`${locale}${route}: missing localized 40-page safety limit.`);
     }
   }
@@ -96,4 +100,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Content truth validation passed: ${liveTools.length} registry tools, 10 popular tools, ${publishedLocales.length} locale contracts.`);
+console.log(`Content truth validation passed: ${liveTools.length} searchable registry tools, valid popularity data, ${publishedLocales.length} locale contracts.`);

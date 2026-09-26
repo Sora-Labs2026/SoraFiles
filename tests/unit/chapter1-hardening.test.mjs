@@ -24,7 +24,7 @@ test('metadata cleanup removes PNG text chunks without re-encoding image bytes',
   const result = await stripImageMeta(input);
   const text = new TextDecoder('latin1').decode(await result.blob.arrayBuffer());
   assert.doesNotMatch(text, /tEXt|Author|Sora/);
-  assert.match(result.detail, /without re-encoding pixels/);
+  assert.match(result.detail, /without changing the image pixels/);
   assert.equal(result.ext, 'png');
 });
 
@@ -63,7 +63,9 @@ test('shared workbenches retain Chapter 1 format, batch, preview, and signature 
   assert.match(document, /data-sign-mode="draw"/);
   assert.match(document, /data-sign-mode="upload"/);
   assert.match(document, /setPointerCapture/);
-  assert.match(document, /same normalized coordinates/);
+  assert.match(document, /startRect\.width \/ stageRect\.width \* 100/);
+  assert.match(document, /item\.style\.width = `\$\{width\}%`/);
+  assert.ok(document.includes('item.style.left = `${Math.max(0, Math.min(100 - width, left))}%`;'));
 
   assert.match(preview, /1 of/);
   assert.match(preview, /max-h-\[20rem\]/);
@@ -93,6 +95,12 @@ test('document and image workbenches expose the new resilient editing controls',
   assert.match(scanner, /quality = \.97/);
   assert.match(scanner, /existing\?\.filter \|\| 'color'/);
   assert.match(scanner, /data-scanner-action-status/);
+  assert.match(scanner, /data-workspace-pages/);
+  assert.match(scanner, /data-workspace-canvas/);
+  assert.match(scanner, /data-workspace-inspector/);
+  assert.match(scanner, /cropMode:\s*'full'\|'manual'/);
+  assert.match(scanner, /data-scanner-full/);
+  assert.doesNotMatch(scanner, /scanic\.scanDocument\(/);
   assert.match(scanner, /data-corner-dialog hidden[\s\S]*?role="dialog" aria-modal="true"/);
   assert.match(scanner, /document\.body\.appendChild\(cornerDialog\)/);
   assert.match(cornerEditor, /width: '52px', height: '52px'/);
@@ -110,10 +118,29 @@ test('document and image workbenches expose the new resilient editing controls',
   assert.match(imageEditor, /renderEditCanvas/);
 });
 
-test('shared tool cards keep one bounded rectangle size across tool grids', async () => {
+test('every primary tool uploader uses the shared premium drop-zone contract', async () => {
+  const files = [
+    'FileWorkbench.astro', 'ImageConverterWorkbench.astro', 'PdfWorkbench.astro',
+    'DocumentActionWorkbench.astro', 'ExtraToolWorkbench.astro',
+    'BackgroundRemovalWorkbench.astro', 'ResizeImageWorkbench.astro', 'DocScannerWorkbench.astro',
+  ];
+  for (const file of files) {
+    const source = await readFile(`src/components/${file}`, 'utf8');
+    assert.match(source, /sf-upload-dropzone/, `${file} is missing the shared upload surface.`);
+  }
+  const [background, resize, scanner] = await Promise.all(['src/lib/background-workbench.ts', 'src/components/ResizeImageWorkbench.astro', 'src/components/DocScannerWorkbench.astro'].map((file) => readFile(file, 'utf8')));
+  for (const [file, source] of [['BackgroundRemovalWorkbench.astro', background], ['ResizeImageWorkbench.astro', resize], ['DocScannerWorkbench.astro', scanner]]) {
+    assert.match(source, /dragenter/); assert.match(source, /dragover/); assert.match(source, /dataTransfer/);
+  }
+});
+
+test('shared tool cards preserve readable content and real routes in the V10 grid', async () => {
   const card = await readFile('src/components/LiveToolCard.astro', 'utf8');
-  assert.match(card, /flex h-28 items-center[^"]*overflow-hidden/);
-  assert.match(card, /line-clamp-2[^"]*font-extrabold/);
-  assert.match(card, /line-clamp-3[^"]*text-\[11px\]/);
-  assert.equal((card.match(/right-3\.5 top-1\/2[^"]*-translate-y-1\/2/g) ?? []).length, 2);
+  assert.match(card, /v10-tool-card__name/);
+  assert.match(card, /v10-tool-card__description/);
+  assert.match(card, /localizedPath\(locale/);
+  assert.doesNotMatch(card, /line-clamp|overflow-hidden/);
+  const css = await readFile('src/styles/v10-workspaces.css', 'utf8');
+  assert.match(css, /min-width:0/);
+  assert.match(css, /grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });

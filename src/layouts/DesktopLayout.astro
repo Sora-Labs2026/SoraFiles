@@ -1,0 +1,69 @@
+---
+import Layout from './Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+interface Props { title: string; description: string; path: string; sensitive?: boolean; }
+const { title, description, path, sensitive = false } = Astro.props;
+const links = [['Overview', '/desktop'], ['Plans', '/desktop/pricing'], ['Downloads', '/desktop/download'], ['Releases', '/desktop/releases'], ['Help', '/desktop/help']];
+---
+<Layout {title} {description} canonicalPath={path} noIndex={true} analytics={!sensitive} {sensitive}>
+  <slot name="early-head" slot="early-head" />
+  <Header />
+  {path !== '/desktop' && <div class="desktop-subnav"><nav aria-label="SoraFiles Desktop" class="dw-container"><a href="/desktop" class="desktop-subnav-title">SoraFiles Desktop</a><div class="desktop-subnav-links">{links.map(([label, href]) => <a href={href} aria-current={path === href ? 'page' : undefined}>{label}</a>)}</div></nav></div>}
+  <main id="main" class="desktop-web" data-desktop-page={path}><slot /></main>
+  <Footer />
+</Layout>
+
+<style is:global>
+  .desktop-subnav{border-bottom:1px solid var(--line)}
+  .desktop-subnav nav{display:flex;align-items:center;gap:24px;min-height:56px;overflow-x:auto;scrollbar-width:none}
+  .desktop-subnav-title{flex-shrink:0;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-secondary)}
+  .desktop-subnav-links{display:flex;gap:2px}
+  .desktop-subnav-links a{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;font-size:13px;color:var(--ink-secondary);white-space:nowrap}
+  .desktop-subnav-links a[aria-current=page]{background:var(--action);color:var(--on-action);font-weight:700}
+  .dw-container{width:min(100% - 2 * clamp(1.25rem,.8rem + 2vw,2.5rem),72rem);margin-inline:auto}
+  .desktop-web{position:relative;isolation:isolate;color:var(--ink);padding-bottom:clamp(56px,7vw,96px)}
+  .desktop-web h1,.desktop-web h2,.desktop-web h3{color:var(--ink);letter-spacing:-.035em}
+  .desktop-web h1{font-size:clamp(2.125rem,4vw,3rem);line-height:1.12;font-weight:800}
+  .desktop-web h2{font-size:clamp(1.5rem,2.3vw,1.875rem);line-height:1.2;font-weight:800}
+  .desktop-web h3{font-size:1.0625rem;font-weight:700}
+  .desktop-web p{color:var(--ink-secondary);line-height:1.6}
+  .desktop-web a:focus-visible,.desktop-subnav a:focus-visible,.desktop-web button:focus-visible,.desktop-web summary:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+  .desktop-web .text-violet,.desktop-web .text-green{color:var(--ink)}
+  .desktop-web .rounded-3xl{border-radius:22px;box-shadow:none}
+  .dw-intro{padding-block:clamp(36px,5vw,64px) 32px}
+  .dw-intro h1{max-width:22ch}
+  .dw-intro p:not(.dw-eyebrow){max-width:38rem;margin-top:16px;font-size:1.125rem;line-height:1.6}
+  .dw-intro-center{text-align:center;display:grid;justify-items:center}
+  .dw-intro-center p:not(.dw-eyebrow){max-width:40rem}
+  .dw-eyebrow{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border-warm-subtle);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;line-height:1.3!important}
+  .dw-eyebrow:before{content:"";width:4px;height:4px;border-radius:50%;background:#fbbf24}
+  .dw-eyebrow+h1{margin-top:20px}
+  .dw-button{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:44px;padding:10px 20px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);color:var(--ink);font-size:14px;font-weight:700;transition:background .15s,color .15s,border-color .15s}
+  .dw-button-primary{background:var(--action);color:var(--on-action);border-color:var(--action)}
+  .dw-button-primary:hover{background:var(--action-hover,var(--ink));border-color:var(--action-hover,var(--ink))}
+  .dw-link{text-decoration:underline;text-underline-offset:4px;font-weight:600;color:var(--ink)}
+  .dw-ruled{border-top:1px solid var(--line);padding-top:clamp(40px,6vw,80px);margin-top:clamp(40px,6vw,80px)}
+  .dw-table{width:100%;border-collapse:collapse;font-size:14px;text-align:left}
+  .dw-table th,.dw-table td{padding:16px 16px 16px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  .dw-table thead th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-secondary)}
+  .dw-table tbody th{font-weight:700;color:var(--ink)}
+  .dw-table td{color:var(--ink-secondary)}
+  .dw-table code{font-family:ui-monospace,Consolas,monospace;overflow-wrap:anywhere;font-size:11px}
+  .dw-panel{padding:clamp(24px,3vw,40px);border:1px solid var(--line);border-radius:22px;background:var(--surface)}
+  .dw-doc-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:64px;align-items:start}
+  .dw-toc{position:sticky;top:88px;display:grid;gap:4px;font-size:13px}
+  .dw-toc strong{font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+  .dw-toc a{padding:8px 0;color:var(--ink-secondary)}
+  .dw-doc-content{max-width:44rem;min-width:0}
+  .dw-doc-content section+section{margin-top:40px;padding-top:32px;border-top:1px solid var(--line)}
+  .dw-doc-content section{scroll-margin-top:96px}
+  .dw-doc-content h2{font-size:1.125rem}
+  .dw-doc-content p,.dw-doc-content ol,.dw-doc-content table{margin-top:16px}
+  .dw-doc-content ol{padding-left:22px;list-style:decimal;color:var(--ink-secondary);line-height:1.7}
+  .dw-doc-content li+li{margin-top:8px}
+  @media(max-width:767px){.desktop-subnav-title{display:none}.desktop-subnav nav{gap:0}.desktop-subnav-links a{padding-inline:12px}.dw-doc-layout{grid-template-columns:1fr;gap:32px}.dw-toc{position:static;border-bottom:1px solid var(--line);padding-bottom:24px}.dw-table th,.dw-table td{padding-right:10px}.desktop-web h1{overflow-wrap:break-word}}
+  @media(prefers-reduced-motion:reduce){.desktop-web *{animation:none!important;transition:none!important}}
+</style>
+
+

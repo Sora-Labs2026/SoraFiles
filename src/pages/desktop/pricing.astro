@@ -1,0 +1,53 @@
+---
+import DesktopLayout from '../../layouts/DesktopLayout.astro';
+const periods = ['monthly', 'annual', 'lifetime'] as const;
+const labels = {monthly: 'Monthly', annual: 'Annual', lifetime: 'Lifetime'};
+const units = {monthly: '/ month', annual: '/ year', lifetime: 'once'};
+const plans = [
+  { id: 'personal', name: 'Personal', devices: '1 active device', prices: ['4.99', '49.99', '249.99'], replacement: ['0.99', '9.99', '49.99'] },
+  { id: 'team', name: 'Team', devices: 'Up to 5 active devices', prices: ['19.99', '199.99', '999.99'], replacement: ['3.99', '39.99', '199.99'] },
+];
+---
+<DesktopLayout title="SoraFiles Desktop plans" description="Personal and Team plans for SoraFiles Desktop." path="/desktop/pricing">
+  <div class="dw-container">
+    <header class="dw-intro dw-intro-center"><p class="dw-eyebrow">Plans</p><h1>Choose your Desktop plan</h1><p>All prices are in USD and include applicable taxes. Every plan includes a 7-day trial and local file processing. Personal covers one active device; Team covers up to five.</p></header>
+    <section class="pricing" aria-label="Desktop plans">
+      <div class="billing-period" role="group" aria-label="Billing period">{periods.map((period, i) => <button type="button" data-billing-period={period} aria-pressed={i === 0}>{labels[period]}</button>)}</div>
+      <div class="plans">{plans.map(plan => <article class="plan" data-plan={plan.id}>
+        <h2>{plan.name}</h2><p class="plan-devices">{plan.devices}</p>
+        {periods.map((period, i) => <div data-plan-period={period} hidden={i !== 0}>
+          <p class="plan-price"><strong>${plan.prices[i]}</strong><span>{units[period]}</span></p>
+          <ul class="plan-features">{[plan.devices, 'Local file processing', 'Works offline after setup', 'File-manager actions and batch tools'].map(feature => <li><span aria-hidden="true">✓</span>{feature}</li>)}</ul>
+          <a href={`https://license.sorafiles.com/v1/checkout?plan=${plan.id}-${period}`} rel="noreferrer" class="dw-button dw-button-primary plan-choose" aria-label={`Choose ${labels[period].toLowerCase()}: ${plan.name}`}>Choose {period}<span aria-hidden="true">→</span></a>
+          <p class="plan-replacement"><span>{labels[period]} device replacement</span><span><strong>${plan.replacement[i]}</strong> one-time</span></p>
+        </div>)}
+      </article>)}</div>
+      <p class="pricing-free">SoraFiles Web stays free.</p>
+      <noscript><p>Choose another billing period: {plans.map(plan => <span>{periods.slice(1).map(period => <a class="dw-link" href={`https://license.sorafiles.com/v1/checkout?plan=${plan.id}-${period}`}>{plan.name} {period} </a>)}</span>)}</p></noscript>
+    </section>
+    <section class="dw-ruled pricing-notes" aria-label="Purchase and device replacement">
+      <div><h2>Your license, by email</h2><p>After payment, your license key is delivered to your checkout email address. Paste it into Desktop to activate.</p><p><strong>Check your Spam or Junk folder too.</strong></p></div>
+      <div><h2>Need to move an occupied device?</h2><p>Device replacement starts inside Desktop. Verify the purchaser email before continuing to the one-time replacement checkout. The fee above follows your selected plan.</p><p>An unused Team seat activates without a replacement fee.</p><a href="/desktop/help#replace-device" class="dw-link">How device replacement works</a></div>
+      <p class="pricing-after"><a href="/desktop/download" class="dw-link">Download Desktop</a> after checkout, or <a href="/tools" class="dw-link">use the free web tools</a> without a purchase.</p>
+    </section>
+  </div>
+</DesktopLayout>
+<script>
+  const periodButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-billing-period]')];
+  function choosePeriod(period: string) {
+    periodButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.billingPeriod === period)));
+    document.querySelectorAll<HTMLElement>('[data-plan-period]').forEach(panel => { panel.hidden = panel.dataset.planPeriod !== period; });
+  }
+  periodButtons.forEach((button, index) => {
+    button.addEventListener('click', () => choosePeriod(button.dataset.billingPeriod!));
+    button.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? periodButtons.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + periodButtons.length) % periodButtons.length;
+      periodButtons[next].focus(); choosePeriod(periodButtons[next].dataset.billingPeriod!);
+    });
+  });
+</script>
+<style>
+  .dw-intro h1{max-width:none}.pricing{display:grid;justify-items:center}.billing-period{display:flex;padding:3px;border:1px solid var(--line);border-radius:999px;background:var(--sunken);margin:8px 0 32px}.billing-period button{min-height:40px;padding:8px 20px;border-radius:999px;color:var(--ink-secondary);font-size:14px;transition:background .2s,color .2s}.billing-period button[aria-pressed=true]{background:var(--action);color:var(--on-action);box-shadow:0 2px 6px #0002}.plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;max-width:832px;width:100%}.plan{padding:32px;border:1px solid var(--line);border-radius:22px;background:var(--surface)}.plan h2{font-size:20px}.plan-devices{font-size:14px;margin-top:4px}.plan-price{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin:24px 0 20px;line-height:1.1!important;font-variant-numeric:tabular-nums}.plan-price strong{font-size:clamp(36px,4vw,48px);letter-spacing:-.055em;line-height:1.1;color:var(--ink);font-weight:800}.plan-price span{font-size:14px}.plan-features{border-top:1px solid var(--line);padding-top:20px;display:grid;gap:12px;list-style:none;font-size:14px;color:var(--ink-secondary)}.plan-features li{display:flex;align-items:center;gap:10px}.plan-features li>span{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--sunken);font-size:11px;flex-shrink:0}.plan-choose{width:100%;justify-content:space-between;margin-top:28px}.plan-choose>span{display:grid;place-items:center;width:26px;height:26px;background:var(--on-action);color:var(--action);border-radius:50%;font-size:20px}.plan-replacement{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;margin-top:20px;padding-top:16px;border-top:1px dashed var(--line-strong);font-size:12px}.plan-replacement strong{color:var(--ink)}.pricing-free{margin-top:32px;font-size:14px;font-weight:700;color:var(--ink)!important}.pricing-notes{display:grid;grid-template-columns:1fr 1fr;gap:40px 64px}.pricing-notes h2{font-size:17px}.pricing-notes p{font-size:14px;margin-top:12px}.pricing-notes a{font-size:14px}.pricing-notes .dw-link{display:inline-block;margin-top:10px}.pricing-after{grid-column:1/-1;border-top:1px solid var(--line);padding-top:24px}.pricing-after .dw-link{margin:0}@media(max-width:639px){.plans{grid-template-columns:1fr}.plan{padding:24px}.pricing-notes{grid-template-columns:1fr}.billing-period button{padding-inline:16px}}
+</style>

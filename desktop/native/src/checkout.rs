@@ -6,6 +6,11 @@ fn trusted(value:&str)->bool{
 }
 pub fn open(value:&str)->Result<(),String>{
  if !trusted(value){return Err("Checkout unavailable".into());}
+ open_url(value)
+}
+// Fixed first-party destination. No renderer-provided URL crosses this boundary.
+pub fn open_release_notes()->Result<(),String>{open_url("https://sorafiles.com/desktop/releases")}
+fn open_url(value:&str)->Result<(),String>{
  #[cfg(windows)]{
   #[link(name="shell32")]unsafe extern "system"{fn ShellExecuteW(window:*mut std::ffi::c_void,operation:*const u16,file:*const u16,parameters:*const u16,directory:*const u16,show:i32)->isize;}
   let operation:Vec<u16>="open".encode_utf16().chain(Some(0)).collect();let url:Vec<u16>=value.encode_utf16().chain(Some(0)).collect();

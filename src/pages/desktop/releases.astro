@@ -1,0 +1,13 @@
+---
+import DesktopLayout from '../../layouts/DesktopLayout.astro';
+import releaseManifest from '../../../desktop/releases/manifest.json';
+const published=releaseManifest.releases.filter(release=>['active','maintenance'].includes(release.status)&&release.security==='clear');
+const versions=[...new Set(published.map(release=>release.version))].sort((a,b)=>b.localeCompare(a,undefined,{numeric:true}));
+const labels:Record<string,string>={windows:'Windows',macos:'macOS',linux:'Linux'};
+---
+<DesktopLayout title="SoraFiles Desktop release notes" description="Published release history for SoraFiles Desktop." path="/desktop/releases">
+ <div class="dw-container"><header class="dw-intro"><h1>Release notes</h1></header><section class="releases" aria-label="Published releases">
+ {versions.length?versions.map(version=>{const rows=published.filter(release=>release.version===version);return <article class="dw-panel"><span class="release-version">{version}</span><h2>SoraFiles Desktop {version}</h2><p>Published artifacts: {[...new Set(rows.map(release=>`${labels[release.platform]} ${release.arch}`))].join(', ')}.</p><time datetime={rows[0].releaseDate}>{new Intl.DateTimeFormat('en',{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(`${rows[0].releaseDate}T00:00:00Z`))}</time><ul>{[...new Set(rows.map(release=>release.notes))].map(note=><li>{note}</li>)}</ul><a class="dw-button" href="/desktop/download">↓ &nbsp; Download this release</a></article>;}):<article class="dw-panel"><h2>Release notes will appear here</h2><p>No public release is available yet.</p><a class="dw-link" href="/desktop/download">Check downloads →</a></article>}
+ </section></div>
+</DesktopLayout>
+<style>.releases{display:grid;gap:24px;max-width:52rem}.release-version{display:inline-flex;padding:4px 10px;background:var(--sunken);border-radius:4px;font-size:12px;font-variant-numeric:tabular-nums}.releases h2{margin-top:16px;font-size:24px}.releases p{font-size:14px;margin-top:12px}.releases time{display:block;font-size:12px;color:var(--ink-secondary);margin-top:10px}.releases ul{padding-left:20px;list-style:disc;font-size:14px;line-height:1.7;color:var(--ink-secondary);margin-top:20px}.releases li+li{margin-top:8px}.releases .dw-button{margin-top:24px}</style>

@@ -1,0 +1,16 @@
+---
+import type { GuideBlock } from '../data/guides';
+interface Props { blocks: GuideBlock[] }
+const { blocks } = Astro.props;
+---
+<div class="v10-guide-body min-w-0 space-y-6 text-base leading-7 text-muted">
+  {blocks.map(block => <>
+    {block.type === 'heading' && (block.level === 2 ? <h2 id={block.id} class="pt-4 text-xl font-bold text-ink">{block.text}</h2> : <h3 id={block.id} class="pt-2 text-lg font-bold text-ink">{block.text}</h3>)}
+    {block.type === 'paragraph' && <p>{block.text}</p>}
+    {block.type === 'linked-paragraph' && <p>{block.parts.map(part => typeof part === 'string' ? part : <a href={part.href}>{part.text}</a>)}</p>}
+    {block.type === 'callout' && <aside class="rounded-card border border-line bg-canvas p-5">{block.text}</aside>}
+    {block.type === 'list' && (block.ordered ? <ol class="list-decimal space-y-2 ps-6">{block.items.map(item => <li>{item}</li>)}</ol> : <ul class="list-disc space-y-2 ps-6">{block.items.map(item => <li>{item}</li>)}</ul>)}
+    {block.type === 'table' && <div class="overflow-x-auto rounded-card border border-line" tabindex="0" role="region" aria-label={block.caption}><table class="w-full text-start"><caption class="p-3 text-start font-semibold text-ink">{block.caption}</caption><thead><tr>{block.headers.map(text => <th scope="col" class="border-b border-line bg-canvas p-3 text-start text-ink">{text}</th>)}</tr></thead><tbody>{block.rows.map(row => <tr>{row.map(text => <td class="border-b border-line p-3">{text}</td>)}</tr>)}</tbody></table></div>}
+    {block.type === 'image' && <figure><img src={block.src} alt={block.alt} width={block.width} height={block.height} loading="lazy" class="h-auto max-w-full rounded-card" />{block.caption && <figcaption>{block.caption}</figcaption>}</figure>}
+  </>)}
+</div>

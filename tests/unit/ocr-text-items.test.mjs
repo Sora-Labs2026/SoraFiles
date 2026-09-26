@@ -39,3 +39,11 @@ test('handles CJK text and Arabic text correctly', () => {
   assert.equal(araResult.mode, 'embedded');
   assert.ok(araResult.meaningfulCharacters >= 12);
 });
+
+test('preserves wide positioned gaps as table cell boundaries', () => {
+  const grouped = groupTextItems([
+    { str: 'Item', transform: [1, 0, 0, 10, 10, 500], width: 24, height: 10 },
+    { str: 'Amount', transform: [1, 0, 0, 10, 180, 500], width: 48, height: 10 },
+  ]);
+  assert.deepEqual(grouped, ['Item\tAmount']);
+});

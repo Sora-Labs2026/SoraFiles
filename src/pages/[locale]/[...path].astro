@@ -12,6 +12,8 @@ import { liveRaw, liveText, liveToolCopy } from '../../data/liveI18n';
 import { localeContent, getLocaleContent } from '../../i18n';
 import { localeByPath, localizedPath, localizedRoutePaths, type LocalePath, type LocalizedRoutePath } from '../../i18n/config';
 import { getBrandPositioning } from '../../i18n/brandPositioning';
+import { CONTENT_PROVENANCE } from '../../data/contentProvenance';
+import type { LocalizedToolCopy } from '../../i18n/types';
 
 type InfoSlug = 'about' | 'contact' | 'privacy' | 'terms' | 'open-source';
 const infoSlugs = new Set<InfoSlug>(['about', 'contact', 'privacy', 'terms', 'open-source']);
@@ -44,6 +46,7 @@ const reviewedInfoPage = infoSlug === 'about'
           ? content.pages.openSource
           : undefined;
 const toolWords = tool ? liveToolCopy(locale, tool.id) : undefined;
+const reviewedToolCopy = tool ? (content.tools as Record<string, LocalizedToolCopy>)[tool.id] : undefined;
 const isHome = basePath === '/';
 const isToolsHub = basePath === '/tools';
 const canonicalPath = localizedPath(locale, basePath);
@@ -57,8 +60,9 @@ const schema = isHome ? {
   ],
 } : tool ? {
   '@context': 'https://schema.org', '@graph': [
-    { '@type': 'WebPage', name: `${toolWords?.n} — SoraFiles`, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description, isPartOf: { '@id': 'https://sorafiles.com/#website' } },
+    { '@type': 'WebPage', name: `${toolWords?.n} — SoraFiles`, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description, isPartOf: { '@id': 'https://sorafiles.com/#website' }, dateModified: CONTENT_PROVENANCE.modifiedIso, author: { '@id': CONTENT_PROVENANCE.publisherId }, publisher: { '@id': CONTENT_PROVENANCE.publisherId }, ...(reviewedToolCopy?.faqs.length ? { mainEntity: { '@id': `${new URL(canonicalPath, 'https://sorafiles.com')}#faq` } } : {}) },
     { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: liveText(locale, 'nav.home'), item: new URL(localizedPath(locale, '/'), 'https://sorafiles.com').toString() }, { '@type': 'ListItem', position: 2, name: toolWords?.n, item: new URL(canonicalPath, 'https://sorafiles.com').toString() }] },
+    ...(reviewedToolCopy?.faqs.length ? [{ '@type': 'FAQPage', '@id': `${new URL(canonicalPath, 'https://sorafiles.com')}#faq`, url: `${new URL(canonicalPath, 'https://sorafiles.com')}#faq`, inLanguage: localeMeta.code, dateModified: CONTENT_PROVENANCE.modifiedIso, author: { '@id': CONTENT_PROVENANCE.publisherId }, publisher: { '@id': CONTENT_PROVENANCE.publisherId }, mainEntity: reviewedToolCopy.faqs.map((faq) => ({ '@type': 'Question', name: faq.question, acceptedAnswer: { '@type': 'Answer', text: faq.answer } })) }] : []),
   ],
 } : { '@context': 'https://schema.org', '@type': infoSlug === 'contact' ? 'ContactPage' : infoSlug === 'about' ? 'AboutPage' : 'WebPage', name: infoPage?.title ?? title, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description };
 ---

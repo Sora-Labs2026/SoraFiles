@@ -22,7 +22,9 @@ for (const path of publicPages) {
   const html = read(path);
   check(!/acscdn\.com\/script|runAutoTag|zoneId:\s*['"]ag86oktn3r|highperformanceformat|effectivecpmnetwork|data-ad-placement|data-sf-ad-slot|data-ad-frame|googletagmanager|google-analytics|G-GQ973RY74K|data-sf-google-analytics|\bgtag\s*\(/i.test(html), `${path} must remain free of advertising and Google Analytics runtime code.`);
   check(!staleAdvertisingCopy.test(html), `${path} still contains obsolete advertising copy.`);
-  check((html.match(/https:\/\/analytics\.ahrefs\.com\/analytics\.js/g) ?? []).length === 1, `${path} must contain exactly one Ahrefs Web Analytics loader.`);
+  const sensitiveDesktopPage = /^dist\/desktop\/(?:redeem|purchase)\/index\.html$/.test(path.replaceAll('\\', '/'));
+  const analyticsCount = (html.match(/https:\/\/analytics\.ahrefs\.com\/analytics\.js/g) ?? []).length;
+  check(analyticsCount === (sensitiveDesktopPage ? 0 : 1), sensitiveDesktopPage ? `${path} must not load analytics on a license page.` : `${path} must contain exactly one Ahrefs Web Analytics loader.`);
 }
 
 if (failures.length) { console.error(failures.map((failure) => `- ${failure}`).join('\n')); process.exit(1); }

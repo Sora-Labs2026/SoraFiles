@@ -14,7 +14,8 @@ test('one JPG offers every connected relevant workflow and explicit conversion c
  assert.deepEqual(menu.map(item=>item.id),['convert-to-png','convert-to-webp','jpg-to-pdf','compress-image','resize-image','edit-image','remove-background','metadata-remover','pdf-ocr','doc-scanner','open']);
  assert.equal(menu.find(item=>item.id==='convert-to-png').direct,true);
  assert.deepEqual(menu.find(item=>item.id==='convert-to-png').options,{format:'png',quality:85});
- for(const id of ['convert-to-webp','jpg-to-pdf','resize-image','edit-image','pdf-ocr','doc-scanner'])assert.equal(menu.find(item=>item.id===id).requiresUI,true);
+ for(const id of ['convert-to-webp','jpg-to-pdf'])assert.equal(menu.find(item=>item.id===id).direct,true);
+ for(const id of ['resize-image','edit-image','pdf-ocr','doc-scanner'])assert.equal(menu.find(item=>item.id===id).requiresUI,true);
  assert.equal(menu.at(-1).label,'More options');
  assert.ok(!JSON.stringify(menu).includes('crop'));
 });
@@ -189,5 +190,29 @@ test('resolved multi-file action keeps the existing host batch failures and outp
   const menu=await runProcessing({...base,tool:request.tool,options:request.options});
   assert.deepEqual(app.results.map(row=>row.state),['completed','failed','completed']);assert.deepEqual(menu.results.map(row=>row.state),app.results.map(row=>row.state));
   for(const i of [0,2]){assert.notEqual(menu.results[i].name,app.results[i].name);assert.deepEqual(await fs.readFile(path.join(dir,menu.results[i].name)),await fs.readFile(path.join(dir,app.results[i].name)));assert.deepEqual(await fs.readFile(paths[i]),input);}
+ }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+
+test('direct image-to-PDF action publishes a real ordered PDF through the licensed host',async()=>{
+ const [{default:sharp},{PDFDocument},{runProcessing},{rasterPdf},{processingFixture},{localFixture},fs,path]=await Promise.all([
+  import('sharp'),import('pdf-lib'),import('../native-host/processing-host.mjs'),import('../core/pdf-raster.mjs'),import('./processing-fixture.mjs'),import('./local-fixture.mjs'),import('node:fs/promises'),import('node:path')]);
+ const dir=await localFixture('sf-native-direct-pdf-');
+ try{
+  const originals=[await sharp({create:{width:20,height:40,channels:3,background:'#ff0000'}}).png().toBuffer(),await sharp({create:{width:40,height:20,channels:3,background:'#0000ff'}}).png().toBuffer()];
+  const paths=[path.join(dir,'first portrait.png'),path.join(dir,'second landscape.png')];
+  for(const [index,source] of paths.entries())await fs.writeFile(source,originals[index]);
+  const request=resolveNativeActionRequest('jpg-to-pdf',context(paths.map((source,index)=>file('PNG',{path:source,bytes:originals[index].length}))));
+  assert.equal(request.direct,true);assert.equal(request.requiresUI,false);assert.deepEqual(request.options,{paper:'a4',orientation:'auto'});
+  const fixture=processingFixture(),run=()=>runProcessing({...fixture,tool:request.tool,paths:request.selection.map(item=>item.path),options:request.options,saveState:async()=>{}});
+  const result=await run();assert.equal(result.state,'completed');assert.equal(path.dirname(result.path),dir);
+  const bytes=await fs.readFile(result.path),pdf=await PDFDocument.load(bytes);assert.equal(pdf.getPageCount(),2);
+  const pages=pdf.getPages();assert.ok(pages[0].getWidth()<pages[0].getHeight());assert.ok(pages[1].getWidth()>pages[1].getHeight());
+  const rendered=await rasterPdf(new Uint8Array(bytes),{dpi:72,format:'png'});
+  for(const [index,page] of rendered.entries()){
+   const pixel=await sharp(page.bytes).extract({left:Math.floor(page.width/2),top:Math.floor(page.height/2),width:1,height:1}).removeAlpha().raw().toBuffer();
+   assert.deepEqual([...pixel],index?[0,0,255]:[255,0,0]);assert.deepEqual(await fs.readFile(paths[index]),originals[index]);
+  }
+  assert.notEqual((await run()).path,result.path);
+  fixture.state.license.entitlement+='tampered';const entries=await fs.readdir(dir);await assert.rejects(run(),/license/);assert.deepEqual(await fs.readdir(dir),entries);
  }finally{await fs.rm(dir,{recursive:true,force:true});}
 });

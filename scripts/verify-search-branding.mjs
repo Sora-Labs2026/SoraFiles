@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
+import { readApprovedBrand, renderBrandPng } from './generate-brand-icons.mjs';
 import { localizedPath } from '../src/i18n/config.ts';
 
 const failures = [];
@@ -15,31 +16,9 @@ const source = await readFile('favicon.png');
 const sourceMetadata = await sharp(source).metadata();
 check(sourceMetadata.format === 'png', 'favicon.png must remain a valid PNG.');
 check(sourceMetadata.width === sourceMetadata.height, 'favicon.png must remain square.');
-const { data: sourcePixels, info: sourceInfo } = await sharp(source).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-const sourceAlphaAt = (x, y) => sourcePixels[((y * sourceInfo.width) + x) * sourceInfo.channels + 3];
-const sourceTransparentPixels = sourcePixels.filter((_, index) => index % sourceInfo.channels === 3 && sourcePixels[index] === 0).length;
-const sourceOpaquePixels = sourcePixels.filter((_, index) => index % sourceInfo.channels === 3 && sourcePixels[index] === 255).length;
-const transparentSamples = [
-  [0, 0],
-  [sourceInfo.width - 1, 0],
-  [0, sourceInfo.height - 1],
-  [sourceInfo.width - 1, sourceInfo.height - 1],
-  [Math.floor(sourceInfo.width / 2), Math.floor(sourceInfo.height * 0.3)],
-  [Math.floor(sourceInfo.width / 2), Math.floor(sourceInfo.height * 0.65)],
-];
-check(sourceMetadata.hasAlpha, 'favicon.png must retain an alpha channel.');
-check(sourceTransparentPixels >= sourceInfo.width * sourceInfo.height * 0.25, 'favicon.png must retain substantial transparent exterior and negative space.');
-check(sourceOpaquePixels >= sourceInfo.width * sourceInfo.height * 0.25, 'favicon.png must retain substantial opaque gradient artwork.');
-check(transparentSamples.every(([x, y]) => sourceAlphaAt(x, y) <= 8), 'favicon.png must not restore a baked white matte around or inside the gradient S.');
-
-const renderPng = (size) => sharp(source)
-  .resize(size, size, {
-    fit: 'contain',
-    background: { r: 0, g: 0, b: 0, alpha: 0 },
-    kernel: sharp.kernel.lanczos3,
-  })
-  .png({ compressionLevel: 9, adaptiveFiltering: true, palette: false, effort: 10 })
-  .toBuffer();
+const { source: approvedSource } = await readApprovedBrand();
+check(hash(source) === hash(approvedSource), 'Root favicon must be the locked V10 app icon.');
+const renderPng = size => renderBrandPng(source, size);
 
 const pngAssets = new Map([
   ['public/favicon-16x16.png', 16],
@@ -59,15 +38,7 @@ for (const [path, size] of pngAssets) {
   if (!existsSync(path)) continue;
   const actual = await readFile(path);
   const metadata = await sharp(actual).metadata();
-  const { data: pixels, info } = await sharp(actual).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  const cornerAlpha = [
-    pixels[3],
-    pixels[((info.width - 1) * info.channels) + 3],
-    pixels[(((info.height - 1) * info.width) * info.channels) + 3],
-    pixels[((((info.height - 1) * info.width) + info.width - 1) * info.channels) + 3],
-  ];
   check(metadata.width === size && metadata.height === size, `${path} must be ${size}x${size}.`);
-  check(metadata.hasAlpha && cornerAlpha.every((alpha) => alpha <= 8), `${path} must preserve transparent corners without a baked white matte.`);
   check(hash(actual) === hash(expectedBySize.get(size)), `${path} is not the deterministic derivative of root favicon.png.`);
 }
 
@@ -93,7 +64,7 @@ if (existsSync('public/favicon.ico')) {
 check(!existsSync('public/favicon.svg'), 'The obsolete public/favicon.svg must not return.');
 check(!existsSync('public/reddit-avatar.svg'), 'The obsolete document-logo social SVG must not return.');
 const socialAvatar = await sharp(await readFile('public/reddit-avatar.png')).metadata();
-check(socialAvatar.width === 512 && socialAvatar.height === 512 && socialAvatar.hasAlpha, 'Social avatar must be the transparent 512px S derivative.');
+check(socialAvatar.width === 512 && socialAvatar.height === 512 && socialAvatar.hasAlpha, 'Social avatar must preserve the approved 512px app icon.');
 const ogImage = await sharp(await readFile('public/og-image.png')).metadata();
 check(ogImage.width === 1200 && ogImage.height === 630, 'Open Graph image must be the canonical 1200x630 brand image.');
 
@@ -135,10 +106,14 @@ const schemas = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'
 const websites = schemas.filter((item) => item?.['@type'] === 'WebSite');
 const organizations = schemas.filter((item) => item?.['@type'] === 'Organization');
 check(websites.length === 1 && websites[0].name === 'SoraFiles', 'Homepage must contain one WebSite named SoraFiles.');
-check(JSON.stringify(websites[0]?.alternateName) === JSON.stringify(['sorafiles.com']), 'WebSite alternateName must contain only the domain alias sorafiles.com.');
+check(websites[0]?.alternateName === undefined, 'WebSite must not expose an alternate product name.');
 check(organizations.length === 1 && organizations[0].name === 'Sora Labs', 'Homepage must contain one Organization named Sora Labs.');
 check(websites[0]?.publisher?.['@id'] === 'https://sorafiles.com/#organization', 'WebSite publisher must reference Sora Labs.');
-check(!schemas.some((item) => ['WebApplication', 'SoftwareApplication'].includes(item?.['@type'])), 'Homepage must not claim review-gated SoftwareApplication rich-result markup.');
+const applications = schemas.filter((item) => ['WebApplication', 'SoftwareApplication'].includes(item?.['@type']));
+check(applications.length <= 1, 'Homepage must not publish competing application entities.');
+check(applications.every((item) => item.name === 'SoraFiles'), 'Application schema must use the exact SoraFiles product name.');
+check(applications.every((item) => item.alternateName === undefined), 'Application schema must not expose an alternate product name.');
+check(!applications.some((item) => item.review || item.aggregateRating), 'Application schema must not manufacture review-gated rating or review evidence.');
 
 const localizedHtml = await readText('dist/ja/index.html');
 const localizedCanonical = new URL(localizedPath('ja', '/'), 'https://sorafiles.com').toString();
@@ -147,7 +122,7 @@ check(/<meta[^>]+property=["']og:site_name["'][^>]+content=["']SoraFiles["']/i.t
 check(localizedHtml.includes(`<link rel="canonical" href="${localizedCanonical}">`), 'Representative localized canonical URL is missing.');
 check(/<link[^>]+hreflang=["']x-default["'][^>]+href=["']https:\/\/sorafiles\.com\/["']/i.test(localizedHtml), 'Representative localized x-default is missing.');
 
-const robots = await readText('public/robots.txt');
+const robots = (await readText('public/robots.txt')).replaceAll('\r\n', '\n');
 check(robots.includes('User-agent: *\nAllow: /'), 'robots.txt must keep the homepage and static assets crawlable.');
 check(robots.includes('User-agent: Googlebot-Image\nAllow: /'), 'robots.txt must allow Googlebot-Image.');
 check(robots.includes('Sitemap: https://sorafiles.com/sitemap.xml'), 'robots.txt must reference the authoritative sitemap.xml URL.');
@@ -159,4 +134,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Search branding verification passed: transparent official favicon derivatives, SoraFiles site identity, Sora Labs organization identity, and multilingual crawl signals are intact.');
+console.log('Search branding verification passed: approved V10 favicon derivatives, SoraFiles site identity, Sora Labs organization identity, and multilingual crawl signals are intact.');

@@ -1,5 +1,9 @@
 ---
 import '../styles/global.css';
+import '../styles/v10-tokens.css';
+import '../styles/v10-atmosphere.css';
+import '../styles/v10-foundation.css';
+import '../styles/v10-workspaces.css';
 import { localeByPath, localeDefinitions, publishedAlternates, type LocalePath } from '../i18n/config';
 import { getLocaleContent } from '../i18n';
 import { liveText } from '../data/liveI18n';
@@ -12,9 +16,12 @@ interface Props {
   imagePath?: string;
   imageAlt?: string;
   noIndex?: boolean;
+  analytics?: boolean;
+  sensitive?: boolean;
   schema?: Record<string, unknown> | Record<string, unknown>[];
   locale?: LocalePath;
   alternatePath?: string;
+  ogType?: 'website' | 'article';
 }
 
 const {
@@ -25,9 +32,12 @@ const {
   imagePath = '/og-image.png',
   imageAlt: providedImageAlt,
   noIndex = false,
+  analytics = true,
+  sensitive = false,
   schema,
   locale = 'en',
   alternatePath = canonicalPath,
+  ogType = 'website',
 } = Astro.props;
 
 const description = providedDescription ?? liveText(locale, 'hero.desc');
@@ -38,46 +48,50 @@ const socialImage = new URL(imagePath, 'https://sorafiles.com');
 const serializedSchema = schema ? JSON.stringify(schema).replace(/</g, '\\u003c') : undefined;
 const localeMeta = localeByPath.get(locale) ?? localeByPath.get('en')!;
 const alternates = noIndex ? [] : publishedAlternates(alternatePath);
-// PERMANENT SORAFILES SEARCH BRANDING INVARIANT: SoraFiles is the site/product name; Sora Labs is the company; the gradient S keeps transparent negative space.
+// PERMANENT SORAFILES SEARCH BRANDING INVARIANT: SoraFiles is the product; Sora Labs is the company; assets preserve the exact approved V10 amber mark.
 const siteName = 'SoraFiles';
 const documentTitle = title;
 // Some social/search markup parsers still misdecode typographic dashes even
 // when the transport is valid UTF-8. Keep machine-consumed titles compatible
 // without changing the user-visible browser title.
 const socialTitle = documentTitle.replace(/[–—]/g, '-');
+const route = canonicalPath.replace(/^\/(?:ar|de|es|fr|hi|id|it|ja|ko|pt|ru|tr|zh)(?=\/|$)/, '').replace(/\/$/, '') || '/';
+const atmosphere = ['/', '/desktop'].includes(route) ? 'hero' : route === '/desktop/pricing' ? 'pricing' : ['/tools','/desktop/download'].includes(route) ? 'page-dots' : ['/privacy','/terms'].includes(route) ? 'legal' : route.startsWith('/guides') || ['/about','/open-source'].includes(route) ? 'doc' : route.startsWith('/desktop/') || ['/contact','/404'].includes(route) ? 'page' : 'tool';
 ---
 
 <!doctype html>
 <html lang={localeMeta.code} dir={localeMeta.direction} data-locale={locale}>
   <head>
     <meta charset="utf-8" />
+    {sensitive && <meta name="referrer" content="no-referrer" />}
+    <slot name="early-head" />
     <link rel="preload" href="/fonts/plus-jakarta-sans-vf.woff2" as="font" type="font/woff2" crossorigin />
-    <script
+    {analytics && !sensitive && <script
       is:inline
       src="https://analytics.ahrefs.com/analytics.js"
       data-key="YJO4kDicTtFqaLaxSZH09Q"
       async
       crossorigin="anonymous"
       fetchpriority="low"
-    ></script>
+    ></script>}
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     {keywords && <meta name="keywords" content={keywords} />}
     <meta name="robots" content={noIndex ? 'noindex,follow' : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'} />
     <meta name="application-name" content={siteName} />
     <meta name="apple-mobile-web-app-title" content={siteName} />
-    <meta name="theme-color" content="#f3f5fb" data-theme-color />
+    <meta name="theme-color" content="#ffffff" data-theme-color />
     <script is:inline>
       (() => {
         document.documentElement.classList.add('js');
         try {
           const savedTheme = localStorage.getItem('sora-theme');
-          const preference = ['dark', 'light'].includes(savedTheme) ? savedTheme : 'light';
-          const useDark = preference === 'dark';
+          const preference = ['dark', 'light'].includes(savedTheme) ? savedTheme : 'system';
+          const useDark = preference === 'dark' || (preference === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
           document.documentElement.classList.toggle('dark', useDark);
           document.documentElement.dataset.theme = useDark ? 'dark' : 'light';
           document.documentElement.dataset.themePreference = preference;
-          document.querySelector('[data-theme-color]')?.setAttribute('content', useDark ? '#070a18' : '#f3f5fb');
+          document.querySelector('[data-theme-color]')?.setAttribute('content', useDark ? '#0a0b0f' : '#ffffff');
         } catch {}
       })();
     </script>
@@ -91,7 +105,7 @@ const socialTitle = documentTitle.replace(/[–—]/g, '-');
     <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={siteName} />
     <meta property="og:title" content={socialTitle} />
     <meta property="og:description" content={description} />
@@ -103,9 +117,11 @@ const socialTitle = documentTitle.replace(/[–—]/g, '-');
     })}
     <meta property="og:image" content={socialImage} />
     <meta property="og:image:secure_url" content={socialImage} />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    {imagePath === '/og-image.png' && <>
+      <meta property="og:image:type" content="image/png" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+    </>}
     <meta property="og:image:alt" content={imageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={socialTitle} />
@@ -115,14 +131,9 @@ const socialTitle = documentTitle.replace(/[–—]/g, '-');
     {serializedSchema && <script type="application/ld+json" is:inline set:html={serializedSchema}></script>}
     <title>{documentTitle}</title>
   </head>
-  <body class="min-h-screen font-sans text-ink antialiased">
+  <body class="page min-h-screen font-sans text-ink antialiased" data-atmos={atmosphere}>
     <a href="#main" class="fixed left-3 top-3 z-50 -translate-y-20 rounded-control bg-action px-4 py-2 text-sm font-medium text-action-contrast transition-transform focus:translate-y-0">{legacyContent.common.skipToContent}</a>
-    <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10">
-      <div class="absolute inset-0 bg-[#f3f5fb] dark:bg-[#070a18]"></div>
-      <div class="absolute -top-32 right-[-8%] h-[480px] w-[480px] rounded-full bg-fuchsia-300/40 blur-[120px] dark:bg-fuchsia-600/15"></div>
-      <div class="absolute left-[-12%] top-[28%] h-[420px] w-[420px] rounded-full bg-blue-300/40 blur-[120px] dark:bg-blue-600/15"></div>
-      <div class="absolute bottom-[-12%] right-[18%] h-[400px] w-[400px] rounded-full bg-cyan-200/50 blur-[120px] dark:bg-cyan-500/10"></div>
-    </div>
+    <div aria-hidden="true" class="atmos"></div>
     <div data-offline-banner hidden role="status" aria-live="polite" class="flex items-center justify-center gap-2 bg-amber-400/90 px-4 py-2 text-center text-xs font-bold text-amber-950">{liveText(locale, 'common.offline')}</div>
     <slot />
     <script is:inline>
@@ -131,9 +142,9 @@ const socialTitle = documentTitle.replace(/[–—]/g, '-');
       const getThemePreference = () => {
         try {
           const savedTheme = localStorage.getItem('sora-theme');
-          return validThemes.includes(savedTheme) ? savedTheme : 'light';
+          return validThemes.includes(savedTheme) ? savedTheme : 'system';
         } catch {
-          return 'light';
+          return 'system';
         }
       };
 
@@ -142,11 +153,12 @@ const socialTitle = documentTitle.replace(/[–—]/g, '-');
       };
 
       const applyTheme = (preference) => {
-        const isDark = preference === 'dark';
+        const isDark = preference === 'dark' || (preference === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.classList.toggle('dark', isDark);
         document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
         document.documentElement.dataset.themePreference = preference;
-        document.querySelector('[data-theme-color]')?.setAttribute('content', isDark ? '#070a18' : '#f3f5fb');
+        document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === (isDark ? 'dark' : 'light'))));
+        document.querySelector('[data-theme-color]')?.setAttribute('content', isDark ? '#0a0b0f' : '#ffffff');
 
         document.querySelectorAll('[data-theme-menu]').forEach((menu) => {
           const summary = menu.querySelector('summary');
@@ -180,6 +192,9 @@ const socialTitle = documentTitle.replace(/[–—]/g, '-');
       });
 
       applyTheme(getThemePreference());
+      matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (getThemePreference() === 'system') applyTheme('system');
+      });
     </script>
     <script is:inline>
       (() => {
@@ -247,6 +262,10 @@ const socialTitle = documentTitle.replace(/[–—]/g, '-');
           syncPageMotion();
         }
       })();
+    </script>
+    <script>
+      import { bindAllRangeProgress } from '../utils/percentRange';
+      bindAllRangeProgress();
     </script>
   </body>
 </html>

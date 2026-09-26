@@ -1,0 +1,59 @@
+---
+// Derived from the existing header panels and homepage CTA. No modal overlay.
+import publication from '../../desktop/releases/publication.json';
+---
+<aside data-desktop-promo data-promo-enabled={String(publication.homepagePromotionEnabled)} hidden aria-label="Explore SoraFiles Desktop" class="sf-desktop-promo fixed bottom-4 right-4 z-40 w-[min(440px,calc(100%-2rem))] rounded-3xl border border-line bg-surface p-3 shadow-lift">
+  <a href="/desktop" class="flex items-center gap-4 rounded-2xl pr-7" data-desktop-promo-link>
+    <img src="/desktop/promo.svg" alt="Illustrated file and quick-action menu concept" width="120" height="160" decoding="async" class="w-24 shrink-0 rounded-2xl sm:w-28" />
+    <span class="min-w-0 py-2">
+      <span class="block text-xs font-semibold text-violet">In development</span>
+      <span class="mt-1 block text-lg font-extrabold tracking-tight text-ink">SoraFiles Desktop</span>
+      <span class="mt-2 block text-sm leading-6 text-muted">A desktop app for repeat file tasks. Web stays free.</span>
+      <span class="mt-3 inline-flex min-h-11 items-center rounded-full bg-action px-4 text-sm font-bold text-action-contrast">Explore Desktop <span aria-hidden="true" class="ml-2">→</span></span>
+    </span>
+  </a>
+  <button type="button" data-desktop-promo-dismiss aria-label="Dismiss Desktop promotion" class="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-canvas hover:text-ink"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
+</aside>
+<script>
+  const promo = document.querySelector<HTMLElement>('[data-desktop-promo]');
+  if (promo?.dataset.promoEnabled === 'true') {
+    const key = 'sora-desktop-promo-dismissed-v1';
+    const month = 30 * 24 * 60 * 60 * 1000;
+    const remembered = () => {
+      // If both stores are unavailable, stay quiet rather than nag on every reload.
+      let usable = false;
+      for (const name of ['localStorage', 'sessionStorage'] as const) {
+        try {
+          const storage = window[name];
+          const until = Number(storage.getItem(key));
+          storage.setItem(key + '-check', '1'); storage.removeItem(key + '-check'); usable = true;
+          if (Number.isFinite(until) && until > Date.now()) return true;
+        } catch {}
+      }
+      return !usable;
+    };
+    const dismiss = () => {
+      const hadFocus = promo.contains(document.activeElement);
+      promo.hidden = true;
+      for (const name of ['localStorage', 'sessionStorage'] as const) {
+        try { window[name].setItem(key, String(Date.now() + month)); } catch {}
+      }
+      // Only move focus when hiding the user's current control.
+      if (hadFocus) document.querySelector<HTMLElement>('[data-testid="logo-link"]')?.focus({ preventScroll: true });
+    };
+    promo.querySelector('button')?.addEventListener('click', dismiss);
+    promo.querySelector('a')?.addEventListener('click', () => { dismiss(); });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !promo.hidden && promo.contains(document.activeElement)) dismiss();
+    });
+    // Leave initial rendering and the main tool search undisturbed.
+    window.setTimeout(() => { if (!remembered()) promo.hidden = false; }, 3500);
+  }
+</script>
+<style>
+  .sf-desktop-promo { bottom:max(1rem,env(safe-area-inset-bottom)); right:max(1rem,env(safe-area-inset-right)); max-height:calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y:auto; }
+  .sf-desktop-promo:not([hidden]) { animation: desktop-promo-enter 220ms ease-out; }
+  @keyframes desktop-promo-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-height: 500px) { .sf-desktop-promo img { width: 72px; } }
+  @media (prefers-reduced-motion: reduce) { .sf-desktop-promo:not([hidden]) { animation:none; } }
+</style>

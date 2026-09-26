@@ -17,7 +17,7 @@ export interface BrandPositioning {
 // Workflow names and workflow-page SEO copy continue to live in their existing registries.
 export const brandPositioning: Record<LocalePath, BrandPositioning> = {
   en: {
-    homeTitle: 'SoraFiles - Private File Processing in Your Browser',
+    homeTitle: 'SoraFiles',
     description: 'SoraFiles is a privacy-first web app for working with PDFs and images directly in your browser. Supported file processing happens locally on your device.',
     heroLine1: 'A Privacy-First',
     heroLine2: 'Web App.',

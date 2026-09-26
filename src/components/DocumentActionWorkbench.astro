@@ -6,6 +6,8 @@ import { getWorkbenchMessages } from '../i18n/workbench';
 import { getOcrMessages } from '../i18n/ocr';
 import { getConversionFidelityMessages, getWatermarkPdfMessages } from '../i18n/documentTools';
 import ToolIcon from './ToolIcon.astro';
+import VisualPdfWorkspace from './VisualPdfWorkspace.astro';
+import AdaptiveWorkspace from './AdaptiveWorkspace.astro';
 import { liveText } from '../data/liveI18n';
 
 interface Props {
@@ -45,34 +47,47 @@ const actionTones: Record<string, keyof typeof tones> = {
   'pdf-to-jpg': 'coral', 'pdf-to-word': 'indigo', 'word-to-pdf': 'cyan',
 };
 const actionTone = actionTones[tool.id] ?? 'indigo';
+const visualPdfTools = new Set(['merge-pdf', 'split-pdf', 'rotate-pdf', 'remove-pages', 'watermark-pdf', 'page-numbers', 'sign-pdf']);
+const workspaceMode = visualPdfTools.has(tool.slug) || tool.slug === 'jpg-to-pdf' ? 'canvas' : 'preview';
+const uploadCopy = { drop: liveText(locale, tool.multiple ? 'wb.dropMany' : 'wb.dropOne'), click: liveText(locale, 'wb.orClick') };
+const englishActions: Record<string, string> = {
+  'merge-pdf': 'Merge PDFs', 'split-pdf': 'Split PDF', 'rotate-pdf': 'Rotate pages',
+  'remove-pages': 'Remove selected pages', 'watermark-pdf': 'Add watermark',
+  'page-numbers': 'Add page numbers', 'sign-pdf': 'Add signature',
+  'jpg-to-pdf': 'Create PDF', 'pdf-to-jpg': 'Convert pages',
+  'pdf-to-word': 'Convert to Word', 'word-to-pdf': 'Convert to PDF',
+};
+const primaryAction = locale === 'en' ? (englishActions[tool.slug] ?? m.process) : m.process;
 ---
 <section data-workbench id="document-tool" aria-labelledby="document-tool-heading" class="mx-auto max-w-5xl px-5 sm:px-6" data-tool={tool.slug} data-accept={tool.accept} data-multiple={String(tool.multiple)} data-localized={locale !== 'en' ? 'true' : 'false'} data-copy-note={copy.note} data-merge-minimum={t('wb.err.tooFew')} data-split-compact-warning={t('lim.compress')} data-locale={locale}>
   <div class="overflow-hidden rounded-card bg-surface shadow-card">
     <div class="border-b border-line px-5 py-4 sm:px-7"><div class="flex flex-wrap items-center justify-between gap-3"><div class="flex items-center gap-3"><span class:list={['flex h-10 w-10 items-center justify-center rounded-xl', tones[actionTone]]}><ToolIcon icon={tool.icon}/></span><div><p class="eyebrow text-xs font-semibold text-blue">{m.localFileTool}</p><h2 id="document-tool-heading" class="mt-1 text-lg font-semibold tracking-tight">{copy.title}</h2></div></div><div class="inline-flex items-center gap-2 rounded-full bg-green-soft px-3 py-1.5 text-xs font-medium text-green"><span class="h-2 w-2 rounded-full bg-green" aria-hidden="true"></span>{m.noUpload}</div></div></div>
     <div id="action-empty" class="p-4 sm:p-7">
-      <div id="action-drop" class="group flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-line-strong bg-canvas px-5 py-12 text-center transition-colors hover:border-blue/60 hover:bg-surface">
-        <span class:list={['flex h-14 w-14 items-center justify-center rounded-xl shadow-small', tones[actionTone]]}><ToolIcon icon={tool.icon}/></span>
-        <h3 class="mt-5 text-xl font-semibold tracking-tight">{tool.multiple ? m.chooseFiles : m.chooseFile}</h3>
+      <div id="action-drop" class="sf-upload-dropzone group flex min-h-72 flex-col items-center justify-center px-5 py-12 text-center">
+        <span class:list={['sf-upload-dropzone__icon flex h-14 w-14 items-center justify-center rounded-xl shadow-small', tones[actionTone]]}><ToolIcon icon={tool.icon}/></span>
+        <h3 class="mt-5 text-xl font-semibold tracking-tight">{uploadCopy.drop}</h3>
         <p class="mt-2 max-w-md text-sm leading-6 text-muted">{copy.short} · {m.processedHere}</p>
         <button id="action-choose" type="button" class="mt-6 inline-flex min-h-12 items-center justify-center rounded-control bg-action px-6 text-sm font-medium text-action-contrast shadow-small transition-colors hover:bg-action-hover">{tool.multiple ? m.chooseFiles : m.chooseFile}</button>
+        <p class="mt-3 text-xs text-muted">{uploadCopy.click}</p>
         <input id="action-input" name="sourceFiles" class="sr-only" tabindex="-1" type="file" accept={tool.accept} multiple={tool.multiple} aria-label={tool.multiple ? m.chooseFiles : m.chooseFile} aria-describedby="action-help action-error" />
         <p id="action-help" class="sr-only">{copy.description}</p>
         <p id="action-error" hidden role="alert" tabindex="-1" class="mt-4 max-w-lg break-words rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
       </div>
     </div>
-    <div id="action-work" hidden class="grid min-w-0 lg:grid-cols-[1fr_0.85fr]">
-      <div class="min-w-0 border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
-        <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="text-sm font-semibold">{tool.multiple ? m.selectedFiles : m.selectedFile}</p><p id="action-total" class="mt-1 text-xs text-muted"></p></div><div class="flex flex-wrap items-center gap-2">{tool.multiple && <button id="action-add" type="button" class="min-h-10 rounded-control border border-line bg-surface px-3 text-sm font-medium text-ink hover:border-line-strong">+ {m.chooseFiles}</button>}<button id="action-remove" type="button" class="min-h-10 rounded-control px-3 text-sm text-muted hover:bg-canvas hover:text-ink">{m.removeAll}</button></div></div>
+    <AdaptiveWorkspace id="action-work" mode={workspaceMode} title={copy.title} resetTarget="#action-remove" class={`action-workspace${visualPdfTools.has(tool.slug) ? ' has-visual-pdf' : ''}${tool.slug === 'word-to-pdf' ? ' no-conversion-options' : ''}`}>
+      <div data-workspace-source class="min-w-0 border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">
+        <div data-workspace-filebar class="flex flex-wrap items-center justify-between gap-3"><div><p class="text-sm font-semibold">{tool.multiple ? m.selectedFiles : m.selectedFile}</p><p id="action-total" class="mt-1 text-xs text-muted"></p></div><div class="flex flex-wrap items-center gap-2">{tool.multiple && <button id="action-add" type="button" class="min-h-10 rounded-control border border-line bg-surface px-3 text-sm font-medium text-ink hover:border-line-strong">+ {m.chooseFiles}</button>}<button id="action-remove" type="button" class="min-h-10 rounded-control px-3 text-sm text-muted hover:bg-canvas hover:text-ink">{m.removeAll}</button></div></div>
         <ol id="action-file-list" class="mt-5 max-h-80 divide-y divide-line overflow-y-auto rounded-xl border border-line"></ol>
+        {visualPdfTools.has(tool.slug) && <VisualPdfWorkspace tool={tool.slug}/>}
         {tool.slug === 'merge-pdf' && <p id="merge-minimum" class="mt-3 text-sm font-medium text-amber" aria-live="polite">{t('wb.err.tooFew')}</p>}
       </div>
-      <form data-workbench-controls id="action-form" class="min-w-0 p-5 sm:p-7">
-        {tool.slug === 'rotate-pdf' && <div><label for="rotate-angle" class="text-sm font-semibold">{m.rotation}</label><select id="rotate-angle" name="rotateAngle" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></div>}
-        {tool.slug === 'split-pdf' && <fieldset><legend class="text-sm font-semibold">{m.whatPreserved}</legend><div class="mt-3 grid gap-2 sm:grid-cols-2"><label class="flex cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-3 hover:border-line-strong has-[:checked]:border-cyan has-[:checked]:bg-cyan-soft"><input type="radio" name="splitMode" value="smart" checked class="mt-1 accent-cyan"/><span><span class="block text-sm font-medium">{m.smallerFile}</span><span class="mt-1 block text-xs leading-5 text-muted">{t('lim.compress')}</span></span></label><label class="flex cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-3 hover:border-line-strong has-[:checked]:border-cyan has-[:checked]:bg-cyan-soft"><input type="radio" name="splitMode" value="preserve" class="mt-1 accent-cyan"/><span><span class="block text-sm font-medium">{m.betterQuality}</span><span class="mt-1 block text-xs leading-5 text-muted">{copy.note}</span></span></label></div></fieldset>}
+      <form data-workspace-inspector data-workbench-controls id="action-form" class="min-w-0 overflow-y-auto p-5 sm:p-7">
+        {tool.slug === 'rotate-pdf' && <div class="rounded-control bg-green-soft px-4 py-3 text-sm leading-6 text-green"><strong class="block">Rotate without changing page quality</strong><span class="mt-1 block text-xs">Select pages in the workspace, then rotate them left or right. Text, images, links, and page size stay intact.</span></div>}
+        {tool.slug === 'split-pdf' && <div class="space-y-4"><div class="rounded-control bg-green-soft px-4 py-3 text-sm leading-6 text-green"><strong class="block">Choose exactly which pages you need</strong><span class="mt-1 block text-xs">Text, images, links, forms, and page sizes stay intact in the new PDFs.</span></div><label class="block text-sm font-semibold">Split mode<select id="split-mode" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="separate" selected>Every selected page · separate PDFs</option><option value="selected">Selected pages · one PDF</option><option value="groups">Custom groups · separate PDFs</option><option value="every">Every N pages</option><option value="odd-even">Odd and even pages</option></select></label><label data-split-option="groups" hidden class="block text-sm font-semibold">Custom groups<input id="split-groups" type="text" inputmode="text" autocomplete="off" placeholder="1-3; 4-6,9; 10-12" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/><span class="mt-1.5 block text-xs font-normal leading-5 text-muted">Separate groups with semicolons. Each group becomes one PDF.</span></label><label data-split-option="every" hidden class="block text-sm font-semibold">Pages per file<input id="split-every" type="number" min="1" max="100" value="5" inputmode="numeric" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></label></div>}
         {tool.slug === 'remove-pages' && <div><label for="remove-page-spec" class="text-sm font-semibold">{t('opt.pages')}</label><input id="remove-page-spec" name="removePageSpec" type="text" inputmode="text" autocomplete="off" placeholder={t('opt.pagesHint')} class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/><p class="mt-2 text-xs leading-5 text-muted">{t('opt.pagesHint')}</p></div>}
         {tool.slug === 'watermark-pdf' && <div class="space-y-5">
           <fieldset><legend class="text-sm font-semibold">{watermarkMsg.watermarkType}</legend><div class="mt-3 grid grid-cols-2 rounded-control bg-canvas p-1 text-sm"><button type="button" data-watermark-mode="text" aria-pressed="true" class="min-h-11 rounded-md bg-surface px-3 font-medium text-ink shadow-small hover:text-blue-strong focus-visible:ring-2 focus-visible:ring-blue">{watermarkMsg.text}</button><button type="button" data-watermark-mode="image" aria-pressed="false" class="min-h-11 rounded-md px-3 font-medium text-muted hover:text-ink focus-visible:ring-2 focus-visible:ring-blue">{watermarkMsg.image}</button></div></fieldset>
-          <div data-watermark-panel="text"><label for="watermark-text" class="text-sm font-semibold">{t('opt.text')}</label><input id="watermark-text" name="watermarkText" type="text" autocomplete="off" maxlength="60" placeholder={t('opt.text')} class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div>
+          <div data-watermark-panel="text"><label for="watermark-text" class="text-sm font-semibold">{t('opt.text')}</label><input id="watermark-text" name="watermarkText" type="text" autocomplete="off" maxlength="60" placeholder={t('opt.text')} class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/><div class="mt-4 grid grid-cols-2 gap-3"><label class="text-xs font-medium text-muted">Font size<input id="watermark-font-size" type="number" min="8" max="160" value="42" class="mt-1 min-h-11 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></label><label class="text-xs font-medium text-muted">Color<input id="watermark-color" type="color" value="#404a6b" class="mt-1 min-h-11 w-full rounded-control border border-line bg-surface p-1"/></label></div></div>
           <div data-watermark-panel="image" hidden>
             <label for="watermark-image" class="text-sm font-semibold">{watermarkMsg.uploadImage}</label>
             <input id="watermark-image" name="watermarkImage" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" class="mt-2 block min-h-12 w-full rounded-control border border-line bg-surface p-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-violet-soft file:px-3 file:py-2 file:font-medium file:text-violet hover:border-line-strong focus-visible:ring-2 focus-visible:ring-blue"/>
@@ -83,43 +98,87 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
             </div></fieldset>
             <div id="watermark-cleanup-controls" hidden class="mt-4"><div class="flex items-center justify-between gap-3"><label for="watermark-cleanup" class="text-xs font-medium text-muted">{watermarkMsg.cleanupStrength}</label><output id="watermark-cleanup-output" for="watermark-cleanup" class="font-mono text-xs font-medium text-muted">32%</output></div><input id="watermark-cleanup" name="watermarkCleanup" type="range" min="8" max="72" value="32" aria-valuetext="32%" class="mt-2 w-full accent-violet"/></div>
             <div id="watermark-image-preview" hidden class="mt-4 grid grid-cols-2 gap-2"><figure class="min-w-0 overflow-hidden rounded-control border border-line bg-surface"><div class="grid h-28 place-items-center bg-[linear-gradient(45deg,var(--color-canvas)_25%,transparent_25%),linear-gradient(-45deg,var(--color-canvas)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,var(--color-canvas)_75%),linear-gradient(-45deg,transparent_75%,var(--color-canvas)_75%)] bg-[length:16px_16px] bg-[position:0_0,0_8px,8px_-8px,-8px_0]"><img id="watermark-image-before" alt={watermarkMsg.beforeAlt} width="320" height="112" class="h-28 w-full object-contain"/></div><figcaption class="border-t border-line px-2 py-1.5 text-xs text-muted">{watermarkMsg.before}</figcaption></figure><figure class="min-w-0 overflow-hidden rounded-control border border-line bg-surface"><div class="grid h-28 place-items-center bg-[linear-gradient(45deg,var(--color-canvas)_25%,transparent_25%),linear-gradient(-45deg,var(--color-canvas)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,var(--color-canvas)_75%),linear-gradient(-45deg,transparent_75%,var(--color-canvas)_75%)] bg-[length:16px_16px] bg-[position:0_0,0_8px,8px_-8px,-8px_0]"><img id="watermark-image-after" alt={watermarkMsg.afterAlt} width="320" height="112" class="h-28 w-full object-contain"/></div><figcaption class="border-t border-line px-2 py-1.5 text-xs text-muted">{watermarkMsg.after}</figcaption></figure></div>
+            <label class="mt-4 block text-xs font-medium text-muted">Logo size<output id="watermark-scale-output" for="watermark-scale" class="float-right font-mono">40%</output><input id="watermark-scale" type="range" min="10" max="90" value="40" class="mt-2 w-full accent-violet"/></label>
           </div>
-          <div><div class="flex items-center justify-between gap-4"><label for="watermark-opacity" class="text-sm font-semibold">{t('opt.opacity')}</label><output id="watermark-opacity-output" for="watermark-opacity" class="font-mono text-sm">20%</output></div><input id="watermark-opacity" name="watermarkOpacity" type="range" min="5" max="50" step="5" value="20" aria-valuetext="20%" class="mt-3 w-full accent-ink"/></div>
+          <div class="grid gap-4 sm:grid-cols-2"><label class="text-xs font-medium text-muted">Position<select id="watermark-position" class="mt-1 min-h-11 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="center">Center</option><option value="top-left">Top left</option><option value="top-center">Top center</option><option value="top-right">Top right</option><option value="bottom-left">Bottom left</option><option value="bottom-center">Bottom center</option><option value="bottom-right">Bottom right</option></select></label><label class="text-xs font-medium text-muted">Rotation<input id="watermark-rotation" type="number" min="-180" max="180" value="35" class="mt-1 min-h-11 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></label></div>
+          <div><div class="flex items-center justify-between gap-4"><label for="watermark-opacity" class="text-sm font-semibold">{t('opt.opacity')}</label><output id="watermark-opacity-output" for="watermark-opacity" class="font-mono text-sm">20%</output></div><input id="watermark-opacity" name="watermarkOpacity" type="range" min="5" max="80" step="5" value="20" aria-valuetext="20%" class="mt-3 w-full accent-ink"/></div>
+          <label class="flex min-h-11 cursor-pointer items-center gap-3 rounded-control border border-line bg-surface px-3 text-sm font-medium"><input id="watermark-tiled" type="checkbox" class="h-4 w-4 accent-violet"/> Repeat across each selected page</label>
         </div>}
-        {tool.slug === 'page-numbers' && <div class="grid gap-5 sm:grid-cols-2"><div><label for="page-number-position" class="text-sm font-semibold">{t('opt.position')}</label><select id="page-number-position" name="pageNumberPosition" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="bottom-center">{t('optval.bottom-center')}</option><option value="bottom-right">{t('optval.bottom-right')}</option><option value="top-center">{t('optval.top-center')}</option><option value="top-right">{t('optval.top-right')}</option></select></div><div><label for="page-number-start" class="text-sm font-semibold">{t('opt.page')}</label><input id="page-number-start" name="pageNumberStart" type="number" inputmode="numeric" min="1" max="999999" value="1" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div></div>}
+        {tool.slug === 'page-numbers' && <div class="grid gap-5 sm:grid-cols-2"><div><label for="page-number-format" class="text-sm font-semibold">Format</label><select id="page-number-format" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="number">1</option><option value="page">Page 1</option><option value="total">Page 1 of N</option><option value="roman">Roman numerals</option></select></div><div><label for="page-number-start" class="text-sm font-semibold">Start number</label><input id="page-number-start" name="pageNumberStart" type="number" inputmode="numeric" min="1" max="999999" value="1" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div><div><label for="page-number-skip" class="text-sm font-semibold">Skip first pages</label><input id="page-number-skip" type="number" inputmode="numeric" min="0" max="9999" value="0" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div><div><label for="page-number-position" class="text-sm font-semibold">{t('opt.position')}</label><select id="page-number-position" name="pageNumberPosition" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="bottom-left">{t('optval.bottom-left')}</option><option value="bottom-center" selected>{t('optval.bottom-center')}</option><option value="bottom-right">{t('optval.bottom-right')}</option><option value="top-left">{t('optval.top-left')}</option><option value="top-center">{t('optval.top-center')}</option><option value="top-right">{t('optval.top-right')}</option></select></div><div><label for="page-number-size" class="text-sm font-semibold">Font size</label><input id="page-number-size" type="number" min="6" max="72" value="10" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div><div><label for="page-number-margin" class="text-sm font-semibold">Margin</label><div class="mt-2 flex items-center rounded-control border border-line bg-surface"><input id="page-number-margin" type="number" min="4" max="144" value="24" class="min-h-12 min-w-0 flex-1 rounded-control bg-transparent px-3 text-sm text-ink"/><span class="pr-3 text-xs text-muted">pt</span></div></div><label class="sm:col-span-2"><span class="text-sm font-semibold">Color</span><input id="page-number-color" type="color" value="#333b52" class="mt-2 min-h-11 w-full rounded-control border border-line bg-surface p-1"/></label></div>}
         {tool.slug === 'sign-pdf' && <div>
           <fieldset><legend class="text-sm font-semibold">{t('opt.signature')}</legend><div class="mt-3 grid grid-cols-3 rounded-control bg-canvas p-1 text-sm"><button type="button" data-sign-mode="type" aria-pressed="true" class="min-h-10 rounded-md bg-surface px-2 font-medium text-ink shadow-small">Type</button><button type="button" data-sign-mode="draw" aria-pressed="false" class="min-h-10 rounded-md px-2 font-medium text-muted">Draw</button><button type="button" data-sign-mode="upload" aria-pressed="false" class="min-h-10 rounded-md px-2 font-medium text-muted">Upload</button></div></fieldset>
-          <div data-sign-panel="type" class="mt-4"><label for="signature-text" class="text-sm font-semibold">Your signature</label><input id="signature-text" name="signatureText" type="text" autocomplete="off" maxlength="80" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div>
+          <div data-sign-panel="type" class="mt-4"><div class="grid gap-3 sm:grid-cols-[.8fr_1.2fr]"><label class="text-sm font-semibold">Field type<select id="signature-kind" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="signature">Signature</option><option value="initials">Initials</option><option value="date">Date</option><option value="text">Text</option><option value="check">Checkmark</option></select></label><label for="signature-text" class="text-sm font-semibold">Text<input id="signature-text" name="signatureText" type="text" autocomplete="off" maxlength="80" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></label></div></div>
           <div data-sign-panel="draw" hidden class="mt-4"><p class="text-sm font-semibold">Draw your signature</p><canvas id="signature-draw-canvas" width="720" height="240" class="mt-2 h-32 w-full touch-none select-none rounded-control border border-line bg-white [-webkit-user-select:none]" aria-label="Draw your signature"></canvas></div>
           <div data-sign-panel="upload" hidden class="mt-4"><label for="signature-upload" class="text-sm font-semibold">Upload a signature image</label><input id="signature-upload" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" class="mt-2 block min-h-12 w-full rounded-control border border-line bg-surface p-2 text-sm"/><div id="signature-upload-controls" hidden class="mt-3"><div class="flex items-center justify-between gap-3"><label for="signature-cleanup" class="text-xs font-medium text-muted">Background cleanup</label><output id="signature-cleanup-output" for="signature-cleanup" class="text-xs font-medium text-muted">32%</output></div><input id="signature-cleanup" type="range" min="8" max="72" value="32" class="mt-2 w-full accent-blue"/><div class="mt-3 grid grid-cols-2 gap-2"><figure class="overflow-hidden rounded-lg border border-line bg-white"><img id="signature-upload-before" alt="Uploaded signature before background cleanup" class="h-24 w-full object-contain"/><figcaption class="border-t border-line px-2 py-1 text-[10px] text-muted">Before</figcaption></figure><figure class="overflow-hidden rounded-lg border border-line bg-white"><img id="signature-upload-after" alt="Signature after background cleanup" class="h-24 w-full object-contain"/><figcaption class="border-t border-line px-2 py-1 text-[10px] text-muted">After</figcaption></figure></div></div></div>
           <canvas id="signature-canvas" width="720" height="240" hidden aria-hidden="true"></canvas>
-          <div class="mt-3 flex items-center justify-end"><button id="signature-clear" type="button" class="min-h-10 shrink-0 rounded-control border border-line px-3 text-sm text-muted hover:bg-canvas hover:text-ink">{t('opt.clear')}</button></div>
-          <div id="signature-placement" hidden class="mt-5 rounded-xl border border-line bg-canvas p-3"><div class="flex items-center justify-between gap-3"><label for="signature-page" class="text-sm font-semibold">{t('opt.page')}</label><input id="signature-page" type="number" inputmode="numeric" min="1" value="1" class="min-h-10 w-24 rounded-control border border-line bg-surface px-3 text-sm"/></div><div id="signature-page-stage" class="relative mx-auto mt-3 w-fit max-w-full overflow-hidden rounded-lg bg-white shadow-small"><canvas id="signature-page-preview" class="block h-auto max-h-[22rem] w-auto max-w-full"></canvas><img id="signature-overlay" alt="Signature placement — drag to reposition" draggable="false" class="absolute left-[62%] top-[76%] w-[30%] touch-none select-none object-contain [-webkit-user-drag:none] [-webkit-user-select:none]"/></div><div class="mt-3 flex items-center justify-between gap-3"><label for="signature-size" class="text-xs font-medium text-muted">Signature size</label><input id="signature-size" type="range" min="15" max="55" value="30" class="w-2/3 accent-blue"/></div><p class="mt-2 text-xs leading-5 text-muted">Drag the signature to the exact position. The page preview and downloaded PDF use the same normalized coordinates.</p></div>
-          <p id="signature-help" class="mt-4 rounded-control bg-blue-soft px-4 py-3 text-xs leading-5 text-blue-strong">A drawn signature is an image stamp, not a cryptographic digital signature.</p>
+          <div class="mt-3 flex flex-wrap items-center justify-end gap-2"><button id="signature-save" type="button" class="min-h-10 shrink-0 rounded-control border border-line px-3 text-sm font-medium text-ink hover:border-blue">Save on this device</button><button id="signature-clear-saved" type="button" class="min-h-10 shrink-0 rounded-control border border-line px-3 text-sm text-muted hover:bg-canvas hover:text-ink">Clear saved signature</button><button id="signature-clear" type="button" class="min-h-10 shrink-0 rounded-control border border-line px-3 text-sm text-muted hover:bg-canvas hover:text-ink">{t('opt.clear')}</button></div>
+          <div id="signature-object-controls" hidden class="mt-5"><div class="flex items-center justify-between gap-3"><label for="signature-size" class="text-xs font-medium text-muted">Selected signature size</label><output id="signature-size-output" for="signature-size" class="font-mono text-xs text-muted">30%</output></div><input id="signature-size" type="range" min="15" max="55" value="30" class="mt-2 w-full accent-blue"/><div class="mt-3 grid grid-cols-2 gap-2"><button id="signature-duplicate" type="button" class="min-h-11 rounded-control bg-canvas px-3 text-sm font-medium text-ink hover:bg-blue-soft">Duplicate</button><button id="signature-delete" type="button" class="min-h-11 rounded-control bg-coral-soft px-3 text-sm font-medium text-coral hover:opacity-80">Delete</button></div></div>
+          <p id="signature-help" class="mt-4 rounded-control bg-blue-soft px-4 py-3 text-xs leading-5 text-blue-strong">This adds a visible signature mark. It does not add a verified digital certificate.</p>
         </div>}
-        {tool.slug === 'jpg-to-pdf' && <div><label for="image-page-size" class="text-sm font-semibold">{m.pageSize}</label><select id="image-page-size" name="imagePageSize" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="a4">A4</option><option value="image">{m.original}</option></select></div>}
-        {tool.slug === 'pdf-to-jpg' && <div><label for="jpg-resolution" class="text-sm font-semibold">{m.imageQuality}</label><select id="jpg-resolution" name="jpgResolution" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="1.5">108 DPI</option><option value="2" selected>144 DPI</option><option value="2.5">180 DPI</option></select></div>}
+        {tool.slug === 'jpg-to-pdf' && <div class="grid gap-5 sm:grid-cols-2"><div><label for="image-page-size" class="text-sm font-semibold">{m.pageSize}</label><select id="image-page-size" name="imagePageSize" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="image">Auto · image size</option><option value="a4" selected>A4</option><option value="letter">Letter</option></select></div><div><label for="image-orientation" class="text-sm font-semibold">Orientation</label><select id="image-orientation" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="auto">Auto</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div><div><label for="image-margin" class="text-sm font-semibold">Margins</label><select id="image-margin" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="0">None</option><option value="18">Small</option><option value="36" selected>Medium</option><option value="72">Large</option></select></div><div><label for="image-fit" class="text-sm font-semibold">Image fit</label><select id="image-fit" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="fit" selected>Fit</option><option value="fill">Fill · crop edges</option><option value="actual">Actual / Auto</option></select></div></div>}
+        {tool.slug === 'pdf-to-jpg' && <div class="grid gap-5 sm:grid-cols-2"><div><label for="jpg-resolution" class="text-sm font-semibold">Resolution</label><select id="jpg-resolution" name="jpgResolution" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="1.5">108 DPI</option><option value="2" selected>144 DPI</option><option value="2.5">180 DPI</option><option value="3">216 DPI</option></select></div><div><label for="pdf-image-format" class="text-sm font-semibold">{m.outputFormat}</label><select id="pdf-image-format" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="jpg" selected>JPG</option><option value="png">PNG</option><option value="webp">WebP</option></select></div><div class="sm:col-span-2"><label for="pdf-image-pages" class="text-sm font-semibold">Pages</label><input id="pdf-image-pages" type="text" inputmode="text" autocomplete="off" placeholder="All pages, or 1-3,7" class="mt-2 min-h-12 w-full rounded-control border border-line bg-surface px-3 text-sm text-ink"/></div><div id="pdf-image-quality-wrap" class="sm:col-span-2"><div class="flex items-center justify-between"><label for="pdf-image-quality" class="text-sm font-semibold">JPG / WebP quality</label><output id="pdf-image-quality-output" for="pdf-image-quality" class="font-mono text-sm">88%</output></div><input id="pdf-image-quality" type="range" min="40" max="100" value="88" class="mt-3 w-full accent-coral"/></div></div>}
+        {tool.slug === 'pdf-to-word' && <fieldset><legend class="text-sm font-semibold">Word result</legend><div class="mt-3 grid gap-3 sm:grid-cols-2">
+          <label class="flex cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-4 has-[:checked]:border-blue has-[:checked]:bg-blue-soft"><input type="radio" name="pdfWordMode" value="editable" checked class="mt-1 accent-blue"/><span><strong class="block text-sm">Editable Word document</strong><span class="mt-1 block text-xs leading-5 text-muted">Turns selectable PDF text into editable paragraphs, headings, lists, simple tables, and page breaks. {ocrMsg.automaticFallback} Complex columns and spacing may need cleanup.</span></span></label>
+          <label class="flex cursor-pointer items-start gap-3 rounded-control border border-line bg-surface p-4 has-[:checked]:border-violet has-[:checked]:bg-violet-soft"><input type="radio" name="pdfWordMode" value="visual" class="mt-1 accent-violet"/><span><strong class="block text-sm">Keep the page appearance</strong><span class="mt-1 block text-xs leading-5 text-muted">Keeps each page looking the same, but the text will not be editable in Word.</span></span></label>
+        </div></fieldset>}
         {tool.slug !== 'sign-pdf' && tool.slug !== 'pdf-to-word' && tool.slug !== 'word-to-pdf' && <div id="action-tool-note" class="mt-5 rounded-control bg-blue-soft px-4 py-3 text-sm leading-6 text-blue-strong">{copy.note}</div>}
-        <button id="action-process" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-50">{m.process}</button>
+        <button id="action-process" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-50">{primaryAction}</button>
         {(tool.slug === 'pdf-to-word' || tool.slug === 'word-to-pdf') && <button id="ocr-cancel" type="button" hidden class="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-control border border-line bg-canvas text-sm font-medium text-ink hover:bg-surface">{ocrMsg.cancel}</button>}
         <p data-workbench-status id="action-status" class="mt-3 min-h-5 text-center text-xs text-muted" aria-live="polite"></p>
       </form>
-    </div>
+    </AdaptiveWorkspace>
     <div data-workbench-result id="action-result" hidden class="border-t border-line bg-canvas p-5 sm:p-7"><div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p class="text-sm font-semibold text-green">{m.ready}</p><p id="action-result-stats" class="mt-2 text-sm text-muted"></p></div><a id="action-download" class="inline-flex min-h-12 items-center justify-center rounded-control bg-blue px-6 text-sm font-medium text-white hover:bg-blue-strong">{m.download}</a></div><p id="action-result-warning" hidden role="status" class="mt-4 rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p></div>
   </div>
 </section>
+
+<style is:global>
+  .action-workspace [data-workspace-body] { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(18rem, .85fr); }
+  .action-workspace[data-workspace-mode='canvas'] [data-workspace-body] { grid-template-columns: minmax(0, 1fr) clamp(18rem, 20vw, 22rem); }
+  .action-workspace [data-workspace-source], .action-workspace [data-workspace-inspector] { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .action-workspace [data-workspace-inspector] { background: var(--color-surface); }
+  .action-workspace.has-visual-pdf [data-workspace-source] { display: grid; grid-template-rows: auto minmax(0,1fr); overflow: hidden; padding: 0; }
+  .action-workspace.has-visual-pdf [data-workspace-filebar] { min-height: 3.7rem; padding: .55rem .85rem; border-bottom: 1px solid var(--color-line); background: var(--color-surface); }
+  .action-workspace.has-visual-pdf #action-file-list { display: none; }
+  .action-workspace.has-visual-pdf [data-pdf-workspace] { min-height: 0; }
+  .no-conversion-options [data-workspace-body] { grid-template-columns: minmax(0,1fr); grid-template-rows: minmax(0,1fr) auto; }
+  .no-conversion-options [data-workspace-inspector] { padding-top: 0; }
+  .no-conversion-options [data-workspace-mobile-nav] { display: none; }
+  .no-conversion-options #action-process { margin-top: 0; }
+  @media (min-width: 768px) {
+    .action-workspace.no-conversion-options[data-workspace-mode='preview'] [data-workspace-surface] { height: auto !important; max-height: 85vh; width: min(44rem,94vw) !important; }
+    .no-conversion-options [data-workspace-body] { grid-template-rows: auto auto; }
+  }
+  @media (max-width: 767px) {
+    .action-workspace [data-image-file] { display: grid; grid-template-columns: auto 3rem minmax(0,1fr); }
+    .action-workspace [data-image-file] [data-file-controls] { grid-column: 2 / -1; justify-content: flex-end; }
+    .action-workspace [data-file-controls] button { min-width: 2.75rem; min-height: 2.75rem; }
+    .action-workspace.no-conversion-options [data-workspace-body] { display: grid; grid-template-rows: minmax(0,1fr) auto; }
+    .action-workspace.no-conversion-options[data-workspace-mode='preview'][data-mobile-view] [data-workspace-source], .action-workspace.no-conversion-options[data-workspace-mode='preview'][data-mobile-view] [data-workspace-inspector] { display: block !important; height: auto; }
+    .action-workspace [data-workspace-body] { display: block; overflow: hidden; }
+    .action-workspace[data-workspace-mode='canvas'][data-mobile-view='canvas'] [data-workspace-inspector] { display: none; }
+    .action-workspace[data-workspace-mode='canvas'][data-mobile-view='pages'] [data-workspace-inspector] { display: none; }
+    .action-workspace[data-workspace-mode='canvas'][data-mobile-view='inspector'] [data-workspace-body] { display: grid; grid-template-columns: minmax(0,1fr); grid-template-rows: minmax(11.5rem, 42%) minmax(0, 1fr); }
+    .action-workspace[data-workspace-mode='canvas'][data-mobile-view='inspector'] [data-workspace-source], .action-workspace[data-workspace-mode='canvas'][data-mobile-view='inspector'] [data-workspace-inspector] { height: auto; min-height: 0; }
+    .action-workspace[data-workspace-mode='canvas'][data-mobile-view='inspector'] [data-workspace-filebar] { display: none; }
+    .action-workspace[data-workspace-mode='canvas'][data-mobile-view='inspector'] [data-workspace-source] { grid-template-rows: minmax(0,1fr); }
+    .action-workspace [data-workspace-source], .action-workspace [data-workspace-inspector] { width: 100%; height: 100%; border: 0; padding: .9rem; }
+    .action-workspace [data-workspace-inspector] { display: flex; flex-direction: column; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    .action-workspace #action-process { position: sticky; bottom: 0; z-index: 4; margin-top: auto; box-shadow: 0 -10px 24px var(--color-surface); }
+  }
+</style>
 
 <script type="application/json" id="action-workbench-messages" is:inline set:html={JSON.stringify(m).replace(/</g, '\\u003c')}></script>
 <script type="application/json" id="watermark-pdf-messages" is:inline set:html={JSON.stringify(watermarkMsg).replace(/</g, '\\u003c')}></script>
 <script type="application/json" id="conversion-fidelity-messages" is:inline set:html={JSON.stringify(fidelityMsg).replace(/</g, '\\u003c')}></script>
 
 <script>
-  import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+  import { loadPdfJs as loadPdfJsRuntime } from '../lib/pdfjsRuntime';
   import { safeOutputStem, setDisplayedFilename } from '../utils/filename';
   import type { WorkbenchMessages } from '../i18n/workbench';
   import type { LocalePath } from '../i18n/config';
   import { getOcrMessages } from '../i18n/ocr';
   import type { ConversionFidelityMessages, WatermarkPdfMessages } from '../i18n/documentTools';
+  import { VisualPdfWorkspace } from '../lib/pdf/visual-workspace';
 
   const actionMessages = JSON.parse(document.querySelector('#action-workbench-messages')?.textContent || '{}') as WorkbenchMessages;
   const watermarkMessages = JSON.parse(document.querySelector('#watermark-pdf-messages')?.textContent || '{}') as WatermarkPdfMessages;
@@ -131,9 +190,15 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
   const currentLocale = (actionRoot.dataset.locale || 'en') as LocalePath;
   const ocrMessages = getOcrMessages(currentLocale);
 
+  const splitMode = actionRoot.querySelector<HTMLSelectElement>('#split-mode');
+  const syncSplitOptions = () => actionRoot.querySelectorAll<HTMLElement>('[data-split-option]').forEach(group => { group.hidden = group.dataset.splitOption !== splitMode?.value; });
+  splitMode?.addEventListener('change', syncSplitOptions);
+  syncSplitOptions();
   const actionEl = <T extends HTMLElement>(selector: string) => { const node = actionRoot.querySelector<T>(selector); if (!node) throw new Error(`Missing element: ${selector}`); return node; };
   const actionInput = actionEl<HTMLInputElement>('#action-input'); const actionEmpty = actionEl('#action-empty'); const actionWork = actionEl('#action-work'); const actionResult = actionEl('#action-result'); const actionError = actionEl('#action-error'); const actionStatus = actionEl('#action-status'); const actionForm = actionEl<HTMLFormElement>('#action-form'); const actionButton = actionEl<HTMLButtonElement>('#action-process');
   const ocrCancelButton = actionRoot.querySelector<HTMLButtonElement>('#ocr-cancel');
+  const pdfWorkspaceRoot = actionRoot.querySelector<HTMLElement>('[data-pdf-workspace]');
+  const pdfWorkspace = pdfWorkspaceRoot ? new VisualPdfWorkspace(pdfWorkspaceRoot) : null;
 
   let activeAbortController: AbortController | null = null;
 
@@ -170,37 +235,44 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
   let signatureUploadUrl: string | null = null;
   let signaturePdfPreview: any = null;
   let signaturePreviewTask: { cancel: () => void; promise: Promise<unknown> } | null = null;
+  let imageRotations = new WeakMap<File, number>();
+  let actionFilePreviewUrls: string[] = [];
   const readableSize = (bytes: number) => bytes < 1000 ? `${bytes} B` : bytes < 1_000_000 ? `${(bytes / 1000).toFixed(0)} KB` : `${(bytes / 1_000_000).toFixed(2)} MB`;
   const baseName = (name: string) => safeOutputStem(name);
   const isPdf = async (file: File) => new TextDecoder('ascii').decode(await file.slice(0, 5).arrayBuffer()) === '%PDF-';
   const imageKind = async (file: File) => { const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer()); if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpg'; if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'png'; return null; };
   const isDocx = async (file: Blob) => { if (new TextDecoder('ascii').decode(await file.slice(0, 2).arrayBuffer()) !== 'PK') return false; const { unzipSync } = await import('fflate'); try { const archive = unzipSync(new Uint8Array(await file.arrayBuffer()), { filter: fileInfo => fileInfo.name === 'word/document.xml' && fileInfo.originalSize <= 20_000_000 }); return Boolean(archive['word/document.xml']); } catch { return false; } };
   const clearActionUrl = () => { if (actionUrl) URL.revokeObjectURL(actionUrl); actionUrl = null; actionResult.hidden = true; };
-  const resetAction = () => { clearActionUrl(); if (signatureUploadUrl) URL.revokeObjectURL(signatureUploadUrl); signatureUploadUrl = null; if (watermarkUploadUrl) URL.revokeObjectURL(watermarkUploadUrl); watermarkUploadUrl = null; watermarkSourceCanvas = null; watermarkProcessedCanvas = null; signaturePreviewTask?.cancel(); signaturePreviewTask = null; void signaturePdfPreview?.cleanup(); signaturePdfPreview = null; signatureHasInk = false; actionFiles = []; actionInput.value = ''; actionInput.removeAttribute('aria-invalid'); actionEmpty.hidden = false; actionWork.hidden = true; actionError.hidden = true; actionStatus.textContent = ''; if (ocrCancelButton) ocrCancelButton.hidden = true; };
+  const resetAction = () => { clearActionUrl(); actionWork.dispatchEvent(new CustomEvent('workspace-clean')); void pdfWorkspace?.clear(); actionFilePreviewUrls.forEach(URL.revokeObjectURL); actionFilePreviewUrls = []; imageRotations = new WeakMap(); if (signatureUploadUrl) URL.revokeObjectURL(signatureUploadUrl); signatureUploadUrl = null; if (watermarkUploadUrl) URL.revokeObjectURL(watermarkUploadUrl); watermarkUploadUrl = null; watermarkSourceCanvas = null; watermarkProcessedCanvas = null; signaturePreviewTask?.cancel(); signaturePreviewTask = null; void signaturePdfPreview?.cleanup(); signaturePdfPreview = null; signatureHasInk = false; actionFiles = []; actionInput.value = ''; actionInput.removeAttribute('aria-invalid'); actionEmpty.hidden = false; actionWork.hidden = true; actionError.hidden = true; actionStatus.textContent = ''; if (ocrCancelButton) ocrCancelButton.hidden = true; };
   const failSelection = (message: string) => { resetAction(); actionError.textContent = message; actionError.hidden = false; actionInput.setAttribute('aria-invalid', 'true'); actionError.focus(); };
 
   const renderActionFiles = () => {
     const list = actionEl<HTMLOListElement>('#action-file-list');
     list.textContent = '';
+    actionFilePreviewUrls.forEach(URL.revokeObjectURL); actionFilePreviewUrls = [];
     actionFiles.forEach((file, index) => {
       const item = document.createElement('li');
       item.className = 'flex min-w-0 items-center gap-2 px-3 py-3';
       item.dataset.fileIndex = String(index);
+      if (actionTool === 'jpg-to-pdf') item.dataset.imageFile = '';
       const count = document.createElement('span'); count.className = 'shrink-0 font-mono text-xs text-muted'; count.textContent = String(index + 1).padStart(2, '0');
+      if (actionTool === 'jpg-to-pdf') { const url = URL.createObjectURL(file); actionFilePreviewUrls.push(url); const preview = document.createElement('img'); preview.src = url; preview.alt = ''; preview.className = 'h-12 w-12 shrink-0 rounded-lg border border-line bg-canvas object-cover'; preview.style.transform = `rotate(${imageRotations.get(file) ?? 0}deg)`; item.append(count, preview); }
       const text = document.createElement('span'); text.className = 'min-w-0 flex-1';
-      const name = document.createElement('span'); name.className = 'block truncate text-sm font-medium'; setDisplayedFilename(name, file.name);
+      const name = document.createElement('span'); name.className = 'block truncate text-sm font-medium'; name.dataset.workspaceSourceName = ''; setDisplayedFilename(name, file.name);
       const size = document.createElement('span'); size.className = 'mt-0.5 block text-xs text-muted'; size.textContent = readableSize(file.size);
       text.append(name, size);
       const controls = document.createElement('span'); controls.className = 'flex shrink-0 items-center gap-1';
+      controls.dataset.fileControls = '';
       if (actionRoot.dataset.multiple === 'true' && actionRoot.dataset.tool !== 'metadata-remover') {
         for (const [label, delta, symbol] of [['Move up', -1, '↑'], ['Move down', 1, '↓']] as const) {
           const button = document.createElement('button'); button.type = 'button'; button.className = 'inline-flex h-10 w-10 items-center justify-center rounded-lg text-sm text-muted hover:bg-canvas hover:text-ink disabled:opacity-30'; button.textContent = symbol; button.setAttribute('aria-label', `${label}: ${file.name}`); button.disabled = delta < 0 ? index === 0 : index === actionFiles.length - 1;
-          button.addEventListener('click', () => { const target = index + delta; [actionFiles[index], actionFiles[target]] = [actionFiles[target], actionFiles[index]]; renderActionFiles(); actionStatus.textContent = `${file.name} is now ${target + 1} of ${actionFiles.length}.`; });
+          button.addEventListener('click', () => { const target = index + delta; [actionFiles[index], actionFiles[target]] = [actionFiles[target], actionFiles[index]]; renderActionFiles(); void pdfWorkspace?.load(actionFiles, loadPdfJs); actionStatus.textContent = `${file.name} is now ${target + 1} of ${actionFiles.length}.`; });
           controls.append(button);
         }
       }
-      const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'inline-flex h-10 w-10 items-center justify-center rounded-lg text-lg text-muted hover:bg-rose-50 hover:text-rose-600'; remove.textContent = '×'; remove.setAttribute('aria-label', `${actionMessages.remove || 'Remove'}: ${file.name}`); remove.addEventListener('click', () => { actionFiles.splice(index, 1); clearActionUrl(); if (!actionFiles.length) { resetAction(); return; } renderActionFiles(); });
-      controls.append(remove); item.append(count, text, controls); list.append(item);
+      if (actionTool === 'jpg-to-pdf') for (const [label, delta, symbol] of [['Rotate left', -90, '↶'], ['Rotate right', 90, '↷']] as const) { const button = document.createElement('button'); button.type = 'button'; button.className = 'inline-flex h-10 w-10 items-center justify-center rounded-lg text-sm text-muted hover:bg-canvas hover:text-ink'; button.textContent = symbol; button.setAttribute('aria-label', `${label}: ${file.name}`); button.addEventListener('click', () => { imageRotations.set(file, ((imageRotations.get(file) ?? 0) + delta + 360) % 360); renderActionFiles(); actionStatus.textContent = `${file.name} rotated ${imageRotations.get(file)}°.`; }); controls.append(button); }
+      const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'inline-flex h-10 w-10 items-center justify-center rounded-lg text-lg text-muted hover:bg-rose-50 hover:text-rose-600'; remove.textContent = '×'; remove.setAttribute('aria-label', `${actionMessages.remove || 'Remove'}: ${file.name}`); remove.addEventListener('click', () => { actionFiles.splice(index, 1); clearActionUrl(); if (!actionFiles.length) { resetAction(); return; } renderActionFiles(); void pdfWorkspace?.load(actionFiles, loadPdfJs); });
+      controls.append(remove); if (actionTool === 'jpg-to-pdf') item.append(text, controls); else item.append(count, text, controls); list.append(item);
     });
     const total = actionFiles.reduce((sum, file) => sum + file.size, 0);
     actionEl('#action-total').textContent = localizedAction ? `${actionFiles.length} · ${readableSize(total)}` : `${actionFiles.length} ${actionFiles.length === 1 ? 'file' : 'files'} · ${readableSize(total)}`;
@@ -221,7 +293,7 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
       if (['merge-pdf','split-pdf','rotate-pdf','remove-pages','watermark-pdf','page-numbers','sign-pdf','pdf-to-jpg','pdf-to-word'].includes(actionTool)) { for (const file of files) if (!(await isPdf(file))) throw new Error(`${file.name} is not a valid PDF. Choose files with a real PDF signature.`); }
       if (actionTool === 'jpg-to-pdf') { for (const file of files) if (!(await imageKind(file))) throw new Error(`${file.name} is not a valid JPG or PNG image.`); }
       if (actionTool === 'word-to-pdf' && !(await isDocx(files[0]))) throw new Error('Choose a valid DOCX file created by Word, Google Docs, or LibreOffice.');
-      clearActionUrl(); actionError.hidden = true; actionInput.removeAttribute('aria-invalid'); actionFiles = combined; actionInput.value = ''; renderActionFiles(); if (actionTool === 'sign-pdf') void setupSignPdfPreview();
+      clearActionUrl(); actionError.hidden = true; actionInput.removeAttribute('aria-invalid'); actionFiles = combined; actionInput.value = ''; renderActionFiles(); if (pdfWorkspace) await pdfWorkspace.load(actionFiles, loadPdfJs); if (actionTool === 'sign-pdf') await setupSignPdfPreview(); actionWork.dispatchEvent(new CustomEvent('workspace-clean'));
     } catch (error) { const detail = error instanceof Error ? error.message : ''; const message = localizedAction ? (/MB|limit|more than|smaller/i.test(detail) ? actionMessages.tooLarge : actionMessages.invalidFile) : (detail || actionMessages.invalidFile); if (append && actionFiles.length) { actionStatus.textContent = message; actionInput.value = ''; } else failSelection(message); }
   };
 
@@ -247,11 +319,12 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
     }
     actionResult.hidden = false;
     actionStatus.textContent = actionMessages.finished;
+    actionWork.dispatchEvent(new CustomEvent('workspace-complete'));
     actionResult.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
   };
 
   const loadPdfLib = async (file: File) => { const { PDFDocument } = await import('pdf-lib'); return { PDFDocument, source: await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: false }) }; };
-  const loadPdfJs = async (file: File) => { const pdfjs = await import('pdfjs-dist'); pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl; return pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), cMapUrl: '/pdfjs/cmaps/', cMapPacked: true, wasmUrl: '/pdfjs/wasm/' }).promise; };
+  const loadPdfJs = async (file: File) => { const pdfjs = await loadPdfJsRuntime(); return pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), cMapUrl: '/pdfjs/cmaps/', cMapPacked: true, wasmUrl: '/pdfjs/wasm/' }).promise; };
 
   const renderSignPdfPage = async () => {
     if (!signaturePdfPreview) return;
@@ -261,9 +334,10 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
     signaturePreviewTask?.cancel();
     const page = await signaturePdfPreview.getPage(pageNumber);
     const base = page.getViewport({ scale: 1 });
-    const maxWidth = Math.max(220, Math.min(520, window.innerWidth - 112));
-    const maxHeight = 352;
-    const cssScale = Math.min(maxWidth / base.width, maxHeight / base.height, 1);
+    const mainStage = actionRoot.querySelector<HTMLElement>('[data-pdf-main-stage]');
+    const maxWidth = Math.max(220, (mainStage?.clientWidth || Math.min(720, window.innerWidth)) - 48);
+    const maxHeight = Math.max(280, (mainStage?.clientHeight || Math.min(760, window.innerHeight)) - 48);
+    const cssScale = Math.min(maxWidth / base.width, maxHeight / base.height, 1.6);
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
     const viewport = page.getViewport({ scale: cssScale * ratio });
     const canvas = actionEl<HTMLCanvasElement>('#signature-page-preview');
@@ -275,13 +349,14 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
     signaturePreviewTask = renderTask;
     try { await renderTask.promise; } catch (error: any) { if (error?.name !== 'RenderingCancelledException') throw error; }
     signaturePreviewTask = null; page.cleanup();
+    actionRoot.querySelectorAll<HTMLElement>('[data-signature-instance]').forEach((item) => { item.hidden = item.dataset.deleted === 'true' || item.dataset.page !== String(pageNumber) || !signatureHasInk; });
   };
 
   const setupSignPdfPreview = async () => {
     if (actionTool !== 'sign-pdf' || !actionFiles[0]) return;
     signaturePreviewTask?.cancel(); await signaturePdfPreview?.cleanup();
     signaturePdfPreview = await loadPdfJs(actionFiles[0]);
-    const pageInput = actionEl<HTMLInputElement>('#signature-page'); pageInput.max = String(signaturePdfPreview.numPages); pageInput.value = String(signaturePdfPreview.numPages);
+    const pageInput = actionEl<HTMLInputElement>('#signature-page'); pageInput.max = String(signaturePdfPreview.numPages); pageInput.value = '1';
     actionEl('#signature-placement').hidden = false;
     await renderSignPdfPage();
   };
@@ -314,25 +389,56 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
     return [...pages].sort((a, b) => a - b);
   };
 
-  const mergePdfs = async () => { const { PDFDocument } = await import('pdf-lib'); const output = await PDFDocument.create(); let pages = 0; for (let i = 0; i < actionFiles.length; i += 1) { actionStatus.textContent = `Adding file ${i + 1} of ${actionFiles.length}…`; const source = await PDFDocument.load(await actionFiles[i].arrayBuffer(), { ignoreEncryption: false }); const copied = await output.copyPages(source, source.getPageIndices()); copied.forEach(page => output.addPage(page)); pages += copied.length; } const bytes = await output.save({ useObjectStreams: true }); await downloadPdfBytes(bytes, pages, 'merged-sorafiles.pdf', `${actionFiles.length} files · ${pages} pages · ${readableSize(bytes.length)}`); };
+  const mergePdfs = async () => {
+    const { PDFDocument, degrees } = await import('pdf-lib');
+    const output = await PDFDocument.create();
+    const sources = await Promise.all(actionFiles.map(async (file) => PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: false, updateMetadata: false })));
+    const workspaceSnapshot = pdfWorkspace?.getPages() ?? [];
+    const workspacePages = workspaceSnapshot.length ? workspaceSnapshot : sources.flatMap((source, fileIndex) => source.getPageIndices().map((pageIndex) => ({ fileIndex, pageIndex, rotation: 0 })));
+    if (!workspacePages.length) throw new Error('Keep at least one page in the merge.');
+    for (let index = 0; index < workspacePages.length; index += 1) {
+      actionStatus.textContent = `Adding page ${index + 1} of ${workspacePages.length}…`;
+      const model = workspacePages[index];
+      const [page] = await output.copyPages(sources[model.fileIndex], [model.pageIndex]);
+      if (model.rotation) page.setRotation(degrees((page.getRotation().angle + model.rotation) % 360));
+      output.addPage(page);
+    }
+    const bytes = await output.save({ useObjectStreams: true });
+    await downloadPdfBytes(bytes, workspacePages.length, 'merged-sorafiles.pdf', `${actionFiles.length} files · ${workspacePages.length} pages · ${readableSize(bytes.length)}`);
+  };
   const splitPdf = async () => {
     const file = actionFiles[0]; const { PDFDocument } = await import('pdf-lib'); const { source } = await loadPdfLib(file); const count = source.getPageCount(); if (count > 100) throw new Error('Split currently supports up to 100 pages.');
-    let entries: Record<string, Uint8Array> = {}; let extractedBytes = 0;
-    for (let i = 0; i < count; i += 1) { actionStatus.textContent = `Preparing page ${i + 1} of ${count}…`; const output = await PDFDocument.create(); const [page] = await output.copyPages(source, [i]); output.addPage(page); const bytes = await output.save({ useObjectStreams: true }); await validatePdfBytes(bytes, 1); entries[`page-${String(i + 1).padStart(3, '0')}.pdf`] = bytes; extractedBytes += bytes.length; }
-    const smartMode = actionRoot.querySelector<HTMLInputElement>('input[name="splitMode"]:checked')?.value !== 'preserve'; const expanded = extractedBytes > Math.max(file.size * 1.75, file.size + 750_000); let compacted = false;
-    if (smartMode && expanded) {
-      compacted = true; entries = {}; const rendered = await loadPdfJs(file); const totalBudget = Math.max(file.size * 1.35, 2_000_000); const pageBudget = Math.max(120_000, totalBudget / count);
-      try { for (let pageNumber = 1; pageNumber <= count; pageNumber += 1) { actionStatus.textContent = `Optimizing page ${pageNumber} of ${count}…`; const page = await rendered.getPage(pageNumber); const base = page.getViewport({ scale: 1 }); let scale = 1.5; if (base.width * scale * base.height * scale > 10_000_000) scale *= Math.sqrt(10_000_000 / (base.width * scale * base.height * scale)); let viewport = page.getViewport({ scale }); let canvas = document.createElement('canvas'); canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height); let context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas rendering is unavailable.'); context.fillStyle = '#fff'; context.fillRect(0,0,canvas.width,canvas.height); await page.render({ canvas, canvasContext: context, viewport, background: '#fff' }).promise; let jpg: Blob | null = null; for (const quality of [.86,.74,.62,.5]) { jpg = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve,'image/jpeg',quality)); if (jpg && jpg.size <= pageBudget) break; } if (!jpg) throw new Error('Page encoding failed.'); if (jpg.size > pageBudget && scale > 1.05) { const smaller = document.createElement('canvas'); const shrink = Math.max(.55, Math.sqrt(pageBudget / jpg.size)); smaller.width = Math.max(1,Math.round(canvas.width*shrink)); smaller.height = Math.max(1,Math.round(canvas.height*shrink)); smaller.getContext('2d')?.drawImage(canvas,0,0,smaller.width,smaller.height); canvas.width=1;canvas.height=1;canvas=smaller;context=canvas.getContext('2d',{alpha:false});jpg=await new Promise<Blob | null>(resolve=>canvas.toBlob(resolve,'image/jpeg',.55)); if(!jpg)throw new Error('Page encoding failed.'); }
-        const output = await PDFDocument.create(); const image = await output.embedJpg(await jpg.arrayBuffer()); const outputPage = output.addPage([base.width,base.height]); outputPage.drawImage(image,{x:0,y:0,width:base.width,height:base.height}); const bytes = await output.save({useObjectStreams:true}); await validatePdfBytes(bytes,1); entries[`page-${String(pageNumber).padStart(3,'0')}.pdf`]=bytes; page.cleanup(); canvas.width=1;canvas.height=1; }
-      } finally { await rendered.cleanup().catch(()=>{}); }
-    }
-    const { zipSync } = await import('fflate'); const zipped = zipSync(entries,{level:6}); const warning = compacted ? (actionRoot.dataset.splitCompactWarning || actionMessages.review) : ''; downloadBlob(new Blob([zipped as BlobPart],{type:'application/zip'}),`${baseName(file.name)}-pages.zip`,`${count} ${count===1?'PDF':'PDFs'} · ${readableSize(zipped.length)}`,warning,0,[],compacted);
+    const workspaceSnapshot = pdfWorkspace?.getPages() ?? [];
+    const selectedPages = workspaceSnapshot.length ? workspaceSnapshot.filter((page) => page.selected) : source.getPageIndices().map((pageIndex) => ({ pageIndex, rotation: 0 }));
+    if (!selectedPages.length) throw new Error('Select at least one page to extract.');
+    const mode = actionEl<HTMLSelectElement>('#split-mode').value;
+    const rotationByPage = new Map(workspaceSnapshot.map((page) => [page.pageIndex, page.rotation]));
+    let groups: number[][];
+    if (mode === 'groups') {
+      const specs = actionEl<HTMLInputElement>('#split-groups').value.split(';').map((value) => value.trim()).filter(Boolean);
+      if (!specs.length) throw new Error('Enter at least one custom group, such as 1-3; 4-6,9.');
+      groups = specs.map((spec) => parsePageSpec(spec, count));
+    } else if (mode === 'every') {
+      const size = Number(actionEl<HTMLInputElement>('#split-every').value);
+      if (!Number.isInteger(size) || size < 1 || size > count) throw new Error(`Choose 1 to ${count} pages per file.`);
+      groups = []; for (let start = 0; start < count; start += size) groups.push(Array.from({ length: Math.min(size, count - start) }, (_, offset) => start + offset));
+    } else if (mode === 'odd-even') {
+      groups = [source.getPageIndices().filter((index) => index % 2 === 0), source.getPageIndices().filter((index) => index % 2 === 1)].filter((group) => group.length);
+    } else if (mode === 'selected') groups = [[...new Set(selectedPages.map((page) => page.pageIndex))]];
+    else groups = selectedPages.map((page) => [page.pageIndex]);
+    const entries: Record<string, Uint8Array> = {};
+    for (let i = 0; i < groups.length; i += 1) { const indices = groups[i]; actionStatus.textContent = `Preparing file ${i + 1} of ${groups.length}…`; const output = await PDFDocument.create(); const pages = await output.copyPages(source, indices); const { degrees } = await import('pdf-lib'); pages.forEach((page, pageOffset) => { const rotation = rotationByPage.get(indices[pageOffset]) ?? 0; if (rotation) page.setRotation(degrees((page.getRotation().angle + rotation) % 360)); output.addPage(page); }); const bytes = await output.save({ useObjectStreams: true }); await validatePdfBytes(bytes, indices.length); const label = indices.length === 1 ? `page-${String(indices[0] + 1).padStart(3, '0')}` : `group-${String(i + 1).padStart(2, '0')}-pages-${indices[0] + 1}-${indices.at(-1)! + 1}`; entries[`${baseName(file.name)}-${label}.pdf`] = bytes; }
+    const names = Object.keys(entries);
+    if (names.length === 1) { const bytes = entries[names[0]]; downloadBlob(new Blob([bytes as BlobPart], { type: 'application/pdf' }), names[0], `${groups[0].length} ${groups[0].length === 1 ? 'page' : 'pages'} · ${readableSize(bytes.length)}`); return; }
+    const { zipSync } = await import('fflate'); const zipped = zipSync(entries,{level:6}); downloadBlob(new Blob([zipped as BlobPart],{type:'application/zip'}),`${baseName(file.name)}-split.zip`,`${groups.length} PDFs · ${groups.reduce((sum, group) => sum + group.length, 0)} pages · ${readableSize(zipped.length)}`);
   };
-  const rotatePdf = async () => { const { degrees } = await import('pdf-lib'); const { source } = await loadPdfLib(actionFiles[0]); const angle = Number(actionEl<HTMLSelectElement>('#rotate-angle').value); source.getPages().forEach(page => page.setRotation(degrees((page.getRotation().angle + angle) % 360))); const bytes = await source.save({ useObjectStreams: true }); const count = source.getPageCount(); await downloadPdfBytes(bytes, count, `${baseName(actionFiles[0].name)}-rotated.pdf`, `${count} ${count === 1 ? 'page' : 'pages'} · ${angle}° · ${readableSize(bytes.length)}`); };
+  const rotatePdf = async () => { const { degrees } = await import('pdf-lib'); const { source } = await loadPdfLib(actionFiles[0]); const workspacePages = pdfWorkspace?.getPages() ?? []; let changed = 0; workspacePages.forEach((model) => { if (!model.rotation) return; const page = source.getPage(model.pageIndex); page.setRotation(degrees((page.getRotation().angle + model.rotation) % 360)); changed += 1; }); if (!changed) throw new Error('Select pages and rotate them left or right in the page workspace.'); const bytes = await source.save({ useObjectStreams: true }); const count = source.getPageCount(); await downloadPdfBytes(bytes, count, `${baseName(actionFiles[0].name)}-rotated.pdf`, `${changed} ${changed === 1 ? 'page' : 'pages'} rotated · ${readableSize(bytes.length)}`); };
   const removePagesPdf = async () => {
     const { source } = await loadPdfLib(actionFiles[0]);
     const pageCount = source.getPageCount();
-    const indices = parsePageSpec(actionEl<HTMLInputElement>('#remove-page-spec').value, pageCount);
+    const typedSpec = actionEl<HTMLInputElement>('#remove-page-spec').value.trim();
+    const indices = typedSpec ? parsePageSpec(typedSpec, pageCount) : [...new Set((pdfWorkspace?.getSelectedPages() ?? []).map((page) => page.pageIndex))].sort((a, b) => a - b);
+    if (!indices.length) throw new Error('Select page thumbnails or enter a page range to remove.');
     if (indices.length >= pageCount) throw new Error('At least one page must remain in the PDF.');
     [...indices].reverse().forEach(index => source.removePage(index));
     const bytes = await source.save({ useObjectStreams: true });
@@ -342,17 +448,36 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
 
   const watermarkPdf = async () => {
     const { source } = await loadPdfLib(actionFiles[0]);
+    const workspaceSnapshot = pdfWorkspace?.getPages() ?? [];
+    const selectedPages = new Set((workspaceSnapshot.length ? workspaceSnapshot.filter((page) => page.selected) : source.getPageIndices().map((pageIndex) => ({ pageIndex }))).map((page) => page.pageIndex));
+    if (!selectedPages.size) throw new Error('Select at least one page for the watermark.');
     const opacity = Number(actionEl<HTMLInputElement>('#watermark-opacity').value) / 100;
-    if (!Number.isFinite(opacity) || opacity < 0.05 || opacity > 0.5) throw new Error('Choose a watermark opacity from 5% to 50%.');
+    if (!Number.isFinite(opacity) || opacity < 0.05 || opacity > 0.8) throw new Error('Choose a watermark opacity from 5% to 80%.');
+    const position = actionEl<HTMLSelectElement>('#watermark-position').value;
+    const rotation = Math.max(-180, Math.min(180, Number(actionEl<HTMLInputElement>('#watermark-rotation').value) || 0));
+    const tiled = actionEl<HTMLInputElement>('#watermark-tiled').checked;
+    const place = (width: number, height: number, itemWidth: number, itemHeight: number, margin = 32) => ({
+      x: position.endsWith('left') ? margin : position.endsWith('right') ? width - itemWidth - margin : (width - itemWidth) / 2,
+      y: position.startsWith('top') ? height - itemHeight - margin : position.startsWith('bottom') ? margin : (height - itemHeight) / 2,
+    });
     if (watermarkMode === 'image') {
       if (!watermarkProcessedCanvas) throw new Error(watermarkMessages.missingImage);
+      const { degrees } = await import('pdf-lib');
       const blob = await new Promise<Blob>((resolve, reject) => watermarkProcessedCanvas?.toBlob(value => value ? resolve(value) : reject(new Error(watermarkMessages.decodeFailed)), 'image/png'));
       const image = await source.embedPng(await blob.arrayBuffer());
-      for (const page of source.getPages()) {
+      for (const [index, page] of source.getPages().entries()) {
+        if (!selectedPages.has(index)) continue;
         const { width, height } = page.getSize();
-        const scale = Math.min((width * .5) / image.width, (height * .4) / image.height);
+        const requestedScale = Number(actionEl<HTMLInputElement>('#watermark-scale').value) / 100;
+        const scale = Math.min((width * requestedScale) / image.width, (height * requestedScale) / image.height);
         const drawWidth = image.width * scale; const drawHeight = image.height * scale;
-        page.drawImage(image, { x: (width - drawWidth) / 2, y: (height - drawHeight) / 2, width: drawWidth, height: drawHeight, opacity });
+        if (tiled) {
+          const stepX = Math.max(48, drawWidth * 1.45), stepY = Math.max(48, drawHeight * 1.65);
+          for (let y = -drawHeight; y < height + drawHeight; y += stepY) for (let x = -drawWidth; x < width + drawWidth; x += stepX) page.drawImage(image, { x, y, width: drawWidth, height: drawHeight, opacity, rotate: degrees(rotation) });
+        } else {
+          const point = place(width, height, drawWidth, drawHeight);
+          page.drawImage(image, { ...point, width: drawWidth, height: drawHeight, opacity, rotate: degrees(rotation) });
+        }
       }
     } else {
       const text = actionEl<HTMLInputElement>('#watermark-text').value.trim().replace(/\s+/g, ' ');
@@ -360,36 +485,58 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
       if (text.length > 60) throw new Error('Keep the watermark to 60 characters or fewer.');
       const { StandardFonts, degrees, rgb } = await import('pdf-lib');
       const font = await source.embedFont(StandardFonts.HelveticaBold);
-      for (const page of source.getPages()) {
+      const fontSize = Math.max(8, Math.min(160, Number(actionEl<HTMLInputElement>('#watermark-font-size').value) || 42));
+      const hex = actionEl<HTMLInputElement>('#watermark-color').value;
+      const color = /^#[0-9a-f]{6}$/i.test(hex) ? rgb(parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255) : rgb(0.25, 0.29, 0.42);
+      for (const [index, page] of source.getPages().entries()) {
+        if (!selectedPages.has(index)) continue;
         const { width, height } = page.getSize();
-        const fontSize = Math.max(20, Math.min(64, Math.min(width, height) / 9));
         const textWidth = font.widthOfTextAtSize(text, fontSize);
-        page.drawText(text, { x: (width - textWidth * 0.72) / 2, y: height / 2, size: fontSize, font, color: rgb(0.25, 0.29, 0.42), opacity, rotate: degrees(35) });
+        if (tiled) {
+          const stepX = Math.max(90, textWidth * 1.35), stepY = Math.max(70, fontSize * 3.2);
+          for (let y = -fontSize; y < height + fontSize; y += stepY) for (let x = -textWidth; x < width + textWidth; x += stepX) page.drawText(text, { x, y, size: fontSize, font, color, opacity, rotate: degrees(rotation) });
+        } else {
+          const point = place(width, height, textWidth, fontSize);
+          page.drawText(text, { ...point, size: fontSize, font, color, opacity, rotate: degrees(rotation) });
+        }
       }
     }
     const bytes = await source.save({ useObjectStreams: true });
-    await downloadPdfBytes(bytes, source.getPageCount(), `${baseName(actionFiles[0].name)}-watermarked.pdf`, `${source.getPageCount()} pages · ${readableSize(bytes.length)}`);
+    await downloadPdfBytes(bytes, source.getPageCount(), `${baseName(actionFiles[0].name)}-watermarked.pdf`, `${selectedPages.size} ${selectedPages.size === 1 ? 'page' : 'pages'} watermarked · ${readableSize(bytes.length)}`);
   };
 
   const addPageNumbersPdf = async () => {
     const { source } = await loadPdfLib(actionFiles[0]);
     const position = actionEl<HTMLSelectElement>('#page-number-position').value;
     const start = Number(actionEl<HTMLInputElement>('#page-number-start').value);
+    const skip = Math.max(0, Number(actionEl<HTMLInputElement>('#page-number-skip').value) || 0);
+    const format = actionEl<HTMLSelectElement>('#page-number-format').value;
+    const size = Math.max(6, Math.min(72, Number(actionEl<HTMLInputElement>('#page-number-size').value) || 10));
+    const margin = Math.max(4, Math.min(144, Number(actionEl<HTMLInputElement>('#page-number-margin').value) || 24));
     if (!Number.isSafeInteger(start) || start < 1 || start > 999_999) throw new Error('Choose a starting number from 1 to 999999.');
     const { StandardFonts, rgb } = await import('pdf-lib');
     const font = await source.embedFont(StandardFonts.Helvetica);
     const pages = source.getPages();
+    const workspaceSnapshot = pdfWorkspace?.getPages() ?? [];
+    const selectedPages = new Set((workspaceSnapshot.length ? workspaceSnapshot.filter((page) => page.selected) : pages.map((_, pageIndex) => ({ pageIndex }))).map((page) => page.pageIndex).filter((pageIndex) => pageIndex >= skip));
+    if (!selectedPages.size) throw new Error('Select at least one page to number.');
+    const hex = actionEl<HTMLInputElement>('#page-number-color').value;
+    const color = /^#[0-9a-f]{6}$/i.test(hex) ? rgb(parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255) : rgb(0.2, 0.23, 0.32);
+    const roman = (value: number) => { const pairs: [number, string][] = [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']]; let number = value, result = ''; for (const [amount, glyph] of pairs) while (number >= amount) { result += glyph; number -= amount; } return result; };
+    let numberedIndex = 0;
     pages.forEach((page, index) => {
+      if (!selectedPages.has(index)) return;
       const { width, height } = page.getSize();
-      const label = `${start + index} / ${start + pages.length - 1}`;
-      const size = 10;
+      const number = start + numberedIndex;
+      const label = format === 'page' ? `Page ${number}` : format === 'total' ? `Page ${number} of ${start + selectedPages.size - 1}` : format === 'roman' ? roman(number) : String(number);
+      numberedIndex += 1;
       const labelWidth = font.widthOfTextAtSize(label, size);
-      const x = position.endsWith('right') ? Math.max(24, width - labelWidth - 28) : Math.max(24, (width - labelWidth) / 2);
-      const y = position.startsWith('top') ? height - 32 : 24;
-      page.drawText(label, { x, y, size, font, color: rgb(0.2, 0.23, 0.32) });
+      const x = position.endsWith('left') ? margin : position.endsWith('right') ? Math.max(margin, width - labelWidth - margin) : Math.max(margin, (width - labelWidth) / 2);
+      const y = position.startsWith('top') ? height - size - margin : margin;
+      page.drawText(label, { x, y, size, font, color });
     });
     const bytes = await source.save({ useObjectStreams: true });
-    await downloadPdfBytes(bytes, pages.length, `${baseName(actionFiles[0].name)}-numbered.pdf`, `${pages.length} numbered pages · ${readableSize(bytes.length)}`);
+    await downloadPdfBytes(bytes, pages.length, `${baseName(actionFiles[0].name)}-numbered.pdf`, `${selectedPages.size} numbered pages · ${readableSize(bytes.length)}`);
   };
 
   const signPdf = async () => {
@@ -399,32 +546,115 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
     const { source } = await loadPdfLib(actionFiles[0]);
     const signature = await source.embedPng(await signatureBlob.arrayBuffer());
     const pages = source.getPages();
-    const pageNumber = Math.max(1, Math.min(pages.length, Number(actionEl<HTMLInputElement>('#signature-page').value) || pages.length));
-    const page = pages[pageNumber - 1];
-    const rotation = ((page.getRotation().angle % 360) + 360) % 360;
-    if (rotation !== 0) throw new Error('For exact placement, rotate this page upright with Rotate PDF first, then sign it. No changes were made.');
-    const stage = actionEl('#signature-page-stage'); const overlay = actionEl<HTMLImageElement>('#signature-overlay');
-    const stageRect = stage.getBoundingClientRect(); const overlayRect = overlay.getBoundingClientRect();
-    if (!stageRect.width || !stageRect.height || !overlayRect.width) throw new Error('Place the signature in the page preview before processing.');
-    const left = Math.max(0, overlayRect.left - stageRect.left); const top = Math.max(0, overlayRect.top - stageRect.top);
-    const { width, height } = page.getSize();
-    const drawWidth = Math.min(width, (overlayRect.width / stageRect.width) * width);
-    const drawHeight = drawWidth * (signature.height / signature.width);
-    const x = Math.min(width - drawWidth, (left / stageRect.width) * width);
-    const y = Math.max(0, Math.min(height - drawHeight, height - ((top / stageRect.height) * height) - drawHeight));
-    page.drawImage(signature, { x, y, width: drawWidth, height: drawHeight });
+    const selectedPageIndices = (pdfWorkspace?.getSelectedPages() ?? []).map((page) => page.pageIndex);
+    const placements = [...actionRoot.querySelectorAll<HTMLElement>('[data-signature-instance]')].filter((item) => item.dataset.deleted !== 'true');
+    if (!placements.length) throw new Error('Place the signature on at least one page before processing.');
+    const touched = new Set<number>();
+    for (const placement of placements) {
+      const ownPage = Math.max(0, Math.min(pages.length - 1, Number(placement.dataset.page || 1) - 1));
+      const targetIndices = selectedPageIndices.length ? [...new Set(selectedPageIndices)] : [ownPage];
+      if (targetIndices.some((index) => ((pages[index].getRotation().angle % 360) + 360) % 360 !== 0)) throw new Error('For exact placement, rotate selected pages upright with Rotate PDF first, then sign them. No changes were made.');
+      const leftRatio = Math.max(0, Math.min(1, Number.parseFloat(placement.style.left || '62') / 100));
+      const topRatio = Math.max(0, Math.min(1, Number.parseFloat(placement.style.top || '76') / 100));
+      const widthRatio = Math.max(.05, Math.min(.8, Number.parseFloat(placement.style.width || '30') / 100));
+      for (const index of targetIndices) {
+        const target = pages[index]; const size = target.getSize(); const drawWidth = Math.min(size.width, size.width * widthRatio); const drawHeight = Math.min(size.height, drawWidth * (signature.height / signature.width)); const x = Math.max(0, Math.min(size.width - drawWidth, size.width * leftRatio)); const y = Math.max(0, Math.min(size.height - drawHeight, size.height - size.height * topRatio - drawHeight)); target.drawImage(signature, { x, y, width: drawWidth, height: drawHeight }); touched.add(index);
+      }
+    }
     const bytes = await source.save({ useObjectStreams: true });
-    await downloadPdfBytes(bytes, pages.length, `${baseName(actionFiles[0].name)}-signed.pdf`, `Page ${pageNumber} signed · ${readableSize(bytes.length)}`, 'This adds a visible signature appearance only. It is not a certificate-backed digital signature and does not verify identity.');
+    await downloadPdfBytes(bytes, pages.length, `${baseName(actionFiles[0].name)}-signed.pdf`, `${placements.length} ${placements.length === 1 ? 'field' : 'fields'} · ${touched.size} ${touched.size === 1 ? 'page' : 'pages'} · ${readableSize(bytes.length)}`, 'This adds a visible signature appearance only. It is not a certificate-backed digital signature and does not verify identity.');
   };
-  const imagesToPdf = async () => { const { PDFDocument } = await import('pdf-lib'); const output = await PDFDocument.create(); const mode = actionEl<HTMLSelectElement>('#image-page-size').value; for (let i = 0; i < actionFiles.length; i += 1) { actionStatus.textContent = `Adding image ${i + 1} of ${actionFiles.length}…`; const file = actionFiles[i]; const kind = await imageKind(file); const image = kind === 'png' ? await output.embedPng(await file.arrayBuffer()) : await output.embedJpg(await file.arrayBuffer()); let pageWidth: number; let pageHeight: number; if (mode === 'a4') { const landscape = image.width > image.height; pageWidth = landscape ? 841.89 : 595.28; pageHeight = landscape ? 595.28 : 841.89; } else { const scale = Math.min(1, 1600 / Math.max(image.width, image.height)); pageWidth = image.width * scale * 0.75; pageHeight = image.height * scale * 0.75; } const page = output.addPage([pageWidth, pageHeight]); const margin = mode === 'a4' ? 28 : 0; const fit = Math.min((pageWidth - margin * 2) / image.width, (pageHeight - margin * 2) / image.height); const width = image.width * fit; const height = image.height * fit; page.drawImage(image, { x: (pageWidth - width) / 2, y: (pageHeight - height) / 2, width, height }); } const bytes = await output.save({ useObjectStreams: true }); await downloadPdfBytes(bytes, actionFiles.length, 'images-sorafiles.pdf', `${actionFiles.length} ${actionFiles.length === 1 ? 'page' : 'pages'} · ${readableSize(bytes.length)}`); };
-  const pdfToJpg = async () => { const source = await loadPdfJs(actionFiles[0]); if (source.numPages > 40) throw new Error('PDF to JPG currently supports up to 40 pages.'); const scaleSetting = Number(actionEl<HTMLSelectElement>('#jpg-resolution').value); const entries: Record<string, Uint8Array> = {}; for (let i = 1; i <= source.numPages; i += 1) { actionStatus.textContent = `Rendering page ${i} of ${source.numPages}…`; const page = await source.getPage(i); const base = page.getViewport({ scale: 1 }); let scale = scaleSetting; if (base.width * scale * base.height * scale > 16_000_000) scale *= Math.sqrt(16_000_000 / (base.width * scale * base.height * scale)); const viewport = page.getViewport({ scale }); const canvas = document.createElement('canvas'); canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height); const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas rendering is unavailable.'); context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height); await page.render({ canvas, canvasContext: context, viewport, background: '#fff' }).promise; const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('JPG encoding failed.')), 'image/jpeg', 0.86)); const bytes = new Uint8Array(await blob.arrayBuffer()); if (!(bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)) throw new Error(`Page ${i} did not produce a valid JPG. No download was created.`); entries[`page-${String(i).padStart(3, '0')}.jpg`] = bytes; page.cleanup(); canvas.width = 1; canvas.height = 1; } const count = source.numPages; await source.cleanup(); const { zipSync } = await import('fflate'); const zipped = zipSync(entries, { level: 0 }); downloadBlob(new Blob([zipped as BlobPart], { type: 'application/zip' }), `${baseName(actionFiles[0].name)}-jpg.zip`, `${count} JPG ${count === 1 ? 'file' : 'files'} · ${readableSize(zipped.length)}`); };
+  const imagesToPdf = async () => {
+    const { PDFDocument, degrees } = await import('pdf-lib'); const output = await PDFDocument.create();
+    const pageMode = actionEl<HTMLSelectElement>('#image-page-size').value; const orientation = actionEl<HTMLSelectElement>('#image-orientation').value; const margin = Number(actionEl<HTMLSelectElement>('#image-margin').value); const fitMode = actionEl<HTMLSelectElement>('#image-fit').value;
+    for (let i = 0; i < actionFiles.length; i += 1) {
+      actionStatus.textContent = `Adding image ${i + 1} of ${actionFiles.length}…`; const file = actionFiles[i]; const kind = await imageKind(file); const image = kind === 'png' ? await output.embedPng(await file.arrayBuffer()) : await output.embedJpg(await file.arrayBuffer());
+      const rotation = imageRotations.get(file) ?? 0; const rotated = rotation === 90 || rotation === 270; const logicalWidth = rotated ? image.height : image.width; const logicalHeight = rotated ? image.width : image.height;
+      let pageWidth: number, pageHeight: number;
+      if (pageMode === 'image') { const scale = Math.min(1, 1600 / Math.max(logicalWidth, logicalHeight)); pageWidth = logicalWidth * scale * .75 + margin * 2; pageHeight = logicalHeight * scale * .75 + margin * 2; }
+      else { [pageWidth, pageHeight] = pageMode === 'letter' ? [612, 792] : [595.28, 841.89]; const landscape = orientation === 'landscape' || (orientation === 'auto' && logicalWidth > logicalHeight); if (landscape) [pageWidth, pageHeight] = [pageHeight, pageWidth]; }
+      const page = output.addPage([pageWidth, pageHeight]); const availableWidth = Math.max(1, pageWidth - margin * 2), availableHeight = Math.max(1, pageHeight - margin * 2);
+      const scale = fitMode === 'fill' ? Math.max(availableWidth / logicalWidth, availableHeight / logicalHeight) : fitMode === 'actual' ? Math.min(.75, availableWidth / logicalWidth, availableHeight / logicalHeight) : Math.min(availableWidth / logicalWidth, availableHeight / logicalHeight);
+      const width = logicalWidth * scale, height = logicalHeight * scale; const targetX = (pageWidth - width) / 2, targetY = (pageHeight - height) / 2;
+      if (rotation === 90) page.drawImage(image, { x: targetX + width, y: targetY, width: height, height: width, rotate: degrees(90) });
+      else if (rotation === 180) page.drawImage(image, { x: targetX + width, y: targetY + height, width, height, rotate: degrees(180) });
+      else if (rotation === 270) page.drawImage(image, { x: targetX, y: targetY + height, width: height, height: width, rotate: degrees(270) });
+      else page.drawImage(image, { x: targetX, y: targetY, width, height });
+    }
+    const bytes = await output.save({ useObjectStreams: true }); await downloadPdfBytes(bytes, actionFiles.length, 'images-sorafiles.pdf', `${actionFiles.length} ${actionFiles.length === 1 ? 'page' : 'pages'} · ${readableSize(bytes.length)}`);
+  };
+  const pdfToJpg = async () => {
+    const source = await loadPdfJs(actionFiles[0]); if (source.numPages > 40) throw new Error('PDF image export currently supports up to 40 pages.');
+    const scaleSetting = Number(actionEl<HTMLSelectElement>('#jpg-resolution').value); const format = actionEl<HTMLSelectElement>('#pdf-image-format').value; const quality = Number(actionEl<HTMLInputElement>('#pdf-image-quality').value) / 100; const pageSpec = actionEl<HTMLInputElement>('#pdf-image-pages').value.trim();
+    const indices = pageSpec ? parsePageSpec(pageSpec, source.numPages) : Array.from({ length: source.numPages }, (_, index) => index);
+    if (!indices.length) throw new Error('Select at least one page to export.');
+    const mime = format === 'png' ? 'image/png' : format === 'webp' ? 'image/webp' : 'image/jpeg'; const extension = format === 'png' ? 'png' : format === 'webp' ? 'webp' : 'jpg'; const entries: Record<string, Uint8Array> = {}; const dimensions: string[] = [];
+    try {
+      for (let current = 0; current < indices.length; current += 1) { const pageNumber = indices[current] + 1; actionStatus.textContent = `Rendering page ${current + 1} of ${indices.length}…`; const page = await source.getPage(pageNumber); const base = page.getViewport({ scale: 1 }); let scale = scaleSetting; if (base.width * scale * base.height * scale > 16_000_000) scale *= Math.sqrt(16_000_000 / (base.width * scale * base.height * scale)); const viewport = page.getViewport({ scale }); const canvas = document.createElement('canvas'); canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height); dimensions.push(`${canvas.width}×${canvas.height}`); const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas rendering is unavailable.'); context.fillStyle = '#fff'; context.fillRect(0, 0,canvas.width, canvas.height); await page.render({ canvas, canvasContext: context, viewport, background: '#fff' }).promise; const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Image encoding failed.')), mime, mime === 'image/png' ? undefined : quality)); const bytes = new Uint8Array(await blob.arrayBuffer()); if (mime === 'image/jpeg' && !(bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)) throw new Error(`Page ${pageNumber} did not produce a valid JPG.`); if (mime === 'image/png' && !(bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47)) throw new Error(`Page ${pageNumber} did not produce a valid PNG.`); if (mime === 'image/webp' && new TextDecoder('ascii').decode(bytes.slice(8, 12)) !== 'WEBP') throw new Error('This browser cannot encode WebP. Choose JPG or PNG.'); entries[`page-${String(pageNumber).padStart(3, '0')}.${extension}`] = bytes; page.cleanup(); canvas.width = 1; canvas.height = 1; }
+    } finally { await source.cleanup(); }
+    const names = Object.keys(entries);
+    if (names.length === 1) { const bytes = entries[names[0]]; downloadBlob(new Blob([bytes as BlobPart], { type: mime }), `${baseName(actionFiles[0].name)}-${names[0]}`, `${Math.round(scaleSetting * 72)} DPI · ${dimensions[0]} px · ${readableSize(bytes.length)}`); return; }
+    const { zipSync } = await import('fflate'); const zipped = zipSync(entries, { level: format === 'png' ? 6 : 0 }); const uniqueDimensions = [...new Set(dimensions)]; downloadBlob(new Blob([zipped as BlobPart], { type: 'application/zip' }), `${baseName(actionFiles[0].name)}-${extension}.zip`, `${names.length} ${extension.toUpperCase()} files · ${uniqueDimensions.length === 1 ? `${uniqueDimensions[0]} px each · ` : ''}${readableSize(zipped.length)}`);
+  };
+
+  const pdfToEditableWord = async (pdfDoc: any) => {
+    const [{ extractPdfForWord }, { createDocxFromPages }, { createLocalOcrEngine }] = await Promise.all([
+      import('../lib/pdf-to-word/convert'),
+      import('../lib/pdf-to-word/docx'),
+      import('../lib/ocr/local-engine'),
+    ]);
+    let scannedPages = 0;
+    let lowConfidencePages: number[] = [];
+    const pages = await extractPdfForWord({
+      document: {
+        pageCount: pdfDoc.numPages,
+        openPage: async (pageNumber: number) => {
+          const page = await pdfDoc.getPage(pageNumber);
+          return {
+            number: pageNumber,
+            textItems: async () => (await page.getTextContent()).items.filter((item: any) => typeof item?.str === 'string'),
+            renderForOcr: async (maxPixels: number) => {
+              const base = page.getViewport({ scale: 1 });
+              const scale = Math.max(1, Math.min(2.5, Math.sqrt(maxPixels / Math.max(1, base.width * base.height))));
+              const viewport = page.getViewport({ scale });
+              const canvas = document.createElement('canvas'); canvas.width = Math.max(1, Math.ceil(viewport.width)); canvas.height = Math.max(1, Math.ceil(viewport.height));
+              const context = canvas.getContext('2d', { alpha: false }); if (!context) throw new Error('Canvas rendering is unavailable.');
+              context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height);
+              await page.render({ canvas, canvasContext: context, viewport, background: '#fff' }).promise;
+              return canvas;
+            },
+            cleanup: () => page.cleanup(),
+          };
+        },
+        destroy: async () => {},
+      },
+      createOcrEngine: (onProgress: (value: number) => void) => createLocalOcrEngine('eng', onProgress),
+      signal: activeAbortController!.signal,
+      onProgress: (progress: any) => {
+        if (progress.stage === 'inspecting') actionStatus.textContent = `Reading page ${progress.page} of ${progress.total}…`;
+        if (progress.stage === 'scan-count') scannedPages = progress.scannedPages;
+        if (progress.stage === 'loading-model') actionStatus.textContent = ocrMessages.loadingModel.replace('{code}', 'English');
+        if (progress.stage === 'recognizing') actionStatus.textContent = `Reading scanned page ${progress.page} of ${progress.total}…`;
+        if (progress.stage === 'complete') lowConfidencePages = progress.lowConfidencePages;
+      },
+    });
+    const blob = await createDocxFromPages(pages, currentLocale === 'ar' ? 'rtl' : 'ltr');
+    if (!(await isDocx(blob))) throw new Error('The editable Word file could not be checked. No download was created.');
+    const warning = scannedPages ? `Text was recognized on ${scannedPages} scanned ${scannedPages === 1 ? 'page' : 'pages'}. Accuracy depends on scan quality.${lowConfidencePages.length ? ` Double-check ${lowConfidencePages.length === 1 ? 'page' : 'pages'} ${lowConfidencePages.join(', ')}.` : ''}` : 'PDF text was turned into editable paragraphs, headings, lists, simple tables, and page breaks. Complex columns and spacing may need cleanup.';
+    downloadBlob(blob, `${baseName(actionFiles[0].name)}-editable.docx`, `${pages.length} ${pages.length === 1 ? 'page' : 'pages'} · ${readableSize(blob.size)}`, warning, scannedPages, lowConfidencePages);
+  };
 
   const pdfToWord = async () => {
     const pdfDoc = await loadPdfJs(actionFiles[0]);
-    if (pdfDoc.numPages > 60) throw new Error('Exact PDF to Word currently supports up to 60 pages per task.');
+    if (pdfDoc.numPages > 60) throw new Error('PDF to Word currently supports up to 60 pages per task.');
     activeAbortController = new AbortController();
     if (ocrCancelButton) ocrCancelButton.hidden = false;
     try {
+      const mode = actionRoot.querySelector<HTMLInputElement>('input[name="pdfWordMode"]:checked')?.value ?? 'editable';
+      if (mode === 'editable') {
+        await pdfToEditableWord(pdfDoc);
+        return;
+      }
       const pages = [];
       for (let pageNumber = 1; pageNumber <= pdfDoc.numPages; pageNumber += 1) {
         if (activeAbortController.signal.aborted) throw new DOMException('Cancelled', 'AbortError');
@@ -450,7 +680,7 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
       actionStatus.textContent = fidelityMessages.assembling;
       const { createVisualDocx } = await import('../lib/pdf-to-word/visual-docx');
       const blob = await createVisualDocx(pages);
-      if (!(await isDocx(blob))) throw new Error('The generated Word file did not pass local ZIP and document-structure validation. No download was created.');
+      if (!(await isDocx(blob))) throw new Error('The Word file could not be checked. No download was created.');
       downloadBlob(
         blob,
         `${baseName(actionFiles[0].name)}.docx`,
@@ -493,6 +723,12 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
   const watermarkOpacity = actionRoot.querySelector<HTMLInputElement>('#watermark-opacity');
   const watermarkOpacityOutput = actionRoot.querySelector<HTMLOutputElement>('#watermark-opacity-output');
   watermarkOpacity?.addEventListener('input', () => { const value = `${watermarkOpacity.value}%`; watermarkOpacity.setAttribute('aria-valuetext', value); if (watermarkOpacityOutput) watermarkOpacityOutput.value = value; });
+  const watermarkScale = actionRoot.querySelector<HTMLInputElement>('#watermark-scale');
+  const watermarkScaleOutput = actionRoot.querySelector<HTMLOutputElement>('#watermark-scale-output');
+  watermarkScale?.addEventListener('input', () => { if (watermarkScaleOutput) watermarkScaleOutput.value = `${watermarkScale.value}%`; });
+  const pdfImageQuality = actionRoot.querySelector<HTMLInputElement>('#pdf-image-quality');
+  const pdfImageQualityOutput = actionRoot.querySelector<HTMLOutputElement>('#pdf-image-quality-output');
+  pdfImageQuality?.addEventListener('input', () => { if (pdfImageQualityOutput) pdfImageQualityOutput.value = `${pdfImageQuality.value}%`; });
 
   const watermarkImageInput = actionRoot.querySelector<HTMLInputElement>('#watermark-image');
   if (watermarkImageInput) {
@@ -566,6 +802,46 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
     cleanupRange.addEventListener('input', () => { const value = `${cleanupRange.value}%`; cleanupOutput.value = value; cleanupRange.setAttribute('aria-valuetext', value); renderWatermarkImage(); });
   }
 
+  const liveOverlay = actionRoot.querySelector<HTMLElement>('[data-pdf-live-overlay]');
+  const liveOverlayContent = liveOverlay?.querySelector<HTMLElement>('[data-pdf-overlay-content]');
+  const syncPdfLiveOverlay = () => {
+    if (!liveOverlay || !liveOverlayContent) return;
+    if (actionTool === 'watermark-pdf') {
+      const text = watermarkMode === 'image' ? (watermarkProcessedCanvas ? 'Logo' : '') : (actionRoot.querySelector<HTMLInputElement>('#watermark-text')?.value.trim() || 'Watermark');
+      const opacity = Number(actionRoot.querySelector<HTMLInputElement>('#watermark-opacity')?.value || 20) / 100;
+      const rotation = Number(actionRoot.querySelector<HTMLInputElement>('#watermark-rotation')?.value || 35);
+      const fontSize = Math.max(14, Math.min(72, Number(actionRoot.querySelector<HTMLInputElement>('#watermark-font-size')?.value || 42) * .7));
+      const position = actionRoot.querySelector<HTMLSelectElement>('#watermark-position')?.value || 'center';
+      const horizontal = position.endsWith('left') ? '18%' : position.endsWith('right') ? '82%' : '50%';
+      const vertical = position.startsWith('top') ? '18%' : position.startsWith('bottom') ? '82%' : '50%';
+      liveOverlayContent.textContent = text; liveOverlayContent.style.opacity = String(opacity); liveOverlayContent.style.fontSize = `${fontSize}px`; liveOverlay.style.left = horizontal; liveOverlay.style.top = vertical; liveOverlay.style.transform = `translate(-50%,-50%) rotate(${rotation}deg)`;
+    } else if (actionTool === 'page-numbers') {
+      const format = actionRoot.querySelector<HTMLSelectElement>('#page-number-format')?.value || 'number'; const start = Number(actionRoot.querySelector<HTMLInputElement>('#page-number-start')?.value || 1); const label = format === 'page' ? `Page ${start}` : format === 'total' ? `Page ${start} of N` : format === 'roman' ? 'I' : String(start); const position = actionRoot.querySelector<HTMLSelectElement>('#page-number-position')?.value || 'bottom-center'; const margin = Math.max(3, Math.min(14, Number(actionRoot.querySelector<HTMLInputElement>('#page-number-margin')?.value || 24) / 3)); liveOverlayContent.textContent = label; liveOverlay.style.transform = 'none'; liveOverlay.style.opacity = '1'; liveOverlay.style.color = actionRoot.querySelector<HTMLInputElement>('#page-number-color')?.value || '#333b52'; liveOverlay.style.fontSize = `${Math.max(10, Number(actionRoot.querySelector<HTMLInputElement>('#page-number-size')?.value || 10))}px`; liveOverlay.style.placeItems = `${position.startsWith('top') ? 'start' : 'end'} ${position.endsWith('left') ? 'start' : position.endsWith('right') ? 'end' : 'center'}`; liveOverlay.style.padding = `${margin}px`;
+    }
+  };
+  if (liveOverlay && (actionTool === 'watermark-pdf' || actionTool === 'page-numbers')) {
+    actionForm.addEventListener('input', syncPdfLiveOverlay); actionForm.addEventListener('change', syncPdfLiveOverlay); syncPdfLiveOverlay();
+  }
+  if (actionTool === 'page-numbers') {
+    const positionSelect = actionEl<HTMLSelectElement>('#page-number-position');
+    const positionPicker = document.createElement('fieldset'); positionPicker.className = 'sm:col-span-2';
+    const legend = document.createElement('legend'); legend.className = 'text-sm font-semibold'; legend.textContent = 'Position';
+    const grid = document.createElement('div'); grid.className = 'mt-2 grid grid-cols-3 gap-2 rounded-xl bg-canvas p-2';
+    const positions = [['top-left','↖'],['top-center','↑'],['top-right','↗'],['bottom-left','↙'],['bottom-center','↓'],['bottom-right','↘']] as const;
+    positions.forEach(([value, glyph]) => { const button = document.createElement('button'); button.type = 'button'; button.dataset.pageNumberPosition = value; button.className = 'grid min-h-11 place-items-center rounded-lg text-base font-semibold text-muted hover:bg-surface hover:text-ink aria-pressed:bg-surface aria-pressed:text-blue aria-pressed:shadow-small'; button.textContent = glyph; button.setAttribute('aria-label', value.replace('-', ' ')); button.setAttribute('aria-pressed', String(positionSelect.value === value)); button.addEventListener('click', () => { positionSelect.value = value; grid.querySelectorAll('button').forEach((candidate) => candidate.setAttribute('aria-pressed', String(candidate === button))); positionSelect.dispatchEvent(new Event('change', { bubbles: true })); }); grid.append(button); });
+    positionPicker.append(legend, grid); positionSelect.closest('div')?.insertAdjacentElement('beforebegin', positionPicker); positionSelect.closest('div')?.classList.add('sr-only');
+  }
+  if (liveOverlay && actionTool === 'watermark-pdf') {
+    liveOverlay.addEventListener('pointerdown', (event) => {
+      if ((event.target as HTMLElement).closest('[data-pdf-overlay-resize]')) return;
+      event.preventDefault(); const page = liveOverlay.parentElement; if (!page) return; const pageRect = page.getBoundingClientRect(); const startRect = liveOverlay.getBoundingClientRect(); const startX = event.clientX; const startY = event.clientY; liveOverlay.setPointerCapture(event.pointerId);
+      const move = (moveEvent: PointerEvent) => { moveEvent.preventDefault(); const dx = Math.max(pageRect.left - startRect.left, Math.min(pageRect.right - startRect.right, moveEvent.clientX - startX)); const dy = Math.max(pageRect.top - startRect.top, Math.min(pageRect.bottom - startRect.bottom, moveEvent.clientY - startY)); liveOverlay.style.translate = `${dx}px ${dy}px`; liveOverlay.dataset.dragX = String(dx); liveOverlay.dataset.dragY = String(dy); };
+      const end = (endEvent: PointerEvent) => { endEvent.preventDefault(); liveOverlay.removeEventListener('pointermove', move); liveOverlay.removeEventListener('pointerup', end); liveOverlay.removeEventListener('pointercancel', end); const centerX = startRect.left + startRect.width / 2 + Number(liveOverlay.dataset.dragX || 0); const centerY = startRect.top + startRect.height / 2 + Number(liveOverlay.dataset.dragY || 0); liveOverlay.style.translate = ''; const column = centerX < pageRect.left + pageRect.width / 3 ? 'left' : centerX > pageRect.right - pageRect.width / 3 ? 'right' : 'center'; const row = centerY < pageRect.top + pageRect.height / 3 ? 'top' : centerY > pageRect.bottom - pageRect.height / 3 ? 'bottom' : ''; const select = actionEl<HTMLSelectElement>('#watermark-position'); select.value = row ? `${row}-${column}` : 'center'; select.dispatchEvent(new Event('change', { bubbles: true })); actionWork.dispatchEvent(new CustomEvent('workspace-dirty')); };
+      liveOverlay.addEventListener('pointermove', move); liveOverlay.addEventListener('pointerup', end); liveOverlay.addEventListener('pointercancel', end);
+    });
+    liveOverlay.querySelector<HTMLElement>('[data-pdf-overlay-resize]')?.addEventListener('pointerdown', (event) => { event.preventDefault(); event.stopPropagation(); const startWidth = liveOverlay.getBoundingClientRect().width; const startX = event.clientX; const input = watermarkMode === 'image' ? actionEl<HTMLInputElement>('#watermark-scale') : actionEl<HTMLInputElement>('#watermark-font-size'); const startValue = Number(input.value); const handle = event.currentTarget as HTMLElement; handle.setPointerCapture(event.pointerId); const move = (moveEvent: PointerEvent) => { moveEvent.preventDefault(); const ratio = Math.max(.35, Math.min(2.5, (startWidth + moveEvent.clientX - startX) / startWidth)); liveOverlay.style.scale = String(ratio); liveOverlay.dataset.resizeRatio = String(ratio); }; const end = (endEvent: PointerEvent) => { endEvent.preventDefault(); handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', end); handle.removeEventListener('pointercancel', end); const ratio = Number(liveOverlay.dataset.resizeRatio || 1); liveOverlay.style.scale = ''; input.value = String(Math.max(Number(input.min), Math.min(Number(input.max), Math.round(startValue * ratio)))); input.dispatchEvent(new Event('input', { bubbles: true })); }; handle.addEventListener('pointermove', move); handle.addEventListener('pointerup', end); handle.addEventListener('pointercancel', end); });
+  }
+
   const signatureCanvas = actionRoot.querySelector<HTMLCanvasElement>('#signature-canvas');
   if (signatureCanvas) {
     const finalContext = signatureCanvas.getContext('2d');
@@ -573,7 +849,10 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
     const drawContext = drawCanvas.getContext('2d');
     if (!finalContext || !drawContext) throw new Error('Signature drawing is unavailable in this browser.');
     const signatureText = actionEl<HTMLInputElement>('#signature-text');
+    const signatureKind = actionEl<HTMLSelectElement>('#signature-kind');
     const overlay = actionEl<HTMLImageElement>('#signature-overlay');
+    const selection = actionEl<HTMLElement>('#signature-selection');
+    const signatureStage = actionEl<HTMLElement>('#signature-page-stage');
     const uploadInput = actionEl<HTMLInputElement>('#signature-upload');
     const uploadControls = actionEl('#signature-upload-controls');
     const cleanupRange = actionEl<HTMLInputElement>('#signature-cleanup');
@@ -582,24 +861,31 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
 
     const publishSignature = () => {
       signatureHasInk = finalContext.getImageData(0, 0, signatureCanvas.width, signatureCanvas.height).data.some((value, index) => index % 4 === 3 && value > 8);
-      overlay.src = signatureHasInk ? signatureCanvas.toDataURL('image/png') : '';
-      overlay.hidden = !signatureHasInk;
+      const source = signatureHasInk ? signatureCanvas.toDataURL('image/png') : '';
+      actionRoot.querySelectorAll<HTMLImageElement>('[data-signature-instance] img').forEach((image) => { image.src = source; });
+      actionRoot.querySelectorAll<HTMLElement>('[data-signature-instance]').forEach((item) => { item.hidden = item.dataset.deleted === 'true' || !signatureHasInk || item.dataset.page !== actionEl<HTMLInputElement>('#signature-page').value; });
+      actionEl('#signature-object-controls').hidden = !signatureHasInk;
+      if (signatureHasInk) actionWork.dispatchEvent(new CustomEvent('workspace-dirty'));
     };
     const clearSignature = () => {
       finalContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
       drawContext.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
       signatureText.value = ''; uploadInput.value = ''; uploadedCanvas = null; uploadControls.hidden = true;
       if (signatureUploadUrl) URL.revokeObjectURL(signatureUploadUrl); signatureUploadUrl = null;
-      signatureHasInk = false; overlay.src = ''; overlay.hidden = true;
+      signatureHasInk = false; overlay.src = ''; selection.hidden = true; delete selection.dataset.deleted; selection.dataset.page = '1'; selection.style.left = '62%'; selection.style.top = '76%'; selection.style.width = '30%';
+      actionEl('#signature-object-controls').hidden = true;
+      actionRoot.querySelectorAll<HTMLElement>('[data-signature-instance]').forEach((item) => { if (item !== selection) item.remove(); });
     };
     const copyDrawnSignature = () => { finalContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height); finalContext.drawImage(drawCanvas, 0, 0); publishSignature(); };
     const renderTypedSignature = () => {
       finalContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-      const value = signatureText.value.trim();
-      if (value) { finalContext.save(); finalContext.fillStyle = '#111827'; finalContext.font = 'italic 72px Georgia, serif'; finalContext.textAlign = 'center'; finalContext.textBaseline = 'middle'; finalContext.fillText(value, signatureCanvas.width / 2, signatureCanvas.height / 2, signatureCanvas.width - 64); finalContext.restore(); }
+      const typed = signatureText.value.trim();
+      const value = signatureKind.value === 'check' ? '✓' : signatureKind.value === 'date' && !typed ? new Intl.DateTimeFormat(currentLocale).format(new Date()) : typed;
+      if (value) { finalContext.save(); finalContext.fillStyle = '#111827'; finalContext.font = signatureKind.value === 'signature' ? 'italic 72px Georgia, serif' : '600 64px system-ui, sans-serif'; finalContext.textAlign = 'center'; finalContext.textBaseline = 'middle'; finalContext.fillText(value, signatureCanvas.width / 2, signatureCanvas.height / 2, signatureCanvas.width - 64); finalContext.restore(); }
       publishSignature();
     };
     signatureText.addEventListener('input', renderTypedSignature);
+    signatureKind.addEventListener('change', () => { signatureText.disabled = signatureKind.value === 'check'; signatureText.placeholder = signatureKind.value === 'date' ? 'Leave blank for today' : signatureKind.value === 'initials' ? 'Your initials' : signatureKind.value === 'text' ? 'Text to place' : 'Your signature'; renderTypedSignature(); });
 
     for (const context of [drawContext]) { context.strokeStyle = '#111827'; context.fillStyle = '#111827'; context.lineWidth = 5; context.lineCap = 'round'; context.lineJoin = 'round'; }
     let drawing = false;
@@ -625,23 +911,95 @@ const actionTone = actionTones[tool.id] ?? 'indigo';
       if (maxX > minX && maxY > minY) { const sourceWidth = maxX - minX + 1, sourceHeight = maxY - minY + 1; const scale = Math.min((signatureCanvas.width - 32) / sourceWidth, (signatureCanvas.height - 24) / sourceHeight); const width = sourceWidth * scale, height = sourceHeight * scale; finalContext.drawImage(temp, minX, minY, sourceWidth, sourceHeight, (signatureCanvas.width - width) / 2, (signatureCanvas.height - height) / 2, width, height); }
       actionEl<HTMLImageElement>('#signature-upload-after').src = signatureCanvas.toDataURL('image/png'); publishSignature();
     };
-    uploadInput.addEventListener('change', async () => { const file = uploadInput.files?.[0]; if (!file) return; if (file.size > 10_000_000) { actionStatus.textContent = 'Choose a signature image smaller than 10 MB.'; return; } try { const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }); if (bitmap.width * bitmap.height > 20_000_000) { bitmap.close(); throw new Error('Choose an image under 20 megapixels.'); } uploadedCanvas = document.createElement('canvas'); uploadedCanvas.width = bitmap.width; uploadedCanvas.height = bitmap.height; uploadedCanvas.getContext('2d')?.drawImage(bitmap, 0, 0); bitmap.close(); if (signatureUploadUrl) URL.revokeObjectURL(signatureUploadUrl); signatureUploadUrl = URL.createObjectURL(file); actionEl<HTMLImageElement>('#signature-upload-before').src = signatureUploadUrl; uploadControls.hidden = false; renderUploadedSignature(); } catch (error) { actionStatus.textContent = error instanceof Error ? error.message : 'This signature image could not be decoded.'; } });
+  uploadInput.addEventListener('change', async () => { const file = uploadInput.files?.[0]; if (!file) return; if (file.size > 10_000_000) { actionStatus.textContent = 'Choose a signature image smaller than 10 MB.'; return; } try { const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }); if (bitmap.width * bitmap.height > 20_000_000) { bitmap.close(); throw new Error('Choose an image under 20 megapixels.'); } uploadedCanvas = document.createElement('canvas'); uploadedCanvas.width = bitmap.width; uploadedCanvas.height = bitmap.height; uploadedCanvas.getContext('2d')?.drawImage(bitmap, 0, 0); bitmap.close(); if (signatureUploadUrl) URL.revokeObjectURL(signatureUploadUrl); signatureUploadUrl = URL.createObjectURL(file); actionEl<HTMLImageElement>('#signature-upload-before').src = signatureUploadUrl; uploadControls.hidden = false; renderUploadedSignature(); } catch (error) { actionStatus.textContent = error instanceof Error ? error.message : 'This signature image could not be read.'; } });
     cleanupRange.addEventListener('input', () => { cleanupOutput.value = `${cleanupRange.value}%`; renderUploadedSignature(); });
 
     actionRoot.querySelectorAll<HTMLButtonElement>('[data-sign-mode]').forEach(button => button.addEventListener('click', () => { clearSignature(); const mode = button.dataset.signMode; actionRoot.querySelectorAll<HTMLButtonElement>('[data-sign-mode]').forEach(candidate => { const active = candidate === button; candidate.setAttribute('aria-pressed', String(active)); candidate.classList.toggle('bg-surface', active); candidate.classList.toggle('text-ink', active); candidate.classList.toggle('shadow-small', active); candidate.classList.toggle('text-muted', !active); }); actionRoot.querySelectorAll<HTMLElement>('[data-sign-panel]').forEach(panel => { panel.hidden = panel.dataset.signPanel !== mode; }); (mode === 'type' ? signatureText : mode === 'draw' ? drawCanvas : uploadInput).focus(); }));
     actionEl<HTMLButtonElement>('#signature-clear').addEventListener('click', () => { clearSignature(); signatureText.focus(); });
+    const savedSignatureKey = 'sorafiles.saved-signature.v1';
+    actionEl<HTMLButtonElement>('#signature-save').addEventListener('click', () => { if (!signatureHasInk) { actionStatus.textContent = 'Create a signature before saving it.'; return; } try { localStorage.setItem(savedSignatureKey, signatureCanvas.toDataURL('image/png')); actionStatus.textContent = 'Signature saved only in this browser on this device.'; } catch { actionStatus.textContent = 'This browser could not save the signature locally.'; } });
+    actionEl<HTMLButtonElement>('#signature-clear-saved').addEventListener('click', () => { try { localStorage.removeItem(savedSignatureKey); actionStatus.textContent = 'Saved signature cleared from this browser.'; } catch { actionStatus.textContent = 'This browser could not clear local signature storage.'; } });
+    try {
+      const saved = localStorage.getItem(savedSignatureKey);
+      if (saved) { const image = new Image(); image.onload = () => { finalContext.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height); finalContext.drawImage(image, 0, 0, signatureCanvas.width, signatureCanvas.height); publishSignature(); actionStatus.textContent = 'Saved signature loaded from this browser.'; }; image.src = saved; }
+    } catch { /* Local storage can be unavailable in hardened/private browser modes. */ }
 
-    const sizeRange = actionEl<HTMLInputElement>('#signature-size'); sizeRange.addEventListener('input', () => { overlay.style.width = `${sizeRange.value}%`; });
-    const pageInput = actionEl<HTMLInputElement>('#signature-page'); pageInput.addEventListener('change', () => void renderSignPdfPage());
-    let moving = false, offsetX = 0, offsetY = 0;
-    overlay.addEventListener('pointerdown', event => { if (!signatureHasInk) return; event.preventDefault(); moving = true; overlay.setPointerCapture(event.pointerId); const rect = overlay.getBoundingClientRect(); offsetX = event.clientX - rect.left; offsetY = event.clientY - rect.top; });
-    overlay.addEventListener('pointermove', event => { if (!moving) return; event.preventDefault(); const stage = actionEl('#signature-page-stage'); const stageRect = stage.getBoundingClientRect(); const overlayRect = overlay.getBoundingClientRect(); const left = Math.max(0, Math.min(stageRect.width - overlayRect.width, event.clientX - stageRect.left - offsetX)); const top = Math.max(0, Math.min(stageRect.height - overlayRect.height, event.clientY - stageRect.top - offsetY)); overlay.style.left = `${(left / stageRect.width) * 100}%`; overlay.style.top = `${(top / stageRect.height) * 100}%`; });
-    const stopMove = (event: PointerEvent) => { if (!moving) return; event.preventDefault(); moving = false; };
-    overlay.addEventListener('pointerup', stopMove); overlay.addEventListener('pointercancel', stopMove);
+    type SignatureSnapshot = Array<{ left: string; top: string; width: string; page: string; hidden: boolean; deleted: boolean }>;
+    const sizeRange = actionEl<HTMLInputElement>('#signature-size');
+    const sizeOutput = actionEl<HTMLOutputElement>('#signature-size-output');
+    const pageInput = actionEl<HTMLInputElement>('#signature-page');
+    let activeSelection = selection;
+    let signatureUndo: SignatureSnapshot[] = [];
+    let signatureRedo: SignatureSnapshot[] = [];
+
+    const placements = () => [...actionRoot.querySelectorAll<HTMLElement>('[data-signature-instance]')];
+    const snapshotPlacements = (): SignatureSnapshot => placements().map((item) => ({ left: item.style.left || '62%', top: item.style.top || '76%', width: item.style.width || '30%', page: item.dataset.page || '1', hidden: item.hidden === true, deleted: item.dataset.deleted === 'true' }));
+    const rememberPlacement = () => { signatureUndo.push(snapshotPlacements()); if (signatureUndo.length > 30) signatureUndo.shift(); signatureRedo = []; actionWork.dispatchEvent(new CustomEvent('workspace-dirty')); };
+    const selectPlacement = (item: HTMLElement) => {
+      activeSelection = item;
+      placements().forEach((candidate) => candidate.toggleAttribute('data-selected', candidate === item));
+      const value = Math.round(Number.parseFloat(item.style.width || '30'));
+      sizeRange.value = String(Math.max(15, Math.min(55, value)));
+      sizeOutput.value = `${sizeRange.value}%`;
+      item.focus({ preventScroll: true });
+    };
+
+    const bindPlacement = (item: HTMLElement) => {
+      if (item.dataset.bound === 'true') return;
+      item.dataset.bound = 'true';
+      item.addEventListener('pointerdown', (event) => {
+        if ((event.target as HTMLElement).closest('[data-sign-handle]')) return;
+        event.preventDefault(); selectPlacement(item); rememberPlacement();
+        const stageRect = signatureStage.getBoundingClientRect(); const startRect = item.getBoundingClientRect(); const startX = event.clientX; const startY = event.clientY;
+        item.setPointerCapture(event.pointerId);
+        const move = (moveEvent: PointerEvent) => { moveEvent.preventDefault(); const dx = Math.max(-startRect.left + stageRect.left, Math.min(stageRect.right - startRect.right, moveEvent.clientX - startX)); const dy = Math.max(-startRect.top + stageRect.top, Math.min(stageRect.bottom - startRect.bottom, moveEvent.clientY - startY)); item.style.transform = `translate3d(${dx}px,${dy}px,0)`; item.dataset.dragX = String(dx); item.dataset.dragY = String(dy); };
+        const end = (endEvent: PointerEvent) => { endEvent.preventDefault(); item.removeEventListener('pointermove', move); item.removeEventListener('pointerup', end); item.removeEventListener('pointercancel', end); const dx = Number(item.dataset.dragX || 0); const dy = Number(item.dataset.dragY || 0); item.style.transform = ''; delete item.dataset.dragX; delete item.dataset.dragY; item.style.left = `${Math.max(0, Math.min(100 - startRect.width / stageRect.width * 100, (startRect.left - stageRect.left + dx) / stageRect.width * 100))}%`; item.style.top = `${Math.max(0, Math.min(100 - startRect.height / stageRect.height * 100, (startRect.top - stageRect.top + dy) / stageRect.height * 100))}%`; };
+        item.addEventListener('pointermove', move); item.addEventListener('pointerup', end); item.addEventListener('pointercancel', end);
+      });
+      item.querySelectorAll<HTMLElement>('[data-sign-handle]').forEach((handle) => handle.addEventListener('pointerdown', (event) => {
+        event.preventDefault(); event.stopPropagation(); selectPlacement(item); rememberPlacement();
+        const direction = handle.dataset.signHandle || 'se'; const stageRect = signatureStage.getBoundingClientRect(); const startRect = item.getBoundingClientRect(); const startX = event.clientX; const startY = event.clientY; handle.setPointerCapture(event.pointerId);
+        const move = (moveEvent: PointerEvent) => { moveEvent.preventDefault(); const horizontal = direction.endsWith('e') ? moveEvent.clientX - startX : startX - moveEvent.clientX; const vertical = direction.startsWith('s') ? moveEvent.clientY - startY : startY - moveEvent.clientY; const scale = Math.max(.5, Math.min(2.25, 1 + Math.max(horizontal / startRect.width, vertical / startRect.height))); item.style.transformOrigin = `${direction.endsWith('w') ? 'right' : 'left'} ${direction.startsWith('n') ? 'bottom' : 'top'}`; item.style.transform = `scale(${scale})`; item.dataset.resizeScale = String(scale); };
+        const end = (endEvent: PointerEvent) => { endEvent.preventDefault(); handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', end); handle.removeEventListener('pointercancel', end); const scale = Number(item.dataset.resizeScale || 1); const width = Math.max(15, Math.min(55, startRect.width * scale / stageRect.width * 100)); const nextHeight = startRect.height * (width / (startRect.width / stageRect.width * 100)); let left = (startRect.left - stageRect.left) / stageRect.width * 100; let top = (startRect.top - stageRect.top) / stageRect.height * 100; if (direction.endsWith('w')) left += startRect.width / stageRect.width * 100 - width; if (direction.startsWith('n')) top += (startRect.height - nextHeight) / stageRect.height * 100; item.style.transform = ''; item.style.transformOrigin = ''; delete item.dataset.resizeScale; item.style.width = `${width}%`; item.style.left = `${Math.max(0, Math.min(100 - width, left))}%`; item.style.top = `${Math.max(0, Math.min(100 - nextHeight / stageRect.height * 100, top))}%`; sizeRange.value = String(Math.round(width)); sizeOutput.value = `${sizeRange.value}%`; };
+        handle.addEventListener('pointermove', move); handle.addEventListener('pointerup', end); handle.addEventListener('pointercancel', end);
+      }));
+      item.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Delete','Backspace'].includes(event.key)) return;
+        event.preventDefault();
+        if (event.key === 'Delete' || event.key === 'Backspace') { actionEl<HTMLButtonElement>('#signature-delete').click(); return; }
+        rememberPlacement(); const step = event.shiftKey ? 2 : .5; const left = Number.parseFloat(item.style.left || '62'); const top = Number.parseFloat(item.style.top || '76'); if (event.key === 'ArrowLeft') item.style.left = `${Math.max(0,left-step)}%`; if (event.key === 'ArrowRight') item.style.left = `${Math.min(100-Number.parseFloat(item.style.width || '30'),left+step)}%`; if (event.key === 'ArrowUp') item.style.top = `${Math.max(0,top-step)}%`; if (event.key === 'ArrowDown') item.style.top = `${Math.min(96,top+step)}%`;
+      });
+    };
+
+    const createPlacement = (state?: SignatureSnapshot[number]) => {
+      const clone = selection.cloneNode(true) as HTMLElement; clone.removeAttribute('id'); clone.querySelector('[id="signature-overlay"]')?.removeAttribute('id'); clone.dataset.bound = 'false'; clone.hidden = state?.hidden ?? false; clone.dataset.page = state?.page || pageInput.value; if (state?.deleted) clone.dataset.deleted = 'true'; else delete clone.dataset.deleted; clone.style.left = state?.left || `${Math.min(70, Number.parseFloat(activeSelection.style.left || '62') + 4)}%`; clone.style.top = state?.top || `${Math.min(88, Number.parseFloat(activeSelection.style.top || '76') + 4)}%`; clone.style.width = state?.width || activeSelection.style.width || '30%'; const image = clone.querySelector<HTMLImageElement>('img'); if (image) image.src = signatureCanvas.toDataURL('image/png'); signatureStage.append(clone); bindPlacement(clone); return clone;
+    };
+    const restorePlacements = (state: SignatureSnapshot) => {
+      placements().forEach((item) => { if (item !== selection) item.remove(); });
+      const first = state[0] || { left: '62%', top: '76%', width: '30%', page: pageInput.value, hidden: !signatureHasInk, deleted: false }; Object.assign(selection.style, { left: first.left, top: first.top, width: first.width }); selection.dataset.page = first.page; selection.hidden = first.hidden; if (first.deleted) selection.dataset.deleted = 'true'; else delete selection.dataset.deleted;
+      for (const item of state.slice(1)) createPlacement(item);
+      selectPlacement(selection);
+    };
+    bindPlacement(selection); selectPlacement(selection);
+
+    signatureStage.addEventListener('click', (event) => {
+      if (!signatureHasInk || (event.target as HTMLElement).closest('[data-signature-instance]')) return;
+      rememberPlacement(); const stageRect = signatureStage.getBoundingClientRect(); const width = activeSelection.getBoundingClientRect().width || stageRect.width * .3; const height = activeSelection.getBoundingClientRect().height || width / 3; delete activeSelection.dataset.deleted; actionEl('#signature-object-controls').hidden = false; activeSelection.dataset.page = pageInput.value; activeSelection.hidden = false; activeSelection.style.left = `${Math.max(0, Math.min(100 - width / stageRect.width * 100, (event.clientX - stageRect.left - width / 2) / stageRect.width * 100))}%`; activeSelection.style.top = `${Math.max(0, Math.min(100 - height / stageRect.height * 100, (event.clientY - stageRect.top - height / 2) / stageRect.height * 100))}%`; selectPlacement(activeSelection);
+    });
+    sizeRange.addEventListener('pointerdown', rememberPlacement);
+    sizeRange.addEventListener('input', () => { activeSelection.style.width = `${sizeRange.value}%`; sizeOutput.value = `${sizeRange.value}%`; });
+    pageInput.addEventListener('change', () => void renderSignPdfPage());
+    actionEl<HTMLButtonElement>('#signature-duplicate').addEventListener('click', () => { if (!signatureHasInk || activeSelection.hidden) return; rememberPlacement(); selectPlacement(createPlacement()); });
+    actionEl<HTMLButtonElement>('#signature-delete').addEventListener('click', () => { if (activeSelection.dataset.deleted === 'true') return; rememberPlacement(); const all = placements().filter((item) => item.dataset.deleted !== 'true'); if (all.length === 1) { activeSelection.dataset.deleted = 'true'; activeSelection.hidden = true; actionEl('#signature-object-controls').hidden = true; } else { const next = all.find((item) => item !== activeSelection)!; activeSelection.remove(); selectPlacement(next); } });
+    actionWork.addEventListener('workspace-command', (event) => {
+      const command = (event as CustomEvent<{ command?: string }>).detail?.command;
+      if (command === 'undo') { const previous = signatureUndo.pop(); if (!previous) return; signatureRedo.push(snapshotPlacements()); restorePlacements(previous); }
+      if (command === 'redo') { const next = signatureRedo.pop(); if (!next) return; signatureUndo.push(snapshotPlacements()); restorePlacements(next); }
+    });
   }
   let appendSelection = false;
   actionEl<HTMLButtonElement>('#action-choose').addEventListener('click', () => { appendSelection = false; actionInput.click(); });
   actionRoot.querySelector<HTMLButtonElement>('#action-add')?.addEventListener('click', () => { appendSelection = true; actionInput.click(); });
   actionInput.addEventListener('change', () => void loadActionFiles(Array.from(actionInput.files ?? []), appendSelection)); actionEl<HTMLButtonElement>('#action-remove').addEventListener('click', resetAction); actionForm.addEventListener('submit', event => { event.preventDefault(); void processAction(); });
-  const actionDrop = actionEl('#action-drop'); for (const eventName of ['dragenter','dragover']) actionDrop.addEventListener(eventName, event => { event.preventDefault(); actionDrop.classList.add('border-blue','bg-blue-soft','select-none'); }); for (const eventName of ['dragleave','drop']) actionDrop.addEventListener(eventName, event => { event.preventDefault(); actionDrop.classList.remove('border-blue','bg-blue-soft','select-none'); }); actionDrop.addEventListener('drop', event => { const files = Array.from(event.dataTransfer?.files ?? []); if (files.length) void loadActionFiles(files, actionFiles.length > 0); }); window.addEventListener('beforeunload', clearActionUrl);
+  const actionDrop = actionEl('#action-drop'); for (const eventName of ['dragenter','dragover']) actionDrop.addEventListener(eventName, event => { event.preventDefault(); actionDrop.dataset.dragActive = 'true'; actionDrop.classList.add('border-blue','bg-blue-soft','select-none'); }); for (const eventName of ['dragleave','drop']) actionDrop.addEventListener(eventName, event => { event.preventDefault(); delete actionDrop.dataset.dragActive; actionDrop.classList.remove('border-blue','bg-blue-soft','select-none'); }); actionDrop.addEventListener('drop', event => { const files = Array.from(event.dataTransfer?.files ?? []); if (files.length) void loadActionFiles(files, actionFiles.length > 0); }); window.addEventListener('beforeunload', () => { clearActionUrl(); actionFilePreviewUrls.forEach((url) => URL.revokeObjectURL(url)); });
 </script>

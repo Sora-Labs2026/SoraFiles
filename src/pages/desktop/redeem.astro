@@ -1,0 +1,35 @@
+---
+import DesktopLayout from '../../layouts/DesktopLayout.astro';
+import redemption from '../../../desktop/releases/redemption.json';
+---
+<DesktopLayout title="Redeem a SoraFiles Desktop invitation" description="Redeem an authorized Desktop giveaway invitation when redemption opens." path="/desktop/redeem" sensitive={true}>
+  <script slot="early-head" is:inline>try { history.replaceState(null, '', location.pathname); } catch {}</script>
+  <section class="dw-container redeem-content" data-redemption-enabled={String(redemption.enabled)}>
+    <header class="dw-intro"><p class="dw-eyebrow">SoraFiles Desktop</p>
+    <h1>Redeem your invitation</h1>
+    <p>A giveaway code is an invitation. After verification, your license key activates Desktop on the devices included in your invitation.</p></header>
+    {!redemption.enabled && <div class="mt-8 rounded-3xl border border-line bg-surface p-6"><h2 class="text-xl font-bold">Redemption has not opened yet</h2><p class="mt-3 leading-7 text-muted">Keep your invitation private and follow the instructions from SoraFiles when redemption opens. No code or payment is needed on this page today.</p></div>}
+    {redemption.enabled && <form data-redemption-form class="mt-8 rounded-3xl border border-line bg-surface p-6">
+      <label for="invitation-code" class="block font-semibold">Invitation code</label>
+      <input id="invitation-code" name="code" type="password" required maxlength="128" autocomplete="off" spellcheck="false" class="mt-3 min-h-12 w-full rounded-xl border border-line bg-surface px-3" />
+      <p class="mt-3 text-sm leading-6 text-muted">Use the verified account associated with your invitation. Your edition and device allowance come from the invitation.</p>
+      <button type="submit" class="mt-5 min-h-12 rounded-full bg-action px-6 font-bold text-action-contrast">Redeem invitation</button>
+    </form>}
+    <p data-redemption-status role="status" aria-live="polite" class="mt-5 leading-7 text-muted"></p>
+    <section data-redemption-result hidden class="mt-6 rounded-3xl border border-line bg-surface p-6">
+      <h2 class="text-xl font-bold">Your Desktop license</h2>
+      <p data-redemption-details class="mt-3 leading-7 text-muted"></p>
+      <p class="mt-3 leading-7 text-muted">Save your key privately, then paste it into License in SoraFiles Desktop. This page has not sent an email.</p>
+      <label for="redemption-license" class="sr-only">Desktop license key</label>
+      <input id="redemption-license" data-redemption-key hidden readonly autocomplete="off" spellcheck="false" class="mt-4 min-h-12 w-full rounded-xl border border-line bg-surface px-3 font-mono" />
+      <div class="mt-5 flex flex-wrap gap-3"><button data-redemption-copy type="button" class="min-h-12 rounded-full bg-action px-6 font-bold text-action-contrast">Copy license key</button><button data-redemption-reveal type="button" aria-expanded="false" aria-controls="redemption-license" class="min-h-12 rounded-full border border-line px-6 font-semibold">Show key</button></div>
+    </section>
+    <p class="mt-8 leading-7 text-muted">Discount codes for a purchase belong at checkout. SoraFiles Web remains free.</p>
+    <a href="/contact" class="mt-5 inline-flex min-h-11 items-center font-semibold text-violet underline underline-offset-4">Contact SoraFiles support</a>
+  </section>
+</DesktopLayout>
+<script>
+  import {mountRedemption} from '../../lib/desktop/redemption.js';
+  mountRedemption(document);
+</script>
+<style>.redeem-content{max-width:52rem;margin-left:max(var(--gutter,20px),calc((100vw - 72rem)/2));margin-right:auto}.redeem-content>div,.redeem-content>form,.redeem-content>section{max-width:44rem}.redeem-content input{border-color:var(--line-strong)}.redeem-content input:focus-visible{outline:2px solid var(--ink);outline-offset:3px}.redeem-content h2{font-size:20px}.redeem-content>p{max-width:44rem;font-size:14px}</style>

@@ -3,7 +3,7 @@ import type { LocalePath } from '../i18n/config';
 import { localizedPath } from '../i18n/config';
 import { getLocaleContent } from '../i18n';
 import { liveTools } from '../data/liveTools';
-import { liveText } from '../data/liveI18n';
+import { liveText, liveToolCopy } from '../data/liveI18n';
 import LiveToolCard from './LiveToolCard.astro';
 
 interface Props { locale?: LocalePath; }
@@ -22,16 +22,79 @@ if (new Set(groupedIds).size !== groupedIds.length || missingIds.length || unkno
   throw new Error(`Tools directory groups are incomplete: missing=${missingIds.join(',') || 'none'} unknown=${unknownIds.join(',') || 'none'}`);
 }
 ---
-
-<main id="main" data-testid="tools-hub" class="mx-auto max-w-[1200px] px-4 py-14 sm:px-6 lg:py-20">
-  <div class="sf-enter max-w-2xl">
-    <span class="text-xs font-extrabold uppercase tracking-[0.25em] text-violet-500">SoraFiles</span>
-    <h1 class="mt-3 text-4xl font-extrabold tracking-[-0.03em] text-slate-900 sm:text-5xl dark:text-white">{liveText(locale, 'nav.allTools')}</h1>
-    <p class="mt-4 text-base font-medium leading-relaxed text-slate-500 dark:text-slate-400">{liveText(locale, 'hero.desc')}</p>
+<main id="main" data-testid="tools-hub" class="v10-content v10-tools-directory">
+  <header class="v10-tool-hero">
+    <nav class="v10-breadcrumb" aria-label={liveText(locale, 'nav.home')}><a href={hrefFor('/')}>{liveText(locale, 'nav.home')}</a><span aria-hidden="true">/</span><span aria-current="page">{liveText(locale, 'nav.allTools')}</span></nav>
+    <h1>{liveText(locale, 'nav.allTools')}</h1>
+    <p class="v10-tool-lead">{liveText(locale, 'hero.desc')}</p>
+    <div class="v10-directory-search">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      <label for="directory-search" class="sr-only">{liveText(locale, 'hero.searchLabel')}</label>
+      <input id="directory-search" type="search" placeholder={liveText(locale, 'hero.searchPh')} autocomplete="off" aria-controls="directory-groups"/>
+      <kbd aria-hidden="true">/</kbd>
+    </div>
+  </header>
+  <div class="v10-directory-toolbar">
+    <div class="v10-directory-filters" role="group" aria-label={liveText(locale, 'nav.allTools')}>
+      <button type="button" data-directory-filter="all" aria-pressed="true">{liveText(locale, 'nav.allTools')} <span data-directory-count="all">{liveTools.length}</span></button>
+      {groups.map(([label, ids], i) => <button type="button" data-directory-filter={String(i)} aria-pressed="false">{label} <span data-directory-count={String(i)}>{ids.length}</span></button>)}
+    </div>
+    <p data-directory-status aria-live="polite" data-template={liveText(locale, 'toolsSec.found')}>{liveText(locale, 'toolsSec.found').replace('{{n}}', String(liveTools.length))}</p>
   </div>
-  {groups.map(([label, ids], groupIndex) => {
-    const tools = ids.map((id) => liveTools.find((tool) => tool.id === id)).filter((tool) => tool !== undefined);
-    return <section class="mt-12" aria-labelledby={`tool-group-${groupIndex}`}><h2 id={`tool-group-${groupIndex}`} class="flex items-center gap-3 text-xl font-extrabold tracking-tight text-slate-900 dark:text-white"><span>{label}</span><span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-extrabold text-violet-600 dark:bg-violet-500/15 dark:text-violet-300">{tools.length}</span><span class="hidden h-px flex-1 bg-slate-200/80 sm:block dark:bg-white/10"></span></h2><div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{tools.map((tool) => <div data-reveal class="sf-reveal"><LiveToolCard {tool} {locale} href={hrefFor(`/${tool.slug}`)} /></div>)}</div></section>;
-  })}
-  <p class="mt-14 rounded-2xl border border-emerald-200/70 bg-emerald-50/70 px-5 py-4 text-sm font-medium leading-6 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200">{liveText(locale, 'panel.check1')} {liveText(locale, 'panel.check2')}</p>
+  <div id="directory-groups">
+    {groups.map(([label, ids], groupIndex) => {
+      const tools = ids.map(id => liveTools.find(tool => tool.id === id)).filter(tool => tool !== undefined);
+      return <section class="v10-directory-group" data-directory-group={String(groupIndex)} aria-labelledby={`tool-group-${groupIndex}`}><h2 id={`tool-group-${groupIndex}`}>{label}<span data-group-count>{tools.length}</span></h2><ul class="v10-tool-grid">{tools.map(tool => { const words = liveToolCopy(locale, tool.id); return <li data-directory-item data-search={`${words.n} ${words.t} ${tool.name} ${tool.id}`}><LiveToolCard {tool} {locale} href={hrefFor(`/${tool.slug}`)} /></li>; })}</ul></section>;
+    })}
+  </div>
+  <div data-directory-empty hidden class="v10-directory-empty"><p data-empty-copy data-template={liveText(locale, 'toolsSec.none')}></p><button type="button" data-directory-clear>{liveText(locale, 'toolsSec.clear')}</button></div>
+  <p data-testid="tools-privacy-summary" class="v10-directory-privacy">{liveText(locale, 'panel.check1')} · {liveText(locale, 'panel.check2')}</p>
 </main>
+<script>
+  const directory = document.querySelector<HTMLElement>('.v10-tools-directory');
+  if (directory) {
+    const input = directory.querySelector<HTMLInputElement>('#directory-search')!;
+    const groups = [...directory.querySelectorAll<HTMLElement>('[data-directory-group]')];
+    const filters = [...directory.querySelectorAll<HTMLButtonElement>('[data-directory-filter]')];
+    const status = directory.querySelector<HTMLElement>('[data-directory-status]')!;
+    const empty = directory.querySelector<HTMLElement>('[data-directory-empty]')!;
+    const emptyCopy = directory.querySelector<HTMLElement>('[data-empty-copy]')!;
+    let filter = 'all';
+    const normalize = (value: string) => value.normalize('NFKD').toLocaleLowerCase().replace(/[\u0300-\u036f]/g, '');
+    const update = () => {
+      const terms = normalize(input.value.trim()).split(/\s+/).filter(Boolean);
+      let total = 0, visible = 0;
+      for (const group of groups) {
+        let count = 0;
+        for (const item of group.querySelectorAll<HTMLElement>('[data-directory-item]')) {
+          item.hidden = !terms.every(term => normalize(item.dataset.search ?? '').includes(term));
+          if (!item.hidden) count++;
+        }
+        total += count;
+        group.hidden = count === 0 || (filter !== 'all' && filter !== group.dataset.directoryGroup);
+        if (!group.hidden) visible += count;
+        group.querySelector('[data-group-count]')!.textContent = String(count);
+        directory.querySelector(`[data-directory-count="${group.dataset.directoryGroup}"]`)!.textContent = String(count);
+      }
+      directory.querySelector('[data-directory-count="all"]')!.textContent = String(total);
+      status.textContent = (status.dataset.template ?? '{{n}}').replace('{{n}}', String(visible));
+      empty.hidden = visible > 0;
+      emptyCopy.textContent = (emptyCopy.dataset.template ?? '').replace('{{q}}', input.value.trim());
+      filters.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.directoryFilter === filter)));
+    };
+    input.addEventListener('input', update);
+    filters.forEach(button => button.addEventListener('click', () => { filter = button.dataset.directoryFilter!; update(); }));
+    directory.querySelector('[data-directory-clear]')!.addEventListener('click', () => { input.value = ''; filter = 'all'; update(); input.focus(); });
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { input.value = ''; update(); }
+      if (event.key === 'ArrowDown' || event.key === 'Enter') {
+        const first = directory.querySelector<HTMLAnchorElement>('[data-directory-group]:not([hidden]) [data-directory-item]:not([hidden]) a');
+        if (first) { event.preventDefault(); event.key === 'Enter' ? first.click() : first.focus(); }
+      }
+    });
+    document.addEventListener('keydown', event => {
+      const target = event.target as HTMLElement;
+      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !target.closest('input,textarea,select,[contenteditable="true"]')) { event.preventDefault(); input.focus(); }
+    });
+  }
+</script>

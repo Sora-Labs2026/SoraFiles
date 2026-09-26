@@ -209,15 +209,25 @@ try{
   await page.getByRole('button',{name:'Home',exact:true}).click();await page.screenshot({path:resolve(out,`home-${width}-${theme}.png`)});
   if(width===1180){
    const ratios=await page.evaluate(()=>{
-    const rgb=color=>{const probe=document.createElement('span');probe.style.color=color;document.body.append(probe);const values=getComputedStyle(probe).color.match(/[\d.]+/g).slice(0,3).map(Number);probe.remove();return values;};
+    const rgb=color=>{const probe=document.createElement('span');probe.style.color=color;document.body.append(probe);const values=getComputedStyle(probe).color.match(/[\d.]+/g).map(Number);probe.remove();return values;};
     const luminance=channels=>channels.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
-    const tokens=getComputedStyle(document.documentElement),read=name=>luminance(rgb(tokens.getPropertyValue(name).trim()));
+    const tokens=getComputedStyle(document.documentElement),surface=rgb(tokens.getPropertyValue('--surface').trim());
+    const read=name=>{const channels=rgb(tokens.getPropertyValue(name).trim()),alpha=channels[3]??1;return luminance(channels.slice(0,3).map((channel,index)=>channel*alpha+surface[index]*(1-alpha)));};
     return [['--text','--surface'],['--muted','--surface'],['--action-text','--action'],['--success-text','--success-bg'],['--error-text','--error-bg']].map(([fg,bg])=>{const a=read(fg),b=read(bg);return {fg,bg,ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)};});
    });
    for(const result of ratios)assert.ok(result.ratio>=4.5,`${theme} ${result.fg}/${result.bg} contrast ${result.ratio}`);contrast.push({theme,ratios});
   }
  }checks.push(`Five screens have no horizontal overflow at ${widths.join(', ')} CSS pixels in light and dark`);
  checks.push('Watermark and page-number controls fit their forms, follow keyboard order and submit all selected options in both themes at every tested width');
+
+ await page.getByRole('button',{name:'Settings',exact:true}).click();
+ await page.getByLabel('Appearance',{exact:true}).selectOption('system');await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
+ await page.emulateMedia({colorScheme:'dark'});await page.waitForFunction(()=>document.documentElement.dataset.theme==='dark');
+ await page.emulateMedia({colorScheme:'light'});await page.waitForFunction(()=>document.documentElement.dataset.theme==='light');
+ await page.getByLabel('Appearance',{exact:true}).selectOption('light');await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
+ await page.emulateMedia({colorScheme:'dark'});assert.equal(await page.locator('html').getAttribute('data-theme'),'light');
+ assert.equal(await page.evaluate(async()=>{await document.fonts.ready;return document.fonts.check('16px "Plus Jakarta Sans Variable"');}),true);
+ checks.push('Follow system responds to OS theme changes, explicit light override remains, and bundled Plus Jakarta Sans loads');
 
  await page.setViewportSize(scaledViewport);await page.evaluate(()=>document.documentElement.style.zoom='2');
  for(const nav of ['Home','All tools','License','Settings','Updates & about']){await page.getByRole('button',{name:nav,exact:true}).click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,nav+' 200% overflow');}

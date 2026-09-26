@@ -265,9 +265,15 @@ async function runTests() {
 
           if (route === '/') {
             const headerText = await page.locator('header').textContent();
-            for (const label of ['All Tools', 'Compress PDF', 'Merge PDF', 'Split PDF', 'PDF to Word', 'Rotate PDF', 'More']) {
+            for (const label of ['All Tools', 'Desktop App', 'More']) {
               if (!headerText.includes(label)) {
                 console.error(`  FAIL: Missing header navigation label ${label}`);
+                hasFailures = true;
+              }
+            }
+            for (const testId of ['nav-desktop', 'mobile-nav-desktop']) {
+              if (await page.getByTestId(testId).getAttribute('href') !== '/desktop') {
+                console.error(`  FAIL: Desktop App navigation has the wrong destination (${testId})`);
                 hasFailures = true;
               }
             }

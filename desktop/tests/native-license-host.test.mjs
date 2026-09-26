@@ -32,7 +32,7 @@ test('an unverifiable trial offers paid activation without granting access or re
  }
 });
 
-test('automatic trial saves its installation deadline offline and retries without resetting it',async()=>{
+test('automatic trial saves its first-launch deadline offline and retries without resetting it',async()=>{
  const signing=generateKeyPairSync('ed25519'),publicKey=signing.publicKey.export({type:'spki',format:'pem'}),privateKey=signing.privateKey.export({type:'pkcs8',format:'pem'});
  let now=1800000000000,saved=null,online=false,writes=0,requests=0;
  const store=new LicenseStore(':memory:'),guard=new RequestGuard({store,secret:randomBytes(32),now:()=>Math.floor(now/1000)});
@@ -43,7 +43,11 @@ test('automatic trial saves its installation deadline offline and retries withou
  try{
   await run('prepareTrial');assert.equal(requests,0);assert.equal(writes,1);const device=structuredClone(saved.device);
   assert.equal((await run('initializeTrial')).trialPending,true);assert.equal(saved.license,null);
-  now+=2*86400000;online=true;const trial=await run('initializeTrial');assert.equal(trial.license,'trial');assert.equal(trial.expiresAt,1800000000+7*86400);assert.deepEqual(saved.device,device);
+  now+=2*86400000;online=true;
+  // Relaunch/upgrade must keep both the device identity and the original local
+  // deadline, including states written by the previous installer-based trial.
+  const beforeRelaunch=structuredClone(saved);await run('prepareTrial');assert.deepEqual(saved,beforeRelaunch);
+  const trial=await run('initializeTrial');assert.equal(trial.license,'trial');assert.equal(trial.expiresAt,1800000000+7*86400);assert.deepEqual(saved.device,device);
   const snapshot=structuredClone(saved),before=requests,beforeWrites=writes;
   assert.equal((await run('initializeTrial')).license,'trial');assert.deepEqual(saved,snapshot);assert.equal(requests,before);assert.equal(writes,beforeWrites);
   now+=6*86400000;assert.equal((await run('initializeTrial')).license,'needs-verification');assert.deepEqual(saved,snapshot);assert.equal(requests,before);

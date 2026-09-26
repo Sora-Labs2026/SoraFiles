@@ -40,10 +40,18 @@ if (existsSync('dist/index.html')) {
     const homepage = read(join(prefix, 'index.html'));
     const about = read(join(prefix, 'about', 'index.html'));
     const copy = brandPositioning[locale];
-    check(homepage.includes(copy.heroLine1) && homepage.includes(copy.heroLine2), `${locale}: homepage is missing one-app hero positioning.`);
+    const heroLines = locale === 'en' ? ['Everyday PDF', 'and image tools.'] : [copy.heroLine1, copy.heroLine2];
+    check(heroLines.every(line => homepage.includes(line)), `${locale}: homepage is missing approved hero positioning.`);
     check(homepage.includes(copy.description), `${locale}: homepage is missing localized privacy-first description.`);
     check(about.includes(copy.aboutTitle) && about.includes(copy.aboutIntro), `${locale}: About page is missing localized one-app positioning.`);
-    check(!countLedBranding.test(homepage) && !countLedBranding.test(about), `${locale}: rendered brand page contains a historical tool-count claim.`);
+    // V10 displays the actual registry count in search/filter controls. Brand
+    // titles, headings and descriptions must still avoid historical count claims.
+    const brandingText = [homepage, about].flatMap(html => [
+      ...(html.match(/<title[^>]*>[\s\S]*?<\/title>/gi) ?? []),
+      ...(html.match(/<h1[^>]*>[\s\S]*?<\/h1>/gi) ?? []),
+      ...(html.match(/<meta[^>]*name="description"[^>]*>/gi) ?? []),
+    ]).join(' ');
+    check(!countLedBranding.test(brandingText), `${locale}: rendered brand identity contains a historical tool-count claim.`);
   }
 
   const workflowIds = ['compress-pdf', 'merge-pdf', 'split-pdf', 'sign-pdf', 'pdf-ocr', 'pdf-to-word', 'word-to-pdf', 'compress-image', 'metadata-remover'];

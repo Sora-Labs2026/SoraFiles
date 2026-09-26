@@ -20,6 +20,51 @@ test('worker never marks unhashed public assets immutable', async () => {
   assert.doesNotMatch(response.headers.get('Cache-Control') ?? '', /immutable/i);
 });
 
+test('background worker opts into the isolated document policy without changing ordinary scripts', async () => {
+  const env = { ASSETS: { fetch: async () => new Response('self.onmessage = () => {};', { headers: { 'Content-Type': 'text/javascript' } }) } };
+  const response = await worker.fetch(new Request('https://sorafiles.com/_astro/background-removal.worker-KWKD31ZM.js'), env);
+  assert.equal(response.headers.get('Cross-Origin-Embedder-Policy'), 'require-corp');
+  assert.equal(response.headers.get('Cross-Origin-Resource-Policy'), 'same-origin');
+  assert.equal(response.headers.get('Content-Type'), 'text/javascript');
+  assert.equal(await response.text(), 'self.onmessage = () => {};');
+  const ordinary = await worker.fetch(new Request('https://sorafiles.com/_astro/home.abcdefgh.js'), env);
+  assert.equal(ordinary.headers.get('Cross-Origin-Embedder-Policy'), null);
+});
+
+test('worker serves background-removal model assets through a cacheable same-origin route', { concurrency: false }, async () => {
+  const originalFetch = globalThis.fetch;
+  const originalCaches = globalThis.caches;
+  const upstreamRequests = [];
+  const cachedResponses = [];
+  try {
+    globalThis.fetch = async (request) => {
+      upstreamRequests.push(String(request));
+      return new Response('{"model":"ok"}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+    };
+    globalThis.caches = { default: {
+      match: async () => undefined,
+      put: async (request, response) => cachedResponses.push({ request: String(request.url || request), body: await response.text() }),
+    } };
+    const pending = [];
+    const response = await worker.fetch(
+      new Request('https://sorafiles.com/__sf/background-removal/resources.json'),
+      { ASSETS: { fetch: async () => new Response('unused') } },
+      { waitUntil: (promise) => pending.push(promise) },
+    );
+    await Promise.all(pending);
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), '{"model":"ok"}');
+    assert.deepEqual(upstreamRequests, ['https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/resources.json']);
+    assert.equal(cachedResponses.length, 1);
+    assert.match(response.headers.get('Cache-Control') || '', /max-age=86400/);
+    assert.equal(response.headers.get('Cross-Origin-Resource-Policy'), 'same-origin');
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalCaches === undefined) delete globalThis.caches;
+    else globalThis.caches = originalCaches;
+  }
+});
+
 test('worker secures HTML while allowing native Cloudflare compression', async () => {
   const env = {
     ASSETS: {
@@ -101,8 +146,9 @@ test('homepage metadata and decorative brand marks satisfy the Part 14 contract'
 
   for (const file of ['src/components/Header.astro', 'src/components/Footer.astro']) {
     const source = await readFile(file, 'utf8');
-    assert.match(source, /aria-hidden="true"[^>]+background-image: url\('\/favicon-48x48\.png'\)/);
-    assert.doesNotMatch(source, /<img[^>]+favicon-48x48\.png/);
+    assert.match(source, /src="\/brand\/sorafiles-logo-full-color\.svg" alt="SoraFiles"/);
+    assert.match(source, /src="\/brand\/sorafiles-logo-full-color-dark\.svg" alt="SoraFiles"/);
+    assert.doesNotMatch(source, /background-image: url\('\/favicon/);
   }
 });
 

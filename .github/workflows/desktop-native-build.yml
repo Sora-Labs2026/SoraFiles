@@ -65,6 +65,10 @@ jobs:
         run: node --test desktop/tests/*.test.mjs
       - name: Build independent interface
         run: node desktop/scripts/build-native-ui.mjs
+      - name: Verify compact action interface
+        run: |
+          node desktop/scripts/build-ui.mjs
+          node desktop/tests/quick-action-ui-qa.mjs
       - name: Measure processing resources and reject source-checkout links
         run: node desktop/scripts/measure-processing-pack.mjs
       - name: Verify isolated processing package

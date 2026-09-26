@@ -64,6 +64,7 @@ async function runPdfToWord(page, fixtureName = 'text') {
   await page.goto(`${baseUrl}/pdf-to-word`, { waitUntil: 'domcontentloaded' });
   await page.locator('#action-input').setInputFiles(fixturePath(fixture.file));
   await page.locator('#action-work').waitFor({ state: 'visible' });
+  await page.locator('input[name="pdfWordMode"][value="visual"]').check({ force: true });
   await page.locator('#action-process').click();
 
   try {
@@ -88,10 +89,28 @@ async function runPdfToWord(page, fixtureName = 'text') {
   console.log(`PASS pdf-to-word ${download.suggestedFilename()} (${media.length} page visuals)`);
 }
 
+async function runPdfToWordEditable(page) {
+  await page.goto(`${baseUrl}/pdf-to-word`, { waitUntil: 'domcontentloaded' });
+  await page.locator('#action-input').setInputFiles(fixturePath('text-two-page.pdf'));
+  await page.locator('#action-work').waitFor({ state: 'visible' });
+  await page.locator('input[name="pdfWordMode"][value="editable"]').check({ force: true });
+  await page.locator('#action-process').click();
+  await page.locator('#action-result').waitFor({ state: 'visible', timeout: 120_000 });
+  const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#action-download').click()]);
+  const downloadPath = await download.path();
+  assert.ok(downloadPath, 'Editable PDF to Word download path must be available.');
+  const { entries } = await validateDocx(await readFile(downloadPath));
+  const documentXml = new TextDecoder().decode(entries['word/document.xml']);
+  assert.match(documentXml, /Sora Files page one/i, 'Editable DOCX must contain source text as editable Word text.');
+  assert.equal(Object.keys(entries).filter((name) => /^word\/media\//i.test(name)).length, 0, 'Editable native-text DOCX must not flatten pages into images.');
+  console.log('PASS pdf-to-word editable semantic mode');
+}
+
 async function runPdfToWordNoText(page) {
   await page.goto(`${baseUrl}/pdf-to-word`, { waitUntil: 'domcontentloaded' });
   await page.locator('#action-input').setInputFiles(fixturePath('scan-english.pdf'));
   await page.locator('#action-work').waitFor({ state: 'visible' });
+  await page.locator('input[name="pdfWordMode"][value="visual"]').check({ force: true });
   await page.locator('#action-process').click();
   await page.locator('#action-result').waitFor({ state: 'visible', timeout: 60_000 });
   const [download] = await Promise.all([
@@ -226,24 +245,39 @@ async function runExtraTools(page) {
   const excelPdf = (await processExtraTool(page, {
     route: 'excel-to-pdf',
     files: [{ name: 'tools.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: workbookBuffer }],
+    timeout: 300_000,
   }))[0];
   await validatePdf(excelPdf.buffer, { pageCount: 1 });
   assert.match(await extractPdfText(excelPdf.buffer), /SoraFiles/);
   console.log(`PASS excel-to-pdf ${excelPdf.filename}`);
 
-  const pdfExcel = (await processExtraTool(page, { route: 'pdf-to-excel', files: ['text-two-page.pdf'] }))[0];
+  const pdfExcel = (await processExtraTool(page, { route: 'pdf-to-excel', files: ['sorafiles-qa/table.pdf'] }))[0];
   const extractedWorkbook = spreadsheet.read(pdfExcel.buffer, { type: 'buffer' });
-  assert.equal(extractedWorkbook.SheetNames.length, 2);
-  assert.match(pdfExcel.buffer.toString('latin1'), /xl\/media\/page1\.png/i, 'Exact PDF to Excel must preserve page one as a worksheet visual.');
-  assert.match(pdfExcel.buffer.toString('latin1'), /xl\/media\/page2\.png/i, 'Exact PDF to Excel must preserve page two as a worksheet visual.');
+  assert.ok(extractedWorkbook.SheetNames.length >= 1, 'PDF to Excel must create at least one editable worksheet.');
+  const extractedCells = extractedWorkbook.SheetNames.map((name) => spreadsheet.utils.sheet_to_csv(extractedWorkbook.Sheets[name])).join('\n');
+  assert.ok(extractedCells.trim().length > 0, 'PDF to Excel must place detected table values into editable cells.');
   console.log(`PASS pdf-to-excel ${pdfExcel.filename}`);
 
   const ocrText = (await processExtraTool(page, {
     route: 'pdf-ocr', files: ['scan-english.pdf'], timeout: 120_000,
-    configure: async (currentPage) => currentPage.locator('[data-extra-lang]').selectOption('eng'),
+    configure: async (currentPage) => {
+      await currentPage.locator('[data-extra-lang]').selectOption('eng');
+      await currentPage.locator('[data-ocr-output]').selectOption('txt');
+    },
   }))[0];
   assert.match(ocrText.buffer.toString('utf8'), /Sora Files local OCR/i);
   console.log(`PASS pdf-ocr ${ocrText.filename}`);
+
+  const searchableOcr = (await processExtraTool(page, {
+    route: 'pdf-ocr', files: ['scan-english.pdf'], timeout: 120_000,
+    configure: async (currentPage) => {
+      await currentPage.locator('[data-extra-lang]').selectOption('eng');
+      await currentPage.locator('[data-ocr-output]').selectOption('pdf');
+    },
+  }))[0];
+  await validatePdf(searchableOcr.buffer, { pageCount: 1 });
+  assert.match(await extractPdfText(searchableOcr.buffer), /Sora Files local OCR/i, 'Searchable PDF must contain an invisible OCR text layer.');
+  console.log(`PASS pdf-ocr searchable PDF ${searchableOcr.filename}`);
 }
 
 async function runDocumentActions(page) {
@@ -260,27 +294,30 @@ async function runDocumentActions(page) {
     files: ['text-two-page.pdf'],
   });
   assert.match(split.filename, /\.zip$/i);
-  const splitZip = validateZip(split.buffer, /^page-\d{3}\.pdf$/i);
+  const splitZip = validateZip(split.buffer, /-page-\d{3}\.pdf$/i);
   assert.equal(splitZip.names.length, 2, 'Split PDF must create one output per page.');
   for (const name of splitZip.names) await validatePdf(splitZip.entries[name], { pageCount: 1 });
+  assert.match(await extractPdfText(splitZip.entries[splitZip.names[0]]), /Sora Files page one/i, 'Native split must preserve selectable source text.');
   console.log(`PASS split-pdf ${split.filename} ${split.stats}`);
 
   const sharedImageSource = await generateImageHeavyPdf(page);
-  const compactSplit = await processDocumentAction(page, {
+  const nativeImageSplit = await processDocumentAction(page, {
     route: 'split-pdf',
     files: [{ name: 'shared-image-pages.pdf', mimeType: 'application/pdf', buffer: sharedImageSource }],
   });
-  const compactZip = validateZip(compactSplit.buffer, /^page-\d{3}\.pdf$/i);
-  assert.equal(compactZip.names.length, 3);
-  assert.ok(compactSplit.warning?.trim(), 'Smart split must disclose when image-based compact pages were used.');
-  assert.ok(compactSplit.buffer.length < sharedImageSource.length * 2, `Smart split remained abnormally large: ${compactSplit.buffer.length}/${sharedImageSource.length} bytes.`);
-  for (const name of compactZip.names) await validatePdf(compactZip.entries[name], { pageCount: 1 });
-  console.log(`PASS split-pdf compact fallback ${compactSplit.buffer.length}/${sharedImageSource.length} bytes`);
+  const nativeImageZip = validateZip(nativeImageSplit.buffer, /-page-\d{3}\.pdf$/i);
+  assert.equal(nativeImageZip.names.length, 3);
+  assert.equal(nativeImageSplit.warning?.trim(), '', 'Native split must not show a rasterization warning.');
+  for (const name of nativeImageZip.names) await validatePdf(nativeImageZip.entries[name], { pageCount: 1 });
+  console.log(`PASS split-pdf native image-page extraction ${nativeImageSplit.buffer.length} bytes`);
 
   const rotate = await processDocumentAction(page, {
     route: 'rotate-pdf',
     files: ['text-two-page.pdf'],
-    configure: async (currentPage) => currentPage.locator('#rotate-angle').selectOption('90'),
+    configure: async (currentPage) => {
+      await currentPage.locator('[data-pdf-workspace]').waitFor({ state: 'visible' });
+      await currentPage.locator('[data-pdf-rotate="90"]').click();
+    },
   });
   await validatePdf(rotate.buffer, { pageCount: 2, rotation: 90 });
   console.log(`PASS rotate-pdf ${rotate.filename} ${rotate.stats}`);
@@ -334,10 +371,13 @@ async function runDocumentActions(page) {
   const numbered = await processDocumentAction(page, {
     route: 'page-numbers',
     files: ['text-two-page.pdf'],
-    configure: async (currentPage) => currentPage.locator('#page-number-start').fill('3'),
+    configure: async (currentPage) => {
+      await currentPage.locator('#page-number-start').fill('3');
+      await currentPage.locator('#page-number-format').selectOption('total');
+    },
   });
   await validatePdf(numbered.buffer, { pageCount: 2 });
-  assert.match(await extractPdfText(numbered.buffer), /3 \/ 4/i, 'Page Numbers must embed the configured sequence.');
+  assert.match(await extractPdfText(numbered.buffer), /Page 3 of 4/i, 'Page Numbers must embed the configured sequence.');
   console.log(`PASS page-numbers ${numbered.filename} ${numbered.stats}`);
 
   const signed = await processDocumentAction(page, {
@@ -379,6 +419,7 @@ async function runDocumentActions(page) {
   console.log(`PASS pdf-to-jpg ${pdfToImages.filename} ${pdfToImages.stats}`);
 
   await runPdfToWord(page);
+  await runPdfToWordEditable(page);
   await runPdfToWordNoText(page);
 
   const wordToPdf = await processDocumentAction(page, {
@@ -518,7 +559,7 @@ async function generatePngFixture(page, transparent) {
   return Buffer.from(base64, 'base64');
 }
 
-async function processImageCompression(page, { input, mode = 'auto', outputMime, targetKb, reductionPercent, route = 'compress-image' }) {
+async function processImageCompression(page, { input, strength = 60, route = 'compress-image' }) {
   await page.goto(`${baseUrl}/${route}`, { waitUntil: 'domcontentloaded' });
   await page.locator('#file-input').setInputFiles(input);
   try {
@@ -526,10 +567,12 @@ async function processImageCompression(page, { input, mode = 'auto', outputMime,
   } catch (error) {
     throw new Error(`Image compressor could not load input. Error: ${await page.locator('#file-error').textContent()}`, { cause: error });
   }
-  await page.locator(`input[name="mode"][value="${mode}"]`).check({ force: true });
-  if (outputMime) await page.locator('#output-format').selectOption(outputMime);
-  if (targetKb !== undefined) await page.locator('#target-kb').fill(String(targetKb));
-  if (reductionPercent !== undefined) await page.locator('#reduction-percent').fill(String(reductionPercent));
+  const strengthControl = page.locator('#compression-strength');
+  if (await strengthControl.count()) await strengthControl.evaluate((input, value) => {
+    input.value = String(value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }, strength);
   await page.locator('#process-file').click();
   try {
     await page.locator('#result-state').waitFor({ state: 'visible', timeout: 90_000 });
@@ -554,58 +597,36 @@ async function processImageCompression(page, { input, mode = 'auto', outputMime,
 async function runImageCompression(page) {
   const sourceJpg = await readFile(fixturePath('sample.jpg'));
   const auto = await processImageCompression(page, { input: fixturePath('sample.jpg') });
-  assert.ok(auto.buffer.length <= sourceJpg.length * 0.8, `Auto JPG must save at least 20%; got ${auto.buffer.length}/${sourceJpg.length} bytes. Warning: ${auto.warning}`);
+  assert.ok(auto.buffer.length <= sourceJpg.length, `Balanced JPG must not return a larger file; got ${auto.buffer.length}/${sourceJpg.length} bytes. Warning: ${auto.warning}`);
   await validateImageInBrowser(page, auto.buffer, auto.outputMime);
-  console.log(`PASS compress-image Auto JPG ${auto.stats}`);
+  const displayedReduction = auto.stats.match(/(\d+)% smaller/)?.[1];
+  if (displayedReduction) assert.equal(Number(displayedReduction), Math.max(0, Math.round((1 - auto.buffer.length / sourceJpg.length) * 100)), 'Displayed reduction must use actual input and output bytes.');
+  console.log(`PASS compress-image balanced JPG ${auto.stats}`);
 
-  const targetKb = 40;
-  const target = await processImageCompression(page, { input: fixturePath('sample.jpg'), mode: 'target', outputMime: 'image/webp', targetKb });
-  assert.ok(target.buffer.length <= targetKb * 1000, 'Target mode must never exceed the requested byte ceiling.');
-  await validateImageInBrowser(page, target.buffer, 'image/webp');
-  console.log(`PASS compress-image Target ${target.stats}`);
-
-  const reductionPercent = 25;
-  const reduced = await processImageCompression(page, { input: fixturePath('sample.jpg'), mode: 'percent', outputMime: 'image/webp', reductionPercent });
-  assert.ok(reduced.buffer.length <= Math.floor(sourceJpg.length * 0.75), 'Reduce-by mode must never exceed its calculated byte ceiling.');
-  await validateImageInBrowser(page, reduced.buffer, 'image/webp');
-  console.log(`PASS compress-image Reduce by ${reduced.stats}`);
-
-  const reduced80 = await processImageCompression(page, { input: fixturePath('sample.jpg'), mode: 'percent', outputMime: 'image/webp', reductionPercent: 80 });
-  assert.ok(reduced80.buffer.length <= Math.floor(sourceJpg.length * 0.2), `80% reduction must produce at most 20% of source bytes; got ${reduced80.buffer.length}/${sourceJpg.length}.`);
-  await validateImageInBrowser(page, reduced80.buffer, 'image/webp');
-  console.log(`PASS compress-image hard 80% rule ${reduced80.stats}`);
+  const strong = await processImageCompression(page, { input: fixturePath('sample.jpg'), strength: 88 });
+  assert.ok(strong.buffer.length <= sourceJpg.length, 'Strong JPG compression must return a valid non-larger file.');
+  await validateImageInBrowser(page, strong.buffer, 'image/jpeg');
+  console.log(`PASS compress-image strong JPG ${strong.stats}`);
 
   await page.goto(`${baseUrl}/compress-image`, { waitUntil: 'domcontentloaded' });
   const opaquePng = await generatePngFixture(page, false);
   const transparentPng = await generatePngFixture(page, true);
 
-  const pngTarget = await processImageCompression(page, {
-    input: { name: 'opaque.png', mimeType: 'image/png', buffer: opaquePng },
-    mode: 'target',
-    targetKb: 250,
-  });
-  assert.equal(pngTarget.outputMime, 'image/png', 'Choosing Target must not silently change PNG to WebP.');
-  assert.ok(pngTarget.buffer.length <= 250_000, 'PNG Target mode must honor its byte ceiling without changing format.');
-  await validateImageInBrowser(page, pngTarget.buffer, 'image/png');
-  console.log(`PASS compress-image PNG target-mode format truth ${pngTarget.stats}`);
-
   const opaque = await processImageCompression(page, {
     input: { name: 'opaque.png', mimeType: 'image/png', buffer: opaquePng },
-    outputMime: 'image/png',
   });
-  assert.ok(opaque.buffer.length <= opaquePng.length * 0.8, `PNG Auto must save at least 20%; got ${opaque.buffer.length}/${opaquePng.length} bytes.`);
+  assert.ok(opaque.buffer.length <= opaquePng.length, `PNG compression must not return a larger file; got ${opaque.buffer.length}/${opaquePng.length} bytes.`);
   const opaqueInspection = await validateImageInBrowser(page, opaque.buffer, 'image/png');
   assert.equal(opaqueInspection.hasTransparency, false, 'Opaque PNG must remain opaque.');
-  console.log(`PASS compress-image Auto opaque PNG ${opaque.stats}`);
+  console.log(`PASS compress-image opaque PNG ${opaque.stats}`);
 
   const transparent = await processImageCompression(page, {
     input: { name: 'transparent.png', mimeType: 'image/png', buffer: transparentPng },
-    outputMime: 'image/png',
   });
-  assert.ok(transparent.buffer.length <= transparentPng.length * 0.8, `Transparent PNG Auto must save at least 20%; got ${transparent.buffer.length}/${transparentPng.length} bytes.`);
+  assert.ok(transparent.buffer.length <= transparentPng.length, `Transparent PNG compression must not return a larger file; got ${transparent.buffer.length}/${transparentPng.length} bytes.`);
   const transparentInspection = await validateImageInBrowser(page, transparent.buffer, 'image/png');
   assert.equal(transparentInspection.hasTransparency, true, 'Transparent PNG output must preserve transparent pixels.');
-  console.log(`PASS compress-image Auto transparent PNG ${transparent.stats}`);
+  console.log(`PASS compress-image transparent PNG ${transparent.stats}`);
 
   const heicSource = await readFile(fixturePath('libheif-example.heic'));
   const heic = await processImageCompression(page, { input: fixturePath('libheif-example.heic'), route: 'heic-to-jpg' });
@@ -615,7 +636,7 @@ async function runImageCompression(page) {
   console.log(`PASS compress-image HEIC to JPG ${heic.stats}`);
 }
 
-async function processPdfCompression(page, { input, level = 'balanced', mode = 'auto', targetKb, reductionPercent }) {
+async function processPdfCompression(page, { input, strength = 60, allowSmallest = false }) {
   await page.goto(`${baseUrl}/pdf`, { waitUntil: 'domcontentloaded' });
   await page.locator('#pdf-input').setInputFiles(input);
   try {
@@ -623,11 +644,12 @@ async function processPdfCompression(page, { input, level = 'balanced', mode = '
   } catch (error) {
     throw new Error(`PDF compressor could not load input. Error: ${await page.locator('#pdf-file-error').textContent()}`, { cause: error });
   }
-  await page.locator(`input[name="pdfLevel"][value="${level}"]`).check({ force: true });
-  await page.locator(`input[name="pdfMode"][value="${mode}"]`).check({ force: true });
-  if (targetKb !== undefined) await page.locator('#pdf-target-kb').fill(String(targetKb));
-  if (reductionPercent !== undefined) await page.locator('#pdf-reduction-percent').fill(String(reductionPercent));
-  await page.locator('#pdf-confirm').check();
+  await page.locator('#pdf-strength').evaluate((input, value) => {
+    input.value = String(value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }, strength);
+  if (allowSmallest) await page.locator('#pdf-smallest-opt-in').check();
   await page.locator('#pdf-process').click();
   try {
     await page.locator('#pdf-result').waitFor({ state: 'visible', timeout: 120_000 });
@@ -666,17 +688,25 @@ async function generateImageHeavyPdf(page) {
 }
 
 async function runPdfCompression(page) {
+  const native = await processPdfCompression(page, { input: fixturePath('text-two-page.pdf') });
+  await validatePdf(native.buffer, { pageCount: 2 });
+  assert.match(await extractPdfText(native.buffer), /Sora Files page one/i, 'Recommended compression must preserve selectable text.');
+  assert.match(native.warning, /Page count and readability were checked/i);
+  console.log('PASS pdf compression preserves native text by default');
+
   await page.goto(`${baseUrl}/pdf`, { waitUntil: 'domcontentloaded' });
   await page.locator('#pdf-input').setInputFiles(fixturePath('text-two-page.pdf'));
   await page.locator('#pdf-work').waitFor({ state: 'visible' });
-  await page.locator('#pdf-process').click();
-  await page.waitForFunction(() => Boolean(document.querySelector('#pdf-status')?.textContent?.trim()) && document.activeElement?.id === 'pdf-confirm');
-  assert.ok(await page.locator('#pdf-result').isHidden(), 'PDF compression must not start without rasterization acknowledgement.');
-  console.log('PASS pdf compression requires rasterization acknowledgement');
+  await page.locator('#pdf-strength').evaluate((input) => { input.value = '100'; input.dispatchEvent(new Event('input', { bubbles: true })); });
+  await page.locator('#pdf-smallest-opt-in').check();
+  assert.match((await page.locator('#pdf-profile-note').textContent()) ?? '', /Smallest file/i);
+  assert.ok(await page.locator('#pdf-smallest-opt-in').isVisible(), 'The optional smallest-file choice must remain explicit.');
+  console.log('PASS pdf compression keeps its smallest-file option explicit');
 
   const imageHeavySource = await generateImageHeavyPdf(page);
   const imageHeavy = await processPdfCompression(page, {
     input: { name: 'image-heavy-three-page.pdf', mimeType: 'application/pdf', buffer: imageHeavySource },
+    strength: 88,
   });
   assert.match(imageHeavy.filename, /\.pdf$/i);
   assert.ok(imageHeavy.buffer.length < imageHeavySource.length, `Image-heavy PDF should shrink; got ${imageHeavy.buffer.length}/${imageHeavySource.length} bytes.`);
@@ -690,16 +720,6 @@ async function runPdfCompression(page) {
   await validateImageInBrowser(page, renderedZip.entries[renderedZip.names[0]], 'image/jpeg');
   console.log(`PASS pdf compression image-heavy PDF ${imageHeavy.stats}`);
 
-  const hard80 = await processPdfCompression(page, {
-    input: { name: 'image-heavy-three-page.pdf', mimeType: 'application/pdf', buffer: imageHeavySource },
-    mode: 'percent',
-    level: 'small',
-    reductionPercent: 80,
-  });
-  assert.ok(hard80.buffer.length <= Math.floor(imageHeavySource.length * 0.2), `PDF 80% reduction must produce at most 20% of source bytes; got ${hard80.buffer.length}/${imageHeavySource.length}.`);
-  await validatePdf(hard80.buffer, { pageCount: 3 });
-  console.log(`PASS pdf compression hard 80% rule ${hard80.stats}`);
-
   const standardFontWarnings = [];
   const recordStandardFontWarning = (message) => {
     if (message.text().includes('standardFontDataUrl')) standardFontWarnings.push(message.text());
@@ -709,12 +729,11 @@ async function runPdfCompression(page) {
     await page.goto(`${baseUrl}/pdf`, { waitUntil: 'domcontentloaded' });
     await page.locator('#pdf-input').setInputFiles(fixturePath('text-two-page.pdf'));
     await page.locator('#pdf-work').waitFor({ state: 'visible' });
-    await page.locator('#pdf-confirm').check();
     await page.locator('#pdf-process').click();
-    await page.waitForFunction(() => /hard limit could not be reached/i.test(document.querySelector('#pdf-status')?.textContent ?? ''), undefined, { timeout: 120_000 });
-    assert.ok(await page.locator('#pdf-result').isHidden(), 'An efficient PDF must not expose a result above the hard limit.');
+    await page.locator('#pdf-result').waitFor({ state: 'visible', timeout: 120_000 });
+    assert.match((await page.locator('#pdf-result-warning').textContent()) ?? '', /Page count and readability were checked/i);
     assert.deepEqual(standardFontWarnings, [], `PDF.js standard font assets must be configured: ${standardFontWarnings.join(', ')}`);
-    console.log('PASS pdf compression rejects larger-than-input output');
+    console.log('PASS pdf compression returns original bytes instead of a larger output');
   } finally {
     page.off('console', recordStandardFontWarning);
   }

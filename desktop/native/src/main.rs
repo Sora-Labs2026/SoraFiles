@@ -32,6 +32,12 @@ struct HostState { launch_busy:AtomicBool, launch_intent:Mutex<Value>, #[cfg(deb
 impl Default for HostState {
     fn default() -> Self { Self { launch_busy:AtomicBool::new(false), launch_intent:Mutex::new(Value::Null), #[cfg(debug_assertions)] smoke_fixture:Mutex::new(None), window_closing:Mutex::new(false), retain_job:AtomicBool::new(false), job:Mutex::new(job_status::JobStatus::default()), selection: Mutex::new(Selection::default()), outputs:Mutex::new(outputs::Outputs::default()), settings: Mutex::new(json!({"output":"source","theme":"system","startup":false})), quitting: AtomicBool::new(false), tray_available: AtomicBool::new(false), smoke_count:AtomicUsize::new(0), window_generation:AtomicUsize::new(0), dialog_busy:AtomicBool::new(false), processing_busy:AtomicBool::new(false), processing_cancel:AtomicBool::new(false) } }
 }
+#[derive(Default)]
+struct WindowMode {
+    quick:AtomicBool,
+    presented_quick:AtomicBool,
+    full_geometry:Mutex<Option<(tauri::PhysicalSize<u32>,bool)>>,
+}
 fn smoke_output() -> Option<std::path::PathBuf> { let args:Vec<_>=std::env::args().collect();let index=args.iter().position(|arg| arg=="--native-smoke")?;args.get(index+1).map(std::path::PathBuf::from) }
 fn background_smoke() -> bool { cfg!(debug_assertions) && smoke_output().is_some() && std::env::args().any(|arg|arg=="--background-job") }
 fn startup_smoke() -> bool { cfg!(debug_assertions) && smoke_output().is_some() && std::env::args().any(|arg|arg=="--startup-helper") }
@@ -44,6 +50,9 @@ fn receive_launch(app: &tauri::AppHandle, args: &[String]) -> bool {
         selection.clear();
         let result=selection.add(paths);
         if result.rejected{selection.clear();let _=app.emit_to("main","native-notice","The whole selection could not be opened. Choose readable supported files and try again.");return false;}
+        if let Ok(mut job)=app.state::<HostState>().job.lock(){job.clear();}
+        if let Ok(mut outputs)=app.state::<HostState>().outputs.lock(){outputs.clear();}
+        app.state::<HostState>().retain_job.store(false,Ordering::SeqCst);
         let _=app.emit_to("main","native-selection",result);
         return true;
     }
@@ -58,6 +67,7 @@ fn route_native_launch(app:&tauri::AppHandle,args:&[String])->bool{
     std::thread::spawn(move||{
         let state=handle.state::<HostState>();
         let result=(||->Result<bool,String>{
+            *state.launch_intent.lock().map_err(|_|"Selection unavailable")?=Value::Null;
             let files=state.selection.lock().map_err(|_|"Selection unavailable")?.list();
             if files.is_empty(){return Err("Choose readable files to edit.".into());}
             let directory=handle.path().app_config_dir().map_err(|_|"Private storage unavailable")?;
@@ -65,7 +75,13 @@ fn route_native_launch(app:&tauri::AppHandle,args:&[String])->bool{
             let output=state.settings.lock().map_err(|_|"Settings unavailable")?["output"].clone();
             let mut params=json!({"files":files,"platform":std::env::consts::OS,"outputMode":output});
             if let Some(action)=action_id{params["actionId"]=json!(action);}
-            let resolved={let _lease=DialogLease::acquire(&state.dialog_busy)?;license_host::run(&directory,&resources,"nativeActions",params)?};
+            // A cold launch can still be finishing its automatic license check.
+            // Wait off the UI thread instead of opening a window on contention.
+            let resolved={
+                let deadline=std::time::Instant::now()+std::time::Duration::from_secs(90);
+                let _lease=loop{match DialogLease::acquire(&state.dialog_busy){Ok(lease)=>break lease,Err(_) if !state.quitting.load(Ordering::SeqCst)&&std::time::Instant::now()<deadline=>std::thread::sleep(std::time::Duration::from_millis(100)),Err(error)=>return Err(error.to_string())}};
+                license_host::run(&directory,&resources,"nativeActions",params)?
+            };
             *state.launch_intent.lock().map_err(|_|"Selection unavailable")?=resolved.clone();
             let action=&resolved["action"];
             if action["direct"]==true&&action["tool"].is_string(){
@@ -76,11 +92,20 @@ fn route_native_launch(app:&tauri::AppHandle,args:&[String])->bool{
             }
             Ok(true)
         })();
-        state.launch_busy.store(false,Ordering::SeqCst);
         if let Err(error)=&result{if let Ok(mut settings)=state.settings.lock(){settings["notice"]=json!(error);}}
         if !matches!(result,Ok(false)){
-            let copy=handle.clone();let _=handle.run_on_main_thread(move||{let _=open_window(&copy);let _=copy.emit_to("main","native-launch",json!({}));});
-        }
+            let copy=handle.clone();
+            if handle.run_on_main_thread(move||{
+                let state=copy.state::<HostState>();
+                if !state.quitting.load(Ordering::SeqCst) {
+                    // Resolve errors and interactive operations use the same
+                    // compact surface. Successful direct actions need no view.
+                    copy.state::<WindowMode>().quick.store(true,Ordering::SeqCst);
+                    let _=open_window(&copy);let _=copy.emit_to("main","native-launch",json!({}));
+                }
+                state.launch_busy.store(false,Ordering::SeqCst);
+            }).is_err(){state.launch_busy.store(false,Ordering::SeqCst);}
+        } else {state.launch_busy.store(false,Ordering::SeqCst);}
     });
     true
 }
@@ -91,7 +116,7 @@ fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
     value["platform"] = json!(std::env::consts::OS);
     // License status has its own verified action. Preference responses must not
     // reset an already activated renderer to the initial unactivated state.
-    value["version"] = json!("SoraFiles Desktop 0.1.0");
+    value["version"] = json!(concat!("SoraFiles Desktop ",env!("CARGO_PKG_VERSION")));
     value["startupAvailable"]=json!(cfg!(windows) || cfg!(target_os = "macos") || cfg!(target_os = "linux"));
     value["shellEntryAvailable"]=json!(false);
     value["shellEntry"]=json!(false);
@@ -100,6 +125,7 @@ fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
     #[cfg(windows)] {if smoke_output().is_none(){value["startup"]=json!(startup::enabled().unwrap_or(false));}}
     #[cfg(any(target_os = "macos", target_os = "linux"))] {if smoke_output().is_none(){value["startup"]=json!(unix_startup::enabled().unwrap_or(false));}}
     value["launchIntent"]=state.launch_intent.lock().map_err(|_|"Selection unavailable")?.clone();
+    value["quickAction"]=json!(app.state::<WindowMode>().quick.load(Ordering::SeqCst));
     value["files"] = json!(state.selection.lock().map_err(|_| "Selection unavailable")?.list());
     value["job"] = state.job.lock().map_err(|_|"Job status unavailable")?.snapshot(state.processing_busy.load(Ordering::SeqCst));
     Ok(value)
@@ -112,21 +138,58 @@ fn persist_preferences(app: &tauri::AppHandle, value: &Value) -> Result<(), Stri
 }
 fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     diagnostic_step("opening window");
-    if let Some(window) = app.get_webview_window("main") { window.show()?; window.unminimize()?; window.set_focus()?; return Ok(()); }
+    let mode=app.state::<WindowMode>();
+    let quick=mode.quick.load(Ordering::SeqCst);
+    let (width,height,min_width,min_height)=if quick {(520.0,400.0,440.0,320.0)}else{(1180.0,900.0,760.0,600.0)};
+    if let Some(window) = app.get_webview_window("main") {
+        if mode.presented_quick.load(Ordering::SeqCst)!=quick {
+            if quick {
+                let geometry=(window.inner_size()?,window.is_maximized()?);
+                if let Ok(mut saved)=mode.full_geometry.lock(){*saved=Some(geometry);}
+            }
+            let full_geometry=mode.full_geometry.lock().ok().and_then(|saved|*saved);
+            // Release all state locks before native window calls: resize and
+            // focus can dispatch callbacks on the same main thread.
+            window.unmaximize()?;
+            window.set_min_size(Some(tauri::LogicalSize::new(min_width,min_height)))?;
+            if !quick {
+                if let Some((size,maximized))=full_geometry {
+                    window.set_size(size)?;
+                    if maximized {window.maximize()?;}
+                } else {window.set_size(tauri::LogicalSize::new(width,height))?;}
+            } else {window.set_size(tauri::LogicalSize::new(width,height))?;}
+            window.set_title(if quick {"Edit with SoraFiles"}else{"SoraFiles Desktop"})?;
+            mode.presented_quick.store(quick,Ordering::SeqCst);
+        }
+        window.show()?; window.unminimize()?; window.set_focus()?; return Ok(());
+    }
     // Serialize accepting a job with closing its originating window.
     if let Ok(mut closing)=app.state::<HostState>().window_closing.lock(){*closing=false;}
     let generation = app.state::<HostState>().window_generation.fetch_add(1, Ordering::SeqCst) + 1;
     let window = WebviewWindowBuilder::new(app,"main",WebviewUrl::App("index.html".into()))
-        .title("SoraFiles Desktop").inner_size(1180.0,900.0).min_inner_size(760.0,600.0)
+        .title(if quick {"Edit with SoraFiles"}else{"SoraFiles Desktop"}).inner_size(width,height).min_inner_size(min_width,min_height)
+        .initialization_script(if quick {"window.__SORA_QUICK_ACTION__=true;"}else{"window.__SORA_QUICK_ACTION__=false;"})
         // GTK needs a mapped window to allocate the WebView viewport. CI uses Xvfb.
         .visible(smoke_output().is_none() || cfg!(target_os="linux"))
         .on_navigation(local_navigation)
         .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
         .build()?;
+    mode.presented_quick.store(quick,Ordering::SeqCst);
+    if !quick {
+        let saved=mode.full_geometry.lock().ok().and_then(|saved|*saved);
+        if let Some((size,maximized))=saved {window.set_size(size)?;if maximized {window.maximize()?;}}
+    }
     let handle = app.clone();
     window.on_window_event(move |event| match event {
         tauri::WindowEvent::CloseRequested { api, .. } => {
             let state=handle.state::<HostState>();
+            if !handle.state::<WindowMode>().presented_quick.load(Ordering::SeqCst) {
+                if let Some(window)=handle.get_webview_window("main") {
+                    if let (Ok(size),Ok(maximized))=(window.inner_size(),window.is_maximized()) {
+                        if let Ok(mut saved)=handle.state::<WindowMode>().full_geometry.lock(){*saved=Some((size,maximized));}
+                    }
+                }
+            }
             let Ok(mut closing)=state.window_closing.lock() else {api.prevent_close();return;};
             let busy=state.processing_busy.load(Ordering::SeqCst);
             if busy&&!state.tray_available.load(Ordering::SeqCst) {
@@ -148,6 +211,14 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         }
         _ => {}
     });
+    Ok(())
+}
+
+fn open_full_window(app:&tauri::AppHandle)->tauri::Result<()> {
+    app.state::<WindowMode>().quick.store(false,Ordering::SeqCst);
+    if let Ok(mut intent)=app.state::<HostState>().launch_intent.lock(){*intent=Value::Null;}
+    open_window(app)?;
+    let _=app.emit_to("main","native-launch",json!({}));
     Ok(())
 }
 
@@ -193,6 +264,12 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
     let generation=state.window_generation.load(Ordering::SeqCst);
     match method.as_str() {
         "getState" if params.as_object().unwrap().is_empty() => state_value(&app),
+        "openFullApp" => {open_full_window(&app).map_err(|_|"Could not open Desktop")?;Ok(json!({"quickAction":false}))},
+        "closeQuickAction" => {
+            if !app.state::<WindowMode>().quick.load(Ordering::SeqCst){return Err("No quick action is open".into());}
+            if state.processing_busy.load(Ordering::SeqCst)||state.dialog_busy.load(Ordering::SeqCst)||state.launch_busy.load(Ordering::SeqCst){return Err("Wait for the current action or cancel processing first.".into());}
+            window.close().map_err(|_|"Could not close quick action")?;Ok(json!({"closed":true}))
+        },
         "smokeReport" => {
             let Some(output)=smoke_output() else { return Err("Unknown action".into()); };
             let mut good=params["heading"]=="File tools for your desktop." && params["tools"]==6 && params["overflow"]==false && params["error"].is_null();
@@ -340,7 +417,7 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
         "processFiles" => {
             let handle=app.clone();tauri::async_runtime::spawn_blocking(move||run_processing(&handle,params,Some(generation))).await.map_err(|_|"Processing could not finish")?
         },
-        "checkUpdates" => Ok(json!({"message":"No Desktop releases are published yet."})),
+        "checkUpdates" => {checkout::open_release_notes()?;Ok(json!({"message":"Release notes opened in your browser."}))},
         "quit" => { if state.processing_busy.load(Ordering::SeqCst) {return Err("Wait for processing to finish, or cancel it before quitting.".into());} state.quitting.store(true,Ordering::SeqCst);app.exit(0);Ok(json!({"quitting":true})) }
         _ => Err("This action is not available.".into())
     }
@@ -350,14 +427,6 @@ fn main() {
     // Generate once: macOS embeds a single Info.plist symbol per executable.
     let context=tauri::generate_context!();
     let early:Vec<String>=std::env::args().skip(1).collect();
-    if early.len()==1&&early[0]=="--initialize-trial" {
-        let result=(||{
-            let directory=dirs::config_dir().ok_or("Settings unavailable".to_string())?.join(&context.config().identifier);
-            let resources=tauri::utils::platform::resource_dir(context.package_info(),&tauri::utils::Env::default()).map_err(|_|"Desktop components unavailable".to_string())?;
-            license_host::run(&directory,&resources,"initializeTrial",json!({}))
-        })();
-        std::process::exit(if result.is_ok(){0}else{1});
-    }
     if early.first().is_some_and(|arg|arg=="--shell-menu"){
         if early.len()!=3{std::process::exit(2);}
         let input=std::path::PathBuf::from(&early[1]);let output=std::path::PathBuf::from(&early[2]);
@@ -396,9 +465,11 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app,args,_| {
             let args:Vec<_>=args.into_iter().skip(1).collect();
             if args.len()==1&&args[0]=="--background"{return;}
-            let accepted=receive_launch(app,&args);if !accepted||!route_native_launch(app,&args){let _=open_window(app);}
+            let accepted=receive_launch(app,&args);
+            if args.first().is_some_and(|arg|matches!(arg.as_str(),"--action"|"--edit")) {if accepted {route_native_launch(app,&args);}}
+            else {let _=open_full_window(app);}
         }))
-        .plugin(tauri_plugin_dialog::init()).manage(HostState::default())
+        .plugin(tauri_plugin_dialog::init()).manage(HostState::default()).manage(WindowMode::default())
         .invoke_handler(tauri::generate_handler![host_request])
         .on_page_load(|view,payload| {
             if smoke_output().is_some() && payload.event()==tauri::webview::PageLoadEvent::Finished {
@@ -436,7 +507,7 @@ fn main() {
             let menu=Menu::with_items(app,&[&open,&quit])?;
             let tray=TrayIconBuilder::new().icon(app.default_window_icon().unwrap().clone()).menu(&menu)
                 .on_menu_event(|app,event| match event.id.as_ref() {
-                    "open"=>{let _=open_window(app);},
+                    "open"=>{let _=open_full_window(app);},
                     "quit"=>{app.state::<HostState>().quitting.store(true,Ordering::SeqCst);app.exit(0);},_=>{}
                 }).build(app);
             app.state::<HostState>().tray_available.store(tray.is_ok(),Ordering::SeqCst);
@@ -448,7 +519,7 @@ fn main() {
                         if !initialize{std::thread::sleep(license_schedule::delay(initial));initial=false;}
                         let state=handle.state::<HostState>();
                         if state.quitting.load(Ordering::SeqCst){break;}
-                        if state.processing_busy.load(Ordering::SeqCst){std::thread::sleep(std::time::Duration::from_secs(1));continue;}
+                        if state.processing_busy.load(Ordering::SeqCst)||state.launch_busy.load(Ordering::SeqCst){std::thread::sleep(std::time::Duration::from_secs(1));continue;}
                         let Ok(_lease)=DialogLease::acquire(&state.dialog_busy) else {std::thread::sleep(std::time::Duration::from_secs(1));continue;};
                         let (Ok(directory),Ok(resources))=(handle.path().app_config_dir(),handle.path().resource_dir()) else {continue;};
                         if initialize {
@@ -490,7 +561,7 @@ fn main() {
             else if !state.quitting.load(Ordering::SeqCst)&&(state.tray_available.load(Ordering::SeqCst)||smoke_output().is_some()) { api.prevent_exit(); }
         }
         #[cfg(target_os="macos")]
-        RunEvent::Reopen { .. } => { let _=open_window(app); }
+        RunEvent::Reopen { .. } => { let _=open_full_window(app); }
         #[cfg(target_os="macos")]
         RunEvent::Opened { urls } => {
             let files:Vec<_>=urls.into_iter().filter_map(|url|url.to_file_path().ok()).map(|path|path.to_string_lossy().into_owned()).collect();

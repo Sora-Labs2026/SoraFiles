@@ -12,7 +12,7 @@ export const rollbackPath = path.join(projectRoot, 'optimizer', 'rollback.json')
 export const baselinePath = path.join(projectRoot, 'optimizer', 'baselines', 'current.json');
 export const visualBaselinePath = path.join(projectRoot, 'optimizer', 'baselines', 'visual.json');
 
-export const CONSTITUTION_SHA256 = 'a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706';
+export const CONSTITUTION_SHA256 = '1e258b166b4542b307bfcbf8c330f291452d6ab7d82fc8b44f410d9541dc0b8a';
 export const RECIPE_IDS = Object.freeze([
   'canonical-locale-root',
   'immutable-astro-cache',

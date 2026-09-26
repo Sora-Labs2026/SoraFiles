@@ -1,0 +1,7 @@
+---
+import { relatedGuidesForTool, guidePath } from '../data/guides';
+interface Props { toolId: string; locale?: string }
+const { toolId, locale = 'en' } = Astro.props;
+const related = locale === 'en' ? relatedGuidesForTool(toolId) : [];
+---
+{related.length > 0 && <section aria-labelledby="related-guides" class="v10-content v10-related-guides"><h2 id="related-guides">Related guides</h2><ul>{related.map(g => <li><a href={guidePath(g.slug)}>{g.title}<span aria-hidden="true">↗</span></a><p>{g.description}</p></li>)}</ul></section>}

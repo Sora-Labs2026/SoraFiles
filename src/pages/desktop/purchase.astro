@@ -1,0 +1,36 @@
+---
+import DesktopLayout from '../../layouts/DesktopLayout.astro';
+import returnScript from '../../lib/desktop/purchase-return.js?raw';
+---
+<DesktopLayout title="Your SoraFiles Desktop checkout" description="Find your license key and the next steps for SoraFiles Desktop." path="/desktop/purchase" sensitive={true}>
+  <script slot="early-head" is:inline set:html={returnScript}></script>
+  <section class="dw-container purchase-content">
+    <header class="dw-intro"><p class="dw-eyebrow">SoraFiles Desktop</p>
+    <h1>Your checkout</h1>
+    <p>Use your license key to activate SoraFiles Desktop. The app checks your license when you activate it.</p></header>
+    <p class="mt-4 leading-7 text-muted">After a successful purchase, your license key is emailed to your checkout address. <strong>Check your Spam or Junk folder too.</strong> Look for “Your License Key is Ready” from noreply@dodopayments.com. If it landed in Spam, mark it as not spam.</p>
+    <div data-checkout-key hidden class="mt-8 rounded-3xl border border-line bg-surface p-6 sm:p-8">
+      <h2 class="text-xl font-bold">License key from checkout</h2>
+      <p class="mt-3 leading-7 text-muted">Keep this key private. In Desktop, open License, choose Activate License, and paste your key.</p>
+      <label for="checkout-license-key" class="sr-only">License key</label>
+      <input id="checkout-license-key" data-license-value hidden readonly autocomplete="off" spellcheck="false" class="mt-5 min-h-12 w-full min-w-0 rounded-xl border border-line bg-surface px-3 font-mono text-sm" />
+      <div class="mt-6 flex flex-wrap gap-3">
+        <button data-license-copy type="button" class="inline-flex min-h-12 items-center justify-center rounded-full bg-action px-6 font-bold text-action-contrast focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet">Copy license key</button>
+        <button data-license-reveal type="button" aria-controls="checkout-license-key" aria-expanded="false" class="inline-flex min-h-12 items-center justify-center rounded-full border border-line px-6 font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet">Show key</button>
+      </div>
+      <p data-checkout-status role="status" aria-live="polite" class="mt-4 text-sm leading-6 text-muted"></p>
+    </div>
+    <div data-checkout-empty class="mt-8 rounded-3xl border border-line bg-surface p-6 sm:p-8">
+      <h2 class="text-xl font-bold">Find your license key</h2>
+      <p class="mt-3 leading-7 text-muted">No license key is available on this page. If you completed a purchase, use the key in your purchase email. If you still cannot find it after checking Spam or Junk, contact us for help.</p>
+      <noscript><p class="mt-3 leading-7 text-muted">Enable JavaScript to display a key returned by checkout.</p></noscript>
+    </div>
+    <p class="mt-6 text-sm leading-7 text-muted">Opening this page does not confirm a payment. Use your Dodo receipt to check your order.</p>
+    <div class="mt-8 flex flex-wrap gap-x-6 gap-y-3 font-semibold">
+      <a href="/desktop/download" class="inline-flex min-h-11 items-center text-violet underline underline-offset-4">Desktop downloads</a>
+      <a href="/desktop/help" class="inline-flex min-h-11 items-center text-violet underline underline-offset-4">Activation help</a>
+      <a href="/contact" class="inline-flex min-h-11 items-center text-violet underline underline-offset-4">Contact us</a>
+    </div>
+  </section>
+</DesktopLayout>
+<style>.purchase-content{max-width:52rem;margin-left:max(var(--gutter,20px),calc((100vw - 72rem)/2));margin-right:auto}.purchase-content>div,.purchase-content>p{max-width:44rem}.purchase-content>p{font-size:14px}.purchase-content h2{font-size:20px}.purchase-content input{border-color:var(--line-strong)}.purchase-content input:focus-visible{outline:2px solid var(--ink);outline-offset:3px}</style>

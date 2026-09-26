@@ -1,0 +1,36 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import GuideBody from '../../components/GuideBody.astro';
+import { guides, isPublicGuide, isIndexableGuide, guidePath, guideSchema, type Guide } from '../../data/guides';
+import { liveTools } from '../../data/liveTools';
+export function getStaticPaths() { return guides.filter(isPublicGuide).map(guide => ({ params: { slug: guide.slug }, props: { guide } })); }
+interface Props { guide: Guide }
+const { guide } = Astro.props;
+const target = liveTools.find(t => t.id === guide.targetTool);
+const tools = liveTools.filter(t => guide.relatedTools.includes(t.id));
+const related = guides.filter(g => isIndexableGuide(g) && guide.relatedGuides.includes(g.slug));
+const headings = guide.body.filter(block => block.type === 'heading' && block.level === 2);
+---
+<Layout title={`${guide.title} | SoraFiles`} description={guide.description} canonicalPath={guidePath(guide.slug)} noIndex={!isIndexableGuide(guide)} schema={guideSchema(guide)} imagePath={guide.socialImage} ogType="article">
+  <Header />
+  <main id="main" class="v10-content">
+    <header class="v10-tool-hero"><nav aria-label="Breadcrumb" class="v10-breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><a href="/guides">Guides</a><span aria-hidden="true">/</span><span aria-current="page">{guide.title}</span></nav>
+      <h1 class="max-w-3xl">{guide.title}</h1>
+      <p class="v10-guide-meta">By {guide.author.name} · Published by {guide.publisher.name}{guide.publishedAt && <> · Published <time datetime={guide.publishedAt}>{guide.publishedAt.slice(0, 10)}</time></>}{guide.modifiedAt && <> · Updated <time datetime={guide.modifiedAt}>{guide.modifiedAt.slice(0, 10)}</time></>}{guide.reviewedAt && <> · Reviewed <time datetime={guide.reviewedAt}>{guide.reviewedAt.slice(0, 10)}</time></>}</p>
+    </header>
+    <div class="v10-guide-layout">
+    <nav class="v10-guide-toc" aria-labelledby="guide-toc-heading"><h2 id="guide-toc-heading">On this page</h2><ul>{headings.map(block => block.type === 'heading' && <li><a href={`#${block.id}`}>{block.text}</a></li>)}</ul></nav>
+    <article>
+      <p class="v10-guide-intro">{guide.introduction}</p>
+      <GuideBody blocks={guide.body} />
+      {guide.references.length > 0 && <section class="mt-8"><h2 class="text-xl font-bold text-ink">References</h2><ul class="mt-4 space-y-2">{guide.references.map(r => <li><a href={r.url} rel="noopener noreferrer" class="break-words text-sm text-violet hover:underline">{r.title}</a></li>)}</ul></section>}
+      {target && <a href={`/${target.slug}`} class="mt-8 inline-flex min-h-11 items-center justify-center rounded-control bg-action px-5 text-sm font-semibold text-action-contrast hover:bg-action-hover">Use {target.name}</a>}
+    </article>
+    </div>
+    {tools.length > 0 && <section class="mt-8"><h2 class="text-xl font-bold text-ink">Related tools</h2><ul class="mt-4 flex flex-wrap gap-4">{tools.map(t => <li><a href={`/${t.slug}`} class="text-violet hover:underline">{t.name}</a></li>)}</ul></section>}
+    {related.length > 0 && <section class="v10-related-guides"><h2>Related guides</h2><ul>{related.map(g => <li><a href={guidePath(g.slug)}>{g.title}<span aria-hidden="true">↗</span></a><p>{g.description}</p></li>)}</ul></section>}
+  </main>
+  <Footer />
+</Layout>

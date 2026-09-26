@@ -1,0 +1,235 @@
+/* SoraFiles design tokens: LaunchIt-inspired visual direction (v2).
+   Components use these semantic names only, never raw values. See DESIGN_NOTES.md. */
+
+:root {
+  /* Type families. Plus Jakarta Sans is the font verified on launchit.fast (OFL, self-hosted). */
+  --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Type scale: extra-bold, tightly tracked headings; compact line-height */
+  --fs-display: clamp(2.625rem, 1.85rem + 3.1vw, 4.25rem);
+  --lh-display: 1;
+  --ls-display: -0.045em;
+  --fs-h1: clamp(2.125rem, 1.7rem + 1.8vw, 3rem);
+  --lh-h1: 1.04;
+  --ls-h1: -0.04em;
+  --fs-h2: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  --lh-h2: 1.15;
+  --ls-h2: -0.032em;
+  --fs-h3: 1.0625rem;
+  --lh-h3: 1.35;
+  --ls-h3: -0.02em;
+  --fs-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+  --lh-lead: 1.55;
+  --fs-body: 1rem;
+  --lh-body: 1.6;
+  --fs-small: 0.875rem;
+  --lh-small: 1.55;
+  --fs-label: 0.8125rem;
+  --lh-label: 1.35;
+  --fs-caption: 0.75rem;
+  --lh-caption: 1.45;
+  --fs-eyebrow: 0.6875rem;
+  --ls-eyebrow: 0.16em;
+  --ls-tight: -0.01em;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-heading: 800;
+  --fw-heading-sm: 700;
+
+  /* Space: 4px base */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.25rem;
+  --s-6: 1.5rem;
+  --s-7: 2rem;
+  --s-8: 2.5rem;
+  --s-9: 3rem;
+  --s-10: 4rem;
+  --s-11: 5rem;
+  --s-12: 6rem;
+
+  /* Layout */
+  --gutter: clamp(1.25rem, 0.8rem + 2vw, 2.5rem);
+  --content-max: 72rem;
+  --measure: 36rem;
+  --section-y: clamp(3.5rem, 2.6rem + 3.6vw, 6rem);
+  --header-h: 4rem;
+
+  /* Radius: one disciplined scale. Pills only for buttons, search, chips, segmented controls. */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-std: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-1: 150ms;
+  --dur-2: 200ms;
+  --dur-3: 300ms;
+  --dur-reveal: 560ms;
+
+  /* Warm atmosphere source hue: LaunchIt amber rgb(251,191,36), read from live computed styles */
+  --warm-rgb: 251, 191, 36;
+}
+
+/* Light: white surfaces, near-black ink, faint warm-yellow atmosphere */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --paper: #ffffff;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-subtle: #f9fafb;
+  --sunken: #f3f4f6;
+  --wash: rgba(3, 7, 18, 0.04);
+  --line: #e9ecef;
+  --line-strong: #d6dae0;
+  --ink: #030712;
+  --ink-2: #4b5563;
+  --ink-3: #5f6673;
+  --ink-4: #c3c8cf;
+  --inverse: #030712;
+  --on-inverse: #ffffff;
+
+  /* Primary action: near-black, white label */
+  --action: #09090b;
+  --action-hover: #27272a;
+  --action-press: #000000;
+  --on-action: #ffffff;
+  --selected-soft: #f4f4f5;
+  --focus: #030712;
+  --focus-ring: rgba(3, 7, 18, 0.1);
+
+  /* SoraFiles brand mark: solid warm amber, graphic use only (never text, never buttons) */
+  --brand-mark: #f4ae0b;
+
+  /* Warm atmosphere (page and section level only) */
+  --surface-warm: rgba(var(--warm-rgb), 0.16);
+  --surface-warm-subtle: rgba(var(--warm-rgb), 0.09);
+  --surface-warm-field: rgba(253, 230, 139, 0.34);
+  --surface-warm-field-2: rgba(255, 237, 213, 0.55);
+  --border-warm-subtle: rgba(245, 158, 11, 0.28);
+  --surface-warm-panel: rgba(var(--warm-rgb), 0.16);
+  --dot-grid: rgba(3, 7, 18, 0.1);
+
+  --shadow-soft: 0 1px 2px rgba(3, 7, 18, 0.04), 0 30px 80px -34px rgba(3, 7, 18, 0.3);
+  --shadow-pop: 0 1px 2px rgba(3, 7, 18, 0.06), 0 18px 45px -18px rgba(3, 7, 18, 0.32);
+  --shadow-hover: 0 18px 45px -24px rgba(3, 7, 18, 0.28);
+  --shadow-btn: 0 6px 16px -6px rgba(3, 7, 18, 0.45);
+  --shadow-field: 0 10px 30px -20px rgba(3, 7, 18, 0.28);
+  --shadow-sm: 0 10px 22px -14px rgba(3, 7, 18, 0.35);
+  --shadow-xs: 0 2px 6px -2px rgba(3, 7, 18, 0.3);
+
+  --success: #1f7a4a;
+  --success-soft: #ecfdf3;
+  --warning: #8a5a06;
+  --warning-soft: #fef6e4;
+  --error: #b42318;
+  --error-soft: #fef3f2;
+  --on-error: #ffffff;
+
+  /* Rendered document surfaces */
+  --sheet: #ffffff;
+  --sheet-shadow: 0 0 0 1px rgba(3, 7, 18, 0.08), 0 6px 16px -8px rgba(3, 7, 18, 0.28);
+  --shadow-up: 0 -12px 24px -20px rgba(3, 7, 18, 0.35);
+  --scrim: rgba(3, 7, 18, 0.45);
+  --sheet-ink: #030712;
+  --sheet-ink-3: #5f6673;
+  --viewfinder: #0b0d12;
+}
+
+/* Dark: near-black foundation, the same system, warmth reduced to a trace */
+:root.dark, [data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0a0b0f;
+  --surface: #101217;
+  --surface-raised: #15171d;
+  --surface-subtle: #0e1014;
+  --sunken: #07080b;
+  --wash: rgba(255, 255, 255, 0.05);
+  --line: #1f232b;
+  --line-strong: #2f343d;
+  --ink: #f4f5f7;
+  --ink-2: #c3c7ce;
+  --ink-3: #9ba1ab;
+  --ink-4: #4a505b;
+  --inverse: #f4f5f7;
+  --on-inverse: #0a0b0f;
+
+  --action: #f4f5f7;
+  --action-hover: #ffffff;
+  --action-press: #d9dce1;
+  --on-action: #0a0b0f;
+  --selected-soft: rgba(255, 255, 255, 0.07);
+  --focus: #f4f5f7;
+  --focus-ring: rgba(255, 255, 255, 0.16);
+
+  --brand-mark: #fbbf24;
+
+  --surface-warm: rgba(var(--warm-rgb), 0.065);
+  --surface-warm-subtle: rgba(var(--warm-rgb), 0.04);
+  --surface-warm-field: rgba(var(--warm-rgb), 0.03);
+  --surface-warm-field-2: transparent;
+  --border-warm-subtle: rgba(var(--warm-rgb), 0.2);
+  --surface-warm-panel: rgba(var(--warm-rgb), 0.08);
+  --dot-grid: rgba(255, 255, 255, 0.045);
+
+  --shadow-soft: 0 0 0 1px rgba(255, 255, 255, 0.03), 0 30px 70px -30px rgba(0, 0, 0, 0.85);
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 18px 45px -14px rgba(0, 0, 0, 0.8);
+  --shadow-hover: 0 18px 45px -20px rgba(0, 0, 0, 0.8);
+  --shadow-btn: 0 6px 16px -8px rgba(0, 0, 0, 0.7);
+  --shadow-field: 0 10px 30px -18px rgba(0, 0, 0, 0.7);
+  --shadow-sm: 0 10px 22px -12px rgba(0, 0, 0, 0.7);
+  --shadow-xs: 0 2px 6px -2px rgba(0, 0, 0, 0.6);
+
+  --success: #7fd1a0;
+  --success-soft: rgba(127, 209, 160, 0.1);
+  --warning: #f0c36b;
+  --warning-soft: rgba(240, 195, 107, 0.1);
+  --error: #f19a90;
+  --error-soft: rgba(241, 154, 144, 0.1);
+  --on-error: #1f0e0c;
+
+  --sheet: #f4f4f5;
+  --sheet-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 8px 20px -8px rgba(0, 0, 0, 0.8);
+  --shadow-up: 0 -12px 24px -16px rgba(0, 0, 0, 0.7);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --sheet-ink: #030712;
+  --sheet-ink-3: #5f6673;
+  --viewfinder: #050608;
+}
+
+/* A contained dark panel inside the light page (Desktop final CTA). Tokens flip locally. */
+.on-dark {
+  --paper: #030712;
+  --surface: #030712;
+  --surface-raised: #0b0f19;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --ink: #ffffff;
+  --ink-2: #c3c7ce;
+  --ink-3: #9ba1ab;
+  --wash: rgba(255, 255, 255, 0.08);
+  --action: #ffffff;
+  --action-hover: #f1f2f4;
+  --action-press: #e2e4e8;
+  --on-action: #030712;
+  --focus: #ffffff;
+  --shadow-btn: none;
+}
+
+:root.dark .on-dark, [data-theme="dark"] .on-dark {
+  --paper: #15171d;
+  --surface: #15171d;
+}
+
+:root { --ink-secondary:var(--ink-2); --ink-muted:var(--ink-3); }

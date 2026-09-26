@@ -6,17 +6,17 @@ import ToolIcon from './ToolIcon.astro';
 
 interface Props { locale?: LocalePath; }
 const { locale = 'en' } = Astro.props;
-const hrefFor = (path: string) => localizedPath(locale, path);
+const hrefFor = (path: string) => path === '/desktop' ? path : localizedPath(locale, path);
 const activeLocale = localeDefinitions.find((item) => item.path === locale) ?? localeDefinitions[0];
-const navLinks = [['compress-pdf', '/pdf'], ['merge-pdf', '/merge-pdf'], ['split-pdf', '/split-pdf'], ['pdf-to-word', '/pdf-to-word'], ['rotate-pdf', '/rotate-pdf']].map(([id, path]) => [liveToolCopy(locale, id).n, path] as const);
-const moreLinks = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 'nav.openSource'), '/open-source'], [liveText(locale, 'nav.contact'), '/contact'], [liveText(locale, 'nav.allTools'), '/tools']] as const;
+const navLinks = [['Desktop App', '/desktop']] as const;
+const moreLinks = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 'nav.openSource'), '/open-source'], [liveText(locale, 'nav.contact'), '/contact'], [liveText(locale, 'nav.allTools'), '/tools'], ...(locale === 'en' ? [['Guides', '/guides']] : [])];
 ---
 
 <header data-testid="site-header" class="sticky top-0 z-50 border-b border-slate-900/5 bg-white/70 backdrop-blur-xl dark:border-white/5 dark:bg-[#0a0e22]/70">
   <div class="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-3 px-4 sm:px-6">
     <a href={hrefFor('/')} data-testid="logo-link" aria-label={['SoraFiles', liveText(locale, 'nav.home')].join(' — ')} class="flex shrink-0 items-center gap-2">
-      <span aria-hidden="true" class="h-8 w-8 rounded-[10px] bg-contain bg-center bg-no-repeat shadow-md shadow-violet-500/30" style="background-image: url('/favicon-48x48.png')"></span>
-      <span translate="no" class="text-[17px] font-extrabold tracking-tight text-slate-900 dark:text-white">SoraFiles</span>
+      <img class="sf-logo sf-logo-light" src="/brand/sorafiles-logo-full-color.svg" alt="SoraFiles" width="110" height="30"/>
+      <img class="sf-logo sf-logo-dark" src="/brand/sorafiles-logo-full-color-dark.svg" alt="SoraFiles" width="110" height="30"/>
     </a>
 
     <nav aria-label={liveText(locale, 'nav.allTools')} class="hidden items-center lg:flex">
@@ -34,24 +34,24 @@ const moreLinks = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 
               <span class="min-w-0"><span class="block truncate text-[13px] font-bold text-slate-800 dark:text-slate-100">{words.n}</span><span class="block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">{words.d}</span></span>
             </a>
           )})}
-          <a href={hrefFor('/tools')} data-testid="nav-view-all" class="mt-1 flex w-full items-center justify-between rounded-xl border-t border-slate-100 px-2.5 pb-1 pt-2.5 text-[12px] font-bold text-violet-600 transition-colors hover:text-violet-700 dark:border-white/10 dark:text-violet-300">
+          <a href={hrefFor('/tools')} data-testid="nav-view-all" class="mt-1 flex min-h-11 w-full items-center justify-between rounded-xl border-t border-slate-100 px-2.5 pb-1 pt-2.5 text-[12px] font-bold text-violet-600 transition-colors hover:text-violet-700 dark:border-white/10 dark:text-violet-300">
             {liveText(locale, 'nav.allTools')} <svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
           </a>
         </div>
       </details>
-      {navLinks.map(([label, href]) => <a href={hrefFor(href)} data-testid={`nav-${href.slice(1)}`} class="whitespace-nowrap rounded-full px-2.5 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">{label}</a>)}
+      {navLinks.map(([label, href]) => <a href={hrefFor(href)} data-testid={`nav-${href.slice(1)}`} class="inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-2.5 py-2 text-[13px] font-semibold text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">{label}</a>)}
       <details data-sf-menu class="relative">
         <summary data-testid="nav-more" class="flex min-h-11 list-none items-center gap-1 rounded-full px-2.5 py-2 text-[13px] font-semibold text-slate-600 transition-colors marker:content-none hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">{liveText(locale, 'nav.more')}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-slate-500 transition-transform duration-200 dark:text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary>
         <div class="sf-menu-panel absolute left-0 top-full z-50 mt-2 w-64 rounded-2xl border border-slate-200/70 bg-white/95 p-2 shadow-xl shadow-indigo-500/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/95">
-          {moreLinks.map(([label, href]) => <a href={hrefFor(href)} data-testid={`nav-more-${href.slice(1)}`} class="block w-full rounded-xl px-3 py-2 text-left text-[13px] font-semibold text-slate-600 transition-colors hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white">{label}</a>)}
+          {moreLinks.map(([label, href]) => <a href={hrefFor(href)} data-testid={`nav-more-${href.slice(1)}`} class="flex min-h-11 w-full items-center rounded-xl px-3 py-2 text-left text-[13px] font-semibold text-slate-600 transition-colors hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white">{label}</a>)}
         </div>
       </details>
     </nav>
 
     <div class="flex items-center gap-2">
       <div class="hidden items-center gap-0.5 rounded-full border border-slate-200/80 p-1 dark:border-white/10 sm:flex" role="group" aria-label={liveText(locale, 'nav.appearance')}>
-        <button type="button" data-theme-choice="dark" data-testid="theme-dark-button" aria-label={liveText(locale, 'nav.dark')} aria-pressed="false" class="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 dark:bg-white/15 dark:text-white"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button>
-        <button type="button" data-theme-choice="light" data-testid="theme-light-button" aria-label={liveText(locale, 'nav.light')} aria-pressed="true" class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white transition-colors dark:bg-transparent dark:text-slate-400"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg></button>
+        <button type="button" data-theme-choice="dark" data-testid="theme-dark-button" aria-label={liveText(locale, 'nav.dark')} aria-pressed="false" class="flex h-11 w-11 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-slate-700 dark:bg-white/15 dark:text-white"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></button>
+        <button type="button" data-theme-choice="light" data-testid="theme-light-button" aria-label={liveText(locale, 'nav.light')} aria-pressed="true" class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 text-white transition-colors dark:bg-transparent dark:text-slate-400"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg></button>
       </div>
       <details data-sf-menu class="relative hidden sm:block">
         <summary data-testid="language-selector" aria-label={`${liveText(locale, 'nav.language')}: ${activeLocale.nativeName}`} class="flex min-h-11 list-none items-center gap-1 rounded-full px-2.5 py-2 text-[13px] font-semibold text-slate-600 marker:content-none dark:text-slate-300"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/></svg>{activeLocale.code.toUpperCase()}<svg aria-hidden="true" viewBox="0 0 24 24" class="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></summary>
@@ -85,7 +85,7 @@ const moreLinks = [[liveText(locale, 'nav.about'), '/about'], [liveText(locale, 
     document.documentElement.classList.toggle('dark', theme === 'dark');
     document.documentElement.dataset.theme = theme;
     document.documentElement.dataset.themePreference = theme;
-    document.querySelector('[data-theme-color]')?.setAttribute('content', theme === 'dark' ? '#070a18' : '#f3f5fb');
+    document.querySelector('[data-theme-color]')?.setAttribute('content', theme === 'dark' ? '#0a0b0f' : '#ffffff');
     document.querySelectorAll<HTMLElement>('[data-theme-choice]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
   };
   document.querySelectorAll<HTMLElement>('[data-theme-choice]').forEach((button) => button.addEventListener('click', () => applySfTheme(button.dataset.themeChoice === 'dark' ? 'dark' : 'light')));

@@ -47,9 +47,10 @@ function install(thread: ZetaThread) {
       model.storeToURL(`file://${outputPath}`, [overwrite, filter]);
       thread.zetajs.mainPort.postMessage({ cmd: 'success', jobId, outputPath });
     } catch (error) {
-      let message = error instanceof Error ? error.message : 'LibreOffice could not convert this document.';
-      try { message = thread.zetajs.catchUnoException(error)?.Message || message; } catch {}
-      thread.zetajs.mainPort.postMessage({ cmd: 'error', jobId, message });
+      thread.zetajs.mainPort.postMessage({ cmd: 'error', jobId, message: 'officeFailed' });
+    } finally {
+      try { currentModel?.close(false); } catch {}
+      currentModel = undefined;
     }
   };
 

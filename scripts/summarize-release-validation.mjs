@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+const json=async p=>JSON.parse(await readFile(`.artifacts/${p}`,'utf8'));
+const formats=await json('astra-formats/independent.json'),scanner=await json('astra-perspective/independent.json'),cancel=await json('astra-office-cancel/results.json'),bg=await json('astra-background-cleanup/metrics.json');
+assert.equal(formats.length,18);assert.ok(formats.every(r=>r.status==='PASS'));assert.ok(scanner.every(r=>r.status==='PASS'));assert.ok(cancel.every(r=>r.status==='PASS'));assert.equal(bg.length,8);
+const release=await json('astra-deployment.json');
+const guideChecks=await json('astra-guides-live/results.json'),references=await json('astra-guide-references.json'),search=await json('search-submission-receipt.json');
+assert.equal(guideChecks.length,14);assert.ok(guideChecks.every(r=>r.status==='PASS'));assert.equal(references.length,22);assert.ok(references.every(r=>r.status===200));
+const desktop=await json('astra-production-desktop/results.json'),mobile=await json('astra-production-mobile/results.json'),independent=await json('astra-production-independent.json'),crawl=await json('astra-crawl-live.json');
+for(const rows of [desktop,mobile]){assert.equal(rows.length,26);assert.ok(rows.every(r=>r.status==='PASS'));}
+assert.equal(independent.length,52);assert.ok(independent.every(r=>r.status==='PASS'));
+assert.equal(crawl.summary.canonicalIndexableCrawled,634);assert.equal(crawl.summary.errors,0);
+const hash=async p=>createHash('sha256').update(await readFile(p)).digest('hex');
+const path='docs/tool-verification-report.md';let previous=await readFile(path,'utf8');
+const marker='<!-- pre-release-audit -->';if(previous.includes(marker))previous=previous.split(marker)[1].trim();
+const lines=[
+'# SoraFiles deployed release validation — 2026-09-10','',
+`Deployed to https://sorafiles.com on ${release.recordedAt}. Cloudflare version: \`${release.version}\`. The user explicitly authorized deployment. This section supersedes the pre-release report below; its former “remaining” implementation items are resolved as described here. Six commissioned English Guides were published; see docs/guides-first-batch-review.md for scope and source review.`, '',
+'## Release and live verification','',
+`- Production build SHA-256: home \`${await hash('dist/index.html')}\`; sitemap \`${await hash('dist/sitemap.xml')}\`. The existing uncommitted worktree was deployed directly; no commit or push was made.`,
+'- True final build: PASS, 636 generated pages; 634 canonical indexable routes. The six Guides and their populated hub are indexable. Metadata, canonicals, hreflang, schema, robots, guide publication gates, branding, OCR assets and optimizer checks pass.',
+'- Astro diagnostics: PASS, 152 files, zero errors/warnings/hints. Unit tests: PASS, 110/110. Cloudflare packaging dry run: PASS; production deployment: PASS.',
+`- Post-deployment crawl: ${crawl.summary.hostsTested}/2 discovered public hosts checked, ${crawl.summary.canonicalIndexableCrawled}/634 canonical URLs crawled, ${crawl.summary.urlsFetched} total URL fetches; ${crawl.summary.brokenLinks} broken internal links, ${crawl.summary.linksToRedirects} internal links to redirects, ${crawl.summary.errors} crawl/indexability errors.`,
+'- Actual deployed production tool benchmark: PASS, 26/26 desktop and 26/26 mobile using the same complex corpus described below. Independent output checks: PASS, 52/52. Functional evidence includes deployed Office isolation headers and background model proxy behavior.',
+'- Six English Guides and their populated hub: PASS, 14/14 live desktop/narrow-screen reading checks; 20 internal link destinations return 200; 22/22 references return 200. Article/Breadcrumb data, canonical/indexability, publication dates, table scrolling, heading positioning and related-tool discovery were checked. The latest icon fixes were visually inspected and verified live.',
+`- Search submission (${search.recordedAt}): ${search.canonicalUrlCount} canonical URLs. ${search.operations.map(o=>`${o.provider}: ${o.status}${o.httpStatus ? ` (HTTP ${o.httpStatus})` : ''}${o.reason ? ` (${o.reason})` : ''}`).join('; ')}. Acceptance confirms receipt, not indexing or rankings.`,
+'- Production benchmark network traces record processing requests and WebSockets; the passing tests require only GET/HEAD requests and no uncaught page errors. This covers browser-visible processing traffic, not every possible network side channel.',
+'- The existing anonymous popularity event deliberately skips automated browsers, so this benchmark does not exercise that normal-use POST. Source review confirms the event contains only the tool identifier and success event; filenames, file contents and outputs are not included. The privacy page discloses this aggregate counting.',
+'','## Remaining defects resolved','',
+'- Production background-worker startup: the isolated page had a worker response without the matching embedder policy. Browser diagnostics recorded ERR_BLOCKED_BY_RESPONSE before inference. Added the required policy to the dedicated background worker response; a synthetic image exported successfully when the header was applied during diagnosis. A regression test checks the policy and ensures ordinary scripts remain unchanged.',
+'- Office cancellation: each conversion owns a hidden browsing context. Cancellation, timeout and completion remove it and terminate its dedicated WASM workers. Both Writer and Calc tests observed workers start, close after cancellation, and successfully export on immediate retry. No stale downloads appeared. Final local conversion checks also applied the production CSP.',
+'- Image converter: JPEG 2000 now uses the installed PDF.js/OpenJPEG decoder in a bounded dedicated worker. Gray, gray-alpha, RGB and RGBA output layouts are normalized to RGBA. Invalid files and 32MP limits reject before creating an output. TIFF/PSD declared dimensions are checked before decoding. Generation guards and decoder termination prevent old uploads/results resurfacing after replacement or reset.',
+'- Format matrix: PASS, 18/18 cases: JPG, PNG, WebP, BMP, GIF, AVIF, TIFF, multipage TIFF, animated GIF, ICO, SVG, PSD and JP2; plus five corrupt variants. All 13 valid exports independently decode with Pillow and preserve the known colored region. TIFF uses the first page, GIF the first frame, PSD the flattened composite. This is representative variant coverage, not every possible encoding.',
+'- Scanner geometry: real UI corner dragging on a known perspective image, PNG export, then independent marker detection. Maximum error was 4.90px desktop and 4.80px mobile (0.535% and 0.522% of the longest output dimension); both pass the declared 1.5% tolerance.',
+'- Background removal: added optional “Clean solid background”, off by default, with descriptions and review guidance in all 19 locales. It derives a color key only from a nearly uniform opaque border and confident foreground colors. Matching background pixels and explainable blended edge pixels are refined at original resolution in bounded strips. Textured borders and pretransparent images keep the base mask. Because subject/background color can be ambiguous, the visible option warns that matching subject colors may disappear.',
+'','## Background cleanup evidence','',
+'Same eight synthetic fixtures, original 1600×1000 dimensions; values compare the new optional cleanup with the earlier base-mask results below. These are controlled synthetic measurements, not photographic portrait quality scores. The formerly retained logo opening is now transparent; dark/cyan composites were visually reviewed. Existing alpha increased at zero pixels in both pretransparent cases.','',
+'| Fixture | Alpha IoU | Alpha MAE | Edge MAE |','|---|---:|---:|---:|',
+...bg.map(r=>`| ${r.fixture} | ${r.metrics.alphaIoU} | ${r.metrics.alphaMeanAbsoluteError} | ${r.metrics.edgeBandMeanAbsoluteError} |`),
+'','Hair edge MAE fell from 0.0763 to 0.0261; logo IoU rose from 0.8688 to 1.0000 on this corpus. The default model still has difficult-edge limitations on some files. The optional cleanup does not claim universal hair/translucency reconstruction.','',
+'## Evidence and external limits','',
+'- Reproduction: tests/e2e/image-format-matrix.mjs; tests/e2e/office-cancellation.mjs; tests/e2e/scanner-perspective.mjs; scripts/verify-release-images.py; SORA_BG_CLEANUP=1 with background-ground-truth.mjs and background-ground-truth.py; SORA_BASE_URL=https://sorafiles.com and SORA_QA_PREFIX=astra-production with complex-quality-audit.mjs and verify-complex-outputs.py; scripts/crawl-public.mjs https://sorafiles.com.',
+'- Browser scope: Edge desktop and mobile/touch emulation. WebKit and Firefox installation was attempted twice, including extended 180-second connection timeouts; distribution downloads failed. Physical Safari/iOS/Android and broad photographic matting quality remain unverified. No skipped registered tool in the Edge benchmark.',
+'- Local workerd previously crashed on this Windows host; packaging/deployment and actual production browser tests now validate the deployed edge behavior. Certificate-transparency discovery and the supplied X design reference remained inaccessible.',
+'- Current OCR searchable-PDF export remains limited to restricted Latin text encoding with nonaligned hidden text. This is explicitly disclosed in the new OCR Guide; TXT output and result inspection are recommended where applicable. Legacy translated visual-only Word explanations require translation review; the English page now explains both actual output modes.',
+'- Earlier offline, keyboard/focus, reduced-motion and performance findings below remain scoped to their stated tests. No full-device or universal fidelity claim is made.',
+'- Ahrefs recognition, warning counts, GEO/AI visibility, ranking and DR require a fresh external crawl. Deployment alone does not establish changes in those metrics.',
+'',marker,'',previous];
+await writeFile(path,lines.join('\n').trimEnd()+'\n');
+console.log('Updated deployed release report: 26/26 desktop, 26/26 mobile, 52/52 independent, 18/18 image cases.');

@@ -1,9 +1,12 @@
 ---
 import type { LocalePath } from '../i18n/config';
 import { chapter3English, chapter3Text } from '../data/chapter3Ui';
+import { liveText } from '../data/liveI18n';
+import AdaptiveWorkspace from './AdaptiveWorkspace.astro';
 interface Props { locale?: LocalePath; }
 const { locale = 'en' } = Astro.props;
 const c3 = (key: keyof typeof chapter3English) => chapter3Text(locale, key);
+const uploadCopy = { drop: liveText(locale, 'wb.dropOne'), click: liveText(locale, 'wb.orClick') };
 const clientMessages = JSON.stringify(Object.fromEntries(Object.keys(chapter3English).map((key) => [key, c3(key as keyof typeof chapter3English)]))).replace(/</g, '\\u003c');
 const ratioGroups = [
   [c3('custom'), [['free', c3('custom')], ['original', c3('originalRatio')]]],
@@ -17,17 +20,20 @@ const ratioGroups = [
   <div class="glass overflow-hidden rounded-[1.75rem] p-4 shadow-2xl shadow-cyan-500/10 sm:p-6">
     <script type="application/json" data-resize-messages is:inline set:html={clientMessages}></script>
     <div data-resize-empty>
-      <button type="button" data-resize-choose aria-controls="resize-file" class="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-cyan-200 bg-cyan-50/50 px-6 py-10 text-center transition-colors hover:border-cyan-400 dark:border-cyan-400/20 dark:bg-cyan-500/[.05]">
-        <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-white shadow-lg shadow-cyan-500/25"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H3v5M16 21h5v-5M3 8l6-6M21 16l-6 6"/><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
-        <span class="text-sm font-extrabold text-slate-800 dark:text-slate-100">{c3('upload')}</span>
-        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">JPG · PNG · WebP — {c3('localOnly')}</span>
+      <button type="button" data-resize-choose aria-controls="resize-file" class="sf-upload-dropzone flex w-full cursor-pointer flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+        <span class="sf-upload-dropzone__icon flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-white shadow-lg shadow-cyan-500/25"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H3v5M16 21h5v-5M3 8l6-6M21 16l-6 6"/><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
+        <span class="text-sm font-extrabold text-slate-800 dark:text-slate-100">{uploadCopy.drop}</span>
+        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">{uploadCopy.click}</span>
+        <span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-300">JPG · PNG · WebP — {c3('localOnly')}</span>
       </button>
       <input id="resize-file" data-resize-input name="resize-image" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" class="sr-only" />
+      <button type="button" data-resize-close hidden>Close editor</button>
     </div>
 
-    <div data-resize-editor hidden class="space-y-5">
-      <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-sm font-extrabold text-slate-900 dark:text-white">{c3('preview')}</h2><p data-resize-source class="mt-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400"></p></div><button type="button" data-resize-replace class="min-h-11 rounded-full border border-slate-200 bg-white px-4 text-xs font-bold text-violet-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-violet-300">{c3('replace')}</button></div>
-      <figure data-resize-stage class="relative mx-auto flex min-h-48 w-full items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(45deg,#f1f5f9_25%,transparent_25%),linear-gradient(-45deg,#f1f5f9_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f1f5f9_75%),linear-gradient(-45deg,transparent_75%,#f1f5f9_75%)] bg-[length:18px_18px] bg-[position:0_0,0_9px,9px_-9px,-9px_0] p-2 dark:border-white/10 dark:bg-slate-900">
+    <AdaptiveWorkspace id="resize-image-editor" mode="canvas" title={c3('resize')} resetTarget="[data-resize-close]" class="resize-canvas-workspace">
+    <div data-resize-editor class="space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-sm font-extrabold text-slate-900 dark:text-white">{c3('preview')}</h2><p data-resize-source data-workspace-source-name class="mt-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400"></p></div><button type="button" data-resize-replace class="min-h-11 rounded-full border border-slate-200 bg-white px-4 text-xs font-bold text-violet-600 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-violet-300">{c3('replace')}</button></div>
+      <figure data-resize-stage data-workspace-canvas class="relative mx-auto flex min-h-48 w-full items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(45deg,#f1f5f9_25%,transparent_25%),linear-gradient(-45deg,#f1f5f9_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f1f5f9_75%),linear-gradient(-45deg,transparent_75%,#f1f5f9_75%)] bg-[length:18px_18px] bg-[position:0_0,0_9px,9px_-9px,-9px_0] p-2 dark:border-white/10 dark:bg-slate-900">
         <div data-resize-canvas-wrap class="relative max-h-[58vh] max-w-full touch-none select-none">
           <canvas data-resize-preview class="block max-h-[58vh] max-w-full rounded-xl object-contain"></canvas>
           <div data-crop-box class="absolute border-2 border-violet-400 bg-violet-500/5 shadow-[0_0_0_9999px_rgba(15,23,42,.48)]" role="group" aria-label={c3('crop')}>
@@ -36,6 +42,7 @@ const ratioGroups = [
         </div>
       </figure>
 
+      <div data-workspace-inspector class="space-y-5">
       <fieldset class="rounded-2xl border border-slate-200/80 bg-white/65 p-4 dark:border-white/10 dark:bg-white/[.03]"><legend class="px-1 text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('ratio')}</legend><div class="space-y-3">{ratioGroups.map(([label, options]) => <div class="flex flex-wrap items-center gap-2"><span class="w-20 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{label}</span>{options.map(([value, text]) => <button type="button" data-ratio={value} aria-pressed={value === 'original' ? 'true' : 'false'} class="min-h-10 rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition-colors aria-pressed:border-violet-400 aria-pressed:bg-violet-50 aria-pressed:text-violet-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:aria-pressed:bg-violet-500/15 dark:aria-pressed:text-violet-200">{text}</button>)}</div>)}</div></fieldset>
 
       <div class="grid gap-4 rounded-2xl border border-slate-200/80 bg-white/65 p-4 sm:grid-cols-2 dark:border-white/10 dark:bg-white/[.03]">
@@ -45,18 +52,43 @@ const ratioGroups = [
 
       <div class="grid gap-4 rounded-2xl border border-slate-200/80 bg-white/65 p-4 sm:grid-cols-2 dark:border-white/10 dark:bg-white/[.03]"><label><span class="mb-1.5 block text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('format')}</span><select data-resize-format name="resize-format" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5"><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select></label><label><span class="mb-1.5 block text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('quality')}</span><div class="flex h-11 items-center gap-2"><input data-resize-quality name="resize-quality" type="range" min="40" max="100" value="90" class="w-full accent-violet-600" /><output data-resize-quality-output class="w-12 text-right text-xs font-extrabold">90%</output></div></label></div>
       <div data-resize-error hidden role="alert" tabindex="-1" class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-200"></div>
-      <div class="flex flex-wrap items-center gap-3"><button type="button" data-resize-run class="inline-flex min-h-12 items-center rounded-full bg-slate-900 px-7 text-sm font-extrabold text-white shadow-lg dark:bg-white dark:text-slate-900">{c3('resize')}</button><button type="button" data-resize-cancel hidden class="min-h-12 rounded-full border border-slate-200 bg-white px-5 text-sm font-bold dark:border-white/10 dark:bg-white/5">{c3('cancel')}</button><span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-300">✓ {c3('localOnly')}</span></div>
+      <div data-resize-actionbar class="flex flex-wrap items-center gap-3"><button type="button" data-resize-run class="inline-flex min-h-12 items-center rounded-full bg-slate-900 px-7 text-sm font-extrabold text-white shadow-lg dark:bg-white dark:text-slate-900">{c3('resize')}</button><button type="button" data-resize-cancel hidden class="min-h-12 rounded-full border border-slate-200 bg-white px-5 text-sm font-bold dark:border-white/10 dark:bg-white/5">{c3('cancel')}</button><span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-300">✓ {c3('localOnly')}</span></div>
       <div data-resize-progress hidden role="status" aria-live="polite" class="rounded-2xl border border-violet-100 bg-violet-50/60 p-4 text-xs font-bold text-violet-700 dark:border-violet-400/20 dark:bg-violet-500/10 dark:text-violet-200">{c3('processing')}</div>
       <div data-resize-result hidden role="status" tabindex="-1" class="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-400/20 dark:bg-emerald-500/10"><div class="flex flex-wrap items-center justify-between gap-3"><div><strong class="block text-sm font-extrabold text-emerald-800 dark:text-emerald-200">{c3('result')}</strong><span data-resize-summary class="mt-1 block text-xs font-semibold text-emerald-700 dark:text-emerald-300"></span></div><a data-resize-download class="inline-flex min-h-11 items-center rounded-full bg-emerald-600 px-5 text-sm font-extrabold text-white shadow-lg" download>{c3('download')}</a></div></div>
+      </div>
     </div>
+    </AdaptiveWorkspace>
   </div>
 </section>
 
-<style>
+<style is:global>
   [data-crop-handle='tl'] { left: -1.375rem; top: -1.375rem; }
   [data-crop-handle='tr'] { right: -1.375rem; top: -1.375rem; }
   [data-crop-handle='br'] { bottom: -1.375rem; right: -1.375rem; }
   [data-crop-handle='bl'] { bottom: -1.375rem; left: -1.375rem; }
+  .resize-canvas-workspace [data-workspace-body] { overflow-y: auto; overscroll-behavior: contain; background: var(--color-canvas); padding: 1rem; }
+  .resize-canvas-workspace [data-resize-editor] { width: min(100%,88rem); margin: auto; }
+  .resize-canvas-workspace [data-resize-stage] { min-height: min(57vh,43rem); background-color: var(--color-surface); }
+  @media (min-width: 768px) {
+    .resize-canvas-workspace [data-workspace-body] { overflow: hidden; }
+    .resize-canvas-workspace [data-resize-editor] { display: grid; height: 100%; min-height: 0; grid-template-columns: minmax(0,1fr) minmax(20rem,32%); grid-template-rows: auto minmax(0,1fr); gap: 1rem; }
+    .resize-canvas-workspace [data-resize-editor] > :first-child { grid-column: 1 / -1; }
+    .resize-canvas-workspace [data-resize-stage] { min-height: 0; margin: 0; }
+    .resize-canvas-workspace [data-workspace-inspector] { min-height: 0; overflow-y: auto; margin: 0; padding: .25rem .5rem; }
+    .resize-canvas-workspace [data-workspace-inspector] > .grid { grid-template-columns: minmax(0,1fr); }
+  }
+  @media (max-width: 767px) {
+    .resize-canvas-workspace [data-workspace-body] { overflow: hidden; padding: 0; }
+    .resize-canvas-workspace [data-resize-editor] { display: grid; grid-template-rows: auto minmax(0,1fr); height: 100%; gap: 0; }
+    .resize-canvas-workspace [data-resize-editor] > :first-child { padding: .65rem .75rem .15rem; }
+    .resize-canvas-workspace [data-resize-stage] { min-height: 0; height: calc(100% - .75rem); margin: .5rem .65rem .25rem; }
+    .resize-canvas-workspace [data-resize-canvas-wrap], .resize-canvas-workspace [data-resize-preview] { max-height: 100%; }
+    .resize-canvas-workspace[data-mobile-view='canvas'] [data-workspace-inspector] { display: none; }
+    .resize-canvas-workspace[data-mobile-view='inspector'] [data-resize-editor] { grid-template-rows: auto minmax(11rem,40%) minmax(0,1fr); }
+    .resize-canvas-workspace[data-mobile-view='inspector'] [data-workspace-inspector] { min-height: 0; overflow-y: auto; padding: .75rem .75rem max(1rem, env(safe-area-inset-bottom)); }
+    .resize-canvas-workspace [data-resize-actionbar] { position: sticky; bottom: 0; z-index: 4; margin-inline: -.2rem; border-radius: 1rem; padding: .5rem; background: color-mix(in srgb,var(--color-surface) 96%,transparent); box-shadow: 0 -12px 26px color-mix(in srgb,var(--color-ink) 12%,transparent); }
+    .resize-canvas-workspace [data-resize-run] { flex: 1; justify-content: center; }
+  }
 </style>
 
 <script>
@@ -68,6 +100,7 @@ const ratioGroups = [
     const input = root.querySelector<HTMLInputElement>('[data-resize-input]')!;
     const empty = root.querySelector<HTMLElement>('[data-resize-empty]')!;
     const editor = root.querySelector<HTMLElement>('[data-resize-editor]')!;
+    const workspace = root.querySelector<HTMLElement>('[data-adaptive-workspace]')!;
     const preview = root.querySelector<HTMLCanvasElement>('[data-resize-preview]')!;
     const cropBox = root.querySelector<HTMLElement>('[data-crop-box]')!;
     const widthInput = root.querySelector<HTMLInputElement>('[data-resize-width]')!;
@@ -146,8 +179,8 @@ const ratioGroups = [
         const image = await decode(selected); const dimensions = sourceDimensions(image);
         assertSafeResize(dimensions, dimensions, dimensions);
         closeSource(); source = image; sourceWidth = dimensions.width; sourceHeight = dimensions.height; file = selected; crop = { x: 0, y: 0, width: 1, height: 1 };
-        empty.hidden = true; editor.hidden = false; sourceText.textContent = `${selected.name} · ${sourceWidth} × ${sourceHeight}px`; renderPreview(); setRatio('original');
-      } catch (error) { closeSource(); errorBox.textContent = error instanceof Error && error.message === 'image-too-large' ? msg.tooLarge : msg.invalidImage; errorBox.hidden = false; editor.hidden = false; empty.hidden = true; errorBox.focus(); }
+        empty.hidden = true; editor.hidden = false; workspace.hidden = false; sourceText.textContent = `${selected.name} · ${sourceWidth} × ${sourceHeight}px`; renderPreview(); setRatio('original'); workspace.dispatchEvent(new CustomEvent('workspace-clean'));
+      } catch (error) { closeSource(); workspace.hidden = false; errorBox.textContent = error instanceof Error && error.message === 'image-too-large' ? msg.tooLarge : msg.invalidImage; errorBox.hidden = false; editor.hidden = false; empty.hidden = true; errorBox.focus(); }
     };
     const applyHandle = (handle: string, nextX: number, nextY: number) => {
       const minW = Math.min(.25, 40 / Math.max(1, preview.clientWidth)); const minH = Math.min(.25, 40 / Math.max(1, preview.clientHeight));
@@ -191,7 +224,12 @@ const ratioGroups = [
         cropCanvas.width = 1; cropCanvas.height = 1; resizedCanvas.width = 1; resizedCanvas.height = 1;
       } catch (error) { if (thisJob === job && !(error instanceof DOMException && error.name === 'AbortError')) { errorBox.textContent = error instanceof Error && error.message === 'image-too-large' ? msg.tooLarge : msg.invalidImage; errorBox.hidden = false; errorBox.focus(); } } finally { if (thisJob === job) { activeResizeAbort = null; setRunning(false); } }
     };
-    root.querySelector('[data-resize-choose]')?.addEventListener('click', () => input.click()); root.querySelector('[data-resize-replace]')?.addEventListener('click', () => input.click()); input.addEventListener('change', () => input.files?.[0] && void loadFile(input.files[0]));
+    const resizeDrop = root.querySelector<HTMLElement>('[data-resize-choose]')!;
+    resizeDrop.addEventListener('click', () => input.click()); root.querySelector('[data-resize-replace]')?.addEventListener('click', () => input.click()); input.addEventListener('change', () => input.files?.[0] && void loadFile(input.files[0]));
+    for (const eventName of ['dragenter','dragover']) resizeDrop.addEventListener(eventName, (event) => { event.preventDefault(); resizeDrop.dataset.dragActive = 'true'; });
+    for (const eventName of ['dragleave','drop']) resizeDrop.addEventListener(eventName, (event) => { event.preventDefault(); delete resizeDrop.dataset.dragActive; });
+    resizeDrop.addEventListener('drop', (event) => { const selected = event.dataTransfer?.files[0]; if (selected) void loadFile(selected); });
+    root.querySelector('[data-resize-close]')?.addEventListener('click', () => { workspace.dispatchEvent(new CustomEvent('workspace-clean')); workspace.hidden = true; clearResult(); closeSource(); file = null; input.value = ''; empty.hidden = false; editor.hidden = true; });
     root.querySelectorAll<HTMLButtonElement>('[data-ratio]').forEach((button) => button.addEventListener('click', () => setRatio(button.dataset.ratio || 'free')));
     widthInput.addEventListener('input', () => { if (lockInput.checked) heightInput.value = String(Math.max(1, Math.round((Number(widthInput.value) || 1) / cropAspect()))); clearResult(); });
     heightInput.addEventListener('input', () => { if (lockInput.checked) widthInput.value = String(Math.max(1, Math.round((Number(heightInput.value) || 1) * cropAspect()))); clearResult(); });

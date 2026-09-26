@@ -1,6 +1,6 @@
 [package]
 name = "sorafiles-desktop"
-version = "0.1.0"
+version = "0.1.1"
 description = "SoraFiles independent native desktop host"
 authors = ["Sora Labs"]
 license = "AGPL-3.0-only"

@@ -7,6 +7,8 @@ Sitemap: https://sorafiles.com/sitemap.xml
 All tools: https://sorafiles.com/tools
 About: https://sorafiles.com/about
 Privacy: https://sorafiles.com/privacy
+Open source: https://sorafiles.com/open-source
+Source repository: https://github.com/Sora-Labs2026/SoraFiles
 
 Published tool categories include PDF compression and organization, PDF conversion, image conversion and compression, OCR, document protection, and metadata removal. Individual capabilities and limitations are stated on each tool page.
 

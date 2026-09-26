@@ -19,6 +19,10 @@ try {
     assert.ok(response?.ok(), `Resize Image failed to load at ${width}px.`);
     await page.locator('[data-resize-input]').setInputFiles(fixture);
     await page.locator('[data-resize-editor]').waitFor({ state: 'visible' });
+    if (!await page.locator('[data-resize-width]').isVisible()) {
+      await page.locator('[data-mobile-panel="inspector"]').click();
+      await page.locator('[data-resize-width]').waitFor({ state: 'visible' });
+    }
     await page.locator('[data-resize-width]').fill('320');
     await page.locator('[data-resize-width]').dispatchEvent('input');
     if (width === 320) {
@@ -60,11 +64,16 @@ try {
   assert.ok(response?.ok(), 'Doc Scanner failed to load.');
   assert.equal(await page.locator('[data-camera-start], [data-camera-panel]').count(), 0, 'Doc Scanner must not expose a camera workflow.');
   await page.locator('[data-scanner-input]').setInputFiles(fixture);
-  await page.locator('[data-page-list] li').waitFor({ state: 'visible', timeout: 60_000 });
+  await page.locator('[data-page-list] li').waitFor({ state: 'attached', timeout: 60_000 });
+  await page.locator('[data-scanner-progress]').waitFor({ state: 'hidden', timeout: 60_000 });
+  await page.locator('[data-scanner-workspace]').waitFor({ state: 'visible', timeout: 60_000 });
+  assert.equal(await page.locator('[data-corner-dialog]').isHidden(), true, 'Doc Scanner must not force the corner editor after upload.');
+  assert.match(await page.locator('[data-scanner-crop-state]').innerText(), /full/i, 'A new scan must preserve the full source image by default.');
+  await page.locator('[data-scanner-recrop]:visible').click();
   await page.locator('[data-corner-dialog]').waitFor({ state: 'visible', timeout: 60_000 });
-  await page.locator('[data-corner-host] .scanic-handle').first().waitFor({ state: 'visible' });
-  assert.equal(await page.locator('[data-corner-host] .scanic-handle').count(), 4, 'Corner editor must expose four large corner handles.');
-  const firstHandle = page.locator('[data-corner-host] .scanic-handle').first();
+  await page.locator('[data-corner-host] [data-corner]').first().waitFor({ state: 'visible' });
+  assert.equal(await page.locator('[data-corner-host] [data-corner]').count(), 4, 'Corner editor must expose four large corner handles.');
+  const firstHandle = page.locator('[data-corner-host] [data-corner]').first();
   const handleBefore = await firstHandle.boundingBox();
   assert.ok(handleBefore, 'Corner handle has no usable hit area.');
   await page.mouse.move(handleBefore.x + handleBefore.width / 2, handleBefore.y + handleBefore.height / 2);
@@ -80,24 +89,27 @@ try {
   await page.waitForTimeout(800);
   const recoveryPage = await context.newPage();
   await recoveryPage.goto(`${baseUrl}/doc-scanner`, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-  await recoveryPage.locator('[data-page-list] li').waitFor({ state: 'visible', timeout: 60_000 });
+  await recoveryPage.locator('[data-page-list] li').waitFor({ state: 'attached', timeout: 60_000 });
   assert.equal(await recoveryPage.locator('[data-page-list] li').count(), 1, 'Doc Scanner did not recover its local draft in a new page.');
   await recoveryPage.close();
+  await page.locator('[data-mobile-panel="inspector"]').click();
+  await page.locator('[data-scanner-retake]').waitFor({ state: 'visible' });
   const chooserPromise = page.waitForEvent('filechooser');
   await page.locator('[data-scanner-retake]').click();
   const chooser = await chooserPromise;
   await chooser.setFiles(fixture);
-  await page.locator('[data-page-list] li').waitFor({ state: 'visible', timeout: 60_000 });
-  await page.locator('[data-corner-dialog]').waitFor({ state: 'visible', timeout: 60_000 });
+  await page.locator('[data-page-list] li').waitFor({ state: 'attached', timeout: 60_000 });
+  await page.locator('[data-scanner-progress]').waitFor({ state: 'hidden', timeout: 60_000 });
   assert.equal(await page.locator('[data-page-list] li').count(), 1, 'Retake added a page instead of replacing it.');
-  await page.locator('[data-corners-apply]').click();
-  await page.locator('[data-corner-dialog]').waitFor({ state: 'hidden', timeout: 60_000 });
-  await page.locator('[data-scanner-recrop]').click();
+  assert.equal(await page.locator('[data-corner-dialog]').isHidden(), true, 'Replacing a page must not force a crop.');
+  await page.locator('[data-scanner-recrop]:visible').click();
   await page.locator('[data-corner-dialog]').waitFor({ state: 'visible' });
-  await page.locator('[data-corner-host] .scanic-handle').first().waitFor({ state: 'visible' });
+  await page.locator('[data-corner-host] [data-corner]').first().waitFor({ state: 'visible' });
   await page.locator('[data-corners-apply]').click();
   await page.locator('[data-corner-dialog]').waitFor({ state: 'hidden', timeout: 60_000 });
-  await page.locator('[data-export-format][value="jpg"]').check();
+  await page.locator('[data-mobile-panel="inspector"]').click();
+  await page.locator('[data-workspace-inspector]').waitFor({ state: 'visible' });
+  await page.locator('[data-export-format][value="jpg"]').evaluate((input) => { input.checked = true; input.dispatchEvent(new Event('change', { bubbles: true })); });
   assert.match(await page.locator('[data-export-run]').innerText(), /JPG/i, 'JPG selection is not reflected in the export action.');
   await page.locator('[data-export-run]').click();
   await page.locator('[data-export-result]').waitFor({ state: 'visible', timeout: 60_000 });
@@ -107,19 +119,22 @@ try {
   });
   assert.deepEqual(jpgSignature, [0xff, 0xd8, 0xff], 'Doc Scanner JPG output is invalid.');
   await page.locator('[data-scanner-input]').setInputFiles(fixture);
-  await page.locator('[data-page-list] li').nth(1).waitFor({ state: 'visible', timeout: 60_000 });
+  await page.locator('[data-page-list] li').nth(1).waitFor({ state: 'attached', timeout: 60_000 });
+  await page.locator('[data-scanner-progress]').waitFor({ state: 'hidden', timeout: 60_000 });
+  await page.locator('[data-mobile-panel="inspector"]').click();
+  await page.locator('[data-workspace-inspector]').waitFor({ state: 'visible' });
   await page.locator('input[name="scan-filter"][value="contrast"]').check({ force: true });
   await page.locator('[data-scanner-progress]').waitFor({ state: 'hidden', timeout: 60_000 });
-  await page.locator('[data-scanner-action-status]').waitFor({ state: 'visible' });
+  await page.waitForFunction(() => Boolean(document.querySelector('[data-scanner-action-status]')?.textContent?.trim()));
   const previousPngHref = await page.locator('[data-export-download]').getAttribute('href');
-  await page.locator('[data-export-format][value="png"]').check();
+  await page.locator('[data-export-format][value="png"]').evaluate((input) => { input.checked = true; input.dispatchEvent(new Event('change', { bubbles: true })); });
   await page.locator('[data-export-run]').click();
   await page.waitForFunction((oldHref) => document.querySelector('[data-export-download]')?.getAttribute('href') !== oldHref, previousPngHref, { timeout: 60_000 });
   const zipSignature = await page.locator('[data-export-download]').evaluate(async (link) => Array.from(new Uint8Array(await (await fetch(link.href)).arrayBuffer()).slice(0, 4)));
   assert.deepEqual(zipSignature, [0x50, 0x4b, 0x03, 0x04], 'Multi-page PNG export is not a valid ZIP.');
   const downloadPromise = page.waitForEvent('download');
   const previousPdfHref = await page.locator('[data-export-download]').getAttribute('href');
-  await page.locator('[data-export-format][value="pdf"]').check();
+  await page.locator('[data-export-format][value="pdf"]').evaluate((input) => { input.checked = true; input.dispatchEvent(new Event('change', { bubbles: true })); });
   await page.locator('[data-export-run]').click();
   await page.waitForFunction((oldHref) => document.querySelector('[data-export-download]')?.getAttribute('href') !== oldHref, previousPdfHref, { timeout: 60_000 });
   await page.locator('[data-export-download]').click();
@@ -135,7 +150,7 @@ try {
   assert.deepEqual(errors, [], `Doc Scanner emitted browser errors: ${errors.join(' | ')}`);
   assert.deepEqual(fileRequests, [], `Doc Scanner sent a non-GET request: ${fileRequests.join(' | ')}`);
   await context.close();
-  console.log('PASS Doc Scanner upload, perspective fallback, filter, JPG, PDF, privacy and mobile layout.');
+  console.log('PASS Doc Scanner dedicated workspace, opt-in crop, filter, JPG, PDF, privacy and mobile layout.');
 } finally {
   await browser.close();
 }

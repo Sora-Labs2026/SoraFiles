@@ -11,7 +11,7 @@ pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
     let Some(fields) = params.as_object() else { return false; };
     if params.to_string().len() > 16384 { return false; }
     match method {
-        "getState" | "selectFiles" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "supportDetails" | "checkUpdates" | "quit" | "cancelProcessing" | "processingStatus" => fields.is_empty(),
+        "getState" | "selectFiles" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "supportDetails" | "checkUpdates" | "quit" | "cancelProcessing" | "processingStatus" | "openFullApp" | "closeQuickAction" => fields.is_empty(),
         "processFiles" => fields.len()==3 && params["options"].is_object()
             && matches!(params["tool"].as_str(),Some("remove-background"|"doc-scanner"|"repair-pdf"|"compress-pdf"|"heic-to-jpg"|"pdf-to-word"|"pdf-to-excel"|"metadata-remover"|"protect-pdf"|"pdf-ocr"|"pdf-to-jpg"|"merge-pdf"|"split-pdf"|"rotate-pdf"|"remove-pages"|"page-numbers"|"watermark-pdf"|"sign-pdf"|"jpg-to-pdf"|"image-converter"|"compress-image"|"resize-image"|"edit-image"))
             && params["selectionIds"].as_array().is_some_and(|ids|!ids.is_empty()&&ids.len()<=256&&ids.iter().all(|id|id.as_str().is_some_and(|text|text.len()==32&&text.bytes().all(|b|b.is_ascii_hexdigit())))),
@@ -77,6 +77,16 @@ impl Drop for DialogLease<'_> { fn drop(&mut self) { self.0.store(false, Orderin
         drop(first);
         assert!(DialogLease::acquire(&busy).is_ok());
         assert!(!busy.load(Ordering::SeqCst));
+    }
+    #[test] fn quick_action_window_commands_accept_no_renderer_controls() {
+        for method in ["openFullApp","closeQuickAction"] {
+            assert!(valid_request(method,&json!({}),false));
+            for params in [json!(null),json!([]),json!({"window":"other"}),json!({"force":true}),json!({"quickAction":false}),json!({"width":1,"height":1})] {
+                assert!(!valid_request(method,&params,false),"{method}: {params}");
+            }
+        }
+        assert!(!valid_request("openWindow",&json!({}),false));
+        assert!(!valid_request("setWindowMode",&json!({"quick":true}),false));
     }
     #[test] fn replacement_bridge_keeps_proof_and_checkout_location_native() {
         assert!(valid_request("replacementEmailStart",&json!({"licenseKey":"purchase-key"}),false));

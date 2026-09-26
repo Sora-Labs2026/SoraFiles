@@ -1,0 +1,20 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { publishedGuides, guidePath } from '../../data/guides';
+const published = publishedGuides();
+const groups = [
+  { title: 'SoraFiles Desktop', id: 'desktop', guides: published.filter(g => g.category === 'SoraFiles Desktop') },
+  { title: 'Working with files', id: 'files', guides: published.filter(g => g.category !== 'SoraFiles Desktop') },
+];
+---
+<Layout title="File Guides | SoraFiles" description="Practical guides for working with PDFs and images using SoraFiles. Browse published guidance on file formats, privacy and troubleshooting." canonicalPath="/guides" noIndex={!published.length}>
+  <Header />
+  <main id="main" class="v10-content min-h-[60vh]">
+    <header class="v10-tool-hero"><nav aria-label="Breadcrumb" class="v10-breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Guides</span></nav><h1>Guides</h1><p class="v10-tool-lead">Practical help for SoraFiles Desktop and working with your files.</p></header>
+    {groups.filter(group => group.guides.length).map(group => <section class="v10-guide-group" data-testid={`guide-group-${group.id}`} aria-labelledby={`guide-group-${group.id}`}><h2 id={`guide-group-${group.id}`}>{group.title}</h2><ul>{group.guides.map(g => <li><h3><a href={guidePath(g.slug)}>{g.title}</a></h3><p>{g.description}</p></li>)}</ul></section>)}
+    {!published.length && <p class="mb-12">No guides published yet. <a href="/tools" class="underline">Explore tools</a>.</p>}
+  </main>
+  <Footer />
+</Layout>

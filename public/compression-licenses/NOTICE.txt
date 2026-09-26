@@ -1,0 +1,20 @@
+SoraFiles local compression engines
+
+GhostPDL/Ghostscript WebAssembly
+Package: @okathira/ghostpdl-wasm 1.1.0
+License: GNU Affero General Public License v3.0 or later
+Source and license: https://github.com/okathira/ghostpdl-wasm
+
+qpdf WebAssembly
+Package: @neslinesli93/qpdf-wasm 0.3.0
+License: ISC
+Source: https://github.com/neslinesli93/qpdf-wasm
+
+jSquash WebP, JPEG (MozJPEG), and OxiPNG codecs
+Packages: @jsquash/webp 1.5.0, @jsquash/jpeg 1.6.0, @jsquash/oxipng 2.3.0
+License: Apache License 2.0
+Source and license: https://github.com/jamsinclair/jSquash
+
+These engines execute locally in the browser. Their WebAssembly and JavaScript
+artifacts are served from the same SoraFiles origin. SoraFiles itself is
+licensed under AGPL-3.0-only; upstream components retain their own terms.

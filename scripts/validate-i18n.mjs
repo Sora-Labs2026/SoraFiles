@@ -75,8 +75,8 @@ for (const [locale, language, direction] of locales) {
     if (route === '/') {
       for (const claim of obsoleteHomepageClaims) if (html.includes(claim)) errors.push(`${locale}${route}: obsolete or unsupported homepage claim “${claim}”`);
       if (!html.includes('data-privacy-proof')) errors.push(`${locale}${route}: missing data-privacy-proof container`);
-      const cardCount = (html.match(/data-privacy-proof-card/g) || []).length;
-      if (cardCount !== 5) errors.push(`${locale}${route}: expected 5 data-privacy-proof-card elements, found ${cardCount}`);
+      const stepCount = (html.match(/data-privacy-step(?:\s|>)/g) || []).length;
+      if (stepCount !== 3) errors.push(`${locale}${route}: expected 3 localized processing privacy steps, found ${stepCount}`);
       if (locale !== 'en') {
         const englishProofLabels = ['Your files stay under your control', 'File uploads', 'Account required', 'Original overwritten'];
         for (const label of englishProofLabels) {

@@ -6,12 +6,15 @@ import LocalizedHome from '../components/LocalizedHome.astro';
 import { liveTools } from '../data/liveTools';
 import { getLocaleContent } from '../i18n';
 import { getBrandPositioning } from '../i18n/brandPositioning';
+import { CONTENT_PROVENANCE } from '../data/contentProvenance';
 
 const locale = 'en' as const;
 const content = getLocaleContent(locale);
 const brand = getBrandPositioning(locale);
 const description = brand.description;
-const keywords = 'compress PDF no upload, private PDF compressor, merge PDF local, split PDF without uploading, image converter, compress image online free, HEIC to JPG, PDF to image, image to PDF';
+const keywords = 'free file tools, private PDF tools, compress PDF without uploading, merge PDF locally, split PDF pages, image converter, compress image, HEIC to JPG, PDF to JPG, JPG to PDF';
+const applicationId = 'https://sorafiles.com/#application';
+const faqId = 'https://sorafiles.com/#faq';
 
 const schema = {
   '@context': 'https://schema.org',
@@ -32,10 +35,59 @@ const schema = {
       '@type': 'WebSite',
       '@id': 'https://sorafiles.com/#website',
       name: 'SoraFiles',
-      alternateName: ['sorafiles.com'],
       url: 'https://sorafiles.com/',
       description,
       publisher: { '@id': 'https://sorafiles.com/#organization' },
+    },
+    {
+      '@type': 'WebPage',
+      '@id': 'https://sorafiles.com/#webpage',
+      url: 'https://sorafiles.com/',
+      name: 'SoraFiles',
+      description,
+      inLanguage: 'en',
+      datePublished: CONTENT_PROVENANCE.publishedIso,
+      dateModified: CONTENT_PROVENANCE.modifiedIso,
+      isPartOf: { '@id': 'https://sorafiles.com/#website' },
+      about: { '@id': applicationId },
+      mainEntity: [{ '@id': applicationId }, { '@id': faqId }],
+      author: { '@id': CONTENT_PROVENANCE.publisherId },
+      publisher: { '@id': CONTENT_PROVENANCE.publisherId },
+    },
+    {
+      '@type': 'WebApplication',
+      '@id': applicationId,
+      name: 'SoraFiles',
+      url: 'https://sorafiles.com/',
+      description,
+      applicationCategory: 'UtilitiesApplication',
+      applicationSuite: 'SoraFiles',
+      operatingSystem: 'Any operating system with a supported modern browser',
+      browserRequirements: 'JavaScript, WebAssembly, File API, Web Workers, and Canvas support',
+      isAccessibleForFree: true,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      featureList: ['Local browser file processing', 'PDF tools', 'Image tools', 'No account required', 'No SoraFiles watermark'],
+      datePublished: CONTENT_PROVENANCE.publishedIso,
+      dateModified: CONTENT_PROVENANCE.modifiedIso,
+      author: { '@id': CONTENT_PROVENANCE.publisherId },
+      publisher: { '@id': CONTENT_PROVENANCE.publisherId },
+      sameAs: ['https://github.com/Sora-Labs2026/SoraFiles'],
+      license: 'https://github.com/Sora-Labs2026/SoraFiles/blob/main/LICENSE',
+    },
+    {
+      '@type': 'FAQPage',
+      '@id': faqId,
+      url: 'https://sorafiles.com/#faq',
+      name: content.home.faqTitle,
+      inLanguage: 'en',
+      dateModified: CONTENT_PROVENANCE.modifiedIso,
+      author: { '@id': CONTENT_PROVENANCE.publisherId },
+      publisher: { '@id': CONTENT_PROVENANCE.publisherId },
+      mainEntity: content.home.faqs.map((faq) => ({
+        '@type': 'Question',
+        name: faq.question,
+        acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+      })),
     },
     {
       '@type': 'ItemList',
