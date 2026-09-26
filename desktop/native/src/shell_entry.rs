@@ -243,6 +243,52 @@ mod windows {
             dynamic_state(&sandbox.root, &sandbox.base, &format!(r"{}\CLSID", sandbox.base), expected(), TEST_DLL)
         }
         #[test]
+        fn dynamic_menu_repairs_moved_install_atomically() {
+            let sandbox = Sandbox::new();
+            let classes = format!(r"{}\CLSID", sandbox.base);
+            let previous = r#""C:\Previous App\sorafiles.exe" --edit "%1""#;
+            let old_dll = r"C:\Previous App\sorafiles-explorer.dll";
+            dynamic_update(&sandbox.root, &sandbox.base, &classes, previous, old_dll, true, false, None).unwrap();
+            assert!(!dynamic_status(&sandbox).unwrap());
+            assert!(dynamic(&sandbox, true, false, Some(3)).is_err());
+            assert_eq!(sandbox.verb(".pdf").get_value::<String,_>("SoraFilesExecutable").unwrap(), previous);
+            let server = sandbox.root.open_subkey(format!(r"{classes}\{CLSID}\InprocServer32")).unwrap();
+            assert_eq!(server.get_value::<String,_>("").unwrap(), old_dll);
+            dynamic(&sandbox, true, false, None).unwrap();
+            assert!(dynamic_status(&sandbox).unwrap());
+            assert_eq!(server.get_value::<String,_>("").unwrap(), TEST_DLL);
+            for extension in EXTENSIONS {
+                assert_eq!(sandbox.verb(extension).get_value::<String,_>("SoraFilesExecutable").unwrap(), expected());
+            }
+        }
+        #[test]
+        fn dynamic_menu_stale_server_is_not_reported_enabled() {
+            let sandbox = Sandbox::new();
+            dynamic(&sandbox, true, false, None).unwrap();
+            let server = sandbox.root.open_subkey_with_flags(format!(r"{}\CLSID\{CLSID}\InprocServer32", sandbox.base), KEY_SET_VALUE).unwrap();
+            server.set_value("", &r"C:\Previous App\sorafiles-explorer.dll").unwrap();
+            assert!(!dynamic_status(&sandbox).unwrap());
+            dynamic(&sandbox, true, false, None).unwrap();
+            assert!(dynamic_status(&sandbox).unwrap());
+        }
+        #[test]
+        fn dynamic_menu_migration_rejects_malformed_and_augmented_entries() {
+            for command_value in [r#""C:\Previous App\sorafiles.exe" --edit "%1" --extra"#, "relative.exe", ""] {
+                let sandbox = Sandbox::new();
+                dynamic(&sandbox, true, false, None).unwrap();
+                sandbox.verb(".gif").set_value("SoraFilesExecutable", &command_value).unwrap();
+                assert!(dynamic_status(&sandbox).is_err());
+                assert!(dynamic(&sandbox, true, false, None).is_err());
+                assert_eq!(sandbox.verb(".pdf").get_value::<String,_>("SoraFilesExecutable").unwrap(), expected());
+            }
+            let sandbox = Sandbox::new();
+            dynamic(&sandbox, true, false, None).unwrap();
+            sandbox.verb(".gif").set_value("SoraFilesExecutable", &r#""C:\Previous App\sorafiles.exe" --edit "%1""#).unwrap();
+            sandbox.verb(".gif").set_value("Extra", &"Keep").unwrap();
+            assert!(dynamic(&sandbox, true, false, None).is_err());
+            assert_eq!(sandbox.verb(".gif").get_value::<String,_>("Extra").unwrap(), "Keep");
+        }
+        #[test]
         fn dynamic_menu_migrates_both_previous_versions_and_removes_class() {
             let sandbox = Sandbox::new();
             sandbox.update(true).unwrap(); make_legacy(&sandbox, ".pdf");

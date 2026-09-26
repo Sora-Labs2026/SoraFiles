@@ -57,19 +57,32 @@ async function atomicWrite(path,bytes,{exists,mode=0o644}){
 
 // The native caller owns preference default/migration. This helper performs only
 // the requested transition and never installs anything at module import time.
-export async function setUnixShellIntegration({platform=process.platform,app,enabled,home=homedir()}){
+export async function setUnixShellIntegration({platform=process.platform,app,enabled,home=homedir(),dataHome=process.env.XDG_DATA_HOME}){
  validate(platform,app);if(typeof enabled!=='boolean')throw Error('enabled must be boolean');
  const assets=await renderUnixShellAssets({platform,app});
+ // Keep stable ownership keys while locating extensions where the desktop
+ // actually searches. Relative XDG values are invalid and use the default.
+ const dataRoot=platform==='linux'&&typeof dataHome==='string'&&isAbsolute(dataHome)?dataHome:join(home,'.local/share');
+ const assetPath=path=>{
+  if(platform!=='linux')return safePath(home,path);
+  const suffix=path.slice('.local/share/'.length),withinHome=relative(resolve(home),resolve(dataRoot,suffix));
+  return !withinHome.startsWith('..')&&!isAbsolute(withinHome)?safePath(home,withinHome):safePath(dataRoot,suffix);
+ };
  const statePath=await safePath(home,stateLocation(platform));
  const stateBytes=await readSmall(statePath);
  let previous=null;
  if(stateBytes){
   previous=JSON.parse(stateBytes);
-  if(previous.owner!==owner||previous.app!==app||previous.platform!==platform||!previous.files||Object.keys(previous.files).length!==assets.size||[...assets.keys()].some(path=>!/^([a-f0-9]{64})$/.test(previous.files[path]??'')))throw Error('Integration belongs to another installation or has an invalid ownership record');
+  if(previous.owner!==owner||previous.platform!==platform||!previous.files||Object.keys(previous.files).length!==assets.size||[...assets.keys()].some(path=>!/^([a-f0-9]{64})$/.test(previous.files[path]??'')))throw Error('Integration belongs to another installation or has an invalid ownership record');
+  validate(platform,previous.app);
+  // A moved app (or renamed AppImage) must repair its now-dead launcher. An
+  // existing second installation and its uninstall must not claim these files.
+  if(previous.app!==app&&(!enabled||await optionalStat(previous.app)))throw Error('Integration belongs to another installation');
  }
- const oldFiles=new Map();
+ const oldFiles=new Map(),oldModes=new Map();
  for(const [path] of assets){
-  const absolute=await safePath(home,path),bytes=await readSmall(absolute);oldFiles.set(absolute,bytes);
+  const absolute=await assetPath(path),bytes=await readSmall(absolute);oldFiles.set(absolute,bytes);
+  oldModes.set(absolute,(await optionalStat(absolute))?.mode&0o777);
   if(bytes&&(!previous||hash(bytes)!==previous.files[path]))throw Error('An existing file-manager integration was modified; it has been preserved');
  }
  if(!enabled&&!previous)return {enabled:false,changed:false};
@@ -77,11 +90,14 @@ export async function setUnixShellIntegration({platform=process.platform,app,ena
  const changes=[];
  try{
   for(const [path,content] of assets){
-   const absolute=await safePath(home,path),old=oldFiles.get(absolute);
+   const absolute=await assetPath(path),old=oldFiles.get(absolute);
    if(enabled){
-    await mkdir(dirname(absolute),{recursive:true});await safePath(home,path);
-    if(old?.equals(Buffer.from(content)))continue;
-    await atomicWrite(absolute,content,{exists:!!old});changes.push(absolute);
+    await mkdir(dirname(absolute),{recursive:true});await assetPath(path);
+    // Dolphin ignores user service menus without executable authorization.
+    // Rewrite even unchanged old assets to repair installations created 0644.
+    const mode=platform==='linux'&&path.endsWith('.desktop')?0o755:0o644;
+    if(old?.equals(Buffer.from(content))&&(process.platform==='win32'||oldModes.get(absolute)===mode))continue;
+    await atomicWrite(absolute,content,{exists:!!old,mode});changes.push(absolute);
    }else if(old){await unlink(absolute);changes.push(absolute);}
   }
   if(enabled){await mkdir(dirname(statePath),{recursive:true});await safePath(home,stateLocation(platform));await atomicWrite(statePath,JSON.stringify(installed,null,2)+'\n',{exists:!!stateBytes,mode:0o600});}
@@ -90,7 +106,7 @@ export async function setUnixShellIntegration({platform=process.platform,app,ena
   // Roll back only files changed by this call. Never recursively delete a tree.
   for(const absolute of changes.reverse()){
    const old=oldFiles.get(absolute);
-   if(old)await atomicWrite(absolute,old,{exists:!!(await optionalStat(absolute))});else await unlink(absolute).catch(()=>{});
+   if(old)await atomicWrite(absolute,old,{exists:!!(await optionalStat(absolute)),mode:oldModes.get(absolute)});else await unlink(absolute).catch(()=>{});
   }
   throw error;
  }

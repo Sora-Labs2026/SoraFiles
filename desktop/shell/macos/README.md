@@ -13,7 +13,14 @@ changed. Unsigned builds may require the user to approve the app in System Setti
 → Privacy & Security. This asset has template tests; actual Finder setup remains
 unverified until run on macOS.
 
-The same setting controls a per-user LaunchAgent at
+The app registers this per-user service on first launch with file-manager actions
+enabled; copying it from the DMG alone cannot register a service. Open it from its
+intended location first. When a previously launched app is moved and its old
+executable no longer exists, first launch at the new location repairs the owned
+workflow's executable path. A still-existing second installation or a manually
+edited workflow is preserved rather than overwritten.
+
+The separate login-startup setting controls a per-user LaunchAgent at
 `~/Library/LaunchAgents/com.soralabs.sorafiles.desktop.desktop.plist`. It starts
 the current executable with `--background`, writes atomically, and removes only
 an entry carrying SoraFiles' ownership marker. It never installs a system daemon

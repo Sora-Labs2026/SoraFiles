@@ -1,6 +1,7 @@
 import './tokens.css';
 import './styles.css';
 import './brand.css';
+import prototypeToolIcons from './tool-icons.json';
 import {connectedTools,processingOptions,readProcessingOptions,syncProcessingOptions} from './processing';
 import {capabilities,relevantActions,searchTools} from '../shared/capabilities.mjs';
 import {host,onNativeSelection,onNativeNotice,onNativeLaunch,onLicenseUpdated} from './host';
@@ -17,9 +18,9 @@ const planLabel=()=>state.plan.split('-').map(word=>word.charAt(0).toUpperCase()
 const escape=(value:unknown)=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const paths:Record<string,string>={home:'M3 10 12 3l9 7v10H3V10Zm6 10v-7h6v7',grid:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',lock:'M6 10h12a2 2 0 0 1 2 2v8H4v-8a2 2 0 0 1 2-2Zm2 0V7a4 4 0 0 1 8 0v3M12 14v3',settings:'m12 3 2 3 4-1 1 4 3 3-3 2 1 4-4 1-4 3-2-3-4 1-1-4-3-3 3-2-1-4 4-1 4-3Zm0 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6',update:'M20 8a8 8 0 1 0 0 8M20 3v5h-5',file:'M6 3h8l4 4v14H6V3Zm8 0v5h4M9 12h6M9 16h6',search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm5 12 6 6',folder:'M3 6h7l2 3h9v11H3V6',arrow:'M5 12h14m-5-5 5 5-5 5',upload:'M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6',close:'m6 6 12 12M6 18 18 6',check:'m5 12 4 4L19 6',image:'M3 3h18v18H3zM3 16l6-6 5 5 3-3 4 4M15 7h.01',compress:'M3 8h5V3m0 5L3 3m18 5h-5V3m0 5 5-5M3 16h5v5m0-5-5 5m18-5h-5v5m0-5 5 5',merge:'M5 3v5l7 6 7-6V3m-7 11v7m-4-4 4 4 4-4',power:'M12 3v9M6 5a9 9 0 1 0 12 0'};
 const icon=(name:string,cls='')=>`<svg class="icon ${cls}" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${paths[name]||paths.file}"/></svg>`;
-const toolIcon=(id:string)=>id.includes('compress')?'compress':id==='merge-pdf'?'merge':id.includes('image')||id==='remove-background'||id==='heic-to-jpg'?'image':'file';
+const toolGlyph=(id:string)=>(prototypeToolIcons as Record<string,string>)[id]??icon('file');
 const common=['compress-pdf','merge-pdf','image-converter','resize-image','remove-background','pdf-ocr'];
-function toolButton(tool:any){return `<button class="tool-card" data-tool="${tool.id}"><span class="tool-icon">${icon(toolIcon(tool.id))}</span><span><strong>${escape(tool.name)}</strong><small>${escape(tool.formats.slice(0,3).join(', '))}${tool.formats.length>3?' + more':''}</small></span>${icon('arrow','card-arrow')}</button>`;}
+function toolButton(tool:any){return `<button class="tool-card" data-tool="${tool.id}"><span class="tool-icon">${toolGlyph(tool.id)}</span><span><strong>${escape(tool.name)}</strong><small>${escape(tool.formats.slice(0,3).join(', '))}${tool.formats.length>3?' + more':''}</small></span>${icon('arrow','card-arrow')}</button>`;}
 const feedback=()=>`${state.error?`<div role="alert" class="feedback error">${escape(state.error)}</div>`:''}${state.notice?`<div role="status" class="feedback">${escape(state.notice)}</div>`:''}`;
 const outputButtons=(id?:string)=>id&&/^[a-f0-9]{32}$/i.test(id)?`<span class="output-actions"><button class="secondary" data-open-output="${id}">Open result</button><button class="text-button" data-reveal-output="${id}">Open containing folder</button></span>`:'';
 function processingResult(result:any,sources:string[]){

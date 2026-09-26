@@ -3,7 +3,7 @@
 The x64 installer includes `sorafiles-explorer.dll` beside the application. A small
 `IExplorerCommand` adapter receives the entire selection and asks a separate,
 windowless application process for relevant actions. It loads no processing
-engines into Explorer. Explorer's background state callback has a 1.4-second
+engines into Explorer. Explorer's background state callback has a 10-second
 broker deadline and a More options fallback. On Windows 11 the unpackaged
 extension is available in **Show more options**.
 
@@ -14,6 +14,30 @@ verbs and the owned COM class change in one registry transaction. Known prior
 Open in SoraFiles / Edit with SoraFiles single-file verbs migrate only when their
 exact command belongs to this executable. Foreign or augmented entries are
 preserved. Uninstall removes only owned entries.
+
+Known dynamic registrations with an old absolute installation path migrate only
+when all five values have the exact owned shape and the executable is a valid
+literal absolute command. A stale owned COM server path is reported as disabled
+until synchronization repairs it. This migration and its rollback are covered
+by isolated registry tests.
+
+## A missing menu after installation
+
+The source version is 0.1.1; the public release manifest still lists 0.1.0.
+Source fixes do not update an already downloaded installer. Verify the installed
+version, selected file type, and actual Windows menu before identifying the
+cause of a tester's report. Right-click a supported local file rather than a
+folder or blank background. On Windows 11, choose **Show more options**. The
+current unsigned/unpackaged installer does not register the package identity
+required for the Windows 11 primary menu. Supported extensions are PDF, JPG,
+JPEG, PNG, WebP, HEIC, HEIF, TIF, TIFF, PSD, DOCX, XLSX, PPTX, and GIF.
+
+The installer must succeed at payload verification and per-user registration;
+registration failure aborts setup. An explicitly disabled preference is kept
+across upgrades. Settings can enable the integration again. A reboot-required
+installer result indicates that Explorer is retaining the previous loaded DLL.
+Do not claim primary Windows 11 menu support or clean-machine visibility from
+registry tests alone.
 
 `build.cmd` compiles the adapter and runs protocol/COM lifecycle checks. Native
 Rust tests exercise real registry transactions under fresh test-only UUID keys.

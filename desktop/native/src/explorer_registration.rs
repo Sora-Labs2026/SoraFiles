@@ -11,8 +11,17 @@ fn dynamic_owned(key: &RegKey, expected: &str) -> Result<bool, String> {
 // command with a different absolute path.  The owner marker and exact shape
 // make this a safe in-place migration; foreign verbs still fail closed.
 fn dynamic_owned_marker(key: &RegKey) -> Result<bool, String> {
+    let executable: String = match key.get_value("SoraFilesExecutable") {
+        Ok(value) => value,
+        Err(error) if matches!(error.kind(), std::io::ErrorKind::NotFound | std::io::ErrorKind::InvalidData) => return Ok(false),
+        Err(_) => return Err(UNAVAILABLE.into()),
+    };
+    // A marker alone is insufficient: require the exact previously emitted
+    // literal command and all five values, including its executable path.
+    let Some(path) = executable.strip_prefix('"').and_then(|value| value.strip_suffix("\" --edit \"%1\"")) else { return Ok(false); };
+    if command(Path::new(path)).ok().as_deref() != Some(executable.as_str()) { return Ok(false); }
     Ok(exact_values(key, &[("", LABEL), ("SoraFilesOwner", OWNER),
-        ("MultiSelectModel", "Player"), ("ExplorerCommandHandler", CLSID)])?
+        ("SoraFilesExecutable", &executable), ("MultiSelectModel", "Player"), ("ExplorerCommandHandler", CLSID)])?
         && exact_children(key, &[])? )
 }
 fn class_owned(key: &RegKey, dll: &str, tx: &Transaction) -> Result<bool, String> {
@@ -40,7 +49,10 @@ fn dynamic_state(root: &RegKey, base: &str, classes: &str, expected: &str, dll: 
     let tx = Transaction::new().map_err(|_| UNAVAILABLE)?;
     let mut all = true;
     match open(root, &format!(r"{classes}\{CLSID}"), &tx)? {
-        Some(key) => if !class_owned(&key, dll, &tx)? && !class_owned_marker(&key, &tx)? { return Err(CONFLICT.into()); },
+        Some(key) => if !class_owned(&key, dll, &tx)? {
+            if !class_owned_marker(&key, &tx)? { return Err(CONFLICT.into()); }
+            all = false;
+        },
         None => all = false,
     }
     for extension in EXTENSIONS {

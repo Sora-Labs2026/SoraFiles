@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,writeFile,mkdir,rm,access,symlink} from 'node:fs/promises';
+import {mkdtemp,readFile,writeFile,mkdir,rm,access,symlink,stat,chmod,rename} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,dirname} from 'node:path';
 import {renderUnixShellAssets,setUnixShellIntegration} from '../scripts/unix-shell-integration.mjs';
@@ -36,11 +36,54 @@ for(const platform of ['darwin','linux'])test(`${platform} per-user install is i
   await assert.rejects(setUnixShellIntegration({...options,enabled:true}),/modified/);
   assert.equal(await readFile(first,'utf8'),'foreign edited content');
   await writeFile(first,original);
-  await assert.rejects(setUnixShellIntegration({...options,app:'/another/install',enabled:true}),/another installation/);
+  await assert.rejects(setUnixShellIntegration({...options,app:'/another/install',enabled:false}),/another installation/);
   const sibling=join(dirname(first),'personal-file');await writeFile(sibling,'keep');
   assert.equal((await setUnixShellIntegration({...options,enabled:false})).enabled,false);
   for(const relative of assets.keys())await assert.rejects(access(join(home,relative)));
   assert.equal(await readFile(sibling,'utf8'),'keep');
+ }finally{await rm(home,{recursive:true,force:true});}
+});
+
+test('Linux installs and removes menus from the configured XDG data directory',async()=>{
+ const home=await mkdtemp(join(tmpdir(),'sorafiles-shell-test-'));
+ try{
+  const dataHome=join(home,'custom data'),options={home,platform:'linux',app:'/opt/sorafiles',dataHome};
+  await setUnixShellIntegration({...options,enabled:true});
+  const names=['nautilus-python/extensions/sorafiles.py','kio/servicemenus/sorafiles.desktop','kservices5/ServiceMenus/sorafiles.desktop'];
+  for(const name of names)await access(join(dataHome,name));
+  await assert.rejects(access(join(home,'.local/share/nautilus-python/extensions/sorafiles.py')));
+  assert.equal((await setUnixShellIntegration({...options,enabled:true})).changed,false);
+  await setUnixShellIntegration({...options,enabled:false});
+  for(const name of names)await assert.rejects(access(join(dataHome,name)));
+ }finally{await rm(home,{recursive:true,force:true});}
+});
+
+test('Dolphin menus are executable and existing owned non-executable menus are repaired',{skip:process.platform==='win32'},async()=>{
+ const home=await mkdtemp(join(tmpdir(),'sorafiles-shell-test-'));
+ try{
+  const options={home,platform:'linux',app:'/opt/sorafiles',dataHome:''};
+  await setUnixShellIntegration({...options,enabled:true});
+  const menu=join(home,'.local/share/kio/servicemenus/sorafiles.desktop');
+  assert.equal((await stat(menu)).mode&0o777,0o755);
+  await chmod(menu,0o644);
+  assert.equal((await setUnixShellIntegration({...options,enabled:true})).changed,true);
+  assert.equal((await stat(menu)).mode&0o777,0o755);
+  assert.equal((await setUnixShellIntegration({...options,enabled:true})).changed,false);
+ }finally{await rm(home,{recursive:true,force:true});}
+});
+
+for(const platform of ['darwin','linux'])test(`${platform} moved app repairs its owned stale launcher but preserves an existing installation`,{skip:process.platform==='win32'},async()=>{
+ const home=await mkdtemp(join(tmpdir(),'sorafiles-shell-test-'));
+ try{
+  const app=join(home,'old app'),moved=join(home,'moved app'),options={home,platform,app,dataHome:''};
+  await writeFile(app,'app');
+  await setUnixShellIntegration({...options,enabled:true});
+  await assert.rejects(setUnixShellIntegration({...options,app:moved,enabled:true}),/another installation/);
+  await rename(app,moved);
+  assert.equal((await setUnixShellIntegration({...options,app:moved,enabled:true})).changed,true);
+  for(const [path,content] of await renderUnixShellAssets({...options,app:moved}))assert.equal(await readFile(join(home,path),'utf8'),content);
+  await assert.rejects(setUnixShellIntegration({...options,enabled:false}),/another installation/);
+  await setUnixShellIntegration({...options,app:moved,enabled:false});
  }finally{await rm(home,{recursive:true,force:true});}
 });
 
