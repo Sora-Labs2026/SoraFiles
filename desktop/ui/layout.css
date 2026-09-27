@@ -45,6 +45,8 @@ body:not([data-quick-action=true]) .section-title .text-button { min-height:32px
 body:not([data-quick-action=true]) .tool-section { margin-top:32px; }
 body:not([data-quick-action=true]) .panel { padding:24px; }
 body:not([data-quick-action=true]) .panel>p { font-size:14px; line-height:1.65; margin:10px 0 20px; }
+.support-actions { display:flex; align-items:center; flex-wrap:wrap; column-gap:24px; row-gap:12px; }
+.support-actions .text-button { min-height:40px; }
 body:not([data-quick-action=true]) .panel>small,
 body:not([data-quick-action=true]) .setting-row p,
 body:not([data-quick-action=true]) .selected li>span small { font-size:12px; line-height:1.6; }
