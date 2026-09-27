@@ -2,6 +2,8 @@
 //! Tests use disposable paths; no real login or file-manager entries are changed.
 #[path = "../native/src/preferences.rs"]
 pub mod preferences;
+#[path = "../native/src/locale.rs"]
+pub mod locale;
 #[path = "../native/src/unix_startup.rs"]
 pub mod startup;
 #[cfg(unix)]
