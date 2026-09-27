@@ -28,19 +28,57 @@ try{
  await page.getByRole('button',{name:'Choose files',exact:true}).click();await page.getByRole('heading',{name:'2 files selected'}).waitFor();assert.ok((await page.locator('.selected li').first().innerText()).includes('Invoice <private> & sample.pdf'));assert.equal(await page.locator('private').count(),0);assert.equal(await page.locator('[data-tool="merge-pdf"]').count(),0);assert.equal(await page.locator('[data-tool="image-converter"]').count(),0);checks.push('Selection names escaped; unlicensed selection does not advertise runnable quick actions');
  await page.getByRole('button',{name:'Clear selection',exact:true}).click();
  await page.keyboard.press('Control+k');await page.getByRole('searchbox',{name:'Search tools'}).fill('merge pdf');assert.equal(await page.locator('[data-tool]').count(),1);await page.keyboard.press('Enter');await page.getByRole('heading',{name:'Merge PDF',exact:true}).waitFor();await page.keyboard.press('Escape');await page.getByRole('searchbox').waitFor();await page.keyboard.press('Escape');assert.equal(await page.locator('[data-tool]').count(),25);checks.push('Ctrl K, search, Enter and Escape work');
+ const prototypeTools=JSON.parse(await readFile('src/data/prototypeHomeTools.json','utf8'));
+ assert.deepEqual(await page.locator('.category-heading h2').allTextContents(),['PDF','Convert','Image','Security']);
+ for(const [category,label] of [['pdf','PDF'],['convert','Convert'],['image','Image'],['security','Security']]){
+  await page.getByRole('button',{name:label,exact:true}).click();
+  const actual=await page.locator('[data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool).sort());
+  assert.deepEqual(actual,prototypeTools.filter(t=>t.category===category&&t.id!=='unlock-pdf').map(t=>t.id).sort());
+  assert.equal(await page.locator('.category-filters [aria-pressed=true]').count(),1);
+ }
+ await page.getByRole('searchbox').fill('pdf');await page.keyboard.press('Enter');
+ await page.getByRole('heading',{name:'Protect PDF',exact:true}).waitFor();await page.keyboard.press('Escape');
+ assert.equal(await page.getByRole('button',{name:'Security',exact:true}).getAttribute('aria-pressed'),'true');
+ await page.getByRole('searchbox').fill('not a matching tool');await page.getByRole('button',{name:'Clear search',exact:true}).click();
+ assert.equal(await page.locator('[data-tool]').count(),25);
+ await page.getByRole('button',{name:'Image',exact:true}).click();await page.keyboard.press('Control+k');
+ assert.equal(await page.getByRole('button',{name:'All',exact:true}).getAttribute('aria-pressed'),'true');
+ checks.push('PDF, Convert, Image and Security match the website categories; filtering, search, keyboard launch and reset retain the correct scope');
+ for(const theme of ['light','dark']){
+  await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
+  await page.screenshot({path:resolve(out,`categories-${theme}.png`),fullPage:true});
+ }
  const ids=await page.locator('[data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool));for(const id of ids){await page.locator(`[data-tool="${id}"]`).click();assert.equal(await page.getByRole('button',{name:'Choose files',exact:true}).count(),1);await page.keyboard.press('Escape');}checks.push('All 25 eligible tools open their independent workspace');
  await page.getByRole('searchbox').fill('unlock');assert.equal(await page.locator('[data-tool]').count(),0);checks.push('Unlock PDF absent from Desktop search');await page.getByRole('searchbox').fill('xyz missing tool');await page.getByRole('heading',{name:'No tools found'}).waitFor();await page.getByRole('button',{name:'Clear search',exact:true}).click();assert.equal(await page.locator('[data-tool]').count(),25);
  await page.getByRole('button',{name:'License',exact:true}).click();await page.getByRole('button',{name:'Show this device ID',exact:true}).click();await page.getByText('a'.repeat(43),{exact:true}).waitFor();checks.push('Support identity is shown only on request and is not a license key');await page.getByLabel('License key',{exact:true}).fill('synthetic-key');assert.equal(await page.getByLabel('License key',{exact:true}).getAttribute('type'),'password');await page.getByRole('button',{name:'Show',exact:true}).click();assert.equal(await page.getByLabel('License key',{exact:true}).getAttribute('type'),'text');await page.getByRole('button',{name:'Activate license',exact:true}).click();await page.getByRole('alert').waitFor();assert.equal(await page.getByLabel('License key',{exact:true}).inputValue(),'');checks.push('License key is masked by default and cleared after submission; failure announced');
- await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByLabel('Default output location').selectOption('downloads');await page.waitForFunction(()=>document.querySelector('#output-mode')?.value==='downloads');await page.getByLabel('Keep quick actions available after sign-in').click();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);assert.equal(await page.getByLabel('Keep quick actions available after sign-in').isChecked(),true);await page.getByLabel('Keep quick actions available after sign-in').click();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);assert.equal(await page.getByLabel('Keep quick actions available after sign-in').isChecked(),false);checks.push('Settings roundtrip; sign-in startup can be enabled and disabled through its native setting');
+ await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByLabel('Default output location').selectOption('downloads');await page.waitForFunction(()=>document.querySelector('#output-mode')?.value==='downloads');
+ const startup=page.getByRole('checkbox',{name:'Keep quick actions ready after sign-in',exact:true});
+ await startup.check();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);assert.equal(await startup.isChecked(),true);
+ const beforeDisable=await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='saveSettings').length);
+ await startup.click();await page.getByRole('dialog',{name:'Turn off the sign-in helper?'}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Keep enabled',exact:true}).evaluate(node=>node===document.activeElement),true);
+ assert.equal(await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='saveSettings').length),beforeDisable);
+ await page.getByRole('button',{name:'Keep enabled',exact:true}).click();assert.equal(await startup.isChecked(),true);
+ await startup.click();await page.keyboard.press('Escape');assert.equal(await startup.isChecked(),true);
+ await startup.click();await page.getByRole('button',{name:'Turn off',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
+ await page.waitForFunction(()=>document.querySelector('#startup')?.checked===false);assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='saveSettings').at(-1))).params,{startup:false});
+ assert.equal(await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='saveSettings').length),beforeDisable+1);
+ checks.push('Disabling the sign-in helper requires confirmation; Keep enabled and Escape preserve it without a native write; confirmation saves once');
 
- const explorerToggle=page.getByLabel('Show SoraFiles actions in the file manager');
+ const explorerToggle=page.getByLabel('Show Edit with SoraFiles in right-click menus');
  assert.equal(await explorerToggle.isChecked(),false);
  await explorerToggle.check();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
  assert.equal(await explorerToggle.isChecked(),true);
  assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(c=>c.method==='saveSettings').at(-1))).params,{shellEntry:true});
- await explorerToggle.uncheck();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
- assert.equal(await explorerToggle.isChecked(),false);
- checks.push('Explorer entry is opt-in and saves only the requested native setting');
+ const beforeShellDisable=await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='saveSettings').length);
+ await explorerToggle.click();await page.getByRole('dialog',{name:'Remove SoraFiles from right-click menus?'}).waitFor();
+ await page.getByRole('button',{name:'Keep enabled',exact:true}).click();assert.equal(await explorerToggle.isChecked(),true);
+ await explorerToggle.click();await page.keyboard.press('Escape');assert.equal(await explorerToggle.isChecked(),true);
+ assert.equal(await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='saveSettings').length),beforeShellDisable);
+ await explorerToggle.click();await page.getByRole('button',{name:'Turn off',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
+ await page.waitForFunction(()=>document.querySelector('#shellEntry')?.checked===false);
+ assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='saveSettings').at(-1))).params,{shellEntry:false});
+ checks.push('Removing file-manager actions requires its own warning; cancelling preserves registration and confirmation saves only shellEntry');
  await page.getByLabel('Default output location').selectOption('custom');await page.waitForFunction(()=>!document.querySelector('#app').matches('[aria-busy="true"]'));
  await page.evaluate(()=>{window.__hostDelay=600;window.__folderSelected=false;});
  await page.getByRole('button',{name:'Choose folder',exact:true}).click();
@@ -257,8 +295,8 @@ try{
  assert.equal(await page.getByRole('button',{name:'Open result',exact:true}).isEnabled(),true);
  checks.push('A recreated view reconnects to background processing, keeps cancellation available and displays saved output');
  await page.getByRole('button',{name:'Settings',exact:true}).click();
- assert.equal(await page.getByLabel('Keep quick actions available after sign-in').isDisabled(),true);
- assert.equal(await page.getByLabel('Show SoraFiles actions in the file manager').isDisabled(),true);
+ assert.equal(await page.getByLabel('Keep quick actions ready after sign-in').isDisabled(),true);
+ assert.equal(await page.getByLabel('Show Edit with SoraFiles in right-click menus').isDisabled(),true);
  checks.push('Unavailable sign-in integration remains disabled after native state restoration');
  const trialPage=await browser.newPage({viewport:{width:1180,height:900}});trialPage.on('pageerror',error=>errors.push(error.message));
  try{

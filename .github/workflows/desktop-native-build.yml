@@ -69,6 +69,7 @@ jobs:
         run: |
           node desktop/scripts/build-ui.mjs
           node desktop/tests/quick-action-ui-qa.mjs
+          node desktop/tests/ui-qa.mjs --desktop-only
       - name: Measure processing resources and reject source-checkout links
         run: node desktop/scripts/measure-processing-pack.mjs
       - name: Verify isolated processing package

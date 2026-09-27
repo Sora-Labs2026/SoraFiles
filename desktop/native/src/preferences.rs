@@ -16,9 +16,11 @@ pub struct Preferences {
     // None means the user has never chosen; preserve explicit false on upgrades.
     #[serde(rename = "shellEntry", default, skip_serializing_if = "Option::is_none")]
     shell_entry: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    startup: Option<bool>,
 }
 impl Default for Preferences {
-    fn default() -> Self { Self { version: 1, output: "source".into(), theme: "system".into(), custom_folder: None, shell_entry: None } }
+    fn default() -> Self { Self { version: 1, output: "source".into(), theme: "system".into(), custom_folder: None, shell_entry: None, startup: None } }
 }
 impl Preferences {
     fn validate(&self) -> Result<(), &'static str> {
@@ -33,13 +35,14 @@ impl Preferences {
         Ok(())
     }
     pub fn value(&self) -> Value {
-        let mut value = json!({"output":self.output,"theme":self.theme,"startup":false});
+        let mut value = json!({"output":self.output,"theme":self.theme});
+        if let Some(enabled) = self.startup { value["startup"] = json!(enabled); }
         if let Some(folder) = &self.custom_folder { value["customFolder"] = json!(folder); }
         if let Some(enabled) = self.shell_entry { value["shellEntry"] = json!(enabled); }
         value
     }
     pub fn from_value(value: &Value) -> Result<Self, &'static str> {
-        let settings: Self = serde_json::from_value(json!({"version":1,"output":value["output"],"theme":value["theme"],"customFolder":value.get("customFolder"),"shellEntry":value.get("shellEntry")})).map_err(|_| "Invalid settings")?;
+        let settings: Self = serde_json::from_value(json!({"version":1,"output":value["output"],"theme":value["theme"],"customFolder":value.get("customFolder"),"shellEntry":value.get("shellEntry"),"startup":value.get("startup")})).map_err(|_| "Invalid settings")?;
         settings.validate()?; Ok(settings)
     }
 }

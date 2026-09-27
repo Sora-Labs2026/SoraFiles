@@ -1,0 +1,347 @@
+[
+  {
+    "id": "compress-pdf",
+    "name": "Compress PDF",
+    "category": "pdf",
+    "href": "/pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shrink\" aria-hidden=\"true\"><path d=\"m15 15 6 6m-6-6v4.8m0-4.8h4.8\"></path><path d=\"M9 19.8V15m0 0H4.2M9 15l-6 6\"></path><path d=\"M15 4.2V9m0 0h4.8M15 9l6-6\"></path><path d=\"M9 4.2V9m0 0H4.2M9 9 3 3\"></path></svg>",
+    "outcome": "Make a PDF smaller.",
+    "keywords": [
+      "reduce",
+      "shrink",
+      "size",
+      "optimize"
+    ]
+  },
+  {
+    "id": "compress-image",
+    "name": "Compress Image",
+    "category": "image",
+    "href": "/compress-image",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-minimize2 lucide-minimize-2\" aria-hidden=\"true\"><path d=\"m14 10 7-7\"></path><path d=\"M20 10h-6V4\"></path><path d=\"m3 21 7-7\"></path><path d=\"M4 14h6v6\"></path></svg>",
+    "outcome": "Shrink JPG and PNG files.",
+    "keywords": [
+      "reduce",
+      "jpg",
+      "png",
+      "size",
+      "photo"
+    ]
+  },
+  {
+    "id": "merge-pdf",
+    "name": "Merge PDF",
+    "category": "pdf",
+    "href": "/merge-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-merge\" aria-hidden=\"true\"><path d=\"m8 6 4-4 4 4\"></path><path d=\"M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22\"></path><path d=\"m20 22-5-5\"></path></svg>",
+    "outcome": "Combine PDFs into one.",
+    "keywords": [
+      "combine",
+      "join"
+    ]
+  },
+  {
+    "id": "split-pdf",
+    "name": "Split PDF",
+    "category": "pdf",
+    "href": "/split-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-split\" aria-hidden=\"true\"><path d=\"M16 3h5v5\"></path><path d=\"M8 3H3v5\"></path><path d=\"M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3\"></path><path d=\"m15 9 6-6\"></path></svg>",
+    "outcome": "Extract a page range.",
+    "keywords": [
+      "extract",
+      "separate",
+      "pages"
+    ]
+  },
+  {
+    "id": "jpg-to-pdf",
+    "name": "JPG to PDF",
+    "category": "convert",
+    "href": "/jpg-to-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-image\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"></path><path d=\"M14 2v4a2 2 0 0 0 2 2h4\"></path><circle cx=\"10\" cy=\"12\" r=\"2\"></circle><path d=\"m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22\"></path></svg>",
+    "outcome": "Turn images into one PDF.",
+    "keywords": [
+      "png",
+      "image",
+      "photo",
+      "convert"
+    ]
+  },
+  {
+    "id": "pdf-to-jpg",
+    "name": "PDF to JPG",
+    "category": "convert",
+    "href": "/pdf-to-jpg",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-images\" aria-hidden=\"true\"><path d=\"M18 22H4a2 2 0 0 1-2-2V6\"></path><path d=\"m22 13-1.296-1.296a2.41 2.41 0 0 0-3.408 0L11 18\"></path><circle cx=\"12\" cy=\"8\" r=\"2\"></circle><rect width=\"16\" height=\"16\" x=\"6\" y=\"2\" rx=\"2\"></rect></svg>",
+    "outcome": "Render pages as images.",
+    "keywords": [
+      "image",
+      "png",
+      "convert"
+    ]
+  },
+  {
+    "id": "pdf-to-word",
+    "name": "PDF to Word",
+    "category": "convert",
+    "href": "/pdf-to-word",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-text\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"></path><path d=\"M14 2v4a2 2 0 0 0 2 2h4\"></path><path d=\"M10 9H8\"></path><path d=\"M16 13H8\"></path><path d=\"M16 17H8\"></path></svg>",
+    "outcome": "Keep each page’s look in DOCX.",
+    "keywords": [
+      "docx",
+      "doc",
+      "convert"
+    ]
+  },
+  {
+    "id": "word-to-pdf",
+    "name": "Word to PDF",
+    "category": "convert",
+    "href": "/word-to-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-output\" aria-hidden=\"true\"><path d=\"M14 2v4a2 2 0 0 0 2 2h4\"></path><path d=\"M4 7V4a2 2 0 0 1 2-2 2 2 0 0 0-2 2\"></path><path d=\"M4.063 20.999a2 2 0 0 0 2 1L18 22a2 2 0 0 0 2-2V7l-5-5H6\"></path><path d=\"m5 11-3 3\"></path><path d=\"m5 17-3-3h10\"></path></svg>",
+    "outcome": "Keep the DOCX layout in PDF.",
+    "keywords": [
+      "docx",
+      "doc",
+      "convert"
+    ]
+  },
+  {
+    "id": "heic-to-jpg",
+    "name": "HEIC to JPG",
+    "category": "convert",
+    "href": "/heic-to-jpg",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-smartphone\" aria-hidden=\"true\"><rect width=\"14\" height=\"20\" x=\"5\" y=\"2\" rx=\"2\" ry=\"2\"></rect><path d=\"M12 18h.01\"></path></svg>",
+    "outcome": "Convert iPhone photos.",
+    "keywords": [
+      "heif",
+      "iphone",
+      "photo",
+      "image",
+      "convert"
+    ]
+  },
+  {
+    "id": "image-converter",
+    "name": "Image Converter",
+    "category": "convert",
+    "href": "/image-converter",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-replace\" aria-hidden=\"true\"><path d=\"M14 4a2 2 0 0 1 2-2\"></path><path d=\"M16 10a2 2 0 0 1-2-2\"></path><path d=\"M20 2a2 2 0 0 1 2 2\"></path><path d=\"M22 8a2 2 0 0 1-2 2\"></path><path d=\"m3 7 3 3 3-3\"></path><path d=\"M6 10V5a3 3 0 0 1 3-3h1\"></path><rect x=\"2\" y=\"14\" width=\"8\" height=\"8\" rx=\"2\"></rect></svg>",
+    "outcome": "Between JPG, PNG and WebP.",
+    "keywords": [
+      "jpg",
+      "png",
+      "webp",
+      "heic",
+      "tiff",
+      "convert"
+    ]
+  },
+  {
+    "id": "rotate-pdf",
+    "name": "Rotate PDF",
+    "category": "pdf",
+    "href": "/rotate-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rotate-cw\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8\"></path><path d=\"M21 3v5h-5\"></path></svg>",
+    "outcome": "Turn pages 90°, 180° or 270°.",
+    "keywords": [
+      "turn",
+      "orientation"
+    ]
+  },
+  {
+    "id": "remove-pages",
+    "name": "Remove Pages",
+    "category": "pdf",
+    "href": "/remove-pages",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-minus\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"></path><path d=\"M14 2v4a2 2 0 0 0 2 2h4\"></path><path d=\"M9 15h6\"></path></svg>",
+    "outcome": "Delete pages from a PDF.",
+    "keywords": [
+      "delete",
+      "pages"
+    ]
+  },
+  {
+    "id": "watermark-pdf",
+    "name": "Watermark PDF",
+    "category": "pdf",
+    "href": "/watermark-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-stamp\" aria-hidden=\"true\"><path d=\"M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13\"></path><path d=\"M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1z\"></path><path d=\"M5 22h14\"></path></svg>",
+    "outcome": "Stamp text on every page.",
+    "keywords": [
+      "stamp",
+      "text"
+    ]
+  },
+  {
+    "id": "page-numbers",
+    "name": "Page Numbers",
+    "category": "pdf",
+    "href": "/page-numbers",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-hash\" aria-hidden=\"true\"><line x1=\"4\" x2=\"20\" y1=\"9\" y2=\"9\"></line><line x1=\"4\" x2=\"20\" y1=\"15\" y2=\"15\"></line><line x1=\"10\" x2=\"8\" y1=\"3\" y2=\"21\"></line><line x1=\"16\" x2=\"14\" y1=\"3\" y2=\"21\"></line></svg>",
+    "outcome": "Number every page.",
+    "keywords": [
+      "numbering"
+    ]
+  },
+  {
+    "id": "sign-pdf",
+    "name": "Sign PDF",
+    "category": "pdf",
+    "href": "/sign-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-signature\" aria-hidden=\"true\"><path d=\"m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284\"></path><path d=\"M3 21h18\"></path></svg>",
+    "outcome": "Draw your signature on a PDF.",
+    "keywords": [
+      "signature",
+      "sign"
+    ]
+  },
+  {
+    "id": "edit-image",
+    "name": "Edit Image",
+    "category": "image",
+    "href": "/edit-image",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-crop\" aria-hidden=\"true\"><path d=\"M6 2v14a2 2 0 0 0 2 2h14\"></path><path d=\"M18 22V8a2 2 0 0 0-2-2H2\"></path></svg>",
+    "outcome": "Crop, rotate and export.",
+    "keywords": [
+      "crop",
+      "rotate",
+      "photo"
+    ]
+  },
+  {
+    "id": "remove-background",
+    "name": "Remove Background",
+    "category": "image",
+    "href": "/remove-background",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-eraser\" aria-hidden=\"true\"><path d=\"M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21\"></path><path d=\"m5.082 11.09 8.828 8.828\"></path></svg>",
+    "outcome": "Cut out the subject of a photo.",
+    "keywords": [
+      "background",
+      "cutout",
+      "transparent",
+      "photo"
+    ]
+  },
+  {
+    "id": "protect-pdf",
+    "name": "Protect PDF",
+    "category": "security",
+    "href": "/protect-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg>",
+    "outcome": "Add a password to a PDF.",
+    "keywords": [
+      "password",
+      "encrypt",
+      "lock"
+    ]
+  },
+  {
+    "id": "unlock-pdf",
+    "name": "Unlock PDF",
+    "category": "security",
+    "href": "/unlock-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lock-open\" aria-hidden=\"true\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 9.9-1\"></path></svg>",
+    "outcome": "Remove a known password.",
+    "keywords": [
+      "password",
+      "unlock",
+      "restrictions"
+    ]
+  },
+  {
+    "id": "repair-pdf",
+    "name": "Repair PDF",
+    "category": "pdf",
+    "href": "/repair-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-wrench\" aria-hidden=\"true\"><path d=\"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z\"></path></svg>",
+    "outcome": "Rebuild a damaged PDF.",
+    "keywords": [
+      "fix",
+      "broken",
+      "corrupt"
+    ]
+  },
+  {
+    "id": "metadata-remover",
+    "name": "Metadata Remover",
+    "category": "security",
+    "href": "/metadata-remover",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-eye-off\" aria-hidden=\"true\"><path d=\"M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49\"></path><path d=\"M14.084 14.158a3 3 0 0 1-4.242-4.242\"></path><path d=\"M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143\"></path><path d=\"m2 2 20 20\"></path></svg>",
+    "outcome": "Strip hidden details from files.",
+    "keywords": [
+      "exif",
+      "metadata",
+      "hidden",
+      "privacy"
+    ]
+  },
+  {
+    "id": "pdf-to-excel",
+    "name": "PDF to Excel",
+    "category": "convert",
+    "href": "/pdf-to-excel",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-sheet\" aria-hidden=\"true\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"></rect><line x1=\"3\" x2=\"21\" y1=\"9\" y2=\"9\"></line><line x1=\"3\" x2=\"21\" y1=\"15\" y2=\"15\"></line><line x1=\"9\" x2=\"9\" y1=\"9\" y2=\"21\"></line><line x1=\"15\" x2=\"15\" y1=\"9\" y2=\"21\"></line></svg>",
+    "outcome": "Extract tables to a spreadsheet.",
+    "keywords": [
+      "xlsx",
+      "table",
+      "spreadsheet",
+      "convert"
+    ]
+  },
+  {
+    "id": "excel-to-pdf",
+    "name": "Excel to PDF",
+    "category": "convert",
+    "href": "/excel-to-pdf",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-spreadsheet\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"></path><path d=\"M14 2v4a2 2 0 0 0 2 2h4\"></path><path d=\"M8 13h2\"></path><path d=\"M14 13h2\"></path><path d=\"M8 17h2\"></path><path d=\"M14 17h2\"></path></svg>",
+    "outcome": "Turn spreadsheets into a PDF.",
+    "keywords": [
+      "xlsx",
+      "spreadsheet",
+      "convert"
+    ]
+  },
+  {
+    "id": "pdf-ocr",
+    "name": "PDF OCR",
+    "category": "pdf",
+    "href": "/pdf-ocr",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-scan-text\" aria-hidden=\"true\"><path d=\"M3 7V5a2 2 0 0 1 2-2h2\"></path><path d=\"M17 3h2a2 2 0 0 1 2 2v2\"></path><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\"></path><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\"></path><path d=\"M7 8h8\"></path><path d=\"M7 12h10\"></path><path d=\"M7 16h6\"></path></svg>",
+    "outcome": "Read text from scans.",
+    "keywords": [
+      "ocr",
+      "text",
+      "scan",
+      "recognize"
+    ]
+  },
+  {
+    "id": "resize-image",
+    "name": "Resize Image",
+    "category": "image",
+    "href": "/resize-image",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-scaling\" aria-hidden=\"true\"><path d=\"M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"></path><path d=\"M14 15H9v-5\"></path><path d=\"M16 3h5v5\"></path><path d=\"M21 3 9 15\"></path></svg>",
+    "outcome": "Change image dimensions.",
+    "keywords": [
+      "dimensions",
+      "crop",
+      "scale",
+      "photo"
+    ]
+  },
+  {
+    "id": "doc-scanner",
+    "name": "Doc Scanner",
+    "category": "image",
+    "href": "/doc-scanner",
+    "icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-scan-line\" aria-hidden=\"true\"><path d=\"M3 7V5a2 2 0 0 1 2-2h2\"></path><path d=\"M17 3h2a2 2 0 0 1 2 2v2\"></path><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\"></path><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\"></path><path d=\"M7 12h10\"></path></svg>",
+    "outcome": "Scan and clean up documents.",
+    "keywords": [
+      "scan",
+      "camera",
+      "document"
+    ]
+  }
+]

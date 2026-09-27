@@ -1,9 +1,18 @@
 ; File-manager actions default on; native preference loading preserves opt-out.
-; Sign-in startup remains opt-in. Registry changes are owned and transactional.
+; Fresh installs enable the lightweight sign-in helper; saved and Windows
+; Startup Apps opt-outs are preserved. Registry changes remain ownership checked.
 !ifndef SORA_EXPLORER_PAYLOAD
   !define SORA_EXPLORER_PAYLOAD "${__FILEDIR__}\..\..\.artifacts\windows-shell\sorafiles-explorer.dll"
 !endif
 Var SoraFilesPreviousExplorer
+
+; Modern UI shows these choices only when the installer sets RebootFlag (for
+; example, when Explorer still has the replaced extension mapped). Ordinary
+; installs retain the normal finish page. Never preselect an immediate restart.
+!define MUI_FINISHPAGE_REBOOTLATER_DEFAULT
+!define MUI_FINISHPAGE_TEXT_REBOOT "SoraFiles is installed. Restart Windows to finish applying the updated file-manager components. Save your work before restarting."
+!define MUI_FINISHPAGE_TEXT_REBOOTNOW "Restart now"
+!define MUI_FINISHPAGE_TEXT_REBOOTLATER "I'll restart later"
 
 Function .onInstFailed
   ; An abort before resource extraction must not leave registration pointing at
@@ -76,7 +85,8 @@ FunctionEnd
 
 !macro NSIS_HOOK_POSTINSTALL
   Call SoraFilesVerifyExplorerPayload
-  ; Installation only registers file-manager integration. The app records its
+  ; Installation registers file-manager integration and fresh-install startup.
+  ; The app records its
   ; automatic seven-day trial on first launch, consistently across platforms.
   ; Existing local trial deadlines are preserved by prepareTrial on upgrades.
   ClearErrors
@@ -86,7 +96,7 @@ FunctionEnd
   StrCpy $R1 1
   StrCmp $R1 0 sorafiles_registered
   SetErrorLevel 1
-  Abort "SoraFiles could not register its Explorer actions. Run the installer again or enable them in SoraFiles Settings."
+  Abort "SoraFiles could not finish setting up quick actions. Run the installer again or review SoraFiles and Windows Startup Apps settings."
   sorafiles_registered:
   StrCmp $SoraFilesPreviousExplorer "" sorafiles_install_done
   ClearErrors

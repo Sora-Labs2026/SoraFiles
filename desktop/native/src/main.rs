@@ -360,13 +360,23 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                 #[cfg(windows)] {
                     let enabled=value.as_bool().ok_or("Invalid sign-in setting")?;
                     if smoke_output().is_some(){return Err("Sign-in changes are disabled in diagnostics".into());}
+                    let mut settings=state.settings.lock().map_err(|_|"Settings unavailable")?;
+                    let previous=startup::enabled()?;
                     startup::set(enabled)?;
+                    let mut next=settings.clone();next["startup"]=json!(enabled);
+                    if let Err(error)=persist_preferences(&app,&next){let _=startup::set(previous);return Err(error);}
+                    *settings=next;drop(settings);
                     return state_value(&app);
                 }
                 #[cfg(any(target_os = "macos", target_os = "linux"))] {
                     let enabled=value.as_bool().ok_or("Invalid sign-in setting")?;
                     if smoke_output().is_some(){return Err("Sign-in changes are disabled in diagnostics".into());}
+                    let mut settings=state.settings.lock().map_err(|_|"Settings unavailable")?;
+                    let previous=unix_startup::enabled()?;
                     unix_startup::set(enabled)?;
+                    let mut next=settings.clone();next["startup"]=json!(enabled);
+                    if let Err(error)=persist_preferences(&app,&next){let _=unix_startup::set(previous);return Err(error);}
+                    *settings=next;drop(settings);
                     return state_value(&app);
                 }
             }
@@ -455,7 +465,8 @@ fn main() {
             let result=tauri::Builder::default().build(context)
                 .map_err(|_|"Desktop setup unavailable".to_string()).and_then(|app|{
                     let directory=app.path().app_config_dir().map_err(|_|"Settings unavailable".to_string())?;
-                    let settings=preferences::load(&directory).map_err(str::to_owned)?.value();
+                    let mut settings=preferences::load(&directory).map_err(str::to_owned)?.value();
+                    startup::initialize_fresh_install(&directory,&mut settings)?;
                     shell_entry::set_enabled(settings["shellEntry"].as_bool().unwrap_or(true))
                 });
             std::process::exit(if result.is_ok(){0}else{1});
@@ -486,10 +497,12 @@ fn main() {
                     defaults["notice"]=json!("Saved settings could not be read. Default settings are in use; choose your preferences in Settings.");defaults
                 }};
                 #[cfg(windows)] if readable {
+                    if app.path().app_config_dir().map_err(|_|"Settings unavailable".to_string()).and_then(|directory|startup::initialize_fresh_install(&directory,&mut value)).is_err(){value["notice"]=json!("Quick actions could not be set to start after sign-in. Check Startup Apps in Windows Settings.");}
                     let enabled=value.get("shellEntry").and_then(Value::as_bool).unwrap_or(true);
                     if shell_entry::set_enabled(enabled).is_err(){value["notice"]=json!("File-manager actions could not be updated. Try changing the setting in Settings.");}
                 }
                 #[cfg(any(target_os = "macos", target_os = "linux"))] if readable {
+                    if app.path().app_config_dir().map_err(|_|"Settings unavailable".to_string()).and_then(|directory|unix_startup::initialize_fresh_install(&directory,&mut value)).is_err(){value["notice"]=json!("Quick actions could not be set to start after sign-in. Check the sign-in setting in Settings.");}
                     let enabled=value.get("shellEntry").and_then(Value::as_bool).unwrap_or(true);
                     let result=app.path().resource_dir().map_err(|_|"Desktop components unavailable".to_string()).and_then(|resources|unix_shell_entry::set_enabled(&resources,enabled));
                     if result.is_err(){value["notice"]=json!("File-manager actions could not be updated. Try changing the setting in Settings.");}
@@ -540,7 +553,7 @@ fn main() {
             let args:Vec<_>=std::env::args().skip(1).collect();
             let background=(args.len()==1&&args[0]=="--background")||startup_smoke();
             let routed=accepted&&route_native_launch(app.handle(),&args);
-            if !routed&&(!background||!app.state::<HostState>().tray_available.load(Ordering::SeqCst)){open_window(app.handle())?;}
+            if !routed&&!background{open_window(app.handle())?;}
             if startup_smoke(){
                 let handle=app.handle().clone();
                 std::thread::spawn(move||{
