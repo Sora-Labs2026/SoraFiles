@@ -38,7 +38,7 @@ async function fixture(){
  return {key,store,email,replacements,original,replacement,oldId:deviceIdentity(old.publicKey),mail,payment:()=>payment,checkoutCalls:()=>checkoutCalls,providerReads:()=>providerReads,deactivateCalls:()=>deactivateCalls,advance:seconds=>now+=seconds,async close(){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));store.close();}};
 }
 
-test('real HTTP email ownership is required before checkout and paid webhook cannot bypass fresh ownership proof',async()=>{
+test('real HTTP requires email ownership before checkout and resumes that verified paid release after OTP expiry without autoactivation',async()=>{
  const f=await fixture();try{
   const {client,device}=f.replacement,request={licenseRef:'license',oldDeviceId:f.oldId,licenseKey:f.key,identityToken:randomBytes(32).toString('base64url')};
   await assert.rejects(client.request('replacementRequest',request,device));assert.equal(f.checkoutCalls(),0);
@@ -47,18 +47,18 @@ test('real HTTP email ownership is required before checkout and paid webhook can
   await client.replacementEmailVerify(f.mail.at(-1).code);await client.replacementRequest(f.oldId);assert.equal(f.checkoutCalls(),1);
   const flow=structuredClone(f.replacement.replacement());f.payment().status='succeeded';assert.equal(f.replacements.applyPayment(f.payment()),true);
   assert.equal(f.store.db.prepare('SELECT status FROM paid_replacements').get().status,'paid');assert.equal(f.replacement.license(),null);
-  const status={orderId:flow.orderId,licenseKey:f.key,identityToken:request.identityToken};
-  await assert.rejects(client.request('replacementStatus',status,device));assert.equal(f.providerReads(),0);assert.equal(f.deactivateCalls(),0);
-  f.advance(1801);await assert.rejects(client.replacementStatus());assert.equal(f.providerReads(),0);assert.equal(f.deactivateCalls(),0);
-  // Expired proof cannot activate the reserved replacement, even though payment succeeded.
+  // Payment has blocked the old grant, but provider release still reserves its seat.
   await assert.rejects(client.activate(f.key));
   assert.equal(f.replacement.license(),null);
-  await client.replacementEmailStart();const verified=await client.replacementEmailVerify(f.mail.at(-1).code);
-  assert.equal(verified.replacement.stage,'payment');assert.deepEqual(verified.replacement.devices,[]);
-  assert.equal(f.replacement.replacement().orderId,flow.orderId);assert.notEqual(f.replacement.replacement().identityToken,flow.identityToken);
-  const complete=await client.replacementStatus();assert.equal(complete.replacement.stage,'complete');assert.equal(complete.license,'active');assert.equal(complete.plan,'personal-lifetime');
-  assert.equal(f.checkoutCalls(),1);assert.equal(f.deactivateCalls(),1);assert.equal(f.replacement.replacement(),null);
-  assert.equal((await client.authorize()).plan,'personal-lifetime');assert.equal((await f.original.client.validateOnline()).active,false);
+  f.advance(1801);
+  // Resuming this one already-verified order requires the proved requester and
+  // matching key, but does not require the expired OTP to be entered again.
+  const complete=await client.replacementStatus();assert.equal(complete.replacement.stage,'complete');assert.equal(complete.license,undefined);
+  assert.equal(f.checkoutCalls(),1);assert.equal(f.deactivateCalls(),1);assert.deepEqual(f.replacement.replacement(),{stage:'complete'});
+  assert.equal(f.replacement.license(),null);await assert.rejects(client.authorize());
+  assert.equal((await f.original.client.validateOnline()).revoked,true);await assert.rejects(f.original.client.authorize());
+  await client.activate(f.key);assert.equal((await client.authorize()).plan,'personal-lifetime');
+  assert.notEqual(f.replacement.license().instanceId,'instance_1');
  }finally{await f.close();}
 });
 
