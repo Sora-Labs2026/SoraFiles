@@ -31,7 +31,8 @@ pub fn run(directory:&Path,resources:&Path,input:&Path,output:&Path)->Result<(),
  if selection.rejected||selection.files.is_empty(){return Err("Selection unavailable".into());}
  let settings=crate::preferences::load(directory).map_err(String::from)?.value();
  if settings.get("shellEntry").and_then(Value::as_bool)==Some(false){return Err("File-manager actions disabled".into());}
- let result=crate::license_host::run(directory,resources,"nativeActions",json!({"files":selection.files,"platform":std::env::consts::OS,"outputMode":settings["output"]}))?;
+ let locale=crate::locale::effective_locale(settings["language"].as_str().unwrap_or("system"));
+ let result=crate::license_host::run(directory,resources,"nativeActions",json!({"files":selection.files,"platform":std::env::consts::OS,"outputMode":settings["output"],"locale":locale}))?;
  let mut text=String::new();
  for action in result["actions"].as_array().ok_or("Menu unavailable")?{
   let id=action["id"].as_str().ok_or("Menu unavailable")?;let label=action["label"].as_str().ok_or("Menu unavailable")?;

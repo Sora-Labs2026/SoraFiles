@@ -11,6 +11,8 @@ pub struct Preferences {
     version: u32,
     output: String,
     theme: String,
+    #[serde(default = "default_language")]
+    language: String,
     #[serde(rename = "customFolder", default, skip_serializing_if = "Option::is_none")]
     custom_folder: Option<PathBuf>,
     // None means the user has never chosen; preserve explicit false on upgrades.
@@ -19,13 +21,14 @@ pub struct Preferences {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     startup: Option<bool>,
 }
+fn default_language() -> String { "system".into() }
 impl Default for Preferences {
-    fn default() -> Self { Self { version: 1, output: "source".into(), theme: "system".into(), custom_folder: None, shell_entry: None, startup: None } }
+    fn default() -> Self { Self { version: 1, output: "source".into(), theme: "system".into(), language: default_language(), custom_folder: None, shell_entry: None, startup: None } }
 }
 impl Preferences {
     fn validate(&self) -> Result<(), &'static str> {
         if self.version != 1 || !matches!(self.output.as_str(), "source" | "downloads" | "custom" | "ask")
-            || !matches!(self.theme.as_str(), "system" | "light" | "dark") { return Err("Invalid settings"); }
+            || !matches!(self.theme.as_str(), "system" | "light" | "dark") || !crate::locale::valid_preference(&self.language) { return Err("Invalid settings"); }
         if let Some(path) = &self.custom_folder {
             let text = path.to_string_lossy();
             if !path.is_absolute() || text.len() > 8192 || text.starts_with("\\\\") || text.starts_with("//") || text.chars().any(char::is_control) {
@@ -35,14 +38,14 @@ impl Preferences {
         Ok(())
     }
     pub fn value(&self) -> Value {
-        let mut value = json!({"output":self.output,"theme":self.theme});
+        let mut value = json!({"output":self.output,"theme":self.theme,"language":self.language});
         if let Some(enabled) = self.startup { value["startup"] = json!(enabled); }
         if let Some(folder) = &self.custom_folder { value["customFolder"] = json!(folder); }
         if let Some(enabled) = self.shell_entry { value["shellEntry"] = json!(enabled); }
         value
     }
     pub fn from_value(value: &Value) -> Result<Self, &'static str> {
-        let settings: Self = serde_json::from_value(json!({"version":1,"output":value["output"],"theme":value["theme"],"customFolder":value.get("customFolder"),"shellEntry":value.get("shellEntry"),"startup":value.get("startup")})).map_err(|_| "Invalid settings")?;
+        let settings: Self = serde_json::from_value(json!({"version":1,"output":value["output"],"theme":value["theme"],"language":value.get("language").cloned().unwrap_or(json!("system")),"customFolder":value.get("customFolder"),"shellEntry":value.get("shellEntry"),"startup":value.get("startup")})).map_err(|_| "Invalid settings")?;
         settings.validate()?; Ok(settings)
     }
 }
@@ -86,6 +89,19 @@ pub fn save(directory: &Path, value: &Preferences) -> Result<(), &'static str> {
 #[cfg(test)] mod tests {
     use super::*;
     fn directory() -> PathBuf { let path=std::env::temp_dir().join(format!("sorafiles-preferences-{}",Uuid::new_v4()));fs::create_dir(&path).unwrap();path }
+    #[test] fn language_defaults_migrates_and_preserves_explicit_choice() {
+        let dir=directory();let path=dir.join("preferences.json");
+        fs::write(&path,br#"{"version":1,"output":"source","theme":"system"}"#).unwrap();
+        assert_eq!(load(&dir).unwrap().value()["language"],"system");
+        for language in crate::locale::SUPPORTED.into_iter().chain(["system"]) {
+            let mut value=load(&dir).unwrap().value();value["language"]=json!(language);
+            save(&dir,&Preferences::from_value(&value).unwrap()).unwrap();assert_eq!(load(&dir).unwrap().value()["language"],language);
+        }
+        for language in [json!("unknown"),json!("ja-JP"),json!(null),json!(true)] {
+            let mut value=Preferences::default().value();value["language"]=language;assert!(Preferences::from_value(&value).is_err());
+        }
+        fs::remove_file(path).unwrap();fs::remove_dir(dir).unwrap();
+    }
     #[test] fn preferences_survive_replacement_without_persisting_license_material() {
         let dir=directory();let mut value=Preferences::default().value();value["theme"]=json!("dark");value["licenseKey"]=json!("must-not-persist");
         save(&dir,&Preferences::from_value(&value).unwrap()).unwrap();assert_eq!(load(&dir).unwrap().value()["theme"],"dark");

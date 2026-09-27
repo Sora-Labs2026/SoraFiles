@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include "menu_protocol.hpp"
+#include "menu_language.hpp"
 
 // Exercise the real DLL/process protocol with a fixture broker in an isolated
 // temporary directory, independent of the developer's installed entitlement.
@@ -74,6 +75,14 @@ void expect_actions(IExplorerCommand* command, const wchar_t* expected) {
     assert(children->Next(1, &child, &fetched) == S_FALSE && fetched == 0); children->Release();
 }
 int wmain(int argc, wchar_t** argv) {
+    assert(sorafiles::saved_language("{\"language\":\"ja\",\"theme\":\"dark\"}")=="ja");
+    assert(sorafiles::saved_language("{\"language\":\"system\"}")=="system");
+    assert(sorafiles::saved_language("{\"language\":\"ja-JP\"}")=="system");
+    assert(sorafiles::saved_language(std::string(16385,'x'))=="system");
+    assert(sorafiles::supported_language("zh-Hant-HK")=="zh-tw");
+    assert(sorafiles::supported_language("fr-FR")=="fr");
+    assert(sorafiles::supported_language("bn-BD")=="en");
+    assert(std::wstring(sorafiles::edit_label("ja"))==L"SoraFilesで編集");
     using namespace sorafiles;
     if (argc == 4 && std::wstring(argv[1]) == L"--shell-menu") return fixture_broker(argv[2], argv[3]);
     assert(argc == 2);

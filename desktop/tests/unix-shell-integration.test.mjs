@@ -5,6 +5,26 @@ import {tmpdir} from 'node:os';
 import {join,dirname} from 'node:path';
 import {renderUnixShellAssets,setUnixShellIntegration} from '../scripts/unix-shell-integration.mjs';
 
+for(const platform of ['darwin','linux'])test(`${platform} menu language updates preserve commands and ownership protection`,async()=>{
+ const home=await mkdtemp(join(tmpdir(),'sorafiles-language-test-'));
+ const options={home,platform,app:'/opt/SoraFiles/bin/app'};
+ try{
+  const english=await renderUnixShellAssets(options),localized=await renderUnixShellAssets({...options,locale:'ja'});
+  assert.deepEqual([...english.keys()],[...localized.keys()]);
+  const primary=[...localized.values()][0];
+  assert.match(primary,/SoraFiles/);assert.notEqual(primary,[...english.values()][0]);
+  if(platform==='darwin')assert.equal([...localized.values()][1],[...english.values()][1]);
+  else assert.equal([...localized.values()][1].split('Exec=')[1],[...english.values()][1].split('Exec=')[1]);
+  await setUnixShellIntegration({...options,enabled:true});
+  assert.equal((await setUnixShellIntegration({...options,locale:'ja',enabled:true})).changed,true);
+  assert.equal((await setUnixShellIntegration({...options,locale:'ja',enabled:true})).changed,false);
+  const first=join(home,[...localized.keys()][0]);
+  await writeFile(first,'foreign change');
+  await assert.rejects(setUnixShellIntegration({...options,locale:'en',enabled:true}),/modified/);
+  assert.equal(await readFile(first,'utf8'),'foreign change');
+ }finally{await rm(home,{recursive:true,force:true});}
+});
+
 test('Unix menu assets preserve executable quoting and literal selected-file forwarding',async()=>{
  const app='/Users/O\'Brien/Sora "Files"/$paid`v`%F\\bin';
  const mac=await renderUnixShellAssets({platform:'darwin',app});

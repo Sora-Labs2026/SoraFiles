@@ -26,7 +26,7 @@ pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
             ids.len() <= 256 && ids.iter().all(|id| id.as_str().is_some_and(|text|
                 text.len() == 32 && text.bytes().all(|b| b.is_ascii_hexdigit())))),
         "saveSettings" => fields.len() == 1 && (matches!(params["output"].as_str(), Some("source" | "downloads" | "custom" | "ask"))
-            || matches!(params["theme"].as_str(), Some("system" | "light" | "dark")) || params["startup"].is_boolean() || params["shellEntry"].is_boolean()),
+            || matches!(params["theme"].as_str(), Some("system" | "light" | "dark")) || params["language"].as_str().is_some_and(crate::locale::valid_preference) || params["startup"].is_boolean() || params["shellEntry"].is_boolean()),
         "smokeReport" => diagnostic && fields.len() == 5 && ["heading", "tools", "overflow", "error", "layout"].iter().all(|key| fields.contains_key(*key)),
         _ => false,
     }
@@ -53,6 +53,9 @@ impl Drop for DialogLease<'_> { fn drop(&mut self) { self.0.store(false, Orderin
         }
     }
     #[test] fn ipc_rejects_unknown_fields_and_actions() {
+        for language in crate::locale::SUPPORTED.into_iter().chain(["system"]) {assert!(valid_request("saveSettings",&json!({"language":language}),false));}
+        for language in [json!("ja-JP"),json!("unknown"),json!(null),json!(true)] {assert!(!valid_request("saveSettings",&json!({"language":language}),false));}
+        assert!(!valid_request("saveSettings",&json!({"language":"ja","locale":"fr"}),false));
         assert!(!valid_request("deactivateLicense", &json!({}), false));
         assert!(valid_request("getState", &json!({}), false));
         assert!(valid_request("supportDetails", &json!({}), false));

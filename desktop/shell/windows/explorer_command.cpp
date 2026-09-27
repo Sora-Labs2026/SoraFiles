@@ -3,6 +3,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shobjidl.h>
+#include <shlobj.h>
 #include <shlwapi.h>
 #include <shlguid.h>
 #include <atomic>
@@ -10,6 +11,7 @@
 #include <mutex>
 #include <new>
 #include "menu_protocol.hpp"
+#include "menu_language.hpp"
 
 namespace {
 using sorafiles::Entry;
@@ -23,6 +25,32 @@ struct Handle {
     Handle(const Handle&) = delete; Handle& operator=(const Handle&) = delete;
     bool valid() const { return value && value != INVALID_HANDLE_VALUE; }
 };
+const wchar_t* current_edit_label() {
+    std::string preference="system";
+    PWSTR directory{};
+    if(SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData,0,nullptr,&directory))) {
+        const auto path=std::wstring(directory)+L"\\com.soralabs.sorafiles.desktop\\preferences.json";
+        CoTaskMemFree(directory);
+        Handle file(CreateFileW(path.c_str(),GENERIC_READ,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,nullptr,OPEN_EXISTING,FILE_FLAG_OPEN_REPARSE_POINT,nullptr));
+        BY_HANDLE_FILE_INFORMATION info{}; LARGE_INTEGER size{};
+        if(file.valid()&&GetFileInformationByHandle(file.value,&info)&&!(info.dwFileAttributes&(FILE_ATTRIBUTE_REPARSE_POINT|FILE_ATTRIBUTE_DIRECTORY))&&GetFileSizeEx(file.value,&size)&&size.QuadPart>0&&size.QuadPart<=16384) {
+            std::string bytes(static_cast<size_t>(size.QuadPart),'\0');DWORD read{};
+            if(ReadFile(file.value,bytes.data(),static_cast<DWORD>(bytes.size()),&read,nullptr)&&read==bytes.size())preference=sorafiles::saved_language(bytes);
+        }
+    }
+    if(preference=="system") {
+        // The user's UI language, not their date/number regional format.
+        ULONG count{},size{};
+        if(GetUserPreferredUILanguages(MUI_LANGUAGE_NAME,&count,nullptr,&size)&&size>0&&size<=32768) {
+            std::vector<wchar_t> names(size);
+            if(GetUserPreferredUILanguages(MUI_LANGUAGE_NAME,&count,names.data(),&size)) {
+                std::string code;for(const auto* p=names.data();*p&&*p<128;++p)code+=static_cast<char>(*p);
+                preference=sorafiles::supported_language(code);
+            }
+        }
+    }
+    return sorafiles::edit_label(preference);
+}
 std::wstring application() {
     std::wstring path(32768, L'\0');
     DWORD count = GetModuleFileNameW(module_handle, path.data(), static_cast<DWORD>(path.size()));
@@ -201,7 +229,7 @@ public:
     }
     HRESULT STDMETHODCALLTYPE GetTitle(IShellItemArray* items, LPWSTR* out) override {
         if (!out) return E_POINTER; *out = nullptr;
-        try { capture(items); return SHStrDupW(root ? L"Edit with SoraFiles" : entry.label.c_str(), out); }
+        try { capture(items); return SHStrDupW(root ? current_edit_label() : entry.label.c_str(), out); }
         catch (...) { return E_FAIL; }
     }
     HRESULT STDMETHODCALLTYPE GetIcon(IShellItemArray*, LPWSTR* out) override { if (!out) return E_POINTER; *out = nullptr; return E_NOTIMPL; }

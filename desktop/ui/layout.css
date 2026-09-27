@@ -1,4 +1,14 @@
 /* Full Desktop presentation. Compact native option cards keep their own scale. */
+[dir=rtl] body:not([data-quick-action=true]) main { margin-left:0; margin-right:224px; }
+[dir=rtl] .sidebar { left:auto; right:0; border-left:1px solid var(--border); border-right:0; }
+[dir=rtl] :is(.tool-card,.setting-row,.selected li,.workspace-output) { text-align:start; }
+[dir=rtl] .card-arrow { transform:scaleX(-1); }
+[data-user-text] { unicode-bidi:plaintext; }
+#language { max-width:100%; min-width:200px; }
+:lang(ja) { --font-sans:"Plus Jakarta Sans Variable","Yu Gothic UI","Hiragino Sans","Meiryo","Noto Sans CJK JP",sans-serif; }
+:lang(ko) { --font-sans:"Plus Jakarta Sans Variable","Malgun Gothic","Apple SD Gothic Neo","Noto Sans CJK KR",sans-serif; }
+:lang(zh-cn) { --font-sans:"Plus Jakarta Sans Variable","Microsoft YaHei UI","PingFang SC","Noto Sans CJK SC",sans-serif; }
+:lang(zh-tw) { --font-sans:"Plus Jakarta Sans Variable","Microsoft JhengHei UI","PingFang TC","Noto Sans CJK TC",sans-serif; }
 body:not([data-quick-action=true]) {
  font-size:14px;
  line-height:1.5;

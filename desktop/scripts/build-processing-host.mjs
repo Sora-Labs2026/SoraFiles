@@ -32,6 +32,11 @@ for(const directory of ['core','shared','native-host']){
  const source=new URL('desktop/'+directory+'/',root),target=new URL('desktop/'+directory+'/',out);await mkdir(target,{recursive:true});
  for(const name of await readdir(source))if(name.endsWith('.mjs')||['heif-decoder.cjs','heif-decoder-LICENSE.txt','heif-decoder-provenance.json'].includes(name))await copyFile(new URL(name,source),new URL(name,target));
 }
+// Localization is data-only and shared by UI, native menu broker, and Unix
+// registration helper. Include its catalog explicitly in every platform pack.
+await mkdir(new URL('desktop/shared/locales/',out),{recursive:true});
+await copyFile(new URL('desktop/shared/locales/catalogs.json',root),new URL('desktop/shared/locales/catalogs.json',out));
+await copyFile(new URL('desktop/shared/locales/menu.json',root),new URL('desktop/shared/locales/menu.json',out));
 if(process.platform!=='win32'){
  for(const file of ['scripts/unix-shell-integration.mjs','shell/linux/sorafiles.py.in']){
   const target=new URL('desktop/'+file,out);await mkdir(dirname(fileURLToPath(target)),{recursive:true});await copyFile(new URL('desktop/'+file,root),target);

@@ -10,6 +10,7 @@ import uuid
 from gi.repository import GObject, Nautilus
 
 APP = __SORAFILES_APP_JSON__
+LABEL = __SORAFILES_LABEL_JSON__
 
 
 def launch(action, paths):
@@ -77,7 +78,7 @@ class SoraFilesMenu(GObject.GObject, Nautilus.MenuProvider):
         actions = resolve_actions(paths)
         if not actions:
             return []
-        parent = Nautilus.MenuItem(name="SoraFiles::edit", label="Edit with SoraFiles", tip="")
+        parent = Nautilus.MenuItem(name="SoraFiles::edit", label=LABEL, tip="")
         menu = Nautilus.Menu()
         for action, label in actions:
             item = Nautilus.MenuItem(name="SoraFiles::" + action, label=label, tip="")

@@ -3,7 +3,7 @@ use std::{
     process::{Command, Stdio},
     time::{Duration, Instant},
 };
-pub fn set_enabled(resources: &Path, enabled: bool) -> Result<bool, String> {
+pub fn set_enabled(resources: &Path, enabled: bool, locale: &str) -> Result<bool, String> {
     let executable = crate::unix_startup::launcher::current()?;
     let (runtime, _, _) = crate::license_host::locations(resources)?;
     let helper = runtime
@@ -15,6 +15,7 @@ pub fn set_enabled(resources: &Path, enabled: bool) -> Result<bool, String> {
         .arg(helper)
         .arg(if enabled { "enable" } else { "disable" })
         .arg(executable)
+        .arg(locale)
         .env_clear()
         .stdin(Stdio::null())
         .stdout(Stdio::null())

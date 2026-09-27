@@ -3,6 +3,7 @@ mod selection;
 mod bridge_policy;
 mod launch;
 mod preferences;
+mod locale;
 mod classify;
 mod vault;
 mod license_host;
@@ -73,7 +74,7 @@ fn route_native_launch(app:&tauri::AppHandle,args:&[String])->bool{
             let directory=handle.path().app_config_dir().map_err(|_|"Private storage unavailable")?;
             let resources=handle.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
             let output=state.settings.lock().map_err(|_|"Settings unavailable")?["output"].clone();
-            let mut params=json!({"files":files,"platform":std::env::consts::OS,"outputMode":output});
+            let mut params=json!({"files":files,"platform":std::env::consts::OS,"outputMode":output,"locale":app_locale(&handle)});
             if let Some(action)=action_id{params["actionId"]=json!(action);}
             // A cold launch can still be finishing its automatic license check.
             // Wait off the UI thread instead of opening a window on contention.
@@ -113,6 +114,8 @@ fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
     let state = app.state::<HostState>();
     let mut value = state.settings.lock().map_err(|_| "Settings unavailable")?.clone();
     value.as_object_mut().unwrap().remove("customFolder");
+    if value.get("language").is_none(){value["language"]=json!("system");}
+    value["locale"]=json!(locale::effective_locale(value["language"].as_str().unwrap_or("system")));
     value["platform"] = json!(std::env::consts::OS);
     // License status has its own verified action. Preference responses must not
     // reset an already activated renderer to the initial unactivated state.
@@ -130,6 +133,16 @@ fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
     value["job"] = state.job.lock().map_err(|_|"Job status unavailable")?.snapshot(state.processing_busy.load(Ordering::SeqCst));
     Ok(value)
 }
+fn app_locale(app:&tauri::AppHandle)->String {
+    let language=app.state::<HostState>().settings.lock().ok().and_then(|settings|settings["language"].as_str().map(str::to_owned)).unwrap_or_else(||"system".into());
+    locale::effective_locale(&language)
+}
+fn localized_tray_menu(app:&tauri::AppHandle)->tauri::Result<Menu<tauri::Wry>> {
+    let language=app_locale(app);
+    let open=MenuItem::with_id(app,"open",locale::text(&language,"open"),true,None::<&str>)?;
+    let quit=MenuItem::with_id(app,"quit",locale::text(&language,"quit"),true,None::<&str>)?;
+    Menu::with_items(app,&[&open,&quit])
+}
 fn persist_preferences(app: &tauri::AppHandle, value: &Value) -> Result<(), String> {
     // Diagnostics use defaults and never touch the user's installed preferences.
     if smoke_output().is_some() { return Ok(()); }
@@ -140,6 +153,7 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     diagnostic_step("opening window");
     let mode=app.state::<WindowMode>();
     let quick=mode.quick.load(Ordering::SeqCst);
+    let language=app_locale(app);
     let (width,height,min_width,min_height)=if quick {(520.0,400.0,440.0,320.0)}else{(1180.0,900.0,760.0,600.0)};
     if let Some(window) = app.get_webview_window("main") {
         if mode.presented_quick.load(Ordering::SeqCst)!=quick {
@@ -158,7 +172,7 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
                     if maximized {window.maximize()?;}
                 } else {window.set_size(tauri::LogicalSize::new(width,height))?;}
             } else {window.set_size(tauri::LogicalSize::new(width,height))?;}
-            window.set_title(if quick {"Edit with SoraFiles"}else{"SoraFiles Desktop"})?;
+            window.set_title(if quick {locale::text(&language,"edit")}else{"SoraFiles Desktop"})?;
             mode.presented_quick.store(quick,Ordering::SeqCst);
         }
         window.show()?; window.unminimize()?; window.set_focus()?; return Ok(());
@@ -167,8 +181,8 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     if let Ok(mut closing)=app.state::<HostState>().window_closing.lock(){*closing=false;}
     let generation = app.state::<HostState>().window_generation.fetch_add(1, Ordering::SeqCst) + 1;
     let window = WebviewWindowBuilder::new(app,"main",WebviewUrl::App("index.html".into()))
-        .title(if quick {"Edit with SoraFiles"}else{"SoraFiles Desktop"}).inner_size(width,height).min_inner_size(min_width,min_height)
-        .initialization_script(if quick {"window.__SORA_QUICK_ACTION__=true;"}else{"window.__SORA_QUICK_ACTION__=false;"})
+        .title(if quick {locale::text(&language,"edit")}else{"SoraFiles Desktop"}).inner_size(width,height).min_inner_size(min_width,min_height)
+        .initialization_script(format!("window.__SORA_QUICK_ACTION__={quick};window.__SORA_LOCALE__={};",json!(language)))
         // GTK needs a mapped window to allocate the WebView viewport. CI uses Xvfb.
         .visible(smoke_output().is_none() || cfg!(target_os="linux"))
         .on_navigation(local_navigation)
@@ -240,7 +254,7 @@ fn run_processing(handle:&tauri::AppHandle,params:Value,generation:Option<usize>
                 let folder=match settings["output"].as_str().unwrap_or("source") {
                     "downloads"=>Some(handle.path().download_dir().map_err(|_|"Downloads folder unavailable")?),
                     "custom"=>Some(std::path::PathBuf::from(settings["customFolder"].as_str().ok_or("Choose an output folder in Settings")?)),
-                    "ask"=>handle.dialog().file().set_title("Save SoraFiles results").blocking_pick_folder().and_then(|file|file.into_path().ok()),
+                    "ask"=>handle.dialog().file().set_title(locale::dialog_text(&app_locale(&handle),"Save SoraFiles results")).blocking_pick_folder().and_then(|file|file.into_path().ok()),
                     _=>None
                 };
                 if settings["output"]=="ask"&&folder.is_none(){return Ok(json!({"state":"cancelled"}));}
@@ -315,7 +329,7 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                 let state=handle.state::<HostState>();
                 let _lease=DialogLease::acquire(&state.dialog_busy)?;
                 if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose files again.".into()); }
-                let files=handle.dialog().file().set_title("Choose files for SoraFiles").blocking_pick_files().unwrap_or_default();
+                let files=handle.dialog().file().set_title(locale::dialog_text(&app_locale(&handle),"Choose files for SoraFiles")).blocking_pick_files().unwrap_or_default();
                 if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose files again.".into()); }
                 let paths=files.into_iter().filter_map(|file| file.into_path().ok()).collect();
                 let mut selection=state.selection.lock().map_err(|_| "Selection unavailable")?;
@@ -350,9 +364,14 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                     let resources=app.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
                     let mut settings=state.settings.lock().map_err(|_|"Settings unavailable")?;
                     let previous=settings.get("shellEntry").and_then(Value::as_bool).unwrap_or(true);
-                    unix_shell_entry::set_enabled(&resources,enabled)?;
+                    let language=locale::effective_locale(settings["language"].as_str().unwrap_or("system"));
+                    if unix_shell_entry::set_enabled(&resources,enabled,&language).is_err() {
+                        // The preference is already committed. Keep the UI in
+                        // sync, and report that the file manager needs repair.
+                        state.settings.lock().map_err(|_|"Settings unavailable")?["notice"]=json!("Language saved. File-manager actions could not be refreshed. Turn them off and on in Settings, then restart your file manager.");
+                    }
                     let mut next=settings.clone();next["shellEntry"]=json!(enabled);
-                    if let Err(error)=persist_preferences(&app,&next){let _=unix_shell_entry::set_enabled(&resources,previous);return Err(error);}
+                    if let Err(error)=persist_preferences(&app,&next){let _=unix_shell_entry::set_enabled(&resources,previous,&language);return Err(error);}
                     *settings=next;drop(settings);return state_value(&app);
                 }
             }
@@ -380,12 +399,24 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                     return state_value(&app);
                 }
             }
-            let valid=match key.as_str() { "output"=>matches!(value.as_str(),Some("source"|"downloads"|"custom"|"ask")), "theme"=>matches!(value.as_str(),Some("system"|"light"|"dark")), _=>false };
+            let valid=match key.as_str() { "output"=>matches!(value.as_str(),Some("source"|"downloads"|"custom"|"ask")), "theme"=>matches!(value.as_str(),Some("system"|"light"|"dark")), "language"=>value.as_str().is_some_and(locale::valid_preference), _=>false };
             if !valid { return Err("This setting is not available in this build.".into()); }
             {
                 let mut settings=state.settings.lock().map_err(|_| "Settings unavailable")?;
                 let mut next=settings.clone();next[key]=value.clone();next.as_object_mut().unwrap().remove("notice");
                 persist_preferences(&app,&next)?;*settings=next;
+            }
+            if key=="language" {
+                let language=app_locale(&app);
+                #[cfg(any(target_os="macos",target_os="linux"))] if smoke_output().is_none() {
+                    let enabled=state.settings.lock().map_err(|_|"Settings unavailable")?["shellEntry"].as_bool().unwrap_or(true);
+                    let resources=app.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
+                    unix_shell_entry::set_enabled(&resources,enabled,&language)?;
+                }
+                if let Some(tray)=app.tray_by_id("main"){let _=localized_tray_menu(&app).and_then(|menu|tray.set_menu(Some(menu)));}
+                if let Some(window)=app.get_webview_window("main") {
+                    if app.state::<WindowMode>().quick.load(Ordering::SeqCst){let _=window.set_title(locale::text(&language,"edit"));}
+                }
             }
             state_value(&app)
         }
@@ -394,7 +425,7 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                 let state=handle.state::<HostState>();
                 let _lease=DialogLease::acquire(&state.dialog_busy)?;
                 if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose a folder again.".into()); }
-                let folder=handle.dialog().file().set_title("Choose output folder").blocking_pick_folder();
+                let folder=handle.dialog().file().set_title(locale::dialog_text(&app_locale(&handle),"Choose output folder")).blocking_pick_folder();
                 if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose a folder again.".into()); }
                 if let Some(folder)=folder { let path=folder.into_path().map_err(|_| "Choose a local folder")?;
                     // This preference is native-only; paths are not returned to the view.
@@ -504,7 +535,8 @@ fn main() {
                 #[cfg(any(target_os = "macos", target_os = "linux"))] if readable {
                     if app.path().app_config_dir().map_err(|_|"Settings unavailable".to_string()).and_then(|directory|unix_startup::initialize_fresh_install(&directory,&mut value)).is_err(){value["notice"]=json!("Quick actions could not be set to start after sign-in. Check the sign-in setting in Settings.");}
                     let enabled=value.get("shellEntry").and_then(Value::as_bool).unwrap_or(true);
-                    let result=app.path().resource_dir().map_err(|_|"Desktop components unavailable".to_string()).and_then(|resources|unix_shell_entry::set_enabled(&resources,enabled));
+                    let language=locale::effective_locale(value["language"].as_str().unwrap_or("system"));
+                    let result=app.path().resource_dir().map_err(|_|"Desktop components unavailable".to_string()).and_then(|resources|unix_shell_entry::set_enabled(&resources,enabled,&language));
                     if result.is_err(){value["notice"]=json!("File-manager actions could not be updated. Try changing the setting in Settings.");}
                 }
                 *app.state::<HostState>().settings.lock().map_err(|_| "Settings unavailable")?=value;
@@ -515,10 +547,8 @@ fn main() {
                     if let Ok(_lease)=DialogLease::acquire(&state.dialog_busy){let _=license_host::run(&directory,&resources,"prepareTrial",json!({}));};
                 }
             }
-            let open=MenuItem::with_id(app,"open","Open SoraFiles",true,None::<&str>)?;
-            let quit=MenuItem::with_id(app,"quit","Quit SoraFiles",true,None::<&str>)?;
-            let menu=Menu::with_items(app,&[&open,&quit])?;
-            let tray=TrayIconBuilder::new().icon(app.default_window_icon().unwrap().clone()).menu(&menu)
+            let menu=localized_tray_menu(app.handle())?;
+            let tray=TrayIconBuilder::with_id("main").icon(app.default_window_icon().unwrap().clone()).menu(&menu)
                 .on_menu_event(|app,event| match event.id.as_ref() {
                     "open"=>{let _=open_full_window(app);},
                     "quit"=>{app.state::<HostState>().quitting.store(true,Ordering::SeqCst);app.exit(0);},_=>{}

@@ -2,11 +2,12 @@ import {generateKeyPairSync} from 'node:crypto';
 import {LicenseClient} from '../core/license-client.mjs';
 import {deviceIdentity,verifyEntitlement} from '../shared/entitlement.mjs';
 import {resolveNativeActions,resolveNativeActionRequest,implementedNativeToolIds} from '../shared/native-actions.mjs';
+import {localizeNativeActions} from '../shared/menu-localization.mjs';
 
 // Trusted native parent supplies state/config and acknowledges every protected
 // write before execution continues. Renderer fields cannot configure this host.
 export async function runLicenseAction({action,params={},state,config,saveState,fetchImpl,now=Date.now}) {
- const fields={support:[],status:[],prepareTrial:[],initializeTrial:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],validate:[],nativeActions:['files','platform','actionId','outputMode'],replacementState:[],replacementEmailStart:['licenseKey'],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCheckout:[]};
+ const fields={support:[],status:[],prepareTrial:[],initializeTrial:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],validate:[],nativeActions:['files','platform','actionId','outputMode','locale'],replacementState:[],replacementEmailStart:['licenseKey'],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCheckout:[]};
  if(!fields[action]||!params||typeof params!=='object'||Object.keys(params).some(key=>!fields[action].includes(key)))throw Error('Invalid license action');
  if(action==='nativeActions'){
   if(!Array.isArray(params.files)||params.files.length>256)throw Error('Invalid selection');
@@ -14,8 +15,8 @@ export async function runLicenseAction({action,params={},state,config,saveState,
   if(state?.device&&state?.license&&config?.keys&&!state.license.deactivationPending){
    try{const {verifyEntitlement}=await import('../shared/entitlement.mjs');verifyEntitlement(state.license.entitlement,{keys:config.keys,deviceId:deviceIdentity(state.device.publicKey),lastTrustedTime:state.license.lastTrustedTime||0});authorized=true;}catch{}
   }
-  const context={files:params.files,platform:params.platform,authorized,outputMode:params.outputMode,installedTools:config?.installedTools??implementedNativeToolIds};
-  const actions=resolveNativeActions(context).map(({id,label,tool,options,direct,requiresUI})=>({id,label,tool,options,direct,requiresUI}));
+  const context={files:params.files,platform:params.platform,authorized,outputMode:params.outputMode,locale:params.locale,installedTools:config?.installedTools??implementedNativeToolIds};
+  const actions=localizeNativeActions(resolveNativeActions(context),params.locale).map(({id,label,tool,options,direct,requiresUI})=>({id,label,tool,options,direct,requiresUI}));
   if(params.actionId){const request=resolveNativeActionRequest(params.actionId,context);return {actions,action:{id:request.actionId,tool:request.tool,options:request.options,direct:request.direct,requiresUI:request.requiresUI}};}
   return {actions};
  }

@@ -3,11 +3,26 @@ import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {resolveNativeActions,resolveNativeActionRequest,implementedNativeToolIds} from '../shared/native-actions.mjs';
 import {capabilities,relevantActions,quickActionMenu} from '../shared/capabilities.mjs';
+import {localizeNativeActions} from '../shared/menu-localization.mjs';
 
 const file=(format,extra={})=>({path:`C:\\Selected files\\写真.${format.toLowerCase()}`,format,validated:true,bytes:1000,...extra});
 const context=(files,extra={})=>({files,authorized:true,platform:'windows',...extra});
 const actions=(files,extra)=>resolveNativeActions(context(files,extra));
 const ids=(files,extra)=>actions(files,extra).map(action=>action.id);
+
+test('localized file-manager menus preserve stable operation IDs and processing options on every platform',()=>{
+ for(const platform of ['windows','macos','linux'])for(const files of [[file('PNG')],[file('PNG'),file('PNG')]]){
+  const english=actions(files,{platform}),japanese=localizeNativeActions(actions(files,{platform}),'ja');
+  assert.deepEqual(japanese.map(({name,label,...operation})=>operation),english.map(({name,label,...operation})=>operation));
+  assert.notEqual(japanese[0].label,english[0].label);
+  assert.notEqual(japanese.at(-1).label,english.at(-1).label);
+  const id=english[0].id;
+  assert.deepEqual(resolveNativeActionRequest(id,context(files,{platform,locale:'ja'})),resolveNativeActionRequest(id,context(files,{platform})));
+ }
+ const fallback=localizeNativeActions(actions([file('PNG')]),'unsupported');
+ assert.deepEqual(fallback,actions([file('PNG')]));
+ assert.notEqual(localizeNativeActions(resolveNativeActions({files:[file('PNG')]}),'ja')[0].label,'Set up SoraFiles');
+});
 
 test('one JPG offers every connected relevant workflow and explicit conversion choices',()=>{
  const menu=actions([file('JPG')]);
