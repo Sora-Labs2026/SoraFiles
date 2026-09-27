@@ -96,9 +96,21 @@ test('replacement locks the original real HTTP client on its next online check, 
   await replaceDevice({store:f.store,guard:f.guard,dodo:f.service.dodo,authority:f.service.authority,licenseKey:'synthetic-dodo-key',request:{ticket:'verified-ticket',operator:'operator',licenseRef:'license',oldDeviceId:deviceIdentity(f.device.publicKey),newDeviceId:deviceIdentity(pair().publicKey),reason:'lost'},now:1800000000});
   f.offline();assert.equal((await f.client.authorize()).plan,'personal-monthly');f.online();
   f.service.dodo.validate=async()=>{throw Error('provider offline');};
-  assert.deepEqual(await f.client.validateOnline(),{checked:true,active:false});assert.equal(f.read().deactivationPending,true);
-  assert.equal(f.read().entitlement,saved.entitlement);await assert.rejects(f.client.authorize(),/verification/);
+  assert.deepEqual(await f.client.validateOnline(),{checked:true,active:false,revoked:true});assert.equal(f.read().deactivationPending,true);
+  assert.equal(f.read().entitlement,undefined);assert.equal(f.read().licenseKey,undefined);await assert.rejects(f.client.authorize(),/verification/);
  }finally{await f.close();}
+});
+
+test('revoked local state permits explicit online activation with a supplied key and never a trial fallback',async()=>{
+ for(const key of ['previous-license-key','new-license-key']){
+  const f=await fixture();try{
+   const revoked={revoked:true,deactivationPending:true,lastTrustedTime:1800000000000};f.set(revoked);
+   await assert.rejects(f.client.trial(),/license key/);assert.equal(f.calls(),0);
+   f.offline();await assert.rejects(f.client.activate(key),/offline/);assert.deepEqual(f.read(),revoked);
+   f.online();const result=await f.client.activate(key);assert.equal(result.plan,'personal-monthly');
+   assert.equal(f.read().licenseKey,key);assert.equal(f.read().revoked,undefined);assert.equal((await f.client.authorize()).plan,'personal-monthly');
+  }finally{await f.close();}
+ }
 });
 
 test('a replayed genuine online validation response cannot update or unlock stored authority',async()=>{

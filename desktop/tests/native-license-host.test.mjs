@@ -54,6 +54,16 @@ test('automatic trial saves its first-launch deadline offline and retries withou
  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));store.close();}
 });
 
+test('restarting a revoked device keeps processing and automatic trial disabled while offering key activation',async()=>{
+ const pair=generateKeyPairSync('ed25519'),device={publicKey:pair.publicKey.export({type:'spki',format:'pem'}),privateKey:pair.privateKey.export({type:'pkcs8',format:'pem'})};
+ const state={schema:1,device,installedAt:1800000000,license:{revoked:true,deactivationPending:true,lastTrustedTime:1800000000000}};
+ const options={state,now:()=>1800000001000,config:{keys:{test:device.publicKey}},saveState:async()=>assert.fail('Revocation must persist'),fetchImpl:()=>assert.fail('No automatic network activation')};
+ for(const action of ['status','initializeTrial'])assert.deepEqual(await runLicenseAction({...options,action}),{license:'revoked',activationAvailable:true,trialPending:false,plan:'',expiresAt:null,devices:[]});
+ await assert.rejects(runLicenseAction({...options,action:'trial'}),/license key/);
+ const {runProcessing}=await import('../native-host/processing-host.mjs');
+ await assert.rejects(runProcessing({...options,tool:'jpg-to-pdf',paths:['unopened.png']}),/license before processing/);
+});
+
 test('automatic initialization preserves paid state and never networks before protected storage succeeds',async()=>{
  const pair=generateKeyPairSync('ed25519'),device={publicKey:pair.publicKey.export({type:'spki',format:'pem'}),privateKey:pair.privateKey.export({type:'pkcs8',format:'pem'})};
  const state={schema:1,device,license:{licenseKey:'paid',licenseRef:'binding',entitlement:'unverifiable'}};

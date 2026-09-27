@@ -21,6 +21,7 @@ export class LicenseService {
   }
   if(action==='validate')return this.validate(body,deviceId);
   if(action==='trial'){
+   this.store.assertTrialAllowed(deviceId);
    // Owner-selected accountless trial: only the proved device key determines the
    // ledger subject. A new key can represent a new device; no hardware tracking.
    const subject=this.guard.trialSubject(deviceId);

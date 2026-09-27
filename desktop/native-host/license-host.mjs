@@ -20,6 +20,8 @@ export async function runLicenseAction({action,params={},state,config,saveState,
   return {actions};
  }
  const pending=()=>({license:'needs-verification',activationAvailable:true,trialPending:state?.installedAt+7*86400>Math.floor(now()/1000),expiresAt:state?.installedAt+7*86400});
+ const revoked=()=>({license:'revoked',activationAvailable:true,trialPending:false,plan:'',expiresAt:null,devices:[]});
+ if(['status','initializeTrial'].includes(action)&&state?.license?.revoked)return revoked();
  if(action==='status'&&!state?.license)return state?.installedAt?pending():{license:'not-activated'};
  if(!['support','prepareTrial','initializeTrial'].includes(action)&&(!config?.keys||!Object.keys(config.keys).length))throw Error('License service configuration is not available in this build');
  let current=state;
@@ -49,12 +51,12 @@ export async function runLicenseAction({action,params={},state,config,saveState,
  const activationAvailable=!current.license?.licenseRef&&!current.license?.licenseKey;
  if(action.startsWith('replacement')){
   try{return await (action==='replacementEmailStart'?client[action](params.licenseKey):action==='replacementEmailVerify'?client[action](params.code):action==='replacementRequest'?client[action](params.oldDeviceId):client[action]());}
-  catch(error){if(/^(Request a new email code\.|Enter the eight-digit email code\.|Verify your email again to continue\.|Choose an active device to replace\.|Check your existing replacement payment first\.|Please wait a moment and try again\.)$/.test(error.message))throw error;throw Error('Device replacement could not finish. Check your code or payment and try again.');}
+  catch(error){if(/^(Request a new email code\.|Enter the eight-digit email code\.|Verify your email again to continue\.|Choose an active device to revoke\.|Check your existing revocation payment first\.|Please wait a moment and try again\.)$/.test(error.message))throw error;throw Error('Device revocation could not finish. Check your code or payment and try again.');}
  }
  if(action==='validate'){
   const result=await client.validateOnline();
   if(!result.checked)return {};
-  return result.active?{license:'active',plan:result.plan,expiresAt:result.expiresAt}:{license:'needs-verification',activationAvailable:false};
+  return result.active?{license:'active',plan:result.plan,expiresAt:result.expiresAt}:result.revoked?revoked():{license:'needs-verification',activationAvailable:false};
  }
  if(action==='status'){try{const result=await client.authorize();return {license:result.plan==='trial'?'trial':'active',activationAvailable,...result};}catch{return {license:'needs-verification',activationAvailable};}}
  if(action==='devices')return {devices:await client.devices()};

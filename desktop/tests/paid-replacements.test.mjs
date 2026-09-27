@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {generateKeyPairSync,randomBytes,sign} from 'node:crypto';
 import {LicenseStore} from '../license-service/store.mjs';
+import {LicenseLedger} from '../license-service/ledger.mjs';
 import {RequestGuard} from '../license-service/request-guard.mjs';
 import {LicenseService} from '../license-service/service.mjs';
 import {PaidReplacementService,verifyReplacementProduct,queueReplacementEvent} from '../license-service/paid-replacements.mjs';
@@ -16,8 +17,11 @@ function setup(plan='personal-annual'){
  const state={ref:'lic',plan,status:'active',periodEnd:now+365*86400,observedAt:now};
  const products=Object.fromEntries(Object.keys(replacementPrices).map(p=>[p,'product_'+p]));
  const product=p=>({product_id:products[p],name:'SoraFiles device replacement',is_recurring:false,price:{type:'one_time_price',currency:'USD',price:replacementPrices[p].amount,tax_inclusive:true},entitlements:[]});
- let payment=null;
+ let payment=null,providerKey;
  const dodo={activate:async()=>({id:'instance_'+ ++serial,license_key_id:'lic',customer:{customer_id:'customer'}}),validate:async()=>({valid:true}),deactivate:async()=>{deactivateCalls++;},product:async()=>product(plan),replacementCheckout:async({orderId,productId,customerId})=>{checkoutCalls++;payment={payment_id:'payment_'+checkoutCalls,metadata:{sorafiles_replacement:orderId},checkout_session_id:'checkout_'+checkoutCalls,customer:{customer_id:customerId},currency:'USD',total_amount:replacementPrices[plan].amount,product_cart:[{product_id:productId,quantity:1}],refunds:[],disputes:[],status:'processing'};return {session_id:payment.checkout_session_id,checkout_url:'https://test.checkout.dodopayments.com/session'};},checkoutStatus:async id=>({session_id:id,payment_id:payment.payment_id}),payment:async()=>payment};
+ const activate=dodo.activate;dodo.activate=async key=>{providerKey=key;return activate();};
+ dodo.customerGrants=async()=>[{customer_id:'customer',integration_type:'license_key',license_key:{id:'lic',key:providerKey}}];
+ dodo.licenseKey=async()=>({id:'lic',customer_id:'customer',key:providerKey});
  const authority={resolve:async()=>({...state,observedAt:now})};
  const replacements=new PaidReplacementService({store,guard,dodo,authority,products,now:()=>now,verifyIdentity:async token=>({customerId:token==='owner'?'customer':'someone_else',verified:token==='owner'})});
  const service=new LicenseService({store,guard,dodo,authority,replacements,signing:{privateKey:signer.privateKey,kid:'test'},now:()=>now});
@@ -30,7 +34,7 @@ test('all six replacement products require exact fixed amounts, no promotions or
  for(const plan of Object.keys(replacementPrices)){const s=setup(plan);try{const product=s.product(plan);assert.equal(verifyReplacementProduct(plan,product,product.product_id).amount,replacementPrices[plan].amount);for(const change of [{price:{...product.price,price:1}},{price:{...product.price,currency:'EUR'}},{price:{...product.price,discount:10}},{is_recurring:true},{entitlements:[{id:'license'}]}])assert.throws(()=>verifyReplacementProduct(plan,{...product,...change},product.product_id));}finally{s.store.close();}}
 });
 
-test('occupied seat moves only after verified exact payment; retries preserve checkout and reserved seat',async()=>{
+test('verified exact payment releases occupied seat for a new device without reserving the requester',async()=>{
  const s=setup(),old=pair(),next=pair(),intruder=pair();try{
   await s.execute('activate',{licenseKey:'secret-key'},old);
   const body={licenseRef:'lic',oldDeviceId:deviceIdentity(old.publicKey),licenseKey:'secret-key',identityToken:'owner'};
@@ -45,11 +49,10 @@ test('occupied seat moves only after verified exact payment; retries preserve ch
   await assert.rejects(s.execute('replacementStatus',status,next),/mismatch/);assert.ok(s.store.active('lic',body.oldDeviceId));
   s.payment().total_amount=999;assert.equal((await s.execute('replacementStatus',status,next)).replacementAuthorized,true);
   assert.equal(s.deactivateCalls(),1);assert.equal((await s.execute('replacementStatus',status,next)).status,'complete');assert.equal(s.deactivateCalls(),1);
-  await assert.rejects(s.execute('activate',{licenseKey:'secret-key'},old),/replaced/);
-  await assert.rejects(s.execute('activate',{licenseKey:'secret-key'},intruder),/limit/);
-  const activated=await s.execute('activate',{licenseKey:'secret-key'},next);assert.equal(s.verifyGrant(activated.entitlement,next).plan,'personal-annual');
+  const activated=await s.execute('activate',{licenseKey:'secret-key'},intruder);assert.equal(s.verifyGrant(activated.entitlement,intruder).plan,'personal-annual');
+  await assert.rejects(s.execute('activate',{licenseKey:'secret-key'},next),/limit/);
   assert.equal(s.store.db.prepare('SELECT COUNT(*) n FROM permanent_devices').get().n,1);
-  assert.ok(s.store.db.prepare('SELECT activated FROM paid_replacements').get().activated);
+  assert.equal(s.store.db.prepare('SELECT new_device FROM paid_replacements').get().new_device,null);
   assert.equal(JSON.stringify(s.store.db.prepare('SELECT * FROM paid_replacements').all()).includes('secret-key'),false);
  }finally{s.store.close();}
 });
@@ -135,4 +138,102 @@ test('an online validation already waiting on Dodo cannot renew the old device a
   const validating=s.execute('validate',body,old);await ready;s.payment().status='succeeded';s.replacements.applyPayment(s.payment());release();
   const claim=s.verify(await validating,old,body);assert.equal(claim.reason,'device-replaced');assert.equal(claim.status,'inactive');assert.equal(claim.entitlement,undefined);
  }finally{release?.();s.store.close();}
+});
+
+test('current device starts replacement; background payment releases it after token expiry and one new device wins the seat',async()=>{
+ const s=setup('personal-lifetime'),old=pair();try{
+  await s.execute('activate',{licenseKey:'key'},old);
+  const body={licenseRef:'lic',oldDeviceId:deviceIdentity(old.publicKey),licenseKey:'key',identityToken:'owner'};
+  const order=await s.execute('replacementRequest',body,old);
+  assert.ok(s.store.active('lic',body.oldDeviceId));assert.equal(s.deactivateCalls(),0);
+  s.advance(3600);s.replacements.verifyIdentity=async()=>{throw Error('Expired token');};
+  s.payment().status='succeeded';queueReplacementEvent(s.store,'paid-background',{type:'payment.succeeded',data:{payment_id:s.payment().payment_id}},1800003600);
+  await s.replacements.reconcile();assert.equal(s.deactivateCalls(),1);
+  assert.equal(s.store.db.prepare('SELECT COUNT(*) n FROM permanent_devices').get().n,0);
+  assert.equal((await s.execute('replacementStatus',{orderId:order.orderId,licenseKey:'key',identityToken:'expired'},old)).status,'complete');
+  const competing=await Promise.allSettled([s.execute('activate',{licenseKey:'key'},old),s.execute('activate',{licenseKey:'key'},pair())]);
+  assert.equal(competing.filter(result=>result.status==='fulfilled').length,1);
+  assert.equal(s.store.db.prepare('SELECT COUNT(*) n FROM permanent_devices').get().n,1);
+ }finally{s.store.close();}
+});
+
+test('unattended release retries paid records after acknowledged event and checks retrieved provider identity',async()=>{
+ for(const fault of ['outage','customer','id','key']){
+  const s=setup(),old=pair();try{
+   await s.execute('activate',{licenseKey:'key'},old);
+   await s.execute('replacementRequest',{licenseRef:'lic',oldDeviceId:deviceIdentity(old.publicKey),licenseKey:'key',identityToken:'owner'},old);
+   s.payment().status='succeeded';queueReplacementEvent(s.store,'event',{type:'payment.succeeded',data:{payment_id:s.payment().payment_id}},1800000000);
+   s.dodo.customerGrants=async()=>[];
+   s.dodo.licenseKey=async()=>fault==='outage'?Promise.reject(Error('offline')):{id:fault==='id'?'other':'lic',customer_id:fault==='customer'?'other':'customer',key:fault==='key'?'other':'key'};
+   await assert.rejects(s.replacements.reconcile(),/unavailable/);
+   assert.equal(s.store.db.prepare('SELECT COUNT(*) n FROM replacement_payment_events WHERE completed IS NULL').get().n,0);
+   assert.equal(s.store.db.prepare('SELECT status FROM paid_replacements').get().status,'paid');
+   assert.equal(s.store.db.prepare('SELECT COUNT(*) n FROM permanent_devices').get().n,1);assert.equal(s.deactivateCalls(),0);
+   s.dodo.licenseKey=async()=>({id:'lic',customer_id:'customer',key:'key'});
+   await s.replacements.reconcile();assert.equal(s.store.db.prepare('SELECT status FROM paid_replacements').get().status,'complete');assert.equal(s.deactivateCalls(),1);
+  }finally{s.store.close();}
+ }
+});
+
+test('migration preserves legacy destination reservation and does not reinterpret existing transfers',async()=>{
+ const s=setup(),old=pair(),reserved=pair(),other=pair();try{
+  await s.execute('activate',{licenseKey:'key'},old);
+  await s.execute('replacementRequest',{licenseRef:'lic',oldDeviceId:deviceIdentity(old.publicKey),licenseKey:'key',identityToken:'owner'},reserved);
+  const db=s.store.db;
+  // Reconstruct the pre-release-mode table with a real existing checkout.
+  db.prepare('UPDATE paid_replacements SET new_device=?').run(deviceIdentity(reserved.publicKey));
+  db.exec('ALTER TABLE paid_replacements DROP COLUMN requester_device; ALTER TABLE paid_replacements DROP COLUMN mode;');
+  const migrated=new LicenseLedger(db),row=db.prepare('SELECT * FROM paid_replacements').get();
+  assert.equal(row.mode,'transfer');assert.equal(row.requester_device,deviceIdentity(reserved.publicKey));
+  s.payment().status='succeeded';s.replacements.applyPayment(s.payment());await s.replacements.finishRelease(s.replacements.row(row.id),'key');
+  await assert.rejects(s.execute('activate',{licenseKey:'key'},old),/replaced/);
+  assert.throws(()=>migrated.activate('lic',deviceIdentity(other.publicKey),'unreserved',1800000000),/limit/);
+  const result=await s.execute('activate',{licenseKey:'key'},reserved);assert.equal(result.licenseRef,'lic');
+ }finally{s.store.close();}
+});
+
+test('completed revocation permits fresh same-device binding repeatedly but never restores revoked instances or trial',async()=>{
+ const s=setup('personal-lifetime'),device=pair(),deviceId=deviceIdentity(device.publicKey);try{
+  await s.execute('trial',{},device);
+  let activation=await s.execute('activate',{licenseKey:'key'},device);
+  const revoked=[];
+  for(let cycle=0;cycle<2;cycle++){
+   const body={licenseRef:'lic',oldDeviceId:deviceId,licenseKey:'key',identityToken:'owner'};
+   const order=await s.execute('replacementRequest',body,device);
+   assert.equal(s.checkoutCalls(),cycle+1);
+   assert.equal((await s.execute('replacementRequest',body,device)).orderId,order.orderId);
+   s.payment().status='succeeded';s.replacements.applyPayment(s.payment());
+   await assert.rejects(s.execute('activate',{licenseKey:'key'},device),/replaced/);
+   await assert.rejects(s.execute('trial',{},device),/revoked/);
+   await s.replacements.finishRelease(s.replacements.row(order.orderId),'key');
+   assert.equal((await s.execute('replacementStatus',{orderId:order.orderId,licenseKey:'key',identityToken:'owner'},device)).revokedInstanceId,activation.instanceId);
+   revoked.push(activation.instanceId);
+   const staleActivate=s.dodo.activate;s.dodo.activate=async()=>({id:activation.instanceId,license_key_id:'lic',customer:{customer_id:'customer'}});
+   await assert.rejects(s.execute('activate',{licenseKey:'key'},device),/replaced/);
+   s.dodo.activate=staleActivate;
+   activation=await s.execute('activate',{licenseKey:'key'},device);
+   assert.equal((await s.execute('replacementStatus',{orderId:order.orderId,licenseKey:'key',identityToken:'owner'},device)).revokedInstanceId,revoked.at(-1));
+   assert.ok(!revoked.includes(activation.instanceId));assert.equal(s.verifyGrant(activation.entitlement,device).plan,'personal-lifetime');
+   await assert.rejects(s.execute('trial',{},device),/revoked/);
+   for(const instanceId of revoked){
+    const validate={licenseKey:'key',licenseRef:'lic',instanceId,nonce:randomBytes(32).toString('base64url')};
+    assert.equal(s.verify(await s.execute('validate',validate,device),device,validate).reason,'device-replaced');
+    await assert.rejects(s.execute('refresh',{licenseKey:'key',licenseRef:'lic',instanceId},device),/instance/);
+   }
+  }
+  assert.equal(s.store.db.prepare('SELECT COUNT(*) n FROM paid_replacements').get().n,2);
+  assert.equal(s.store.db.prepare('SELECT COUNT(*) n FROM permanent_devices').get().n,1);
+ }finally{s.store.close();}
+});
+
+test('revoked device without prior trial cannot obtain one but can activate a different valid license',async()=>{
+ const s=setup('personal-lifetime'),device=pair();try{
+  await s.execute('activate',{licenseKey:'key'},device);
+  const order=await s.execute('replacementRequest',{licenseRef:'lic',oldDeviceId:deviceIdentity(device.publicKey),licenseKey:'key',identityToken:'owner'},device);
+  s.payment().status='succeeded';s.replacements.applyPayment(s.payment());await s.replacements.finishRelease(s.replacements.row(order.orderId),'key');
+  await assert.rejects(s.execute('trial',{},device),/revoked/);
+  s.state.ref='new-license';s.dodo.activate=async()=>({id:'new-key-instance',license_key_id:'new-license',customer:{customer_id:'customer'}});
+  const activated=await s.execute('activate',{licenseKey:'new-key'},device);
+  assert.equal(activated.licenseRef,'new-license');assert.equal(s.verifyGrant(activated.entitlement,device).plan,'personal-lifetime');
+ }finally{s.store.close();}
 });

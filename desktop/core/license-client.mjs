@@ -36,6 +36,7 @@ export class LicenseClient {
  verify(token,device,lastTrustedTime=0){return verifyEntitlement(token,{keys:this.keys,deviceId:deviceIdentity(device.publicKey),now:this.now(),lastTrustedTime});}
  async trial(installedAt){return this.exclusive(async()=>{
   const device=await this.readDevice(),saved=await this.readLicense();
+  if(saved?.revoked)throw Error('Enter a license key to activate this device again');
   if(saved?.licenseRef)throw Error('A paid license is already configured');
   const response=await this.request('trial',installedAt===undefined?{}:{installedAt},device);
   const claims=this.verify(response.entitlement,device,saved?.lastTrustedTime||0);if(claims.plan!=='trial')throw Error('Invalid trial response');
@@ -46,7 +47,7 @@ export class LicenseClient {
  async activate(licenseKey){return this.exclusive(async()=>{
   requestContext('activate',{licenseKey});const device=await this.readDevice(),saved=await this.readLicense();
   if(saved?.licenseKey&&saved.licenseKey.trim()!==licenseKey.trim())throw Error('This device is already bound to a license');
-  if(saved?.deactivationPending)throw Error('This saved license needs online verification');
+  if(saved?.deactivationPending&&!saved.revoked)throw Error('This saved license needs online verification');
   const response=await this.request('activate',{licenseKey},device),claims=this.verify(response.entitlement,device,saved?.lastTrustedTime||0);
   if(claims.plan==='trial'||claims.licenseRef!==response.licenseRef||typeof response.instanceId!=='string'||!response.instanceId||response.instanceId.length>512)throw Error('Invalid activation response');
   await this.saveLicense({licenseKey,licenseRef:response.licenseRef,instanceId:response.instanceId,entitlement:response.entitlement,lastTrustedTime:this.now()});
@@ -70,7 +71,7 @@ export class LicenseClient {
  async replacementEmailStart(licenseKey){return this.exclusive(async()=>{
   const previous=await this.readReplacement(),saved=await this.readLicense();
   const key=licenseKey||previous?.licenseKey||saved?.licenseKey;
-  if(previous?.orderId&&key!==previous.licenseKey)throw Error('Check your existing replacement payment first.');
+  if(previous?.orderId&&key!==previous.licenseKey)throw Error('Check your existing revocation payment first.');
   requestContext('replacementEmailStart',{licenseKey:key});
   const response=await this.request('replacementEmailStart',{licenseKey:key},await this.readDevice());
   if(!boundedId(response.verificationId)||typeof response.maskedEmail!=='string'||response.maskedEmail.length>254||!response.maskedEmail.includes('*')||/[\x00-\x1f]/.test(response.maskedEmail)||!futureTime(response.expiresAt,this.now())||!Number.isSafeInteger(response.resendAfter))throw Error('Invalid email verification response');
@@ -89,7 +90,7 @@ export class LicenseClient {
  });}
  async replacementRequest(oldDeviceId){return this.exclusive(async()=>{
   const flow=await this.readReplacement();if(flow?.stage!=='verified'||!futureTime(flow.expiresAt,this.now()))throw Error('Verify your email again to continue.');
-  if(!flow.devices.some(row=>row.id===oldDeviceId&&row.active&&!row.current))throw Error('Choose an active device to replace.');
+  if(!flow.devices.some(row=>row.id===oldDeviceId&&row.active))throw Error('Choose an active device to revoke.');
   const result=await this.request('replacementRequest',{licenseRef:flow.licenseRef,oldDeviceId,licenseKey:flow.licenseKey,identityToken:flow.identityToken},await this.readDevice());
   validateReplacementOrder(result,flow.plan);
   await this.saveReplacement({...flow,stage:'payment',oldDeviceId,orderId:result.orderId,status:result.status,checkoutUrl:result.checkoutUrl||null});return this.replacementState();
@@ -99,11 +100,20 @@ export class LicenseClient {
    const flow=await this.readReplacement();if(!flow?.orderId)throw Error('No replacement payment to check.');
    const response=await this.request('replacementStatus',{orderId:flow.orderId,licenseKey:flow.licenseKey,identityToken:flow.identityToken},await this.readDevice());
    validateReplacementOrder(response,flow.plan);if(response.orderId!==flow.orderId)throw Error('Invalid replacement payment response');
-   await this.saveReplacement({...flow,status:response.status});return {complete:response.status==='complete'&&response.replacementAuthorized===true,key:flow.licenseKey};
+   if(response.status==='complete'&&response.replacementAuthorized===true){
+    // Payment releases a seat. A future device must perform normal server activation.
+    // Never activate the requesting device automatically after a replacement.
+    const saved=await this.readLicense(),device=await this.readDevice();
+    const releasedHere=flow.oldDeviceId===deviceIdentity(device.publicKey);
+    if(typeof response.revokedInstanceId!=='string'||!response.revokedInstanceId||response.revokedInstanceId.length>512)throw Error('Invalid revoked activation response');
+    const revokedHere=releasedHere&&saved?.licenseRef===flow.licenseRef&&saved.instanceId===response.revokedInstanceId;
+    if(revokedHere)await this.saveLicense({revoked:true,deactivationPending:true,lastTrustedTime:Math.max(saved.lastTrustedTime||0,this.now())});
+    await this.saveReplacement({stage:'complete'});
+    return {...(revokedHere?{license:'revoked',plan:'',expiresAt:null,activationAvailable:true,trialPending:false,devices:[]}:{}),replacement:{stage:'complete'}};
+   }
+   await this.saveReplacement({...flow,status:response.status});return this.replacementState();
   });
-  // Payment authorizes a normal activation; it never supplies a local entitlement.
-  if(result.complete){const activation=await this.activate(result.key);await this.saveReplacement(null);return {...activation,license:'active',activationAvailable:false,replacement:{stage:'complete'}};}
-  return this.replacementState();
+  return result;
  }
  async replacementCheckout(){const flow=await this.readReplacement();if(flow?.stage!=='payment'||!trustedCheckout(flow.checkoutUrl))throw Error('Payment page unavailable.');return {checkoutUrl:flow.checkoutUrl};}
  async validateOnline(){return this.exclusive(async()=>{
@@ -114,8 +124,9 @@ export class LicenseClient {
   const response=await this.request('validate',body,device);
   const proof=verifyValidationProof(response.validation,{keys:this.keys,deviceId:deviceIdentity(device.publicKey),licenseRef:saved.licenseRef,instanceId:saved.instanceId,nonce,now:this.now()});
   if(proof.status==='inactive'){
-   await this.saveLicense({...saved,deactivationPending:true,lastTrustedTime:Math.max(saved.lastTrustedTime||0,this.now())});
-   return {checked:true,active:false};
+   const revoked=proof.reason==='device-replaced';
+   await this.saveLicense({... (revoked?{revoked:true}:saved),deactivationPending:true,lastTrustedTime:Math.max(saved.lastTrustedTime||0,this.now())});
+   return {checked:true,active:false,...(revoked?{revoked:true}:{})};
   }
   const claims=this.verify(proof.entitlement,device,saved.lastTrustedTime||0);
   if(claims.plan==='trial'||claims.licenseRef!==saved.licenseRef)throw Error('Invalid validation entitlement');
@@ -130,4 +141,4 @@ const futureTime=(value,now)=>Number.isSafeInteger(value)&&value>Math.floor(now/
 const validDevices=value=>Array.isArray(value)&&value.length<=256&&value.every(row=>row&&/^[A-Za-z0-9_-]{43}$/.test(row.id)&&typeof row.active==='boolean'&&typeof row.current==='boolean');
 export function trustedCheckout(value){try{const url=new URL(value);return typeof value==='string'&&value.length<=4096&&url.protocol==='https:'&&['checkout.dodopayments.com','test.checkout.dodopayments.com'].includes(url.hostname)&&!url.username&&!url.password&&!url.port;}catch{return false;}}
 function validateReplacementOrder(value,plan){const fee=replacementPrice(plan);if(!boundedId(value?.orderId)||!['payment-pending','payment-confirmed','payment-failed','complete'].includes(value.status)||value.fee?.plan!==plan||value.fee.amount!==fee.amount||value.fee.currency!=='USD'||value.checkoutUrl&&!trustedCheckout(value.checkoutUrl))throw Error('Invalid replacement payment response');}
-function publicReplacement(flow){if(!flow)return {stage:'idle'};return {stage:flow.stage,maskedEmail:flow.maskedEmail,expiresAt:flow.expiresAt,resendAfter:flow.resendAfter,...(flow.plan?{plan:flow.plan,fee:replacementPrice(flow.plan),devices:flow.devices.map(({id,current,active})=>({id,current,active}))}:{}),...(flow.status?{status:flow.status,checkoutAvailable:trustedCheckout(flow.checkoutUrl)}:{})};}
+function publicReplacement(flow){if(!flow)return {stage:'idle'};if(flow.stage==='complete')return {stage:'complete'};return {stage:flow.stage,maskedEmail:flow.maskedEmail,expiresAt:flow.expiresAt,resendAfter:flow.resendAfter,...(flow.plan?{plan:flow.plan,fee:replacementPrice(flow.plan),devices:flow.devices.map(({id,current,active})=>({id,current,active}))}:{}),...(flow.status?{status:flow.status,checkoutAvailable:trustedCheckout(flow.checkoutUrl)}:{})};}

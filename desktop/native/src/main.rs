@@ -545,7 +545,9 @@ fn main() {
                         }
                         // Network failure is deliberately silent and leaves the
                         // signed offline authorization intact. No engine loads.
-                        let _=license_host::run(&directory,&resources,"validate",json!({}));
+                        let result=license_host::run(&directory,&resources,"validate",json!({}));
+                        drop(_lease);
+                        if let Ok(value)=result{if value["license"].is_string(){let _=handle.emit_to("main","license-updated",value);}}
                     }
                 });
             }

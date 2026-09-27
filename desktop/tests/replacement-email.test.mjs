@@ -30,10 +30,29 @@ test('purchaser email comes from verified authority; code is one-use and only ha
   assert.throws(()=>f.email.verify({verificationId:first.verificationId,code:f.mail[0].code},id(2)));
   assert.ok(!JSON.stringify(f.store.db.prepare('SELECT * FROM replacement_email').all()).includes(verified.identityToken));
   const scope={licenseRef:'license',deviceId:id(2),oldDeviceId:id(1),keyHash:f.keyHash};
-  assert.deepEqual(f.email.identity(verified.identityToken,scope),{verified:true,customerId:'customer'});
-  assert.deepEqual(f.email.identity(verified.identityToken,scope),{verified:true,customerId:'customer'});
+  assert.deepEqual(f.email.identity(verified.identityToken,scope),{verified:true,customerId:'customer',instanceId:'old'});
+  assert.deepEqual(f.email.identity(verified.identityToken,scope),{verified:true,customerId:'customer',instanceId:'old'});
   for(const change of [{deviceId:id(3)},{oldDeviceId:id(4)},{licenseRef:'other'},{keyHash:'wrong'}])assert.throws(()=>f.email.identity(verified.identityToken,{...scope,...change}));
   f.advance(1800);assert.throws(()=>f.email.identity(verified.identityToken,scope));
+ }finally{f.store.close();}
+});
+
+test('consumed purchaser verification cannot authorize another activation of the same device',async()=>{
+ const f=fixture();try{
+  const started=await f.email.start({licenseKey:'synthetic-key'},id(1));
+  const verified=f.email.verify({verificationId:started.verificationId,code:f.mail[0].code},id(1));
+  const scope={licenseRef:'license',deviceId:id(1),oldDeviceId:id(1),keyHash:f.keyHash};
+  assert.equal(f.email.identity(verified.identityToken,scope).instanceId,'old');
+  f.store.db.prepare('UPDATE devices SET instance_id=? WHERE license_ref=?').run('fresh','license');
+  assert.throws(()=>f.email.identity(verified.identityToken,scope),/verification/);
+ }finally{f.store.close();}
+});
+test('verification from the occupied device offers that same device for release',async()=>{
+ const f=fixture();try{
+  const start=await f.email.start({licenseKey:'synthetic-key'},id(1));
+  const result=f.email.verify({verificationId:start.verificationId,code:f.mail[0].code},id(1));
+  assert.deepEqual(result.devices,[{id:id(1),current:true,active:true}]);
+  assert.equal(f.email.identity(result.identityToken,{licenseRef:'license',deviceId:id(1),oldDeviceId:id(1),keyHash:f.keyHash}).verified,true);
  }finally{f.store.close();}
 });
 test('resends invalidate prior code and have durable per-license limits across devices and service restart',async()=>{

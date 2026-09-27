@@ -15,6 +15,23 @@ export class Probe {
   const s=this.store,db=s.db,now=1800000000;
   try {
    switch(new URL(request.url).pathname){
+    case '/paid-release-migration': {
+     const ref='migration-release',deviceId=id(21),keyHash='b'.repeat(64);
+     s.sync({ref,plan:'personal-lifetime',status:'active',observedAt:now});
+     db.prepare("INSERT INTO paid_replacements(id,license_ref,old_device,instance_id,key_hash,customer_id,plan,amount,currency,product_id,status,created,mode,requester_device) VALUES(?,?,?,?,?,?,'personal-lifetime',4999,'USD','revoke','complete',?,'release',?)").run('migration-first',ref,deviceId,'revoked-instance',keyHash,'owner',now,deviceId);
+     db.prepare("INSERT INTO activation_attempts VALUES(?,?,'blocked',?,'revoked-instance','owner',?)").run(keyHash,deviceId,ref,now);
+     // Restore the prior release schema with its completed receipt, then reopen.
+     const sql=db.prepare("SELECT sql FROM sqlite_master WHERE name='paid_replacements'").get().sql;
+     db.exec(sql.replace('paid_replacements','historical_releases').replace('UNIQUE(license_ref,old_device,instance_id)','UNIQUE(license_ref,old_device)'));
+     db.exec('INSERT INTO historical_releases SELECT * FROM paid_replacements; DROP TABLE paid_replacements; ALTER TABLE historical_releases RENAME TO paid_replacements;');
+     const migrated=new DurableLicenseStore(this.ctx.storage);
+     const reserved=migrated.reserveActivation(keyHash,deviceId,now+1);
+     let oldDenied=false;try{migrated.activate(ref,deviceId,'revoked-instance',now+1);}catch{oldDenied=true;}
+     migrated.recordActivation(keyHash,deviceId,{license_key_id:ref,id:'fresh-instance',customer:{customer_id:'owner'}});
+     migrated.activate(ref,deviceId,'fresh-instance',now+1,{provisional:true});migrated.finishActivation(keyHash,deviceId,'complete',now+1);
+     db.prepare("INSERT INTO paid_replacements(id,license_ref,old_device,instance_id,key_hash,customer_id,plan,amount,currency,product_id,status,created,mode,requester_device) VALUES(?,?,?,?,?,?,'personal-lifetime',4999,'USD','revoke','pending',?,'release',?)").run('migration-second',ref,deviceId,'fresh-instance',keyHash,'owner',now+2,deviceId);
+     return Response.json({reserved,oldDenied,freshActive:!!migrated.active(ref,deviceId),receipts:db.prepare('SELECT COUNT(*) n FROM paid_replacements WHERE license_ref=?').get(ref).n});
+    }
     case '/replacement-email': {
      const guard=new RequestGuard({store:s,secret:Buffer.alloc(32,17),now:()=>now}),keyHash=guard.activationFingerprint('synthetic-key');
      const state={ref:'email-license',plan:'personal-lifetime',status:'active',periodEnd:null,observedAt:now};s.sync(state);s.bind(state.ref,'email-customer');s.activate(state.ref,id(1),'old',now);

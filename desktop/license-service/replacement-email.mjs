@@ -57,7 +57,7 @@ export class ReplacementEmailService {
    if(!license||license.status!=='active'||(license.period_end!==null&&license.period_end<=now))return null;
    const expiresAt=now+1800;
    db.prepare('UPDATE replacement_email SET verified=?,code_hash=?,token_hash=?,token_expires=? WHERE id=?').run(now,'',this.hash('token',token),expiresAt,verificationId);
-   return {identityToken:token,licenseRef:row.license_ref,plan:license.plan,expiresAt,devices:this.store.devices(row.license_ref).filter(d=>d.active&&d.device_id!==deviceId).map(d=>({id:d.device_id,current:false,active:true}))};
+   return {identityToken:token,licenseRef:row.license_ref,plan:license.plan,expiresAt,devices:this.store.devices(row.license_ref).filter(d=>d.active).map(d=>({id:d.device_id,current:d.device_id===deviceId,active:true}))};
   });
   if(!result)throw reject();return result;
  }
@@ -69,8 +69,13 @@ export class ReplacementEmailService {
    const row=this.store.db.prepare('SELECT * FROM replacement_email WHERE token_hash=?').get(this.hash('token',token));
    if(!row||row.verified===null||row.token_expires<=now||row.license_ref!==licenseRef||row.device_id!==deviceId||row.key_hash!==keyHash||row.old_device&&row.old_device!==oldDeviceId)throw reject();
    if(!/^[A-Za-z0-9_-]{43}$/.test(oldDeviceId))throw reject();
-   this.store.db.prepare('UPDATE replacement_email SET old_device=? WHERE id=? AND old_device IS NULL').run(oldDeviceId,row.id);
-   return {verified:true,customerId:row.customer_id};
+   const active=this.store.active(licenseRef,oldDeviceId);
+   // Bind verification to this activation, not the reusable device identity.
+   // Previously consumed tokens from before this migration need a new OTP.
+   if((row.old_device&&!row.old_instance)||(!row.old_instance&&!active)||(row.old_instance&&active&&row.old_instance!==active.instance_id))throw reject();
+   const instanceId=row.old_instance??active.instance_id;
+   this.store.db.prepare('UPDATE replacement_email SET old_device=?,old_instance=? WHERE id=? AND old_device IS NULL').run(oldDeviceId,instanceId,row.id);
+   return {verified:true,customerId:row.customer_id,instanceId};
   });
  }
 }

@@ -54,10 +54,10 @@ try{
  const ids=await page.locator('[data-tool]').evaluateAll(nodes=>nodes.map(n=>n.dataset.tool));for(const id of ids){await page.locator(`[data-tool="${id}"]`).click();assert.equal(await page.getByRole('button',{name:'Choose files',exact:true}).count(),1);await page.keyboard.press('Escape');}checks.push('All 25 eligible tools open their independent workspace');
  await page.getByRole('searchbox').fill('unlock');assert.equal(await page.locator('[data-tool]').count(),0);checks.push('Unlock PDF absent from Desktop search');await page.getByRole('searchbox').fill('xyz missing tool');await page.getByRole('heading',{name:'No tools found'}).waitFor();await page.getByRole('button',{name:'Clear search',exact:true}).click();assert.equal(await page.locator('[data-tool]').count(),25);
  await page.getByRole('button',{name:'License',exact:true}).click();
- const replaceBox=await page.getByRole('button',{name:'Replace device',exact:true}).boundingBox();
+ const replaceBox=await page.getByRole('button',{name:'Revoke Device',exact:true}).boundingBox();
  const deviceBox=await page.getByRole('button',{name:'Show this device ID',exact:true}).boundingBox();
  assert.ok(replaceBox&&deviceBox&&deviceBox.x-(replaceBox.x+replaceBox.width)>=16,'License actions need a clear horizontal gap');
- checks.push('Replace device and Show this device ID have a visible gap');
+ checks.push('Revoke Device and Show this device ID have a visible gap');
  await page.getByRole('button',{name:'Show this device ID',exact:true}).click();await page.getByText('a'.repeat(43),{exact:true}).waitFor();checks.push('Support identity is shown only on request and is not a license key');await page.getByLabel('License key',{exact:true}).fill('synthetic-key');assert.equal(await page.getByLabel('License key',{exact:true}).getAttribute('type'),'password');await page.getByRole('button',{name:'Show',exact:true}).click();assert.equal(await page.getByLabel('License key',{exact:true}).getAttribute('type'),'text');await page.getByRole('button',{name:'Activate license',exact:true}).click();await page.getByRole('alert').waitFor();assert.equal(await page.getByLabel('License key',{exact:true}).inputValue(),'');checks.push('License key is masked by default and cleared after submission; failure announced');
  await page.getByRole('button',{name:'Settings',exact:true}).click();await page.getByLabel('Default output location').selectOption('downloads');await page.waitForFunction(()=>document.querySelector('#output-mode')?.value==='downloads');
  const startup=page.getByRole('checkbox',{name:'Keep quick actions ready after sign-in',exact:true});
@@ -337,6 +337,12 @@ try{
   assert.equal(await trialPage.getByText(/We will retry automatically/).count(),0);
   const calls=await trialPage.evaluate(()=>window.__trialCalls);assert.deepEqual(calls,['getState','licenseStatus']);
   checks.push('Native license-updated automatically changes pending trial to active, preserves its deadline, clears retry messaging after expiry and never calls startTrial');
+  await trialPage.evaluate(()=>window.__publishTrial({license:'active',plan:'personal-lifetime',activationAvailable:false}));
+  await trialPage.evaluate(()=>window.__publishTrial({license:'revoked',plan:'',expiresAt:null,activationAvailable:true,trialPending:false,devices:[]}));
+  await trialPage.getByRole('heading',{name:'Device revoked',exact:true}).waitFor();
+  assert.equal(await trialPage.getByRole('button',{name:'Activate license',exact:true}).isVisible(),true);
+  assert.equal(await trialPage.getByText(/We will retry automatically/).count(),0);
+  checks.push('Background revocation replaces active status with Device revoked and fresh key entry');
  }finally{await trialPage.close();}
  assert.deepEqual(errors,[]);await writeFile(resolve(out,'results.json'),JSON.stringify({status:'PASS',scope:'Browser UI with explicit fake native bridge',desktopOnly,widths,scaledViewport,checks,contrast},null,2));console.log(JSON.stringify({status:'PASS',desktopOnly,checks}));
 }catch(error){await page.screenshot({path:resolve(out,'failure.png'),fullPage:true}).catch(()=>{});throw error;}finally{await browser.close();await new Promise(r=>server.close(r));}

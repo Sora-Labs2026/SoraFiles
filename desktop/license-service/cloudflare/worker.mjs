@@ -110,7 +110,7 @@ export class LicenseLedgerObject extends DurableObject {
   // Schedule before external I/O so exhaustion/crash cannot lose retry work.
   await this.ctx.storage.setAlarm(Date.now()+30000);
   try {const {authority,replacements}=await this.runtime();
-   await replacements?.reconcile();await reconcileBatch(this.store,authority);await this.ctx.blockConcurrencyWhile(async()=>{if(this.store.pendingWebhookBoundary()===null&&!this.store.db.prepare('SELECT 1 FROM replacement_payment_events WHERE completed IS NULL LIMIT 1').get())await this.ctx.storage.deleteAlarm();});}
+   await replacements?.reconcile();await reconcileBatch(this.store,authority);await this.ctx.blockConcurrencyWhile(async()=>{if(this.store.pendingWebhookBoundary()===null&&!this.store.db.prepare('SELECT 1 FROM replacement_payment_events WHERE completed IS NULL LIMIT 1').get()&&!this.store.db.prepare("SELECT 1 FROM paid_replacements WHERE status='paid' LIMIT 1").get())await this.ctx.storage.deleteAlarm();});}
   catch { /* Receipt/cursor remain durable. No payloads or keys are logged. */ }
  }
 }

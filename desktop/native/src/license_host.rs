@@ -73,7 +73,9 @@ pub(crate) fn validate_state(value:&Value)->Result<(),String>{
  if object.contains_key("installedAt")&&!value["installedAt"].as_u64().is_some_and(|time|time>0&&time<=9007199254740991){return Err("Invalid installation time".into());}
  let device=value["device"].as_object().ok_or("Invalid private device")?;
  if device.len()!=2||!["publicKey","privateKey"].iter().all(|key|device.get(*key).and_then(Value::as_str).is_some_and(|text|!text.is_empty()&&text.len()<=2048)){return Err("Invalid private device".into());}
- if !value["license"].is_null(){let license=value["license"].as_object().ok_or("Invalid private license")?;if license.keys().any(|key|!matches!(key.as_str(),"licenseKey"|"licenseRef"|"instanceId"|"entitlement"|"lastTrustedTime"|"deactivationPending")){return Err("Invalid private license".into());}}
+ if !value["license"].is_null(){let license=value["license"].as_object().ok_or("Invalid private license")?;if license.keys().any(|key|!matches!(key.as_str(),"licenseKey"|"licenseRef"|"instanceId"|"entitlement"|"lastTrustedTime"|"deactivationPending"|"revoked")){return Err("Invalid private license".into());}
+  if license.contains_key("revoked")&&(!value["license"]["revoked"].is_boolean()||(value["license"]["revoked"]==true&&(value["license"]["deactivationPending"]!=true||["licenseKey","licenseRef","instanceId","entitlement"].iter().any(|key|license.contains_key(*key))))){return Err("Invalid revoked license state".into());}
+ }
  if !value["replacement"].is_null(){let flow=value["replacement"].as_object().ok_or("Invalid private replacement")?;
   if flow.keys().any(|key|!matches!(key.as_str(),"stage"|"licenseKey"|"verificationId"|"maskedEmail"|"expiresAt"|"resendAfter"|"identityToken"|"licenseRef"|"plan"|"devices"|"oldDeviceId"|"orderId"|"status"|"checkoutUrl"))||value["replacement"].to_string().len()>24576{return Err("Invalid private replacement".into());}
  }
@@ -83,7 +85,7 @@ fn validate_result(value:&Value)->Result<(),String>{
  let result=value.as_object().ok_or("Invalid license result")?;
  if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"devices"|"activationAvailable"|"trialPending"|"supportDeviceId"|"actions"|"action"|"replacement"|"checkoutUrl")){return Err("Private fields cannot enter the interface".into());}
  for (key,value) in result {let valid=match key.as_str(){
-  "license"=>matches!(value.as_str(),Some("not-activated"|"trial"|"active"|"needs-verification")),
+  "license"=>matches!(value.as_str(),Some("not-activated"|"trial"|"active"|"needs-verification"|"revoked")),
   "plan"=>value.as_str().is_some_and(|s|s.len()<64&&s.bytes().all(|b|b.is_ascii_lowercase()||b.is_ascii_digit()||b==b'-')),
   "expiresAt"=>value.is_null()||value.as_u64().is_some(),"maxDevices"=>matches!(value.as_u64(),Some(1|5)),
   "activationAvailable"|"trialPending"=>value.is_boolean(),
@@ -134,6 +136,13 @@ fn valid_native_action(value:&Value)->bool{
   assert!(validate_result(&json!({"supportDeviceId":"a".repeat(43),"privateKey":"secret"})).is_err());
  }
  #[test]fn vault_boundary_rejects_unknown_state_fields(){assert!(validate_state(&json!({"schema":1,"device":{"publicKey":"public","privateKey":"private"},"license":null})).is_ok());assert!(validate_state(&json!({"schema":1,"device":{"publicKey":"public","privateKey":"private"},"license":{"url":"elsewhere"}})).is_err());}
+ #[test]fn revoked_state_cannot_retain_a_grant_or_disable_the_lock(){
+  let mut state=json!({"schema":1,"device":{"publicKey":"public","privateKey":"private"},"license":{"revoked":true,"deactivationPending":true,"lastTrustedTime":1800000000000u64}});
+  assert!(validate_state(&state).is_ok());
+  state["license"]["entitlement"]=json!("old-grant");assert!(validate_state(&state).is_err());state["license"].as_object_mut().unwrap().remove("entitlement");
+  state["license"]["deactivationPending"]=json!(false);assert!(validate_state(&state).is_err());
+  assert!(validate_result(&json!({"license":"revoked","activationAvailable":true,"trialPending":false,"plan":"","expiresAt":null,"devices":[]})).is_ok());
+ }
  #[test]fn installation_time_is_private_bounded_and_backward_compatible(){
   let state=json!({"schema":1,"device":{"publicKey":"public","privateKey":"private"},"license":null,"installedAt":1800000000});assert!(validate_state(&state).is_ok());
   for time in [json!(0),json!(-1),json!(1.5),json!("1800000000"),json!(null),json!(9007199254740992u64)]{let mut bad=state.clone();bad["installedAt"]=time;assert!(validate_state(&bad).is_err());}

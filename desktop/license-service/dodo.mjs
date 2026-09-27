@@ -28,6 +28,9 @@ export class DodoClient {
  }
  checkoutStatus(id){return this.call('/checkouts/'+encodeURIComponent(id),{privileged:true});}
  payment(id){return this.call('/payments/'+encodeURIComponent(id),{privileged:true});}
- replacementCheckout({productId,customerId,orderId}){return this.call('/checkouts',{privileged:true,body:{product_cart:[{product_id:productId,quantity:1}],customer:{customer_id:customerId},billing_currency:'USD',metadata:{sorafiles_replacement:orderId},feature_flags:{allow_discount_code:false,allow_currency_selection:false,allow_customer_editing_name:false,allow_customer_editing_email:false},return_url:'https://sorafiles.com/desktop/purchase'}});}
+ // Narrow compatibility lookup for unattended release of an existing license
+ // instance. The caller verifies returned identity and key fingerprint.
+ licenseKey(id){return this.call('/license_keys/'+encodeURIComponent(id),{privileged:true});}
+ replacementCheckout({productId,customerId,orderId}){return this.call('/checkouts',{privileged:true,body:{product_cart:[{product_id:productId,quantity:1}],customer:{customer_id:customerId},billing_currency:'USD',metadata:{sorafiles_replacement:orderId},feature_flags:{allow_discount_code:false,allow_currency_selection:false,allow_customer_editing_name:false,allow_customer_editing_email:false},return_url:'https://sorafiles.com/desktop/purchase?flow=device-replacement'}});}
  portal(customerId){return this.call('/customers/'+encodeURIComponent(customerId)+'/customer-portal/session',{privileged:true,body:{}});}
 }
