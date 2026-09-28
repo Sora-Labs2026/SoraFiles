@@ -338,9 +338,17 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
             }).await.map_err(|_| "File picker unavailable")?
         }
         "releaseSelection" => {
+            let _idle=DialogLease::acquire(&state.processing_busy)?;
             if params.as_object().unwrap().len()!=1 { return Err("Invalid selection".into()); }
             let ids:Vec<String>=serde_json::from_value(params["ids"].clone()).map_err(|_| "Invalid selection")?;
-            state.selection.lock().map_err(|_| "Selection unavailable")?.release(&ids)?;
+            // Clearing the last selected file also dismisses retained results.
+            // Leave saved files on disk; only release their in-memory handles.
+            let empty={let mut selection=state.selection.lock().map_err(|_| "Selection unavailable")?;selection.release(&ids)?;selection.list().is_empty()};
+            if empty {
+                state.job.lock().map_err(|_| "Job status unavailable")?.clear();
+                state.outputs.lock().map_err(|_| "Outputs unavailable")?.clear();
+                state.retain_job.store(false,Ordering::SeqCst);
+            }
             Ok(json!({"released":true}))
         }
         "saveSettings" => {
