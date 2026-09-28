@@ -127,3 +127,8 @@ kbd,.support-device-id { font-family:var(--font-mono); }
 .icon-button { border-radius:var(--r-pill); }
 .icon-button:hover { background:var(--tint); }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+/* Calm quick-action card: one processing status (the footer), quieter helper text. */
+body[data-quick-action=true][data-processing=true] .pending-action { display:none; }
+.quick-content .option-fields p { font-size:11px; line-height:1.55; color:var(--caption); }
+.quick-heading h1 { font-size:15px; font-weight:700; letter-spacing:-.01em; }
+.quick-heading img { width:22px; height:22px; }

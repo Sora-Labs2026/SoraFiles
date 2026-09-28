@@ -8,16 +8,16 @@ Product Info, Identity Verification and Bank Verification are complete per the o
 
 ## Dodo configuration
 
-Create separate test and live configurations. The six authoritative amounts are:
+Create separate test and live configurations. The six authoritative amounts (owner pricing of 29 September 2026; earlier $4.99–$999.99 amounts are obsolete) are:
 
 | Plan | Amount | Active devices |
 | --- | ---: | ---: |
-| Personal Monthly | 4.99 | 1 |
-| Personal Annual | 49.99 | 1 |
-| Personal Lifetime | 249.99 | 1 |
-| Team Monthly | 19.99 | 5 |
-| Team Annual | 199.99 | 5 |
-| Team Lifetime | 999.99 | 5 |
+| Personal Monthly | 1.99 | 1 |
+| Personal Annual | 19.99 | 1 |
+| Personal Lifetime | 99.99 | 1 |
+| Team Monthly | 9.99 | 5 |
+| Team Annual | 99.99 | 5 |
+| Team Lifetime | 399.99 | 5 |
 
 The six SoraFiles Test Mode products were observed in USD with tax included. The currency must still be read and verified from the actual API products in each environment; do not treat a dashboard observation as live API verification. Pass that verified currency explicitly to `DodoClient.checkout(productId, currency)`. Product and entitlement IDs must be distinct for each plan. Configure recurring intervals and entitlement activation limits to match. Lifetime must have no expiry. One Team purchase has quantity one and permits five activations; do not multiply checkout quantity by five.
 

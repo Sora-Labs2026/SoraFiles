@@ -1,14 +1,34 @@
 # Desktop release readiness — 24 September 2026
 
+## Superseded by the 25 September production release
+
+The historical readiness notes below describe the pre-launch state. The current
+release is SoraFiles Desktop 0.1.0: all four CI packaging jobs passed, the five
+public assets are published at the [v0.1.0 GitHub release](https://github.com/Sora-Labs2026/SoraFiles/releases/tag/v0.1.0),
+and the live site lists their checksums at `/desktop/download`. The production
+license Worker is live at `https://license.sorafiles.com` in Dodo live mode,
+with Resend purchaser-email verification enabled. Windows/Linux are unsigned by
+owner choice, macOS is ad-hoc signed with Open Anyway guidance, and automatic
+updates remain disabled. See [live-release-status-20260925.md](live-release-status-20260925.md)
+for the authoritative current record.
+
 All four jobs in [CI run 35976479337](https://github.com/Sora-Labs2026/SoraFiles/actions/runs/35976479337)
 passed for application snapshot `3453e39e4063cce2aecd3123d37bf3690cd4c2bf`:
 Windows x64, macOS Intel, macOS Apple Silicon and Linux x64. The outputs are a
 Windows NSIS installer, two macOS DMGs, and Linux DEB/AppImage packages.
 
+The newer [CI run 35982947047](https://github.com/Sora-Labs2026/SoraFiles/actions/runs/35982947047)
+also passed all four platforms for `8d00090c041110c37873468ee12bff400f77aec7`.
+
 The user authorized unsigned Windows/Linux and ad-hoc macOS distribution.
 macOS installation guidance is System Settings → Privacy & Security → Open Anyway.
 Automatic updates remain disabled for this channel. Signing is not the current
 release blocker.
+
+The target-by-target status is recorded in the [cross-platform release
+matrix](cross-platform-release-matrix-20260924.md). Build jobs and automated
+component checks are reported separately from native installation and shell
+interaction checks; a green CI job does not certify a desktop host.
 
 ## Completed checks
 
@@ -17,7 +37,9 @@ release blocker.
   snapshot also adds a passing isolated per-user Classes-hive migration test.
 - The actual Windows credential store passed a synthetic encrypted-state roundtrip.
 - Desktop-only interface checks and the full synthetic replacement renderer flow passed.
-- All platforms passed native window lifecycle and file-manager broker checks.
+- Automated window lifecycle and file-manager broker checks passed for the
+  candidate targets. These are broker/component checks, not certification of
+  an installed Explorer, Finder, Nautilus or Dolphin context-menu experience.
 - Packaged resources and executable image engines passed verification. Linux
   checks extracted resources from the actual DEB and AppImage.
 - Windows native hooks migrated 14 legacy entries, removed owned registrations,
@@ -85,11 +107,22 @@ standard 24–64-byte range and rejects malformed encoding. Eleven targeted
 Node/HTTP/workerd tests passed, including signature/timestamp tampering checks.
 Reference: [Standard Webhooks specification](https://github.com/standard-webhooks/standard-webhooks/blob/main/spec/standard-webhooks.md).
 
-Real email delivery, provider-originated webhook delivery, deployed replacement checkout, activation after
+Provider-originated delivery is now verified: Dodo's Test Mode Testing panel sent
+`payment.succeeded`, message `msg_3JlrmopERO01bUS0scsZzufPepg`, and its delivery log
+reports Succeeded / HTTP 202 / 779 ms on September 24. This is a provider sample,
+not a paid transaction. The eighteen intended event filters were restored and
+verified by API after discovering that an enable PATCH omitting filter_types had
+cleared them. The local continuation script now preserves the existing filters.
+The saved test device also recovered and refreshed in a subsequent process.
+
+Real email delivery, deployed replacement checkout, activation after
 replacement, and secure-storage behavior on macOS/Linux still require validation.
-Actual Explorer/Finder/Nautilus/Dolphin menu interaction remains narrower than
-the automated broker/component evidence. Windows screenshot capture failed in
-the available automation helper, so no full visual menu certification is claimed.
+The new macOS LaunchAgent and Linux XDG-autostart writers are implemented with
+per-user ownership checks, but their desktop-session lifecycle has not been run
+on native hosts. Actual Explorer/Finder/Nautilus/Dolphin menu interaction
+remains narrower than the automated broker/component evidence. Windows
+screenshot capture failed in the available automation helper, so no full visual
+menu certification is claimed.
 
 ## Local artifacts
 

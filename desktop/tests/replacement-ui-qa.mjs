@@ -12,13 +12,14 @@ const browser=await chromium.launch({...process.env.SORA_BROWSER_EXECUTABLE?{exe
 try{
  const page=await browser.newPage({viewport:{width:1180,height:900}});
  await page.addInitScript(()=>{
-  const listeners=[];window.__calls=[];let stage='idle';const fee={plan:'team-lifetime',amount:19999,currency:'USD',formatted:'$199.99',perSeat:true};
+  const listeners=[];window.__calls=[];let stage='idle';const fee={plan:'team-lifetime',amount:7999,currency:'USD',formatted:'$79.99',perSeat:true};
   const snapshot=()=>({replacement:{stage:window.__forceStage??stage,maskedEmail:'j***@example.com',expiresAt:1900000000,resendAfter:1800000000,plan:'team-lifetime',fee,devices:window.__emptySeats?[]:[{id:'a'.repeat(43),current:true,active:true}],...(stage==='payment'?{status:'payment-pending',checkoutAvailable:true}:{})}});
   window.chrome=window.chrome||{};Object.defineProperty(window.chrome,'webview',{value:{addEventListener:(_name,fn)=>listeners.push(fn),postMessage:message=>{
    window.__calls.push(message);let result={};
    if(message.method==='getState')result={license:'not-activated',platform:'windows'};
    if(message.method==='replacementState')result=snapshot();
-   if(message.method==='replacementEmailStart'){stage='email';result=snapshot();}
+   if(message.method==='replacementEmailStart'||message.method==='replacementEmailResend'){stage='email';result=snapshot();}
+   if(message.method==='replacementReset'){stage='idle';result={replacement:{stage:'idle',email:'buyer@example.com'}};}
    if(message.method==='replacementEmailVerify'){stage='verified';result=snapshot();}
    if(message.method==='replacementRequest'){stage='payment';result=snapshot();}
    if(message.method==='replacementCheckout')result={opened:true};
@@ -35,13 +36,25 @@ try{
  await page.getByRole('button',{name:'Back to license',exact:true}).click();
  await page.evaluate(()=>{window.__emptySeats=false;window.__forceStage=undefined});
  await page.getByRole('button',{name:'Revoke Device',exact:true}).click();
- await page.getByLabel('License key',{exact:true}).fill('synthetic-private-key');await page.getByRole('button',{name:'Send verification code',exact:true}).click();
- assert.equal(await page.locator('input[type="email"]').count(),0);await page.getByText('j***@example.com',{exact:true}).waitFor();
+ // Opening the screen sends nothing; an empty email is refused locally.
+ await page.getByLabel('Email used for purchase',{exact:true}).waitFor();
+ assert.equal((await page.evaluate(()=>window.__calls)).some(call=>/replacementEmail(Start|Resend)/.test(call.method)),false);
+ await page.getByLabel('License key',{exact:true}).fill('synthetic-private-key');await page.getByRole('button',{name:'Send code',exact:true}).click();
+ await page.getByText('Enter the email address you used for your purchase.',{exact:true}).waitFor();
+ assert.equal((await page.evaluate(()=>window.__calls)).some(call=>call.method==='replacementEmailStart'),false);
+ await page.getByLabel('Email used for purchase',{exact:true}).fill(' Buyer@Example.com ');await page.getByLabel('License key',{exact:true}).fill('synthetic-private-key');
+ await page.getByRole('button',{name:'Send code',exact:true}).click();
+ await page.getByText('j***@example.com',{exact:true}).waitFor();
+ assert.deepEqual((await page.evaluate(()=>window.__calls)).find(call=>call.method==='replacementEmailStart').params,{email:'Buyer@Example.com',licenseKey:'synthetic-private-key'});
+ assert.equal(await page.getByRole('button',{name:'Resend code',exact:true}).isDisabled(),true);
+ await page.getByRole('button',{name:'Use a different email',exact:true}).click();await page.getByLabel('Email used for purchase',{exact:true}).waitFor();
+ assert.equal(await page.getByLabel('Email used for purchase',{exact:true}).inputValue(),'buyer@example.com');
+ await page.getByLabel('License key',{exact:true}).fill('synthetic-private-key');await page.getByRole('button',{name:'Send code',exact:true}).click();await page.getByText('j***@example.com',{exact:true}).waitFor();
  await page.getByLabel('Email verification code',{exact:true}).fill('12345678');await page.getByRole('button',{name:'Verify email',exact:true}).click();
- await page.getByRole('button',{name:'Pay $199.99 and revoke',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Pay $79.99 and revoke',exact:true}).waitFor();
  assert.match(await page.getByLabel('Device to revoke',{exact:true}).innerText(),/This device/);
  assert.equal((await page.evaluate(()=>window.__calls)).some(call=>call.method==='replacementRequest'),false);
- await page.getByRole('button',{name:'Pay $199.99 and revoke',exact:true}).click();await page.getByRole('button',{name:'Check payment',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Pay $79.99 and revoke',exact:true}).click();await page.getByRole('button',{name:'Check payment',exact:true}).waitFor();
  const calls=await page.evaluate(()=>window.__calls);assert.deepEqual(calls.find(call=>call.method==='replacementEmailVerify').params,{code:'12345678'});
  assert.deepEqual(calls.find(call=>call.method==='replacementRequest').params,{oldDeviceId:'a'.repeat(43)});
  assert.deepEqual(calls.find(call=>call.method==='replacementCheckout').params,{});
@@ -55,7 +68,7 @@ try{
  assert.equal(await page.getByRole('heading',{name:'Setting up your trial',exact:true}).count(),0);
  assert.equal(await page.getByRole('button',{name:'Replace device',exact:true}).count(),0);
  await page.getByRole('button',{name:'Revoke Device',exact:true}).click();
- await page.getByRole('button',{name:'Send verification code',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Send code',exact:true}).waitFor();await page.getByLabel('Email used for purchase',{exact:true}).waitFor();
  await page.getByLabel('License key',{exact:true}).waitFor();
  assert.equal(await page.getByText('The selected device has been revoked and its license seat is free.',{exact:true}).count(),0);
  await page.getByRole('button',{name:'Back to license',exact:true}).click();
@@ -64,5 +77,5 @@ try{
  await page.getByText(/No occupied device is available to revoke/).waitFor();
  assert.equal(await page.getByRole('button',{name:'Verify email again',exact:true}).count(),0);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
- console.log('PASS: Desktop email verification, masked address, explicit exact fee consent, native checkout without URL, and payment status renderer flow.');
+ console.log('PASS: Desktop Revoke Device sends nothing on open, requires a typed purchase email and explicit Send code, disables early resend, resets on email change; masked address, masked address, explicit exact fee consent, native checkout without URL, and payment status renderer flow.');
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

@@ -2,7 +2,7 @@
 // it never sends customer files, identifiers, keys or interface text to a service.
 import fs from 'node:fs';
 import ts from 'typescript';
-const sources=['desktop/ui/main.ts','desktop/ui/processing.ts','desktop/ui/startup-confirmation.ts','desktop/ui/host.ts','desktop/ui/tool-categories.ts','desktop/shared/native-actions.mjs'];
+const sources=['desktop/ui/main.ts','desktop/shared/replacement-messages.mjs','desktop/ui/processing.ts','desktop/ui/startup-confirmation.ts','desktop/ui/host.ts','desktop/ui/tool-categories.ts','desktop/shared/native-actions.mjs'];
 const strings=new Set(['Language','App language','Use Windows language (default)','Use macOS language (default)','Use system language (default)','Default','Light','Dark','Follow system','Cancel processing','Settings','Edit with SoraFiles','Open SoraFiles','Quit SoraFiles']);
 for(const message of ['Save SoraFiles results','Choose files for SoraFiles','Choose output folder','Language saved. File-manager actions could not be refreshed. Turn them off and on in Settings, then restart your file manager.'])strings.add(message);
 function add(text){text=text.trim();if(text&&/[A-Za-z]/.test(text)&&!/[{}<>]|\$\{|\b(?:const|function|return)\b|^(?:https?:|[./#])/.test(text)&&text.length<2000&&(text.includes(' ')||/^[A-Z][a-z]+$/.test(text)))strings.add(text);}

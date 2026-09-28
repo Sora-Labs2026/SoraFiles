@@ -32,19 +32,6 @@ code,kbd,pre {font-family:var(--font-mono)}
 .sf-button:active {transform:translateY(1px)}
 .sf-logo {display:block;width:110px;height:30px;object-fit:contain}
 .sf-logo-dark {display:none}.dark .sf-logo-light {display:none}.dark .sf-logo-dark {display:block}
-[data-testid=site-header] {background:var(--paper);border-color:var(--line);backdrop-filter:none;box-shadow:none}
-[data-testid=site-header]>div:first-child {max-width:calc(var(--content-max) + 2 * var(--gutter));padding-inline:var(--gutter)}
-@media(min-width:1024px){[data-testid=site-header] nav{margin-inline-end:auto;margin-inline-start:24px;gap:6px}}
-[data-testid=site-header] [role=group] button{width:32px;height:32px}
-.home-tools__grid .v10-tool-card{min-height:72px;padding:14px;gap:10px;align-items:center}
-.home-tools__grid .v10-tool-card__copy{gap:1px}
-.home-tools__grid .v10-tool-card__description{line-height:1.3}
-.home-tools__grid .v10-tool-card__arrow{display:none}
-[data-testid=site-header] .sf-menu-panel,[data-mobile-menu] {background:var(--surface);border-color:var(--line);backdrop-filter:none}
-[data-theme-choice] {background:transparent!important;color:var(--ink-3)!important;border-color:var(--line)!important}
-[data-theme-choice][aria-pressed=true] {background:var(--action)!important;color:var(--on-action)!important}
-[data-testid=site-footer] {background:var(--paper);border-top:1px solid var(--line)}
-[data-testid=site-footer]>div {max-width:calc(var(--content-max) + 2 * var(--gutter));padding-inline:var(--gutter);border:0}
 /* Neutral legacy presentation utilities; these apply to interface chrome only,
    never pixel data in canvas/images or semantic error/success/warning colors. */
 :is([class*=text-violet],[class*=text-indigo],[class*=text-fuchsia],[class*=text-purple],[class*=text-blue],[class*=text-cyan]) {color:var(--ink)}

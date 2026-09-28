@@ -18,9 +18,9 @@ set "SORA_SHELL_OUTPUT=%~dp0..\..\..\.artifacts\windows-shell"
 if not "%~1"=="" set "SORA_SHELL_OUTPUT=%~f1"
 if not exist "%SORA_SHELL_OUTPUT%" mkdir "%SORA_SHELL_OUTPUT%"
 if errorlevel 1 exit /b 1
-cl /nologo /std:c++17 /EHsc /W4 /O2 /MT /DUNICODE /D_UNICODE /guard:cf /LD "%SORA_SHELL_SOURCE%explorer_command.cpp" /Fo"%SORA_SHELL_OUTPUT%\explorer_command.obj" /link /DEF:"%SORA_SHELL_SOURCE%sorafiles-explorer.def" /OUT:"%SORA_SHELL_OUTPUT%\sorafiles-explorer.dll" /IMPLIB:"%SORA_SHELL_OUTPUT%\sorafiles-explorer.lib" /DYNAMICBASE /NXCOMPAT /guard:cf ole32.lib shell32.lib shlwapi.lib uuid.lib
+cl /nologo /utf-8 /std:c++17 /EHsc /W4 /O2 /MT /DUNICODE /D_UNICODE /guard:cf /LD "%SORA_SHELL_SOURCE%explorer_command.cpp" /Fo"%SORA_SHELL_OUTPUT%\explorer_command.obj" /link /DEF:"%SORA_SHELL_SOURCE%sorafiles-explorer.def" /OUT:"%SORA_SHELL_OUTPUT%\sorafiles-explorer.dll" /IMPLIB:"%SORA_SHELL_OUTPUT%\sorafiles-explorer.lib" /DYNAMICBASE /NXCOMPAT /guard:cf ole32.lib shell32.lib shlwapi.lib uuid.lib
 if errorlevel 1 exit /b 1
-cl /nologo /std:c++17 /EHsc /W4 /O2 /MT /DUNICODE /D_UNICODE "%SORA_SHELL_SOURCE%tests.cpp" /Fo"%SORA_SHELL_OUTPUT%\tests.obj" /Fe"%SORA_SHELL_OUTPUT%\shell-tests.exe" /link ole32.lib shell32.lib shlwapi.lib uuid.lib
+cl /nologo /utf-8 /std:c++17 /EHsc /W4 /O2 /MT /DUNICODE /D_UNICODE "%SORA_SHELL_SOURCE%tests.cpp" /Fo"%SORA_SHELL_OUTPUT%\tests.obj" /Fe"%SORA_SHELL_OUTPUT%\shell-tests.exe" /link ole32.lib shell32.lib shlwapi.lib uuid.lib
 if errorlevel 1 exit /b 1
 "%SORA_SHELL_OUTPUT%\shell-tests.exe" "%SORA_SHELL_OUTPUT%\sorafiles-explorer.dll"
 exit /b %ERRORLEVEL%

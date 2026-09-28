@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "sorafiles-license-service",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-08-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": {"enabled": false},
+  "routes": [{"pattern": "license.sorafiles.com", "custom_domain": true}],
+  "durable_objects": {
+    "bindings": [{"name": "LICENSE_LEDGER", "class_name": "LicenseLedgerObject"}]
+  },
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["LicenseLedgerObject"]}],
+  "vars": {
+    "DODO_MODE": "live_mode",
+    "REDEMPTION_ENABLED": "false",
+    "REPLACEMENTS_ENABLED": "true",
+    "REPLACEMENT_EMAIL_FROM": "SoraFiles <no-reply@sorafiles.com>"
+  }
+}

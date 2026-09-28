@@ -30,16 +30,16 @@ resumes the same order without a second charge. A payment return URL grants no
 access. The backend verifies provider payment data and releases the old binding;
 the new device then obtains its ordinary signed activation.
 
-## Fixed fees
+## Fixed fees (29 September 2026)
 
 | Plan | USD replacement fee per occupied seat |
 | --- | ---: |
 | Personal Monthly | 0.99 |
-| Personal Annual | 9.99 |
-| Personal Lifetime | 49.99 |
+| Personal Annual | 0.99 |
+| Personal Lifetime | 19.99 |
 | Team Monthly | 3.99 |
-| Team Annual | 39.99 |
-| Team Lifetime | 199.99 |
+| Team Annual | 3.99 |
+| Team Lifetime | 79.99 |
 
 Unused Team seats use ordinary activation without a replacement charge. These
 six replacement products are one-time, tax-inclusive USD prices with no license

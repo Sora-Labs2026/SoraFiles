@@ -5,6 +5,12 @@ import returnScript from '../../lib/desktop/purchase-return.js?raw';
 <DesktopLayout title="Your SoraFiles Desktop checkout" description="Find your license key and the next steps for SoraFiles Desktop." path="/desktop/purchase" sensitive={true}>
   <script slot="early-head" is:inline set:html={returnScript}></script>
   <section class="dw-container purchase-content">
+    <div data-replacement-return hidden>
+      <header class="dw-intro"><p class="dw-eyebrow">SoraFiles Desktop</p><h1>Revoke Device</h1><p>The selected device is unbound after the server confirms payment. You can close this page; payment verification continues automatically.</p></header>
+      <p class="mt-4 leading-7 text-muted">Return to the app and choose Check payment to see the result. The revoked device must be activated again before it can process files. Enter the same or a new license key and connect to the internet to verify and bind the device. You can also use the released license seat on another device.</p>
+      <p class="mt-4 leading-7 text-muted">Revoking a device does not create a new license key. Opening this page does not confirm payment.</p>
+    </div>
+    <div data-purchase-return>
     <header class="dw-intro"><p class="dw-eyebrow">SoraFiles Desktop</p>
     <h1>Your checkout</h1>
     <p>Use your license key to activate SoraFiles Desktop. The app checks your license when you activate it.</p></header>
@@ -26,6 +32,7 @@ import returnScript from '../../lib/desktop/purchase-return.js?raw';
       <noscript><p class="mt-3 leading-7 text-muted">Enable JavaScript to display a key returned by checkout.</p></noscript>
     </div>
     <p class="mt-6 text-sm leading-7 text-muted">Opening this page does not confirm a payment. Use your Dodo receipt to check your order.</p>
+    </div>
     <div class="mt-8 flex flex-wrap gap-x-6 gap-y-3 font-semibold">
       <a href="/desktop/download" class="inline-flex min-h-11 items-center text-violet underline underline-offset-4">Desktop downloads</a>
       <a href="/desktop/help" class="inline-flex min-h-11 items-center text-violet underline underline-offset-4">Activation help</a>

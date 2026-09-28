@@ -1,6 +1,6 @@
 # SoraFiles Web and Desktop design review
 
-> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. Production Mac releases require signing and notarization.
+> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. The owner-approved macOS candidate channel permits ad-hoc builds with Open Anyway guidance; Developer ID signing and notarization remain future public-trust work.
 
 
 Reviewed September 13, 2026 using Apple-HIG-derived cross-platform design principles. This is a scoped implementation review, not an Apple HIG or WCAG conformance certificate. The existing SoraFiles brand and free Web workflows remain the design authority.

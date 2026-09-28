@@ -1,6 +1,6 @@
 # Native licensing connection
 
-> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. Production Mac releases require signing and notarization.
+> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. The owner-approved macOS candidate channel permits ad-hoc builds with Open Anyway guidance; Developer ID signing and notarization remain future public-trust work.
 
 
 The native interface now calls a restricted Rust licensing bridge for trial, activation, status, refresh, bound-device listing. An on-demand Node runtime communicates with Rust through private, bounded pipes. It exits after every action. Only public status fields enter the interface; private keys, license keys and signed entitlements remain in the native boundary.

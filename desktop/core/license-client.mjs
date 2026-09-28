@@ -3,6 +3,7 @@ import {verifyValidationProof} from '../shared/validation-proof.mjs';
 import {deviceIdentity,verifyEntitlement} from '../shared/entitlement.mjs';
 import {requestContext} from '../shared/license-request.mjs';
 import {replacementPrice} from '../shared/replacement-prices.mjs';
+import {replacementMessages,replacementError} from '../shared/replacement-messages.mjs';
 
 // Native-host adapter. The UI never receives the private key, provider key or raw
 // entitlement. Storage callbacks must use protected OS storage in the final host.
@@ -16,7 +17,12 @@ export class LicenseClient {
  }
  async post(route,body){
   const response=await this.fetchImpl(this.origin+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'error',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(15000)});
-  if(!response.ok){await response.body?.cancel();throw Error(response.status===409?'Activation needs to be checked. Contact SoraFiles support.':response.status===429?'Please wait a moment and try again.':'License verification could not finish. Try again later.');}
+  if(!response.ok){
+   // The service may add one fixed reason code; anything else is discarded.
+   let reason=null;try{const length=Number(response.headers.get('content-length')||0);if(/^application\/json(?:;|$)/i.test(response.headers.get('content-type')||'')&&length<=2048){const value=JSON.parse(await response.text())?.reason;if(Object.hasOwn(replacementMessages,value))reason=value;}}catch{}
+   await response.body?.cancel().catch(()=>{});
+   if(reason)throw replacementError(reason);
+   throw Error(response.status===409?'Activation needs to be checked. Contact SoraFiles support.':response.status===429?'Please wait a moment and try again.':'License verification could not finish. Try again later.');}
   if(!/^application\/json(?:;|$)/i.test(response.headers.get('content-type')||'')||!response.body)throw Error('Invalid license response');
   const reader=response.body.getReader(),chunks=[];let size=0;
   try{while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>16384)throw Error('License response too large');chunks.push(part.value);}}
@@ -67,19 +73,43 @@ export class LicenseClient {
   if(!Array.isArray(response.devices)||response.devices.length>256||response.devices.some(row=>!row||typeof row.id!=='string'||row.id.length>128||typeof row.current!=='boolean'||typeof row.active!=='boolean'))throw Error('Invalid device list');
   return response.devices.map(({id,current,active})=>({id,current,active}));
  });}
- async replacementState(){return {replacement:publicReplacement(await this.readReplacement())};}
- async replacementEmailStart(licenseKey){return this.exclusive(async()=>{
+ async replacementState(){return {replacement:publicReplacement(await this.readReplacement(),this.now())};}
+ // Sends a code only for an address the person typed, after an explicit click.
+ // The service compares it with the purchase record before any email is sent.
+ async replacementEmailStart({licenseKey,email}={}){return this.exclusive(async()=>{
   const previous=await this.readReplacement(),saved=await this.readLicense();
-  const key=licenseKey||previous?.licenseKey||saved?.licenseKey;
-  if(previous?.orderId&&key!==previous.licenseKey)throw Error('Check your existing revocation payment first.');
-  requestContext('replacementEmailStart',{licenseKey:key});
-  const response=await this.request('replacementEmailStart',{licenseKey:key},await this.readDevice());
+  const address=normalizeEmail(email);if(!address)throw replacementError('email-required');
+  const key=(typeof licenseKey==='string'&&licenseKey.trim())||saved?.licenseKey||previous?.licenseKey;
+  if(!key)throw replacementError('license-key-required');
+  if(previous?.orderId&&previous.stage!=='complete'&&key!==previous.licenseKey)throw replacementError('payment-pending');
+  return this.sendReplacementCode(previous?.stage==='complete'?null:previous,key,address);
+ });}
+ // Resend reuses the address and key from the last successful send only.
+ async replacementEmailResend(){return this.exclusive(async()=>{
+  const flow=await this.readReplacement();
+  if(flow?.stage!=='email'||!flow.email||!flow.licenseKey||!flow.verificationId)throw replacementError('send-first');
+  if(Number.isSafeInteger(flow.resendAfter)&&flow.resendAfter>Math.floor(this.now()/1000))throw replacementError('email-cooldown');
+  return this.sendReplacementCode(flow,flow.licenseKey,flow.email);
+ });}
+ async sendReplacementCode(previous,key,email){
+  requestContext('replacementEmailStart',{licenseKey:key,email});
+  const response=await this.request('replacementEmailStart',{licenseKey:key,email},await this.readDevice());
   if(!boundedId(response.verificationId)||typeof response.maskedEmail!=='string'||response.maskedEmail.length>254||!response.maskedEmail.includes('*')||/[\x00-\x1f]/.test(response.maskedEmail)||!futureTime(response.expiresAt,this.now())||!Number.isSafeInteger(response.resendAfter))throw Error('Invalid email verification response');
-  await this.saveReplacement({...previous,stage:'email',licenseKey:key,verificationId:response.verificationId,maskedEmail:response.maskedEmail,expiresAt:response.expiresAt,resendAfter:response.resendAfter});
+  // A new code supersedes any earlier verification. Only an unfinished payment
+  // order is carried forward, so it can still be checked.
+  const order=previous?.orderId?{orderId:previous.orderId,oldDeviceId:previous.oldDeviceId,status:previous.status,checkoutUrl:previous.checkoutUrl,plan:previous.plan,licenseRef:previous.licenseRef,devices:previous.devices}:{};
+  await this.saveReplacement({...order,stage:'email',licenseKey:key,email,verificationId:response.verificationId,maskedEmail:response.maskedEmail,expiresAt:response.expiresAt,resendAfter:response.resendAfter});
   return this.replacementState();
+ }
+ // Changing the email or starting over clears verification. An unfinished
+ // payment order is never discarded here.
+ async replacementReset(){return this.exclusive(async()=>{
+  const flow=await this.readReplacement();
+  if(flow?.orderId&&flow.stage!=='complete')throw replacementError('payment-pending');
+  await this.saveReplacement(flow?.email?{stage:'idle',email:flow.email}:null);return this.replacementState();
  });}
  async replacementEmailVerify(code){return this.exclusive(async()=>{
-  const flow=await this.readReplacement();if(flow?.stage!=='email'||!futureTime(flow.expiresAt,this.now()))throw Error('Request a new email code.');
+  const flow=await this.readReplacement();if(flow?.stage!=='email')throw replacementError('send-first');if(!futureTime(flow.expiresAt,this.now()))throw replacementError('code-expired');
   if(typeof code!=='string'||!/^\d{8}$/.test(code))throw Error('Enter the eight-digit email code.');
   const response=await this.request('replacementEmailVerify',{verificationId:flow.verificationId,code},await this.readDevice());
   if(typeof response.identityToken!=='string'||!response.identityToken||response.identityToken.length>4096||!boundedId(response.licenseRef)||!futureTime(response.expiresAt,this.now())||!validDevices(response.devices))throw Error('Invalid email verification response');
@@ -141,4 +171,11 @@ const futureTime=(value,now)=>Number.isSafeInteger(value)&&value>Math.floor(now/
 const validDevices=value=>Array.isArray(value)&&value.length<=256&&value.every(row=>row&&/^[A-Za-z0-9_-]{43}$/.test(row.id)&&typeof row.active==='boolean'&&typeof row.current==='boolean');
 export function trustedCheckout(value){try{const url=new URL(value);return typeof value==='string'&&value.length<=4096&&url.protocol==='https:'&&['checkout.dodopayments.com','test.checkout.dodopayments.com'].includes(url.hostname)&&!url.username&&!url.password&&!url.port;}catch{return false;}}
 function validateReplacementOrder(value,plan){const fee=replacementPrice(plan);if(!boundedId(value?.orderId)||!['payment-pending','payment-confirmed','payment-failed','complete'].includes(value.status)||value.fee?.plan!==plan||value.fee.amount!==fee.amount||value.fee.currency!=='USD'||value.checkoutUrl&&!trustedCheckout(value.checkoutUrl))throw Error('Invalid replacement payment response');}
-function publicReplacement(flow){if(!flow)return {stage:'idle'};if(flow.stage==='complete')return {stage:'complete'};return {stage:flow.stage,maskedEmail:flow.maskedEmail,expiresAt:flow.expiresAt,resendAfter:flow.resendAfter,...(flow.plan?{plan:flow.plan,fee:replacementPrice(flow.plan),devices:flow.devices.map(({id,current,active})=>({id,current,active}))}:{}),...(flow.status?{status:flow.status,checkoutAvailable:trustedCheckout(flow.checkoutUrl)}:{})};}
+const normalizeEmail=value=>{if(typeof value!=='string')return null;const email=value.normalize('NFKC').trim().toLowerCase();return email.length<=254&&/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)?email:null;};
+// Opening Revoke Device never resumes an expired code screen. Without an
+// unfinished payment, expired verification returns to the email form.
+function publicReplacement(flow,now){if(!flow)return {stage:'idle'};if(flow.stage==='complete')return {stage:'complete'};
+ const email=typeof flow.email==='string'?flow.email:'';
+ if(flow.stage==='idle'||(['email','verified'].includes(flow.stage)&&!flow.orderId&&!futureTime(flow.expiresAt,now)))return {stage:'idle',...(email?{email}:{}),...(flow.stage==='idle'?{}:{expired:true})};
+ return {stage:flow.stage,...(email?{email}:{}),
+maskedEmail:flow.maskedEmail,expiresAt:flow.expiresAt,resendAfter:flow.resendAfter,...(flow.plan?{plan:flow.plan,fee:replacementPrice(flow.plan),devices:flow.devices.map(({id,current,active})=>({id,current,active}))}:{}),...(flow.status?{status:flow.status,checkoutAvailable:trustedCheckout(flow.checkoutUrl)}:{})};}

@@ -13,7 +13,7 @@ const escapeXml = (value: string) => value
   .replaceAll('>', '&gt;');
 
 export function GET() {
-  const entries = localizedRoutePaths.flatMap((route) => {
+  const entries = localizedRoutePaths.filter(route=>!route.startsWith('/desktop')).flatMap((route) => {
     const alternates = publishedLocales.map((locale) => ({
       hreflang: locale.code,
       href: new URL(localizedPath(locale.path, route), siteUrl).toString(),
@@ -26,7 +26,7 @@ export function GET() {
 
     return alternates.map(({ href }) => ({ url: href, alternateLinks }));
   });
-  entries.push(...guideSitemapUrls().map(url => ({ url, alternateLinks: [] })));
+  entries.push(...guideSitemapUrls().filter(url=>!entries.some(entry=>entry.url===url)).map(url => ({ url, alternateLinks: [] })));
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${entries
     .map(({ url, alternateLinks }) => `  <url>\n    <loc>${escapeXml(url)}</loc>\n${alternateLinks

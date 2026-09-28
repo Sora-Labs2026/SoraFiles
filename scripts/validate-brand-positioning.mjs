@@ -4,6 +4,9 @@ import { brandPositioning } from '../src/i18n/brandPositioning.ts';
 import { publishedLocales } from '../src/i18n/config.ts';
 import { liveToolById } from '../src/data/liveTools.ts';
 import liveCopy from '../src/data/liveCopy.ts';
+import { build } from 'esbuild';
+const prototypeBundle=await build({entryPoints:['src/i18n/prototype.ts'],bundle:true,platform:'node',format:'esm',write:false,logLevel:'silent'});
+const {prototypeText}=await import(`data:text/javascript;base64,${Buffer.from(prototypeBundle.outputFiles[0].text).toString('base64')}`);
 
 const failures = [];
 const check = (condition, message) => { if (!condition) failures.push(message); };
@@ -40,7 +43,7 @@ if (existsSync('dist/index.html')) {
     const homepage = read(join(prefix, 'index.html'));
     const about = read(join(prefix, 'about', 'index.html'));
     const copy = brandPositioning[locale];
-    const heroLines = locale === 'en' ? ['Everyday PDF', 'and image tools.'] : [copy.heroLine1, copy.heroLine2];
+    const heroLines = ['Everyday PDF', 'and image tools.'].map(line => prototypeText(locale,line));
     check(heroLines.every(line => homepage.includes(line)), `${locale}: homepage is missing approved hero positioning.`);
     check(homepage.includes(copy.description), `${locale}: homepage is missing localized privacy-first description.`);
     check(about.includes(copy.aboutTitle) && about.includes(copy.aboutIntro), `${locale}: About page is missing localized one-app positioning.`);

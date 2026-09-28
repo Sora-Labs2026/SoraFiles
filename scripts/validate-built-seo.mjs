@@ -127,7 +127,9 @@ async function validatePage(file) {
   else if (Buffer.byteLength(html.slice(0, charset.index + charset[0].length), 'utf8') > 1024) failures.push(`${label}: UTF-8 character encoding declaration must be completely within the first 1024 bytes.`);
   const text = plainText(html);
   const { locale, base } = routeContext(route);
-  const h1Count = (html.match(/<h1\b/gi) ?? []).length;
+  // The checkout response has two mutually exclusive views; only one is shown.
+  const visibleHtml=html.replace(/<div\b[^>]*\bdata-replacement-return\b[^>]*\bhidden\b[^>]*>[\s\S]*?<\/div>/gi,'');
+  const h1Count = (visibleHtml.match(/<h1\b/gi) ?? []).length;
   if (route === '/404' ? h1Count !== 0 : h1Count !== 1) failures.push(`${label}: unexpected H1 count ${h1Count}.`);
   if ((html.match(/<title\b/gi) ?? []).length !== 1 || !/<title>[^<]+<\/title>/i.test(html)) failures.push(`${label}: expected one non-empty title.`);
 
@@ -163,7 +165,7 @@ async function validatePage(file) {
     if (canonical !== expectedCanonical) failures.push(`${label}: canonical ${canonical} does not match ${expectedCanonical}.`);
     const alternates = links.filter(({ attributes: attrs }) => attrs.rel === 'alternate' && attrs.hreflang);
     const actualHreflangs = new Set(alternates.map(({ attributes: attrs }) => attrs.hreflang));
-    if (base.startsWith('/guides')) {
+    if (!localizedRoutePaths.includes(base)) {
       if (alternates.length) failures.push(`${label}: English-only guides must not advertise translations.`);
     } else if (alternates.length !== hreflangs.size || actualHreflangs.size !== hreflangs.size || [...hreflangs].some((code) => !actualHreflangs.has(code))) failures.push(`${label}: hreflang cluster must contain all ${hreflangs.size} unique languages including x-default.`);
     for (const alternate of alternates) {
@@ -176,7 +178,7 @@ async function validatePage(file) {
     const localeDefinition = localeDefinitions.find((item) => item.path === locale);
     if (htmlTag.lang !== localeDefinition?.code || (htmlTag.dir || 'ltr') !== localeDefinition?.direction) failures.push(`${label}: html lang/dir does not match locale ${locale}.`);
     validateSchemas(text, label, locale, base, schemasFrom(html, label));
-  } else if (!['/404', '/heic'].includes(route) && !route.startsWith('/guides') && !desktopPreviewRoutes.has(route)) {
+  } else if (!['/404', '/heic'].includes(route) && !route.startsWith('/guides') && !desktopPreviewRoutes.has(base)) {
     failures.push(`${label}: unexpected noindex page.`);
   }
 }
@@ -235,6 +237,7 @@ async function validateSitemapAndRobots() {
   });
   const expectedByUrl = new Map();
   for (const route of localizedRoutePaths) {
+    if (desktopPreviewRoutes.has(route)) continue;
     const alternates = new Map(publishedLocales.map((locale) => [
       locale.code,
       new URL(localizedPath(locale.path, route), siteUrl).toString(),
@@ -244,7 +247,7 @@ async function validateSitemapAndRobots() {
       expectedByUrl.set(new URL(localizedPath(locale.path, route), siteUrl).toString(), alternates);
     }
   }
-  for (const url of guideSitemapUrls()) expectedByUrl.set(url, new Map());
+  for (const url of guideSitemapUrls()) if (!expectedByUrl.has(url)) expectedByUrl.set(url, new Map());
   const expectedUrls = [...expectedByUrl.keys()];
   const expectedSet = new Set(expectedUrls);
   const actualSet = new Set(entries.map((entry) => entry.loc));

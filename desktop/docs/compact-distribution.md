@@ -133,7 +133,7 @@ flow before any smaller-installer claim; no such end-user flow exists yet.
 | --- | --- | --- |
 | Windows x64 | Tauri NSIS, per-user installation | Current unsigned release packaging, staged payload and native lifecycle pass; install/upgrade/uninstall, installed Explorer and signing pending. |
 | Windows ARM64/x86 | No verified package | Unsupported until dependency/build/native checks establish support. |
-| macOS Apple Silicon / Intel | Separate CI DMG targets, minimum 13.0 configured | Current platform execution unverified. Configured minimum is not tested compatibility. Production signing and notarization required; ad-hoc candidates only. |
+| macOS Apple Silicon / Intel | Separate CI DMG targets, minimum 13.0 configured | Current platform execution unverified. Configured minimum is not tested compatibility. Ad-hoc candidates are allowed for owner testing/distribution with Open Anyway guidance; Developer ID signing and notarization remain future public-trust work. |
 | Linux x64 | Ubuntu 22.04 CI DEB/AppImage targets | Current native/runtime/integration unverified; no universal distro or glibc claim. RPM/ARM builds not established. |
 
 Release manifest has no public artifacts. Download pages and paid checkout remain

@@ -57,7 +57,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || request.headers.has('range')) return;
   // License return URLs must never enter persistent navigation storage.
-  if (/^\/desktop\/(?:purchase|redeem)(?:\/|\/index\.html)?$/.test(url.pathname) || url.searchParams.has('license_key')) return;
+  if (/^\/(?:[a-z]{2}\/|zh-(?:cn|tw)\/)?desktop\/(?:purchase|redeem)(?:\/|\/index\.html)?$/.test(url.pathname) || url.searchParams.has('license_key')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {

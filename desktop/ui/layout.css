@@ -111,3 +111,47 @@ body:not([data-quick-action=true]) .result-count { font-size:12px; margin:0 0 20
  body:not([data-quick-action=true]) .dropzone.compact { padding:20px; }
  body:not([data-quick-action=true]) .tool-card { padding:14px; gap:10px; }
 }
+/* Calm pass (29 Sep 2026): quiet navigation, smaller headings, and a two-part
+   workspace once files are chosen — the selection in the main area, options in
+   one predictable side panel with a single primary action. */
+body:not([data-quick-action=true]) nav button[aria-current=page] { background:var(--tint); color:var(--text); font-weight:700; box-shadow:inset 0 0 0 1px var(--line); }
+body:not([data-quick-action=true]) nav button[aria-current=page] .icon { color:var(--text); }
+body:not([data-quick-action=true]) nav button:not([aria-current=page]) { color:var(--muted); }
+body:not([data-quick-action=true]) nav button:not([aria-current=page]):hover { color:var(--text); background:var(--tint); }
+body:not([data-quick-action=true]) h1 { font-size:26px; line-height:1.25; letter-spacing:-.03em; font-weight:750; }
+body:not([data-quick-action=true]) h2 { font-weight:700; }
+body:not([data-quick-action=true]) .eyebrow { font-weight:650; color:var(--caption); }
+body:not([data-quick-action=true]) main>.workspace-heading h1 { font-size:22px; }
+body:not([data-quick-action=true]) main>.workspace-heading>p:last-child { margin-top:6px; font-size:13px; color:var(--caption); }
+body:not([data-quick-action=true]) .panel { border-radius:var(--r-md); }
+body:not([data-quick-action=true]) main>.workspace-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,340px); gap:24px; align-items:start; max-width:1320px; }
+.workspace-main { min-width:0; display:grid; gap:16px; align-content:start; }
+.workspace-main .selected { margin:0; }
+.workspace-main .selected ul { max-height:min(62vh,640px); }
+.workspace-main .workspace-file-actions { margin:0; }
+.workspace-panel { position:sticky; top:24px; display:grid; gap:16px; min-width:0; }
+.workspace-panel .processing-options { margin:0; padding:20px; }
+.workspace-panel .processing-options>h2 { font-size:14px; }
+.workspace-panel .option-fields { grid-template-columns:minmax(0,1fr) !important; gap:16px !important; margin:16px 0 20px !important; }
+.workspace-panel .processing-options>button[type=submit] { width:100%; min-height:44px; }
+.workspace-panel .action-bar { flex-direction:column; align-items:stretch; margin:0; padding:20px; border:1px solid var(--line); border-radius:var(--r-md); background:var(--surface); }
+.workspace-panel .action-bar>div { max-width:none; }
+.workspace-panel .workspace-output { margin:0; padding:14px 16px; border:1px solid var(--line); border-radius:var(--r-md); background:var(--surface); align-items:flex-start; }
+.workspace-panel .workspace-output .text-button { min-height:32px; padding:0; }
+.workspace-main [aria-label="Batch results"] { padding:18px 20px; }
+@container(max-width:760px) {
+ body:not([data-quick-action=true]) main>.workspace-grid { grid-template-columns:minmax(0,1fr); }
+ .workspace-panel { position:static; }
+}
+@supports not (container-type:inline-size) {
+ @media(max-width:1000px) { body:not([data-quick-action=true]) main>.workspace-grid { grid-template-columns:minmax(0,1fr); } .workspace-panel { position:static; } }
+}
+/* Enlarged text: settings selects shrink with the row instead of overflowing. */
+body:not([data-quick-action=true]) .setting-row select,#language { min-width:min(200px,100%); max-width:100%; }
+body:not([data-quick-action=true]) .setting-row:has(>select)>select { flex:1 1 180px; }
+.workspace-panel .option-fields p { font-size:12px; line-height:1.6; color:var(--caption); margin:0; }
+.workspace-panel .option-fields label { font-size:13px; }
+.workspace-panel .workspace-output { display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:10px; row-gap:6px; }
+.workspace-panel .workspace-output>.text-button { grid-column:2; justify-self:start; }
+.workspace-panel .workspace-output p { font-size:12px; }
+.workspace-main [aria-label="Batch results"] ul { padding-left:18px; margin:10px 0 0; }

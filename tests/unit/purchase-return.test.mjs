@@ -7,7 +7,7 @@ import worker from '../../worker.js';
 const source=await readFile('src/lib/desktop/purchase-return.js','utf8');
 function page(search,{clipboardFailure=false,historyFailure=false}={}){
  const events={},controls=new Map(),copied=[];let cleaned=false;
- for(const id of ['checkout-key','checkout-empty','license-value','license-reveal','license-copy','checkout-status'])controls.set(id,{hidden:id==='checkout-key'||id==='license-value',value:'',textContent:'',events:{},addEventListener(name,fn){this.events[name]=fn;},setAttribute(name,value){this[name]=value;}});
+ for(const id of ['checkout-key','checkout-empty','license-value','license-reveal','license-copy','checkout-status','purchase-return','replacement-return'])controls.set(id,{hidden:['checkout-key','license-value','replacement-return'].includes(id),value:'',textContent:'',events:{},addEventListener(name,fn){this.events[name]=fn;},setAttribute(name,value){this[name]=name==='hidden'?true:value;},removeAttribute(name){if(name==='hidden')this.hidden=false;else delete this[name];}});
  runInNewContext(source,{URLSearchParams,location:{search,pathname:'/desktop/purchase'},history:{replaceState(_state,_title,path){assert.equal(path,'/desktop/purchase');if(historyFailure)throw Error('disabled');cleaned=true;}},document:{addEventListener(name,fn){events[name]=fn;},querySelector(selector){return controls.get(selector.slice(6,-1));}},addEventListener(name,fn){events[name]=fn;},navigator:{clipboard:{async writeText(value){if(clipboardFailure)throw Error('blocked');copied.push(value);}}}});
  assert.equal(cleaned,!historyFailure);events.DOMContentLoaded();
  return {get:id=>controls.get(id),copied,leave:()=>events.pagehide()};
@@ -28,8 +28,14 @@ test('clipboard denial offers manual copy without losing the key',async()=>{
  const p=page('?license_key=synthetic-key',{clipboardFailure:true});await p.get('license-copy').events.click();
  assert.match(p.get('checkout-status').textContent,/Show key/);p.get('license-reveal').events.click();assert.equal(p.get('license-value').value,'synthetic-key');
 });
+
+test('replacement return gives release instructions without exposing a key or claiming payment',()=>{
+ const p=page('?flow=device-replacement&status=succeeded&license_key=synthetic-key');
+ assert.equal(p.get('purchase-return').hidden,true);assert.equal(p.get('replacement-return').hidden,false);
+ assert.equal(p.get('checkout-key').hidden,true);assert.equal(p.get('license-value').value,'');assert.equal(p.get('license-copy').events.click,undefined);
+});
 test('checkout HTML bypasses caching, suppresses referrers and strips queries before the asset service',async()=>{
- for(const path of ['/desktop/purchase','/desktop/purchase/','/desktop/purchase/index.html','/desktop/redeem','/desktop/redeem/','/desktop/redeem/index.html']){
+ for(const path of ['/desktop/purchase','/desktop/purchase/','/desktop/purchase/index.html','/desktop/redeem','/desktop/redeem/','/desktop/redeem/index.html','/ja/desktop/purchase','/ar/desktop/redeem/','/zh-tw/desktop/purchase/index.html']){
   let assetRequest;
   const response=await worker.fetch(new Request('https://sorafiles.com'+path+'?license_key=synthetic-key&email=test@example.invalid'),{ASSETS:{fetch:async request=>{assetRequest=request;return new Response('<html></html>',{headers:{'Content-Type':'text/html','Cache-Control':'public, max-age=300'}});}}});
   assert.equal(new URL(assetRequest.url).search,'');assert.equal(response.headers.get('Cache-Control'),'private, no-store');assert.equal(response.headers.get('Referrer-Policy'),'no-referrer');assert.equal(response.headers.get('X-Robots-Tag'),'noindex, nofollow, noarchive');

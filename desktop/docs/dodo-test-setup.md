@@ -1,5 +1,7 @@
 # Dodo test setup
 
+> Historical test-mode record. The amounts below are the obsolete launch prices; current prices are in `desktop/shared/plans.mjs` and `owner-setup.md`.
+
 September 17: Product Info, Identity Verification and Bank Verification are VERIFIED according to the owner. Do not repeat onboarding. Historical test-product observations below have not been independently rechecked on this PC; live products, currency, credentials, webhooks, checkout and email delivery still need separate validation.
 
 Verified onboarding alone does not establish live payment or payout readiness.

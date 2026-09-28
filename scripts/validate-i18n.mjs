@@ -52,6 +52,8 @@ for (const [locale, language, direction] of locales) {
       continue;
     }
     const html = readFileSync(file, 'utf8');
+    const visibleHtml=html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'');
+    const noIndex=/<meta\b[^>]*name="robots"[^>]*content="noindex\b/i.test(html);
     const head = textMatch(html, /<head>([\s\S]*?)<\/head>/i);
     const htmlTag = textMatch(html, /(<html[^>]*>)/i);
     const canonical = textMatch(head, /<link rel="canonical" href="([^"]+)"/i);
@@ -69,14 +71,13 @@ for (const [locale, language, direction] of locales) {
     if (html.includes('\uFFFD')) errors.push(`${locale}${route}: replacement character found`);
     if (locale !== 'en') {
       for (const fragment of forbiddenEnglishFragments) {
-        if (html.includes(fragment)) errors.push(`${locale}${route}: untranslated shared UI “${fragment}”`);
+        if (visibleHtml.includes(fragment)) errors.push(`${locale}${route}: untranslated shared UI “${fragment}”`);
       }
     }
     if (route === '/') {
       for (const claim of obsoleteHomepageClaims) if (html.includes(claim)) errors.push(`${locale}${route}: obsolete or unsupported homepage claim “${claim}”`);
-      if (!html.includes('data-privacy-proof')) errors.push(`${locale}${route}: missing data-privacy-proof container`);
-      const stepCount = (html.match(/data-privacy-step(?:\s|>)/g) || []).length;
-      if (stepCount !== 3) errors.push(`${locale}${route}: expected 3 localized processing privacy steps, found ${stepCount}`);
+      if (!html.includes('data-testid="privacy-statement"')) errors.push(`${locale}${route}: missing prototype privacy statement`);
+      if (html.includes('data-privacy-step')) errors.push(`${locale}${route}: obsolete homepage steps are absent from the locked prototype`);
       if (locale !== 'en') {
         const englishProofLabels = ['Your files stay under your control', 'File uploads', 'Account required', 'Original overwritten'];
         for (const label of englishProofLabels) {
@@ -87,6 +88,7 @@ for (const [locale, language, direction] of locales) {
     if (locale !== 'en' && toolRoutes.has(route)) {
       for (const label of englishWorkbenchLabels) if (html.includes(`>${label}<`)) errors.push(`${locale}${route}: untranslated workbench label “${label}”`);
     }
+    if (!noIndex) {
     if (alternatePairs.length !== locales.length + 1) errors.push(`${locale}${route}: expected 20 head hreflang links, found ${alternatePairs.length}`);
 
     for (const [alternateLocale, alternateLanguage] of locales) {
@@ -99,6 +101,10 @@ for (const [locale, language, direction] of locales) {
       errors.push(`${locale}${route}: missing x-default`);
     }
     if (!sitemap.includes(`<loc>${expectedUrl}</loc>`)) errors.push(`${locale}${route}: missing sitemap URL ${expectedUrl}`);
+    } else {
+      if(!route.startsWith('/desktop'))errors.push(`${locale}${route}: unexpected noindex page`);
+      if(alternatePairs.length||sitemap.includes(`<loc>${expectedUrl}</loc>`))errors.push(`${locale}${route}: noindex page must stay outside search alternates and sitemap`);
+    }
 
     for (const match of html.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)) {
       try { JSON.parse(match[1]); } catch { errors.push(`${locale}${route}: invalid JSON-LD`); }

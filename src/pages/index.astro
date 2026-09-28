@@ -14,7 +14,6 @@ const brand = getBrandPositioning(locale);
 const description = brand.description;
 const keywords = 'free file tools, private PDF tools, compress PDF without uploading, merge PDF locally, split PDF pages, image converter, compress image, HEIC to JPG, PDF to JPG, JPG to PDF';
 const applicationId = 'https://sorafiles.com/#application';
-const faqId = 'https://sorafiles.com/#faq';
 
 const schema = {
   '@context': 'https://schema.org',
@@ -50,7 +49,7 @@ const schema = {
       dateModified: CONTENT_PROVENANCE.modifiedIso,
       isPartOf: { '@id': 'https://sorafiles.com/#website' },
       about: { '@id': applicationId },
-      mainEntity: [{ '@id': applicationId }, { '@id': faqId }],
+      mainEntity: [{ '@id': applicationId }],
       author: { '@id': CONTENT_PROVENANCE.publisherId },
       publisher: { '@id': CONTENT_PROVENANCE.publisherId },
     },
@@ -73,21 +72,6 @@ const schema = {
       publisher: { '@id': CONTENT_PROVENANCE.publisherId },
       sameAs: ['https://github.com/Sora-Labs2026/SoraFiles'],
       license: 'https://github.com/Sora-Labs2026/SoraFiles/blob/main/LICENSE',
-    },
-    {
-      '@type': 'FAQPage',
-      '@id': faqId,
-      url: 'https://sorafiles.com/#faq',
-      name: content.home.faqTitle,
-      inLanguage: 'en',
-      dateModified: CONTENT_PROVENANCE.modifiedIso,
-      author: { '@id': CONTENT_PROVENANCE.publisherId },
-      publisher: { '@id': CONTENT_PROVENANCE.publisherId },
-      mainEntity: content.home.faqs.map((faq) => ({
-        '@type': 'Question',
-        name: faq.question,
-        acceptedAnswer: { '@type': 'Answer', text: faq.answer },
-      })),
     },
     {
       '@type': 'ItemList',

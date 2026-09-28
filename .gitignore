@@ -19,6 +19,7 @@ pnpm-debug.log*
 .env
 .env.production
 .env*.local
+desktop/.local/
 
 # private Google Search Console credentials (exact/common local names only)
 google-search-console.json
@@ -27,6 +28,9 @@ search-console-credentials.json
 
 # local verification and submission receipts
 .artifacts/
+test-results/
+data/search-console/*
+!data/search-console/.gitignore
 
 # private project operations, prompts, and local AI continuity
 .ai/
@@ -65,5 +69,3 @@ English Sub-links/
 
 # jetbrains setting folder
 .idea/
-
-desktop/platform-checks/target/

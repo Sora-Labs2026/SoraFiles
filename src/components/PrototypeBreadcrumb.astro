@@ -1,0 +1,8 @@
+---
+import type {LocalePath} from '../i18n/config';
+import {prototypeText} from '../i18n/prototype';
+interface Props {items:{label:string;href?:string}[];locale?:LocalePath;}
+const {items,locale='en'}=Astro.props;
+---
+<nav class="crumbs" aria-label={prototypeText(locale,'Breadcrumb')}><ol>{items.map(item=><li>{item.href?<a class="crumbs__link" href={item.href}>{item.label}</a>:<span aria-current="page">{item.label}</span>}</li>)}</ol></nav>
+<style>.crumbs ol{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-1) var(--s-2);font-size:var(--fs-label);font-weight:var(--fw-medium);color:var(--ink-3)}.crumbs li+li::before{content:"/";margin-right:var(--s-2);color:var(--ink-4)}.crumbs__link{border-radius:var(--r-xs);transition:color var(--dur-1) var(--ease-std)}.crumbs__link:hover,.crumbs [aria-current=page]{color:var(--ink)}</style>

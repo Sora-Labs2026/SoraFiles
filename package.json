@@ -99,6 +99,7 @@
     "zetajs": "^1.2.0"
   },
   "devDependencies": {
+    "parse5": "8.0.1",
     "@astrojs/check": "^0.9.10",
     "@napi-rs/canvas": "1.0.9",
     "fast-png": "^6.4.0",

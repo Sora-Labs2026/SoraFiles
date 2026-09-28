@@ -8,6 +8,7 @@ import { getConversionFidelityMessages, getWatermarkPdfMessages } from '../i18n/
 import ToolIcon from './ToolIcon.astro';
 import VisualPdfWorkspace from './VisualPdfWorkspace.astro';
 import AdaptiveWorkspace from './AdaptiveWorkspace.astro';
+import PrototypeDropZone from './PrototypeDropZone.astro';
 import { liveText } from '../data/liveI18n';
 
 interface Props {
@@ -49,7 +50,6 @@ const actionTones: Record<string, keyof typeof tones> = {
 const actionTone = actionTones[tool.id] ?? 'indigo';
 const visualPdfTools = new Set(['merge-pdf', 'split-pdf', 'rotate-pdf', 'remove-pages', 'watermark-pdf', 'page-numbers', 'sign-pdf']);
 const workspaceMode = visualPdfTools.has(tool.slug) || tool.slug === 'jpg-to-pdf' ? 'canvas' : 'preview';
-const uploadCopy = { drop: liveText(locale, tool.multiple ? 'wb.dropMany' : 'wb.dropOne'), click: liveText(locale, 'wb.orClick') };
 const englishActions: Record<string, string> = {
   'merge-pdf': 'Merge PDFs', 'split-pdf': 'Split PDF', 'rotate-pdf': 'Rotate pages',
   'remove-pages': 'Remove selected pages', 'watermark-pdf': 'Add watermark',
@@ -63,16 +63,7 @@ const primaryAction = locale === 'en' ? (englishActions[tool.slug] ?? m.process)
   <div class="overflow-hidden rounded-card bg-surface shadow-card">
     <div class="border-b border-line px-5 py-4 sm:px-7"><div class="flex flex-wrap items-center justify-between gap-3"><div class="flex items-center gap-3"><span class:list={['flex h-10 w-10 items-center justify-center rounded-xl', tones[actionTone]]}><ToolIcon icon={tool.icon}/></span><div><p class="eyebrow text-xs font-semibold text-blue">{m.localFileTool}</p><h2 id="document-tool-heading" class="mt-1 text-lg font-semibold tracking-tight">{copy.title}</h2></div></div><div class="inline-flex items-center gap-2 rounded-full bg-green-soft px-3 py-1.5 text-xs font-medium text-green"><span class="h-2 w-2 rounded-full bg-green" aria-hidden="true"></span>{m.noUpload}</div></div></div>
     <div id="action-empty" class="p-4 sm:p-7">
-      <div id="action-drop" class="sf-upload-dropzone group flex min-h-72 flex-col items-center justify-center px-5 py-12 text-center">
-        <span class:list={['sf-upload-dropzone__icon flex h-14 w-14 items-center justify-center rounded-xl shadow-small', tones[actionTone]]}><ToolIcon icon={tool.icon}/></span>
-        <h3 class="mt-5 text-xl font-semibold tracking-tight">{uploadCopy.drop}</h3>
-        <p class="mt-2 max-w-md text-sm leading-6 text-muted">{copy.short} · {m.processedHere}</p>
-        <button id="action-choose" type="button" class="mt-6 inline-flex min-h-12 items-center justify-center rounded-control bg-action px-6 text-sm font-medium text-action-contrast shadow-small transition-colors hover:bg-action-hover">{tool.multiple ? m.chooseFiles : m.chooseFile}</button>
-        <p class="mt-3 text-xs text-muted">{uploadCopy.click}</p>
-        <input id="action-input" name="sourceFiles" class="sr-only" tabindex="-1" type="file" accept={tool.accept} multiple={tool.multiple} aria-label={tool.multiple ? m.chooseFiles : m.chooseFile} aria-describedby="action-help action-error" />
-        <p id="action-help" class="sr-only">{copy.description}</p>
-        <p id="action-error" hidden role="alert" tabindex="-1" class="mt-4 max-w-lg break-words rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></p>
-      </div>
+      <PrototypeDropZone toolId={tool.id} dropId="action-drop" chooseId="action-choose" inputId="action-input" helpId="action-help" errorId="action-error" accept={tool.accept} multiple={tool.multiple} description={copy.description} {locale}/>
     </div>
     <AdaptiveWorkspace id="action-work" mode={workspaceMode} title={copy.title} resetTarget="#action-remove" class={`action-workspace${visualPdfTools.has(tool.slug) ? ' has-visual-pdf' : ''}${tool.slug === 'word-to-pdf' ? ' no-conversion-options' : ''}`}>
       <div data-workspace-source class="min-w-0 border-b border-line p-5 sm:p-7 lg:border-b-0 lg:border-r">

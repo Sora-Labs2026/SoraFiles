@@ -20,7 +20,7 @@ function fixture(){
 }
 test('purchaser email comes from verified authority; code is one-use and only hashes enter the ledger',async()=>{
  const f=fixture();try{
-  const first=await f.email.start({licenseKey:'synthetic-key'},id(2));assert.equal(first.maskedEmail,'p***@example.com');assert.equal(f.mail[0].to,'purchaser@example.com');
+  const first=await f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2));assert.equal(first.maskedEmail,'p***@example.com');assert.equal(f.mail[0].to,'purchaser@example.com');
   assert.equal(first.expiresAt,f.now()+600);assert.match(f.mail[0].code,/^\d{8}$/);
   const initial=JSON.stringify(f.store.db.prepare('SELECT * FROM replacement_email').all());
   for(const text of ['purchaser@example.com',f.mail[0].code,'synthetic-key'])assert.ok(!initial.includes(text));
@@ -39,7 +39,7 @@ test('purchaser email comes from verified authority; code is one-use and only ha
 
 test('consumed purchaser verification cannot authorize another activation of the same device',async()=>{
  const f=fixture();try{
-  const started=await f.email.start({licenseKey:'synthetic-key'},id(1));
+  const started=await f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(1));
   const verified=f.email.verify({verificationId:started.verificationId,code:f.mail[0].code},id(1));
   const scope={licenseRef:'license',deviceId:id(1),oldDeviceId:id(1),keyHash:f.keyHash};
   assert.equal(f.email.identity(verified.identityToken,scope).instanceId,'old');
@@ -49,7 +49,7 @@ test('consumed purchaser verification cannot authorize another activation of the
 });
 test('verification from the occupied device offers that same device for release',async()=>{
  const f=fixture();try{
-  const start=await f.email.start({licenseKey:'synthetic-key'},id(1));
+  const start=await f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(1));
   const result=f.email.verify({verificationId:start.verificationId,code:f.mail[0].code},id(1));
   assert.deepEqual(result.devices,[{id:id(1),current:true,active:true}]);
   assert.equal(f.email.identity(result.identityToken,{licenseRef:'license',deviceId:id(1),oldDeviceId:id(1),keyHash:f.keyHash}).verified,true);
@@ -57,11 +57,11 @@ test('verification from the occupied device offers that same device for release'
 });
 test('resends invalidate prior code and have durable per-license limits across devices and service restart',async()=>{
  const f=fixture();try{
-  const first=await f.email.start({licenseKey:'synthetic-key'},id(2));await assert.rejects(f.email.start({licenseKey:'synthetic-key'},id(3)),{httpStatus:429});
-  f.advance(60);const second=await f.email.start({licenseKey:'synthetic-key'},id(2));
+  const first=await f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2));await assert.rejects(f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(3)),{httpStatus:429});
+  f.advance(60);const second=await f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2));
   assert.throws(()=>f.email.verify({verificationId:first.verificationId,code:f.mail[0].code},id(2)));
-  const resumed=new ReplacementEmailService(f.args);f.advance(60);await resumed.start({licenseKey:'synthetic-key'},id(4));f.advance(60);
-  await assert.rejects(resumed.start({licenseKey:'synthetic-key'},id(5)),{httpStatus:429});
+  const resumed=new ReplacementEmailService(f.args);f.advance(60);await resumed.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(4));f.advance(60);
+  await assert.rejects(resumed.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(5)),{httpStatus:429});
   assert.equal(f.mail.length,3);assert.ok(second.verificationId!==first.verificationId);
  }finally{f.store.close();}
 });
@@ -72,8 +72,8 @@ test('five bad attempts persist, expired codes fail, and provider failure never 
    if(mode==='inactive')f.state.status='revoked';
    if(mode==='invalid')f.dodo.validate=async()=>({valid:false});
    if(mode==='delivery')f.email.sendCode=async()=>{throw Error('unavailable');};
-   if(['customer','inactive','invalid','delivery'].includes(mode)){await assert.rejects(f.email.start({licenseKey:'synthetic-key'},id(2)));assert.equal(f.mail.length,0);continue;}
-   const start=await f.email.start({licenseKey:'synthetic-key'},id(2));
+   if(['customer','inactive','invalid','delivery'].includes(mode)){await assert.rejects(f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2)));assert.equal(f.mail.length,0);continue;}
+   const start=await f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2));
    if(mode==='expired')f.advance(600);
    else for(let i=0;i<5;i++)assert.throws(()=>f.email.verify({verificationId:start.verificationId,code:'incorrect'},id(2)));
    assert.throws(()=>new ReplacementEmailService(f.args).verify({verificationId:start.verificationId,code:f.mail[0].code},id(2)));
@@ -82,12 +82,12 @@ test('five bad attempts persist, expired codes fail, and provider failure never 
 });
 test('overlapping email requests send once and verification routes use real HTTP device proof',async()=>{
  const f=fixture();let server;try{
-  const results=await Promise.allSettled([f.email.start({licenseKey:'synthetic-key'},id(2)),f.email.start({licenseKey:'synthetic-key'},id(2))]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(f.mail.length,1);
+  const results=await Promise.allSettled([f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2)),f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2))]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(f.mail.length,1);
   f.advance(3600);const pair=generateKeyPairSync('ed25519'),device={publicKey:pair.publicKey.export({format:'pem',type:'spki'}),privateKey:pair.privateKey.export({format:'pem',type:'pkcs8'})};
   const service=new LicenseService({...f.args,replacementEmail:f.email,signing:{privateKey:device.privateKey,kid:'test'}});
   server=createLicenseHttpServer({service,webhooks:{},rateSecret:randomBytes(32)});await new Promise(r=>server.listen(0,'127.0.0.1',r));
   const client=new LicenseClient({origin:`http://127.0.0.1:${server.address().port}`,allowLocalTesting:true,keys:{test:device.publicKey},readDevice:async()=>device,readLicense:async()=>null,saveLicense:async()=>{throw Error('Email cannot activate a license');},now:()=>f.now()*1000});
-  const start=await client.request('replacementEmailStart',{licenseKey:'synthetic-key'},device);
+  const start=await client.request('replacementEmailStart',{licenseKey:'synthetic-key',email:'Purchaser@Example.com'},device);
   const proof=await client.request('replacementEmailVerify',{verificationId:start.verificationId,code:f.mail.at(-1).code},device);assert.equal(proof.licenseRef,'license');
   await assert.rejects(client.request('replacementEmailStart',{licenseKey:'synthetic-key',email:'attacker@example.com'},device));
  }finally{if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}f.store.close();}
@@ -98,4 +98,38 @@ test('email adapter limits destination/body, fixed origin and suppresses provide
  assert.equal(await send(packet),undefined);assert.equal(calls[0].url,'https://api.resend.com/emails');assert.equal(calls[0].options.redirect,'manual');assert.deepEqual(JSON.parse(calls[0].options.body).to,[packet.to]);
  await assert.rejects(send({...packet,to:'bad\r\nBcc: attacker@example.com'}));assert.equal(calls.length,1);
  assert.throws(()=>maskPurchaserEmail('bad\r\n@example.com'));
+});
+test('opening nothing sends nothing; a wrong or missing email never sends a code and is rate limited',async()=>{
+ const f=fixture();try{
+  for(const email of [undefined,'',' ','not-an-email'])await assert.rejects(f.email.start({licenseKey:'synthetic-key',email},id(2)),{reason:'email-required'});
+  let lookups=0;const customer=f.dodo.customer;f.dodo.customer=async value=>{lookups++;return customer(value);};
+  for(let i=0;i<5;i++)await assert.rejects(f.email.start({licenseKey:'synthetic-key',email:'someone-else@example.com'},id(2)),{reason:'email-mismatch'});
+  assert.equal(f.mail.length,0);assert.equal(lookups,5);
+  // After five misses, even the correct address waits and no provider is contacted.
+  await assert.rejects(f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2)),{httpStatus:429,reason:'email-attempts'});
+  assert.equal(lookups,5);assert.equal(f.mail.length,0);
+  assert.ok(!JSON.stringify(f.store.db.prepare('SELECT * FROM replacement_email_misses').all()).includes('someone-else'));
+  f.advance(3601);
+  const sent=await f.email.start({licenseKey:'synthetic-key',email:'  PURCHASER@example.COM '},id(2));assert.equal(f.mail.length,1);assert.equal(sent.maskedEmail,'p***@example.com');
+ }finally{f.store.close();}
+});
+test('verification failures carry exact reasons: wrong, expired, superseded and locked codes',async()=>{
+ const f=fixture();try{
+  const first=await f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2));
+  assert.throws(()=>f.email.verify({verificationId:first.verificationId,code:'00000000'===f.mail[0].code?'11111111':'00000000'},id(2)),{reason:'code-invalid'});
+  f.advance(60);const second=await f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2));
+  assert.throws(()=>f.email.verify({verificationId:first.verificationId,code:f.mail[0].code},id(2)),{reason:'code-superseded'});
+  f.advance(600);assert.throws(()=>f.email.verify({verificationId:second.verificationId,code:f.mail[1].code},id(2)),{reason:'code-expired'});
+  f.advance(60);const third=await f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2));
+  for(let i=0;i<4;i++)assert.throws(()=>f.email.verify({verificationId:third.verificationId,code:'bad'},id(2)),{reason:'code-invalid'});
+  assert.throws(()=>f.email.verify({verificationId:third.verificationId,code:'bad'},id(2)),{reason:'code-locked'});
+  assert.throws(()=>f.email.verify({verificationId:third.verificationId,code:f.mail[2].code},id(2)),{reason:'code-locked'});
+ }finally{f.store.close();}
+});
+test('mail provider failure reports delivery failure and leaves no usable code',async()=>{
+ const f=fixture();try{
+  f.email.sendCode=async()=>{throw Error('provider down');};
+  await assert.rejects(f.email.start({licenseKey:'synthetic-key',email:'purchaser@example.com'},id(2)),{code:'providerUnavailable',reason:'email-delivery-failed'});
+  assert.equal(f.store.db.prepare('SELECT COUNT(*) AS n FROM replacement_email WHERE expires>0').get().n,0);
+ }finally{f.store.close();}
 });

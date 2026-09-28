@@ -1,0 +1,13 @@
+---
+import pages from '../data/prototypeToolSections.json';
+import '../styles/v10-tool-exact.css';
+interface Props {id:string;part:'hero'|'after'}
+const {id,part}=Astro.props;
+const page=pages[id as keyof typeof pages];
+if(!page)throw Error('Missing prototype tool: '+id);
+---
+<Fragment set:html={page[part]}/>
+<script>
+document.querySelectorAll<HTMLElement>('[data-prototype-tool] .reveal').forEach(el=>{const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting){el.dataset.inview='true';observer.disconnect()}},{threshold:.15,rootMargin:'0px 0px -8% 0px'});observer.observe(el)});
+document.querySelectorAll<HTMLButtonElement>('[data-prototype-tool] .faq__q').forEach(button=>button.addEventListener('click',()=>{const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));button.closest<HTMLElement>('.faq__item')!.dataset.open=String(open)}));
+</script>

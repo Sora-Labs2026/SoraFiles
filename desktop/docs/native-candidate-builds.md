@@ -9,7 +9,7 @@ development-only background fixture and cannot certify background processing
 merely by completing normal lifecycle checks. The regression test is
 `desktop/tests/native-smoke-report.test.mjs` (one passing test).
 
-> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. Production Mac releases require signing and notarization.
+> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. The owner-approved macOS candidate channel permits ad-hoc builds with Open Anyway guidance; Developer ID signing and notarization remain future public-trust work.
 
 
 These builds evaluate the native host. They are not finished processing apps or approved public downloads. The release manifest stays empty until product, engine, licensing and platform checks pass.

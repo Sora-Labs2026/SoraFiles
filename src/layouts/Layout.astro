@@ -4,7 +4,9 @@ import '../styles/v10-tokens.css';
 import '../styles/v10-atmosphere.css';
 import '../styles/v10-foundation.css';
 import '../styles/v10-workspaces.css';
-import { localeByPath, localeDefinitions, publishedAlternates, type LocalePath } from '../i18n/config';
+import '../styles/v10-calm-workspace.css';
+import { localeByPath, localeDefinitions, publishedAlternates, localizedPath, basePathFromLocalized, type LocalePath } from '../i18n/config';
+import DesktopPageLanguage from '../components/DesktopPageLanguage.astro';
 import { getLocaleContent } from '../i18n';
 import { liveText } from '../data/liveI18n';
 
@@ -27,7 +29,7 @@ interface Props {
 const {
   title,
   description: providedDescription,
-  canonicalPath = '/',
+  canonicalPath:providedCanonicalPath = '/',
   keywords,
   imagePath = '/og-image.png',
   imageAlt: providedImageAlt,
@@ -35,11 +37,12 @@ const {
   analytics = true,
   sensitive = false,
   schema,
-  locale = 'en',
-  alternatePath = canonicalPath,
+  locale = localeByPath.has(Astro.params.locale as LocalePath) ? Astro.params.locale as LocalePath : 'en',
+  alternatePath = basePathFromLocalized(providedCanonicalPath),
   ogType = 'website',
 } = Astro.props;
 
+const canonicalPath=localizedPath(locale,basePathFromLocalized(providedCanonicalPath));
 const description = providedDescription ?? liveText(locale, 'hero.desc');
 const imageAlt = providedImageAlt ?? ['SoraFiles', description].join(' — ');
 const legacyContent = getLocaleContent(locale);
@@ -55,7 +58,7 @@ const documentTitle = title;
 // when the transport is valid UTF-8. Keep machine-consumed titles compatible
 // without changing the user-visible browser title.
 const socialTitle = documentTitle.replace(/[–—]/g, '-');
-const route = canonicalPath.replace(/^\/(?:ar|de|es|fr|hi|id|it|ja|ko|pt|ru|tr|zh)(?=\/|$)/, '').replace(/\/$/, '') || '/';
+const route = basePathFromLocalized(canonicalPath);
 const atmosphere = ['/', '/desktop'].includes(route) ? 'hero' : route === '/desktop/pricing' ? 'pricing' : ['/tools','/desktop/download'].includes(route) ? 'page-dots' : ['/privacy','/terms'].includes(route) ? 'legal' : route.startsWith('/guides') || ['/about','/open-source'].includes(route) ? 'doc' : route.startsWith('/desktop/') || ['/contact','/404'].includes(route) ? 'page' : 'tool';
 ---
 
@@ -63,6 +66,7 @@ const atmosphere = ['/', '/desktop'].includes(route) ? 'hero' : route === '/desk
 <html lang={localeMeta.code} dir={localeMeta.direction} data-locale={locale}>
   <head>
     <meta charset="utf-8" />
+    {locale!=='en'&&route.startsWith('/desktop')&&<DesktopPageLanguage {locale}/>}
     {sensitive && <meta name="referrer" content="no-referrer" />}
     <slot name="early-head" />
     <link rel="preload" href="/fonts/plus-jakarta-sans-vf.woff2" as="font" type="font/woff2" crossorigin />
@@ -132,7 +136,7 @@ const atmosphere = ['/', '/desktop'].includes(route) ? 'hero' : route === '/desk
     <title>{documentTitle}</title>
   </head>
   <body class="page min-h-screen font-sans text-ink antialiased" data-atmos={atmosphere}>
-    <a href="#main" class="fixed left-3 top-3 z-50 -translate-y-20 rounded-control bg-action px-4 py-2 text-sm font-medium text-action-contrast transition-transform focus:translate-y-0">{legacyContent.common.skipToContent}</a>
+    <a href="#main" class="skip-link">{legacyContent.common.skipToContent}</a>
     <div aria-hidden="true" class="atmos"></div>
     <div data-offline-banner hidden role="status" aria-live="polite" class="flex items-center justify-center gap-2 bg-amber-400/90 px-4 py-2 text-center text-xs font-bold text-amber-950">{liveText(locale, 'common.offline')}</div>
     <slot />

@@ -1,0 +1,22 @@
+---
+import PrototypeBreadcrumb from './PrototypeBreadcrumb.astro';
+import PrototypeGuideBlock from './PrototypeGuideBlock.astro';
+import LiveToolCard from './LiveToolCard.astro';
+import {guideText,guideLink,localizedGuides} from '../i18n/guides';
+import {localeByPath,type LocalePath} from '../i18n/config';
+import {liveTools} from '../data/liveTools';
+import '../styles/v10-site-exact.css';
+import '../styles/v10-home-exact.css';
+interface Props {slug:string;locale?:LocalePath}
+const {locale='en'}=Astro.props;
+const t=(s:string)=>guideText(locale,s);
+const guide=localizedGuides(locale).find(g=>g.slug===Astro.props.slug)!;
+const headings=guide.body.filter(b=>b.type==='h2'&&b.id);
+const related=guide.relatedTools.map(r=>liveTools.find(t=>guideLink(locale,`/${t.slug}`)===r.href)).filter(t=>t!==undefined);
+const published='published' in guide?String(guide.published):undefined;
+---
+<main id="main" data-prototype-info data-prototype-directory>
+ <header class="container page-intro"><PrototypeBreadcrumb {locale} items={[{label:t('Home'),href:guideLink(locale,'/')},{label:t('Guides'),href:guideLink(locale,'/guides')},{label:guide.title}]}/><p class="eyebrow eyebrow--pill page-intro__eyebrow">{guide.category}</p><h1 class="t-h1 page-intro__title"><span class="line-reveal"><span class="line-reveal__inner">{guide.title}</span></span></h1>{published&&<p class="t-caption page-intro__meta" data-testid="guide-byline">{t('By Sora Labs')} · {t('Published')} {new Intl.DateTimeFormat(locale==='en'?'en-GB':localeByPath.get(locale)!.code,{day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(published))}</p>}</header>
+ <div class="container doc-layout"><nav class="toc" aria-label={t('On this page')} data-testid="toc"><p class="eyebrow eyebrow--plain toc__title">{t('On this page')}</p><ol>{headings.map(h=><li><a class="toc__link" href={`#${h.id}`}>{h.text}</a></li>)}</ol></nav><article class="prose" data-testid="guide-body">{guide.body.map(block=><PrototypeGuideBlock {block} {locale}/>)}</article></div>
+ {(related.length>0||guide.relatedGuides.length>0)&&<section class="section section--ruled" aria-label={t('Related tools')} data-testid="guide-related"><div class="container guide-related">{related.length>0&&<div><h2 class="t-h2 related__title">{t('Related tools')}</h2><ul class="tool-grid">{related.map((tool,i)=><li style={`--i:${i}`}><LiveToolCard exact {tool} {locale}/></li>)}</ul></div>}{guide.relatedGuides.length>0&&<div><h2 class="t-h3 guide-related__title">{t('Related guides')}</h2><ul class="guide-links">{guide.relatedGuides.map(link=><li><a class="link" href={link.href}>{link.text}</a></li>)}</ul></div>}</div></section>}
+</main>

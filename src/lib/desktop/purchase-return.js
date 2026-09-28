@@ -2,6 +2,7 @@
 // parameters are untrusted display data, never payment or entitlement authority.
 (() => {
   const query = new URLSearchParams(location.search);
+  const replacement = query.get('flow') === 'device-replacement';
   const values = query.getAll('license_key');
   let key = values.length === 1 && /^[A-Za-z0-9_-]{6,512}$/.test(values[0]) ? values[0] : '';
   query.delete('license_key');
@@ -9,6 +10,12 @@
   catch { key = ''; }
 
   document.addEventListener('DOMContentLoaded', () => {
+    if (replacement) {
+      key = '';
+      document.querySelector('[data-purchase-return]')?.setAttribute('hidden', '');
+      document.querySelector('[data-replacement-return]')?.removeAttribute('hidden');
+      return;
+    }
     const panel = document.querySelector('[data-checkout-key]');
     const empty = document.querySelector('[data-checkout-empty]');
     const input = document.querySelector('[data-license-value]');

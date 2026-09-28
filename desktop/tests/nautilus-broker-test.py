@@ -17,7 +17,7 @@ sys.modules['gi'] = gi
 sys.modules['gi.repository'] = repository
 source = Path(__file__).parent.parent / 'shell' / 'linux' / 'sorafiles.py.in'
 namespace = {}
-exec(compile(source.read_text(encoding='utf-8').replace('__SORAFILES_APP_JSON__', json.dumps('/opt/Sora Files/app')), str(source), 'exec'), namespace)
+exec(compile(source.read_text(encoding='utf-8').replace('__SORAFILES_APP_JSON__', json.dumps('/opt/Sora Files/app')).replace('__SORAFILES_LABEL_JSON__', json.dumps('Edit with SoraFiles')), str(source), 'exec'), namespace)
 
 
 class BrokerTests(unittest.TestCase):

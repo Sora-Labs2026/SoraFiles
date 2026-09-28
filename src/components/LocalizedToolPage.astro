@@ -1,11 +1,9 @@
 ---
 import type { LocaleContent, LocalizedToolCopy } from '../i18n/types';
 import type { LocalePath } from '../i18n/config';
-import { localizedPath } from '../i18n/config';
 import type { LiveTool } from '../data/liveTools';
-import { dedicatedWorkbenchToolIds, documentActionToolIds, liveToolById } from '../data/liveTools';
+import { dedicatedWorkbenchToolIds, documentActionToolIds } from '../data/liveTools';
 import { liveText, liveToolCopy } from '../data/liveI18n';
-import LiveToolCard from './LiveToolCard.astro';
 import DocumentActionWorkbench from './DocumentActionWorkbench.astro';
 import FileWorkbench from './FileWorkbench.astro';
 import ImageConverterWorkbench from './ImageConverterWorkbench.astro';
@@ -14,25 +12,19 @@ import ExtraToolWorkbench from './ExtraToolWorkbench.astro';
 import ResizeImageWorkbench from './ResizeImageWorkbench.astro';
 import DocScannerWorkbench from './DocScannerWorkbench.astro';
 import BackgroundRemovalWorkbench from './BackgroundRemovalWorkbench.astro';
+import PrototypeToolSections from './PrototypeToolSections.astro';
+import LocalizedPrototypeToolSections from './LocalizedPrototypeToolSections.astro';
 interface Props { locale: LocalePath; content: LocaleContent; tool: LiveTool; copy?: LocalizedToolCopy; }
 const { locale, tool, content } = Astro.props;
-const hrefFor = (path: string) => localizedPath(locale, path);
 const t = (path: string) => liveText(locale, path);
 const words = liveToolCopy(locale, tool.id);
 const reviewedCopy = (content.tools as Record<string, LocalizedToolCopy>)[tool.id];
 const fallbackCopy = { title: words.n, short: words.t, description: words.d, note: words.d, h1: words.n, intro: words.t, sectionTitle: words.n, paragraphs: [words.d], steps: [t('steps.s1t'), t('steps.s2t'), t('steps.s3t')], faqs: [] } as unknown as LocalizedToolCopy;
 const exactCopy = reviewedCopy ?? fallbackCopy;
-const hasGuidance = Boolean(reviewedCopy && (exactCopy.paragraphs.length || exactCopy.note || exactCopy.faqs.length));
-const related = tool.related.map((id) => liveToolById.get(id)).filter((item) => item !== undefined);
-const steps = [[t('steps.s1t'), t('steps.s1d')], [t('steps.s2t'), t('steps.s2d')], [t('steps.s3t'), t('steps.s3d')]];
 ---
-<main id="main" class="v10-tool-page" data-testid={`tool-page-${tool.slug}`}>
-  <header class="v10-content v10-tool-hero" data-testid="tool-hero">
-    <nav aria-label={t('nav.home')} class="v10-breadcrumb"><a href={hrefFor('/')}>{t('nav.home')}</a><span aria-hidden="true">/</span><a href={hrefFor('/tools')}>{t('nav.allTools')}</a><span aria-hidden="true">/</span><span aria-current="page">{words.n}</span></nav>
-    <h1 class="sf-enter">{words.n}</h1>
-    <p class="v10-tool-lead sf-enter">{words.t}</p>
-  </header>
-  <section class="v10-content v10-tool-stage" aria-label={words.n}>
+<main id="main" class="v10-tool-page" data-testid={`tool-page-${tool.slug}`} data-prototype-tool>
+  {locale==='en'?<PrototypeToolSections id={tool.id} part="hero"/>:<LocalizedPrototypeToolSections {locale} {tool} copy={exactCopy} part="hero"/>}
+  <section class="container tool-stage" aria-label={words.n}>
     <div id="workbench" class="live-workbench v10-workbench scroll-mt-24">
       {tool.id === 'compress-pdf' && <PdfWorkbench {locale} copy={exactCopy}/>}
       {tool.id === 'image-converter' && <ImageConverterWorkbench {locale} copy={exactCopy}/>}
@@ -44,13 +36,5 @@ const steps = [[t('steps.s1t'), t('steps.s1d')], [t('steps.s2t'), t('steps.s2d')
       {!dedicatedWorkbenchToolIds.has(tool.id) && <ExtraToolWorkbench {tool} {locale}/>}
     </div>
   </section>
-  <section class="v10-content v10-tool-steps" aria-labelledby="tool-steps-heading">
-    <h2 id="tool-steps-heading">{t('peek.howTitle')}</h2>
-    <ol>{steps.map(([title, description], index) => <li><span class="v10-step-number">{index + 1}</span><div><h3>{title}</h3><p>{description}</p></div></li>)}</ol>
-  </section>
-  {hasGuidance && <section data-tool-guidance class="v10-content v10-tool-guidance">
-    <div class="v10-tool-guidance__copy"><h2>{exactCopy.sectionTitle}</h2>{exactCopy.paragraphs.map((paragraph) => <p>{paragraph}</p>)}{exactCopy.note && <aside class="v10-tool-note">{exactCopy.note}</aside>}</div>
-    {exactCopy.faqs.length > 0 && <div id="faq" class="v10-tool-faq"><h2>Frequently asked questions</h2>{exactCopy.faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div>}
-  </section>}
-  <section class="v10-content v10-related-tools"><div class="v10-section-heading"><h2>{t('nav.allTools')}</h2><a href={hrefFor('/tools')}>{t('nav.allTools')} <span aria-hidden="true">→</span></a></div><ul class="v10-tool-grid">{related.map((item) => <li><LiveToolCard tool={item} href={hrefFor(`/${item.slug}`)} {locale}/></li>)}</ul></section>
+  {locale==='en'?<PrototypeToolSections id={tool.id} part="after"/>:<LocalizedPrototypeToolSections {locale} {tool} copy={exactCopy} part="after"/>}
 </main>

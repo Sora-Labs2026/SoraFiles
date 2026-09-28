@@ -121,8 +121,8 @@ const detailAdjustments = [['definition',adjust('definition'),0,100],['sharpness
   .scanner-crop-state { flex: none; border: 1px solid rgb(255 255 255 / .1); border-radius: 999px; padding: .2rem .5rem; font-size: .62rem; line-height: .9rem; font-weight: 800; color: #cbd5e1; background: rgb(255 255 255 / .05); }
   .scanner-stage-actions { display: flex; flex: none; align-items: center; gap: .35rem; }
   .scanner-stage-button { min-width: 2.5rem; min-height: 2.5rem; display: inline-grid; place-items: center; border: 1px solid rgb(255 255 255 / .1); border-radius: .7rem; padding-inline: .7rem; font-size: .72rem; font-weight: 800; color: #e2e8f0; background: rgb(255 255 255 / .055); }
-  .scanner-stage-button:hover { border-color: rgb(167 139 250 / .55); background: rgb(124 58 237 / .18); }
-  .scanner-stage-button-primary { color: #fff; background: #6d28d9; border-color: #7c3aed; }
+  .scanner-stage-button:hover { border-color: rgb(255 255 255 / .35); background: rgb(255 255 255 / .08); }
+  .scanner-stage-button-primary { color: #030712; background: #ffffff; border-color: #ffffff; }
   .scanner-action-status { min-height: 1.65rem; padding: .35rem 1rem 0; font-size: .68rem; font-weight: 750; color: #6ee7b7; background: #0b1020; }
   .scanner-light-table { position: relative; display: grid; min-width: 0; min-height: 0; place-items: center; overflow: auto; padding: clamp(1rem,3vw,2.5rem); background-color: #0b1020; background-image: radial-gradient(circle at center, rgb(67 56 202 / .13), transparent 48%), linear-gradient(rgb(255 255 255 / .025) 1px, transparent 1px), linear-gradient(90deg,rgb(255 255 255 / .025) 1px,transparent 1px); background-size: auto, 24px 24px, 24px 24px; }
   .scanner-paper-shadow { display: grid; max-width: 100%; max-height: 100%; place-items: center; border-radius: .28rem; background: #fff; box-shadow: 0 32px 80px rgb(0 0 0 / .5), 0 0 0 1px rgb(255 255 255 / .14); }
@@ -131,8 +131,8 @@ const detailAdjustments = [['definition',adjust('definition'),0,100],['sharpness
   .scanner-control-section + .scanner-control-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-line); }
   .scanner-control-button { min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-line); border-radius: .75rem; padding-inline: .75rem; font-size: .7rem; font-weight: 800; color: var(--color-ink); background: var(--color-surface); }
   .scanner-control-button:hover { border-color: color-mix(in srgb,var(--color-violet) 45%,var(--color-line)); color: var(--color-violet); background: var(--color-violet-soft); }
-  .scanner-control-button-primary { color: #fff; border-color: #7c3aed; background: #6d28d9; }
-  .scanner-control-button-primary:hover { color: #fff; background: #7c3aed; }
+  .scanner-control-button-primary { color: var(--on-action, #fff); border-color: var(--action, #09090b); background: var(--action, #09090b); }
+  .scanner-control-button-primary:hover { color: var(--on-action, #fff); background: var(--action-hover, #27272a); }
   .scanner-choice, .scanner-format-choice { min-height: 2.65rem; display: flex; cursor: pointer; align-items: center; justify-content: flex-start; gap: .5rem; border: 1px solid var(--color-line); border-radius: .7rem; padding: .5rem .65rem; font-size: .68rem; font-weight: 750; color: var(--color-muted); background: var(--color-surface); }
   .scanner-choice:hover, .scanner-format-choice:hover { border-color: color-mix(in srgb,var(--color-green) 45%,var(--color-line)); }
   .scanner-choice:has(:checked) { border-color: var(--color-green); color: var(--color-green); background: var(--color-green-soft); box-shadow: 0 0 0 1px color-mix(in srgb,var(--color-green) 18%,transparent); }

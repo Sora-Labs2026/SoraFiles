@@ -30,7 +30,7 @@ function setup(plan='personal-annual'){
 }
 
 test('all six replacement products require exact fixed amounts, no promotions or license grant',()=>{
- const expected=[99,999,4999,399,3999,19999];assert.deepEqual(Object.values(replacementPrices).map(p=>p.amount),expected);
+ const expected=[99,99,1999,399,399,7999];assert.deepEqual(Object.values(replacementPrices).map(p=>p.amount),expected);
  for(const plan of Object.keys(replacementPrices)){const s=setup(plan);try{const product=s.product(plan);assert.equal(verifyReplacementProduct(plan,product,product.product_id).amount,replacementPrices[plan].amount);for(const change of [{price:{...product.price,price:1}},{price:{...product.price,currency:'EUR'}},{price:{...product.price,discount:10}},{is_recurring:true},{entitlements:[{id:'license'}]}])assert.throws(()=>verifyReplacementProduct(plan,{...product,...change},product.product_id));}finally{s.store.close();}}
 });
 
@@ -39,7 +39,7 @@ test('verified exact payment releases occupied seat for a new device without res
   await s.execute('activate',{licenseKey:'secret-key'},old);
   const body={licenseRef:'lic',oldDeviceId:deviceIdentity(old.publicKey),licenseKey:'secret-key',identityToken:'owner'};
   await assert.rejects(s.execute('replacementRequest',{...body,identityToken:'key-only'},next),/ownership/);assert.equal(s.checkoutCalls(),0);
-  const order=await s.execute('replacementRequest',body,next);assert.equal(order.fee.amount,999);assert.equal(order.status,'payment-pending');
+  const order=await s.execute('replacementRequest',body,next);assert.equal(order.fee.amount,99);assert.equal(order.status,'payment-pending');
   assert.equal((await s.execute('replacementRequest',body,next)).orderId,order.orderId);assert.equal(s.checkoutCalls(),1);
   await assert.rejects(s.execute('replacementRequest',body,intruder),/pending/);
   const status={orderId:order.orderId,licenseKey:'secret-key',identityToken:'owner'};
@@ -47,7 +47,7 @@ test('verified exact payment releases occupied seat for a new device without res
   assert.equal((await s.execute('replacementStatus',status,next)).status,'payment-pending');assert.ok(s.store.active('lic',body.oldDeviceId));
   s.payment().status='succeeded';s.payment().total_amount=998;
   await assert.rejects(s.execute('replacementStatus',status,next),/mismatch/);assert.ok(s.store.active('lic',body.oldDeviceId));
-  s.payment().total_amount=999;assert.equal((await s.execute('replacementStatus',status,next)).replacementAuthorized,true);
+  s.payment().total_amount=99;assert.equal((await s.execute('replacementStatus',status,next)).replacementAuthorized,true);
   assert.equal(s.deactivateCalls(),1);assert.equal((await s.execute('replacementStatus',status,next)).status,'complete');assert.equal(s.deactivateCalls(),1);
   const activated=await s.execute('activate',{licenseKey:'secret-key'},intruder);assert.equal(s.verifyGrant(activated.entitlement,intruder).plan,'personal-annual');
   await assert.rejects(s.execute('activate',{licenseKey:'secret-key'},next),/limit/);

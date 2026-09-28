@@ -153,7 +153,8 @@ async function processExtraTool(page, { route, files, configure, timeout = 60_00
   await page.goto(`${baseUrl}/${route}`, { waitUntil: 'domcontentloaded' });
   const input = page.locator('[data-extra-input]');
   await input.setInputFiles(files.map((file) => typeof file === 'string' ? fixturePath(file) : file));
-  await page.locator('[data-extra-selected]').waitFor({ state: 'visible' });
+  // The image editor shows its canvas instead of the generic selected-file list.
+  await page.locator(route === 'edit-image' ? '[data-edit-preview]' : '[data-extra-selected]').waitFor({ state: 'visible' });
   if (configure) await configure(page);
   await page.locator('[data-extra-start]').click();
   try {

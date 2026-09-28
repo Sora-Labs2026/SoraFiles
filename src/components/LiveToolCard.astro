@@ -3,14 +3,16 @@ import type { LiveTool } from '../data/liveTools';
 import { localizedPath, type LocalePath } from '../i18n/config';
 import { liveToolCopy } from '../data/liveI18n';
 import ToolIcon from './ToolIcon.astro';
-interface Props { tool: LiveTool; href?: string; modal?: boolean; locale?: LocalePath; }
-const { tool, href, modal = false, locale = 'en' } = Astro.props;
+import prototypeTools from '../data/prototypeHomeTools.json';
+interface Props { tool: LiveTool; href?: string; modal?: boolean; locale?: LocalePath; exact?:boolean; }
+const { tool, href, modal = false, locale = 'en',exact=false } = Astro.props;
 const words = liveToolCopy(locale, tool.id);
 const classes = 'sf-tool-card v10-tool-card';
+const reference=prototypeTools.find(item=>item.id===tool.id)!;
 ---
 
-<a href={href ?? localizedPath(locale, `/${tool.slug}`)} data-live-tool-card={modal ? tool.id : undefined} data-tool-card data-testid={`tool-card-${tool.id}`} class={classes}>
+{exact?<a href={href??localizedPath(locale,`/${tool.slug}`)} class="tool-card" data-tool-card data-testid={`tool-card-${tool.id}`}><span class="tool-card__icon" aria-hidden="true" set:html={reference.icon}/><span class="tool-card__body"><span class="tool-card__name">{locale==='en'?reference.name:words.n}</span><span class="tool-card__desc">{locale==='en'?reference.outcome:words.t}</span></span><kbd class="tool-card__enter" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 10 4 15l5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></kbd><svg class="tool-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a>:<a href={href ?? localizedPath(locale, `/${tool.slug}`)} data-live-tool-card={modal ? tool.id : undefined} data-tool-card data-testid={`tool-card-${tool.id}`} class={classes}>
   <span class="v10-tool-card__icon"><ToolIcon icon={tool.icon}/></span>
   <span class="v10-tool-card__copy"><span class="v10-tool-card__name">{words.n}</span><span class="v10-tool-card__description">{words.t}</span></span>
   <svg aria-hidden="true" viewBox="0 0 24 24" class="v10-tool-card__arrow" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
-</a>
+</a>}

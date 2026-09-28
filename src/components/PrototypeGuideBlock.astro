@@ -1,0 +1,15 @@
+---
+import PrototypeRich from './PrototypeRich.astro';
+import PrototypeRightClickMini from './PrototypeRightClickMini.astro';
+import type {LocalePath} from '../i18n/config';
+type Rich=string|(string|{href:string;text:string})[];
+interface Props {locale?:LocalePath;block:{type:string;id?:string|null;text?:string;content?:Rich;items?:Rich[];caption?:string;head?:string[];rows?:Rich[][];href?:string}}
+const {block:b,locale='en'}=Astro.props;
+---
+{b.type==='h2'&&<h2 id={b.id} class="t-h2 prose__h2">{b.text}</h2>}
+{b.type==='p'&&<p><PrototypeRich content={b.content!}/></p>}
+{b.type==='ul'&&<ul class="prose__list">{b.items!.map(item=><li><PrototypeRich content={item}/></li>)}</ul>}
+{b.type==='table'&&<div class="table-wrap"><table class="data-table"><caption>{b.caption}</caption><thead><tr>{b.head!.map(h=><th scope="col">{h}</th>)}</tr></thead><tbody>{b.rows!.map(row=><tr>{row.map((cell,i)=>i===0?<th scope="row"><PrototypeRich content={cell}/></th>:<td data-label={b.head![i]}><PrototypeRich content={cell}/></td>)}</tr>)}</tbody></table></div>}
+{b.type==='steps'&&<ol class="steps prose__steps" data-testid="guide-steps">{b.items!.map((item,i)=><li><span class="steps__n tnum" aria-hidden="true">{i+1}</span><span><PrototypeRich content={item}/></span></li>)}</ol>}
+{b.type==='cta'&&<a class="btn btn--primary btn--md prose__cta" href={b.href} data-testid="guide-cta"><span>{b.text}</span><svg class="btn__icon btn__icon--end" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a>}
+{b.type==='menu'&&<figure class="guide-figure" data-testid="guide-menu-figure"><div class="guide-figure__stage"><PrototypeRightClickMini {locale}/></div><figcaption class="t-caption guide-figure__caption">{b.caption}</figcaption></figure>}

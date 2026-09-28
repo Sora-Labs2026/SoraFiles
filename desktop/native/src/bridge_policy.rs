@@ -15,11 +15,15 @@ pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
         "processFiles" => fields.len()==3 && params["options"].is_object()
             && matches!(params["tool"].as_str(),Some("remove-background"|"doc-scanner"|"repair-pdf"|"compress-pdf"|"heic-to-jpg"|"pdf-to-word"|"pdf-to-excel"|"metadata-remover"|"protect-pdf"|"pdf-ocr"|"pdf-to-jpg"|"merge-pdf"|"split-pdf"|"rotate-pdf"|"remove-pages"|"page-numbers"|"watermark-pdf"|"sign-pdf"|"jpg-to-pdf"|"image-converter"|"compress-image"|"resize-image"|"edit-image"))
             && params["selectionIds"].as_array().is_some_and(|ids|!ids.is_empty()&&ids.len()<=256&&ids.iter().all(|id|id.as_str().is_some_and(|text|text.len()==32&&text.bytes().all(|b|b.is_ascii_hexdigit())))),
-        "replacementState" | "replacementStatus" | "replacementCheckout" => fields.is_empty(),
+        "replacementState" | "replacementStatus" | "replacementCheckout" | "replacementEmailResend" | "replacementReset" => fields.is_empty(),
+        // A code is requested only with an email the person typed; an optional
+        // license key is accepted when this device has no saved key.
+        "replacementEmailStart" => fields.contains_key("email") && (fields.len()==1 || (fields.len()==2 && fields.contains_key("licenseKey")))
+            && params["email"].as_str().is_some_and(|email| (3..=254).contains(&email.len()) && email.matches('@').count()==1 && !email.chars().any(|c| c.is_control() || c.is_whitespace()))
+            && (fields.len()==1 || params["licenseKey"].as_str().is_some_and(|key| !key.trim().is_empty() && key.len() <= 4096 && !key.chars().any(char::is_control))),
         "replacementEmailVerify" => fields.len()==1 && params["code"].as_str().is_some_and(|code|code.len()==8&&code.bytes().all(|b|b.is_ascii_digit())),
         "replacementRequest" => fields.len()==1 && params["oldDeviceId"].as_str().is_some_and(|id|id.len()==43&&id.bytes().all(|b|b.is_ascii_alphanumeric()||b==b'-'||b==b'_')),
-        "replacementEmailStart" if fields.is_empty() => true,
-        "activate" | "replacementEmailStart" => fields.len() == 1 && params["licenseKey"].as_str()
+        "activate" => fields.len() == 1 && params["licenseKey"].as_str()
             .is_some_and(|key| !key.trim().is_empty() && key.len() <= 4096 && !key.chars().any(char::is_control)),
         "openOutput"|"revealOutput"=>fields.len()==1&&params["id"].as_str().is_some_and(|id|id.len()==32&&id.bytes().all(|b|b.is_ascii_hexdigit())),
         "releaseSelection" => fields.len() == 1 && params["ids"].as_array().is_some_and(|ids|
@@ -92,12 +96,19 @@ impl Drop for DialogLease<'_> { fn drop(&mut self) { self.0.store(false, Orderin
         assert!(!valid_request("setWindowMode",&json!({"quick":true}),false));
     }
     #[test] fn replacement_bridge_keeps_proof_and_checkout_location_native() {
-        assert!(valid_request("replacementEmailStart",&json!({"licenseKey":"purchase-key"}),false));
-        assert!(valid_request("replacementEmailStart",&json!({}),false));
+        assert!(valid_request("replacementEmailStart",&json!({"email":"buyer@example.com"}),false));
+        assert!(valid_request("replacementEmailStart",&json!({"email":"buyer@example.com","licenseKey":"purchase-key"}),false));
+        assert!(valid_request("replacementEmailResend",&json!({}),false));
+        assert!(valid_request("replacementReset",&json!({}),false));
         assert!(valid_request("replacementEmailVerify",&json!({"code":"12345678"}),false));
         assert!(valid_request("replacementRequest",&json!({"oldDeviceId":"a".repeat(43)}),false));
         assert!(valid_request("replacementCheckout",&json!({}),false));
-        for (method,params) in [("replacementEmailStart",json!({"email":"other@example.com"})),("replacementEmailVerify",json!({"code":"12345678","identityToken":"forged"})),("replacementRequest",json!({"oldDeviceId":"a".repeat(43),"amount":1})),("replacementCheckout",json!({"url":"https://elsewhere.example"}))]{assert!(!valid_request(method,&params,false));}
+        // Nothing can request a code without a typed purchase email.
+        for params in [json!({}),json!({"licenseKey":"purchase-key"}),json!({"email":""}),json!({"email":"no-at-sign"}),json!({"email":"a b@example.com"}),json!({"email":"buyer@example.com","plan":"x"}),json!({"email":"buyer@example.com","licenseKey":"\nkey"})] {
+            assert!(!valid_request("replacementEmailStart",&params,false),"{params}");
+        }
+        assert!(!valid_request("replacementEmailResend",&json!({"email":"other@example.com"}),false));
+        for (method,params) in [("replacementEmailVerify",json!({"code":"12345678","identityToken":"forged"})),("replacementRequest",json!({"oldDeviceId":"a".repeat(43),"amount":1})),("replacementCheckout",json!({"url":"https://elsewhere.example"}))]{assert!(!valid_request(method,&params,false));}
     }
     #[test] fn processing_accepts_only_known_tools_and_opaque_selection_ids() {
         let valid=json!({"tool":"pdf-to-jpg","selectionIds":["b".repeat(32)],"options":{"dpi":150}});

@@ -1,6 +1,6 @@
 # Promotions implementation and release requirements
 
-> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. Production Mac releases require signing and notarization.
+> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. The owner-approved macOS candidate channel permits ad-hoc builds with Open Anyway guidance; Developer ID signing and notarization remain future public-trust work.
 
 
 ## Checkout discounts

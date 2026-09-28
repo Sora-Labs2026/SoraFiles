@@ -488,7 +488,7 @@ html[data-motion-suspended] [data-motion-region] * {
 .sf-range::-webkit-slider-runnable-track {
   height: .5rem;
   border-radius: 999px;
-  background: linear-gradient(to right, #7c3aed 0 var(--range-progress), #e2e8f0 var(--range-progress) 100%);
+  background: linear-gradient(to right, var(--ink, #030712) 0 var(--range-progress), #e2e8f0 var(--range-progress) 100%);
 }
 .sf-range::-webkit-slider-thumb {
   appearance: none;
@@ -508,7 +508,7 @@ html[data-motion-suspended] [data-motion-region] * {
 .sf-range::-moz-range-progress {
   height: .5rem;
   border-radius: 999px;
-  background: #7c3aed;
+  background: var(--ink, #030712);
 }
 .sf-range::-moz-range-thumb {
   width: .875rem;
@@ -518,13 +518,13 @@ html[data-motion-suspended] [data-motion-region] * {
   background: #111827;
   box-shadow: 0 2px 8px rgb(15 23 42 / 25%);
 }
-.sf-range:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; border-radius: 999px; }
+.sf-range:focus-visible { outline: 2px solid var(--ink, #030712); outline-offset: 2px; border-radius: 999px; }
 .sf-range:disabled { cursor: not-allowed; opacity: .48; }
-.dark .sf-range::-webkit-slider-runnable-track { background: linear-gradient(to right, #a78bfa 0 var(--range-progress), rgb(255 255 255 / 14%) var(--range-progress) 100%); }
+.dark .sf-range::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--ink, #f4f5f7) 0 var(--range-progress), rgb(255 255 255 / 14%) var(--range-progress) 100%); }
 .dark .sf-range::-moz-range-track { background: rgb(255 255 255 / 14%); }
-.dark .sf-range::-moz-range-progress { background: #a78bfa; }
-html[dir='rtl'] .sf-range::-webkit-slider-runnable-track { background: linear-gradient(to left, #7c3aed 0 var(--range-progress), #e2e8f0 var(--range-progress) 100%); }
-html[dir='rtl'].dark .sf-range::-webkit-slider-runnable-track { background: linear-gradient(to left, #a78bfa 0 var(--range-progress), rgb(255 255 255 / 14%) var(--range-progress) 100%); }
+.dark .sf-range::-moz-range-progress { background: var(--ink, #f4f5f7); }
+html[dir='rtl'] .sf-range::-webkit-slider-runnable-track { background: linear-gradient(to left, var(--ink, #030712) 0 var(--range-progress), #e2e8f0 var(--range-progress) 100%); }
+html[dir='rtl'].dark .sf-range::-webkit-slider-runnable-track { background: linear-gradient(to left, var(--ink, #f4f5f7) 0 var(--range-progress), rgb(255 255 255 / 14%) var(--range-progress) 100%); }
 .anim-twinkle { animation: sf-twinkle 3.4s ease-in-out infinite; }
 .anim-dash { animation: sf-dash 6s linear infinite; }
 .anim-pulse-soft { animation: sf-pulse-soft 3s ease-in-out infinite; }

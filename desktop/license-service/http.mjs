@@ -3,6 +3,7 @@ import {createHmac} from 'node:crypto';
 import {RateLimiter} from './request-guard.mjs';
 
 const actions=new Set(['trial','activate','refresh','validate','devices','replacementRequest','replacementStatus','replacementEmailStart','replacementEmailVerify']);
+const reasons=new Set(['email-required','email-mismatch','email-rate-limited','email-cooldown','email-attempts','email-delivery-failed','license-unverified','code-invalid','code-used','code-superseded','code-expired','code-locked']);
 const fail=(status,code)=>Object.assign(Error(code),{httpStatus:status});
 function exact(value,keys){if(!value||Array.isArray(value)||Object.getPrototypeOf(value)!==Object.prototype||Object.keys(value).length!==keys.length||keys.some(k=>!Object.hasOwn(value,k)))throw fail(400,'Invalid request');}
 async function readBody(req,maxBytes){
@@ -43,7 +44,7 @@ export function createLicenseHttpServer({service,webhooks,rateSecret,limiter=new
   }catch(error){
    // Do not echo key material, provider response bodies, paths or stack traces.
    const status=error.httpStatus||(error.code==='providerUnavailable'?503:400);try{onFailure({status});}catch{}
-   json(res,status,{error:error.code==='activationReconciliation'?'Your activation needs to be checked before another attempt. Contact SoraFiles support if it remains pending.':status===503?'License verification is temporarily unavailable. Please try again later.':status===429?'Please wait a moment and try again.':status===413?'The request is too large.':'The request could not be completed. Check your details and try again.'});
+   json(res,status,{error:error.code==='activationReconciliation'?'Your activation needs to be checked before another attempt. Contact SoraFiles support if it remains pending.':status===503?'License verification is temporarily unavailable. Please try again later.':status===429?'Please wait a moment and try again.':status===413?'The request is too large.':'The request could not be completed. Check your details and try again.',...(reasons.has(error.reason)?{reason:error.reason}:{})});
   }
  });
  server.keepAliveTimeout=5000;server.maxRequestsPerSocket=100;

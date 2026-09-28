@@ -1,5 +1,6 @@
 import { BOOTSTRAP_POPULAR_TOOL_IDS, PUBLISHED_TOOL_IDS } from './src/data/popularityRegistry.generated.js';
 import { computePopularityRanking, createBootstrapRanking } from './src/lib/popularity/core.js';
+import { desktopRedemptionRequest } from './src/lib/desktop/redemption-edge.js';
 
 const CANONICAL_HOST = 'sorafiles.com';
 const CANONICAL_ORIGIN = `https://${CANONICAL_HOST}`;
@@ -14,10 +15,13 @@ const HASHED_ASTRO_ASSET = /^\/_astro\/[^/?]+\.[A-Za-z0-9_-]{8,}\.(?:css|js|mjs|
 const HOMEPAGE_PATH = /^\/(?:[a-z]{2}|zh-(?:cn|tw))?\/?$/;
 const POPULARITY_EVENT_PATH = '/__sf/popularity/event';
 const POPULARITY_RANKING_PATH = '/__sf/popularity/ranking';
+const BACKGROUND_REMOVAL_ASSET_PREFIX = '/__sf/background-removal/';
+const BACKGROUND_REMOVAL_ASSET_ORIGIN = 'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/';
 const PUBLISHED_TOOL_SET = new Set(PUBLISHED_TOOL_IDS);
 const HSTS = 'max-age=31536000';
 const PUBLIC_CSP = "base-uri 'self'; object-src 'none'; frame-ancestors 'none'";
 const OFFICE_CONVERTER_PATH = /\/(?:word-to-pdf|excel-to-pdf|remove-background)\/?$/;
+const BACKGROUND_WORKER_PATH = /^\/_astro\/background-removal\.worker-[A-Za-z0-9_-]+\.js$/;
 // The document scanner needs same-origin camera access after explicit browser consent.
 // All unrelated powerful features remain disabled.
 const PERMISSIONS_POLICY = 'camera=(self), geolocation=(), microphone=(), payment=(), usb=()';
@@ -40,6 +44,11 @@ function preparePublicHtml(response, ranking, pathname = '/') {
   headers.set('Permissions-Policy', PERMISSIONS_POLICY);
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('X-Frame-Options', 'DENY');
+  if (/^\/(?:[a-z]{2}\/|zh-(?:cn|tw)\/)?desktop\/(?:purchase|redeem)(?:\/|\/index\.html)?$/.test(pathname)) {
+    headers.set('Referrer-Policy', 'no-referrer');
+    headers.set('Cache-Control', 'private, no-store');
+    headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  }
   if (OFFICE_CONVERTER_PATH.test(pathname)) {
     // ZetaOffice/LibreOffice WebAssembly requires SharedArrayBuffer. Keep the
     // isolation surgical so ordinary pages and third-party analytics are not
@@ -132,6 +141,29 @@ async function handlePopularityEvent(request, env, ctx) {
   return noStore(204);
 }
 
+async function handleBackgroundRemovalAsset(request, ctx) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return noStore(405, 'Method Not Allowed');
+  const url = new URL(request.url);
+  const asset = url.pathname.slice(BACKGROUND_REMOVAL_ASSET_PREFIX.length);
+  if (asset !== 'resources.json' && !/^[a-f0-9]{64}$/i.test(asset)) return noStore(404, 'Not Found');
+  const cache = caches.default;
+  const cacheKey = new Request(url.toString(), { method: 'GET' });
+  let response = await cache.match(cacheKey);
+  if (!response) {
+    const upstream = await fetch(new URL(asset, BACKGROUND_REMOVAL_ASSET_ORIGIN), { headers: { Accept: '*/*' } });
+    if (!upstream.ok) return noStore(502, 'Model asset unavailable');
+    const headers = new Headers(upstream.headers);
+    headers.set('Cache-Control', asset === 'resources.json' ? 'public, max-age=86400' : 'public, max-age=31536000, immutable');
+    headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+    headers.set('X-Content-Type-Options', 'nosniff');
+    headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    response = new Response(upstream.body, { status: upstream.status, headers });
+    if (request.method === 'GET' && ctx?.waitUntil) ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  }
+  if (request.method === 'HEAD') return new Response(null, { status: response.status, headers: response.headers });
+  return response;
+}
+
 function dayKey(timestamp) {
   return new Date(timestamp).toISOString().slice(0, 10);
 }
@@ -181,6 +213,8 @@ async function refreshPopularityRanking(env, now = new Date()) {
 
 export default {
   async fetch(request, env, ctx) {
+    const redemptionResponse = await desktopRedemptionRequest(request, env);
+    if (redemptionResponse) return redemptionResponse;
     const url = new URL(request.url);
     if (url.protocol !== 'https:' || url.hostname !== CANONICAL_HOST) {
       url.protocol = 'https:'; url.hostname = CANONICAL_HOST; url.port = '';
@@ -200,6 +234,7 @@ export default {
       return redirectWithHsts(url.toString());
     }
     if (url.pathname === POPULARITY_EVENT_PATH) return handlePopularityEvent(request, env, ctx);
+    if (url.pathname.startsWith(BACKGROUND_REMOVAL_ASSET_PREFIX)) return handleBackgroundRemovalAsset(request, ctx);
     if (url.pathname === POPULARITY_RANKING_PATH) {
       if (request.method !== 'GET') return noStore(405, 'Method Not Allowed');
       return Response.json(await getCachedRanking(env), { headers: {
@@ -211,6 +246,14 @@ export default {
       return Response.json({ suggestedLocale: COUNTRY_LOCALES[country] || null }, { headers: { 'Cache-Control': 'private, no-store', 'X-Robots-Tag': 'noindex' } });
     }
     if (REMOVED_AD_PATHS.has(url.pathname)) return noStore(404, 'Not Found');
+    if (BACKGROUND_WORKER_PATH.test(url.pathname)) {
+      const response = await env.ASSETS.fetch(request);
+      const headers = new Headers(response.headers);
+      // Dedicated workers must opt into the embedding document's isolation policy.
+      headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+      headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+      return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+    }
     if (HASHED_ASTRO_ASSET.test(url.pathname)) {
       const response = await env.ASSETS.fetch(request);
       const headers = new Headers(response.headers);
@@ -225,7 +268,10 @@ export default {
       headers.set('Cache-Control', 'public, max-age=300');
       return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
     }
-    const response = await env.ASSETS.fetch(request);
+    // Keep checkout keys/customer query parameters out of static asset requests.
+    const sensitiveReturn = /^\/(?:[a-z]{2}\/|zh-(?:cn|tw)\/)?desktop\/(?:purchase|redeem)(?:\/|\/index\.html)?$/.test(url.pathname);
+    const assetUrl = new URL(url); if (sensitiveReturn) assetUrl.search = '';
+    const response = await env.ASSETS.fetch(sensitiveReturn ? new Request(assetUrl, request) : request);
     const ranking = request.method === 'GET' && HOMEPAGE_PATH.test(url.pathname) ? await getCachedRanking(env) : null;
     return preparePublicHtml(response, ranking, url.pathname);
   },

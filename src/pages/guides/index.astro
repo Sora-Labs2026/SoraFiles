@@ -3,7 +3,11 @@ import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import { publishedGuides, guidePath } from '../../data/guides';
-const published = publishedGuides();
+import prototypeGuides from '../../data/prototypeGuides.json';
+import PrototypeBreadcrumb from '../../components/PrototypeBreadcrumb.astro';
+import '../../styles/v10-site-exact.css';
+const publicSlugs=new Set(publishedGuides().map(g=>g.slug));
+const published=prototypeGuides.filter(g=>publicSlugs.has(g.slug));
 const groups = [
   { title: 'SoraFiles Desktop', id: 'desktop', guides: published.filter(g => g.category === 'SoraFiles Desktop') },
   { title: 'Working with files', id: 'files', guides: published.filter(g => g.category !== 'SoraFiles Desktop') },
@@ -11,9 +15,9 @@ const groups = [
 ---
 <Layout title="File Guides | SoraFiles" description="Practical guides for working with PDFs and images using SoraFiles. Browse published guidance on file formats, privacy and troubleshooting." canonicalPath="/guides" noIndex={!published.length}>
   <Header />
-  <main id="main" class="v10-content min-h-[60vh]">
-    <header class="v10-tool-hero"><nav aria-label="Breadcrumb" class="v10-breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span aria-current="page">Guides</span></nav><h1>Guides</h1><p class="v10-tool-lead">Practical help for SoraFiles Desktop and working with your files.</p></header>
-    {groups.filter(group => group.guides.length).map(group => <section class="v10-guide-group" data-testid={`guide-group-${group.id}`} aria-labelledby={`guide-group-${group.id}`}><h2 id={`guide-group-${group.id}`}>{group.title}</h2><ul>{group.guides.map(g => <li><h3><a href={guidePath(g.slug)}>{g.title}</a></h3><p>{g.description}</p></li>)}</ul></section>)}
+  <main id="main" data-prototype-info>
+    <header class="container page-intro"><PrototypeBreadcrumb items={[{label:'Home',href:'/'},{label:'Guides'}]}/><h1 class="t-h1 page-intro__title"><span class="line-reveal"><span class="line-reveal__inner">Guides</span></span></h1></header>
+    <div class="container guides-hub">{groups.filter(group => group.guides.length).map(group => <section class="guide-group" data-testid={`guide-group-${group.id}`} aria-labelledby={`guide-group-${group.id}`}><h2 class="t-h3 guide-group__title" id={`guide-group-${group.id}`}>{group.title}</h2><ul class="guide-list">{group.guides.map((g,i) => <li style={`--i:${i}`}><a class="guide-card" href={guidePath(g.slug)}><span class="t-label guide-card__cat">{g.category}</span><span class="guide-card__title">{g.title}</span><span class="t-small guide-card__desc">{g.description}</span>{('published' in g ? g.published : undefined)&&<time class="t-caption tnum guide-card__date" datetime={('published' in g ? g.published : undefined)}>{new Intl.DateTimeFormat('en-GB',{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(String('published' in g ? g.published : '')))}</time>}<svg class="guide-card__arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a></li>)}</ul></section>)}</div>
     {!published.length && <p class="mb-12">No guides published yet. <a href="/tools" class="underline">Explore tools</a>.</p>}
   </main>
   <Footer />

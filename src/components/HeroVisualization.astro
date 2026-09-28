@@ -1,9 +1,11 @@
 ---
 import type { LocalePath } from '../i18n/config';
 import { liveToolCopy } from '../data/liveI18n';
+import {prototypeText} from '../i18n/prototype';
 import '../styles/v10-product-window.css';
 interface Props { locale?: LocalePath; desktop?: boolean; }
 const { locale = 'en' } = Astro.props;
+const t=(text:string)=>prototypeText(locale,text);
 const scenes = [
  {id:'merge',tool:'merge-pdf',path:'merge-pdf',caption:'3 PDFs into one file'},
  {id:'compress',tool:'compress-pdf',path:'pdf',caption:'24.6 MB down to 4.8 MB'},
@@ -11,22 +13,22 @@ const scenes = [
  {id:'rotate',tool:'rotate-pdf',path:'rotate-pdf',caption:'Sideways pages turned 90°'},
 ].map(scene=>({...scene,title:liveToolCopy(locale,scene.tool).n}));
 ---
-<figure class="pw" data-hero-visualization data-testid="hero-product-window" aria-label={locale==='en'?'Illustrated tool preview':scenes[0].title} data-running="false">
+<figure class="pw" data-hero-visualization data-testid="hero-product-window" aria-label={t('Illustrated tool preview')} data-running="false">
  <div class="pw__bar"><img src="/brand/sorafiles-mark-full-color.svg" width="14" height="14" alt=""/><span class="pw__title" data-testid="hero-scene-title">{scenes[0].title}</span><span class="pw__path">sorafiles.com/merge-pdf</span></div>
  <div class="pw__stage" aria-hidden="true">
-  {scenes.map((scene,index)=><div data-preview-scene={scene.id} data-title={scene.title} data-path={scene.path} data-caption={locale==='en'?scene.caption:scene.title} hidden={index!==0} class={`scene scene-${scene.id}`}>
-   {scene.id==='compress' ? <div class="cmp"><div class="cmp__file"><span class="cmp__tag">PDF</span><span>Document.pdf</span></div><div class="cmp__row"><span class="cmp__label">PDF</span><span class="cmp__bar"><i style="width:100%"></i></span><span class="cmp__size">24.6 MB</span></div><div class="cmp__row cmp__row--result"><span class="cmp__label">→ PDF</span><span class="cmp__bar"><i style="width:19.5%"></i></span><span class="cmp__size">4.8 MB</span></div></div> :
-    [-1,0,1].map((n)=><span class={`sheet scene-${scene.id}__page ${scene.id==='rotate' && n===0?'scene-rotate__page--turn':''}`} style={`--n:${n}`}><span class="sheet__lines"><i></i><i></i><i></i><i></i></span><span class="sheet__num">{n+2}</span><span class="sheet__tag">PDF</span></span>)}
-   {scene.id==='rotate'&&<span class="scene-rotate__badge">↻ 90°</span>}
-   <span class="scene__result"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>{locale==='en'?scene.caption:scene.title}</span>
+  {scenes.map((scene,index)=><div data-preview-scene={scene.id} data-title={scene.title} data-path={scene.path} data-caption={t(scene.caption)} hidden={index!==0} class={`scene scene-${scene.id}`}>
+   {scene.id==='compress' ? <div class="cmp"><div class="cmp__file"><span class="cmp__tag tnum">PDF</span><span class="tnum">{t("Document.pdf")}</span></div><div class="cmp__row"><span class="cmp__label">{t("Original")}</span><span class="cmp__bar"><i style="width:100%"></i></span><span class="cmp__size tnum">24.6 MB</span></div><div class="cmp__row cmp__row--result"><span class="cmp__label">{t("Compressed")}</span><span class="cmp__bar"><i data-compress-bar style="width:19.5%"></i></span><span class="cmp__size tnum" data-compress-size>4.8 MB</span></div><span class="cmp__badge tnum" data-show="true">−80%</span></div> :
+    [-1,0,1].map((n)=><span class={`sheet scene-${scene.id}__page ${scene.id==='rotate' && n===0?'scene-rotate__page--turn':''}`} style={`--n:${n}`}><span class="sheet__lines"><i></i><i></i><i></i><i></i></span>{scene.id!=='rotate'&&<span class="sheet__num tnum">{n+2}</span>}<span class="sheet__tag tnum">PDF</span></span>)}
+   {scene.id==='rotate'&&<span class="scene-rotate__badge tnum"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 7v5h-5M20.5 12a8.5 8.5 0 1 0-2.3 5.8"/></svg>90°</span>}
+   {scene.id!=='compress'&&<span class="scene__result"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>{scene.id==='merge'?<><span class="tnum">{t("Combined.pdf")}</span> · {t('3 pages')}</>:scene.id==='split'?t('3 files, one per page'):t('Pages upright')}</span>}
   </div>)}
  </div>
- <figcaption class="pw__foot"><span class="pw__caption">{locale==='en'?scenes[0].caption:scenes[0].title}</span><div class="pw__dots" role="group" aria-label={locale==='en'?'Choose a preview':scenes[0].title}>{scenes.map((scene,index)=><button type="button" class="pw__dot" data-scene-button={scene.id} data-testid={`hero-scene-dot-${scene.id}`} aria-label={scene.title} aria-pressed={index===0}><span class="pw__dot-track"><span class="pw__dot-fill" style="--dur:4200ms" hidden={index!==0}></span></span></button>)}</div></figcaption>
+ <figcaption class="pw__foot"><span class="pw__caption">{t(scenes[0].caption)}</span><div class="pw__dots" role="group" aria-label={t('Choose a preview')}>{scenes.map((scene,index)=><button type="button" class="pw__dot" data-scene-button={scene.id} data-testid={`hero-scene-dot-${scene.id}`} aria-label={scene.title} aria-pressed={index===0}><span class="pw__dot-track"><span class="pw__dot-fill" style="--dur:4200ms" hidden={index!==0}></span></span></button>)}</div></figcaption>
 </figure>
 <style>
 .pw{margin:0}.pw__path{font-family:var(--font-mono)}.pw__stage [hidden],.pw__dot-fill[hidden]{display:none!important}.pw__caption{font-size:12px}.pw__dot{cursor:pointer}.pw__dot:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}.pw__stage [data-preview-scene]{animation-play-state:inherit}
 .pw[data-running=false] :global(*){animation-play-state:paused!important}
-@media(prefers-reduced-motion:reduce){.pw :global(*){animation:none!important}.pw :global(.scene__result){opacity:1;transform:none}.pw :global(.scene-merge__page){transform:translate(calc(var(--n) * 30px),0) rotate(calc(var(--n) * 8deg))}.pw :global(.scene-split__page){transform:translate(calc(var(--n) * 85px),0)}}
+@media(prefers-reduced-motion:reduce){.pw[data-running=false] :global(*){animation-play-state:running!important;animation-duration:1ms!important;animation-delay:0ms!important;animation-iteration-count:1!important}.pw :global(.scene__result){opacity:1;transform:none}}
 @media(max-width:400px){.pw__path{display:none}.pw__foot{gap:4px;padding-inline:12px 4px}.pw__caption{font-size:11px}}
 </style>
 <script>
@@ -35,9 +37,11 @@ document.querySelectorAll<HTMLElement>('[data-hero-visualization]').forEach(root
  const dots=[...root.querySelectorAll<HTMLButtonElement>('[data-scene-button]')];
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let index=0,visible=false,hover=false,focused=false,timer:ReturnType<typeof setTimeout>|undefined;
+ let compressionFrame=0;
+ const animateCompression=()=>{cancelAnimationFrame(compressionFrame);const start=performance.now();const tick=(now:number)=>{const t=reduced.matches?1:Math.min(1,Math.max(0,(now-start-600)/1400)),p=1-(1-t)**3,size=24.6-(24.6-4.8)*p;root.querySelector<HTMLElement>('[data-compress-bar]')!.style.width=`${size/24.6*100}%`;root.querySelector('[data-compress-size]')!.textContent=`${size.toFixed(1)} MB`;root.querySelector<HTMLElement>('.cmp__badge')!.dataset.show=String(p>=1);if(t<1)compressionFrame=requestAnimationFrame(tick)};compressionFrame=requestAnimationFrame(tick)};
  const running=()=>visible&&!hover&&!focused&&!reduced.matches&&!document.hidden;
  const schedule=()=>{clearTimeout(timer);root.dataset.running=String(running());if(running())timer=setTimeout(()=>show((index+1)%scenes.length),4200)};
- const show=(next:number)=>{index=next;scenes.forEach((scene,i)=>scene.hidden=i!==index);const scene=scenes[index];root.querySelector('.pw__title')!.textContent=scene.dataset.title!;root.querySelector('.pw__path')!.textContent='sorafiles.com/'+scene.dataset.path;root.querySelector('.pw__caption')!.textContent=scene.dataset.caption!;dots.forEach((dot,i)=>{dot.setAttribute('aria-pressed',String(i===index));dot.querySelector<HTMLElement>('.pw__dot-fill')!.hidden=i!==index});schedule()};
+ const show=(next:number)=>{index=next;scenes.forEach((scene,i)=>scene.hidden=i!==index);const scene=scenes[index];root.querySelector('.pw__title')!.textContent=scene.dataset.title!;root.querySelector('.pw__path')!.textContent='sorafiles.com/'+scene.dataset.path;root.querySelector('.pw__caption')!.textContent=scene.dataset.caption!;dots.forEach((dot,i)=>{dot.setAttribute('aria-pressed',String(i===index));dot.querySelector<HTMLElement>('.pw__dot-fill')!.hidden=i!==index});if(scene.dataset.previewScene==='compress')animateCompression();schedule()};
  dots.forEach((dot,i)=>dot.addEventListener('click',()=>show(i)));
  root.addEventListener('mouseenter',()=>{hover=true;schedule()});root.addEventListener('mouseleave',()=>{hover=false;schedule()});
  root.addEventListener('focusin',()=>{focused=true;schedule()});root.addEventListener('focusout',event=>{if(!root.contains(event.relatedTarget as Node)){focused=false;schedule()}});

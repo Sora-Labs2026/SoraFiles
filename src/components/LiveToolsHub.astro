@@ -5,11 +5,16 @@ import { getLocaleContent } from '../i18n';
 import { liveTools } from '../data/liveTools';
 import { liveText, liveToolCopy } from '../data/liveI18n';
 import LiveToolCard from './LiveToolCard.astro';
+import PrototypeBreadcrumb from './PrototypeBreadcrumb.astro';
+import prototypeTools from '../data/prototypeHomeTools.json';
+import '../styles/v10-home-exact.css';
+import '../styles/v10-site-exact.css';
 
 interface Props { locale?: LocalePath; }
 const { locale = 'en' } = Astro.props;
 const hrefFor = (path: string) => localizedPath(locale, path);
 const categoryLabels = getLocaleContent(locale).home.categories;
+const title = locale === 'en' ? 'All tools' : liveText(locale, 'nav.allTools');
 const groups = [
   [categoryLabels.organize, ['compress-pdf','merge-pdf','split-pdf','rotate-pdf','remove-pages','page-numbers','watermark-pdf','sign-pdf','protect-pdf','unlock-pdf','repair-pdf','metadata-remover']],
   [categoryLabels.convert, ['pdf-to-jpg','jpg-to-pdf','pdf-to-word','word-to-pdf','pdf-to-excel','excel-to-pdf','pdf-ocr','doc-scanner']],
@@ -22,36 +27,38 @@ if (new Set(groupedIds).size !== groupedIds.length || missingIds.length || unkno
   throw new Error(`Tools directory groups are incomplete: missing=${missingIds.join(',') || 'none'} unknown=${unknownIds.join(',') || 'none'}`);
 }
 ---
-<main id="main" data-testid="tools-hub" class="v10-content v10-tools-directory">
-  <header class="v10-tool-hero">
-    <nav class="v10-breadcrumb" aria-label={liveText(locale, 'nav.home')}><a href={hrefFor('/')}>{liveText(locale, 'nav.home')}</a><span aria-hidden="true">/</span><span aria-current="page">{liveText(locale, 'nav.allTools')}</span></nav>
-    <h1>{liveText(locale, 'nav.allTools')}</h1>
-    <p class="v10-tool-lead">{liveText(locale, 'hero.desc')}</p>
-    <div class="v10-directory-search">
-      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+<main id="main" data-testid="tools-hub" data-prototype-directory data-prototype-info>
+  <header class="container page-intro">
+    <PrototypeBreadcrumb {locale} items={[{label:liveText(locale,'nav.home'),href:hrefFor('/')},{label:title}]}/>
+    <h1 class="t-h1 page-intro__title"><span class="line-reveal"><span class="line-reveal__inner">{title}</span></span></h1>
+    <p class="t-lead page-intro__lead">{locale === 'en' ? 'SoraFiles is a privacy-first web app for working with PDFs and images directly in your browser. Supported file processing happens locally on your device.' : liveText(locale, 'hero.desc')}</p>
+    <div class="tools-dir__search tool-search">
+      <svg class="tool-search__icon" width="18" height="18" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <label for="directory-search" class="sr-only">{liveText(locale, 'hero.searchLabel')}</label>
-      <input id="directory-search" type="search" placeholder={liveText(locale, 'hero.searchPh')} autocomplete="off" aria-controls="directory-groups"/>
-      <kbd aria-hidden="true">/</kbd>
+      <input class="tool-search__input" id="directory-search" type="search" placeholder={locale === 'en' ? `Search ${liveTools.length} tools` : liveText(locale, 'hero.searchPh')} autocomplete="off" aria-controls="directory-groups"/>
+      <button class="tool-search__clear" type="button" data-directory-search-clear hidden aria-label={liveText(locale, 'toolsSec.clear')}>×</button>
+      <kbd class="tool-search__kbd" aria-hidden="true">/</kbd>
     </div>
   </header>
-  <div class="v10-directory-toolbar">
-    <div class="v10-directory-filters" role="group" aria-label={liveText(locale, 'nav.allTools')}>
-      <button type="button" data-directory-filter="all" aria-pressed="true">{liveText(locale, 'nav.allTools')} <span data-directory-count="all">{liveTools.length}</span></button>
-      {groups.map(([label, ids], i) => <button type="button" data-directory-filter={String(i)} aria-pressed="false">{label} <span data-directory-count={String(i)}>{ids.length}</span></button>)}
+ <section class="container tools-dir">
+  <div class="tools__bar">
+    <div class="chips" role="group" aria-label={liveText(locale, 'nav.allTools')}>
+      <button class="chip" type="button" data-directory-filter="all" aria-pressed="true">{locale === 'en' ? 'All' : liveText(locale, 'nav.allTools')} <span class="chip__count tnum" data-directory-count="all">{liveTools.length}</span></button>
+      {groups.map(([label, ids], i) => <button class="chip" type="button" data-directory-filter={String(i)} aria-pressed="false">{label} <span class="chip__count tnum" data-directory-count={String(i)}>{ids.length}</span></button>)}
     </div>
-    <p data-directory-status aria-live="polite" data-template={liveText(locale, 'toolsSec.found')}>{liveText(locale, 'toolsSec.found').replace('{{n}}', String(liveTools.length))}</p>
+    <p class="tools__count t-label" data-directory-status aria-live="polite" data-template={liveText(locale, 'toolsSec.found')} data-english={locale === 'en'}>{locale === 'en' ? `${liveTools.length} tools` : liveText(locale, 'toolsSec.found').replace('{{n}}', String(liveTools.length))}</p>
   </div>
-  <div id="directory-groups">
+  <div id="directory-groups" class="tools-dir__groups">
     {groups.map(([label, ids], groupIndex) => {
       const tools = ids.map(id => liveTools.find(tool => tool.id === id)).filter(tool => tool !== undefined);
-      return <section class="v10-directory-group" data-directory-group={String(groupIndex)} aria-labelledby={`tool-group-${groupIndex}`}><h2 id={`tool-group-${groupIndex}`}>{label}<span data-group-count>{tools.length}</span></h2><ul class="v10-tool-grid">{tools.map(tool => { const words = liveToolCopy(locale, tool.id); return <li data-directory-item data-search={`${words.n} ${words.t} ${tool.name} ${tool.id}`}><LiveToolCard {tool} {locale} href={hrefFor(`/${tool.slug}`)} /></li>; })}</ul></section>;
+      return <section class="tools-group" data-directory-group={String(groupIndex)} aria-labelledby={`tool-group-${groupIndex}`}><h2 class="t-h3 tools-group__title" id={`tool-group-${groupIndex}`}>{label}<span class="tnum tools-group__count" data-group-count>{tools.length}</span></h2><ul class="tool-grid">{tools.map(tool => { const words = liveToolCopy(locale, tool.id),reference=prototypeTools.find(t=>t.id===tool.id)!; return <li data-directory-item data-rank={prototypeTools.indexOf(reference)} data-search={`${words.n} ${reference.outcome} ${reference.keywords.join(' ')}`}><LiveToolCard exact {tool} {locale} href={hrefFor(`/${tool.slug}`)} /></li>; })}</ul></section>;
     })}
   </div>
-  <div data-directory-empty hidden class="v10-directory-empty"><p data-empty-copy data-template={liveText(locale, 'toolsSec.none')}></p><button type="button" data-directory-clear>{liveText(locale, 'toolsSec.clear')}</button></div>
-  <p data-testid="tools-privacy-summary" class="v10-directory-privacy">{liveText(locale, 'panel.check1')} · {liveText(locale, 'panel.check2')}</p>
+  <div data-directory-empty hidden class="tools-empty"><p class="t-h3" data-empty-copy data-template={locale === 'en' ? 'No tools match “{{q}}”' : liveText(locale, 'toolsSec.none')}></p>{locale === 'en' && <p class="t-small tools-empty__hint">Try a file type like PDF or JPG, or a task like compress.</p>}<button class="btn btn--secondary btn--sm" type="button" data-directory-clear>{liveText(locale, 'toolsSec.clear')}</button></div>
+ </section>
 </main>
 <script>
-  const directory = document.querySelector<HTMLElement>('.v10-tools-directory');
+  const directory = document.querySelector<HTMLElement>('[data-prototype-directory]');
   if (directory) {
     const input = directory.querySelector<HTMLInputElement>('#directory-search')!;
     const groups = [...directory.querySelectorAll<HTMLElement>('[data-directory-group]')];
@@ -60,15 +67,25 @@ if (new Set(groupedIds).size !== groupedIds.length || missingIds.length || unkno
     const empty = directory.querySelector<HTMLElement>('[data-directory-empty]')!;
     const emptyCopy = directory.querySelector<HTMLElement>('[data-empty-copy]')!;
     let filter = 'all';
-    const normalize = (value: string) => value.normalize('NFKD').toLocaleLowerCase().replace(/[\u0300-\u036f]/g, '');
+    const normalize = (value: string) => value.toLowerCase();
+    const original = new Map(groups.map(group=>[group,[...group.querySelectorAll<HTMLElement>('[data-directory-item]')]]));
     const update = () => {
       const terms = normalize(input.value.trim()).split(/\s+/).filter(Boolean);
       let total = 0, visible = 0;
       for (const group of groups) {
         let count = 0;
-        for (const item of group.querySelectorAll<HTMLElement>('[data-directory-item]')) {
-          item.hidden = !terms.every(term => normalize(item.dataset.search ?? '').includes(term));
+        const items=original.get(group)!;
+        const tier=(item:HTMLElement)=>{
+          const name=normalize(item.querySelector('.tool-card__name')!.textContent!);
+          const words=name.split(' ');
+          return terms.every(term=>words.some(word=>word.startsWith(term)))?3:name.includes(normalize(input.value.trim()))?2:1;
+        };
+        for (const item of [...items].sort((a,b)=>terms.length?tier(b)-tier(a)||Number(a.dataset.rank)-Number(b.dataset.rank):0)) {
+          item.parentElement!.append(item);
+          const words=normalize(item.dataset.search??'').split(/[^\p{L}\p{N}]+/u);
+          item.hidden = !terms.every(term => words.some(word=>word.startsWith(term)));
           if (!item.hidden) count++;
+          item.querySelector('a')!.removeAttribute('data-top');
         }
         total += count;
         group.hidden = count === 0 || (filter !== 'all' && filter !== group.dataset.directoryGroup);
@@ -77,16 +94,20 @@ if (new Set(groupedIds).size !== groupedIds.length || missingIds.length || unkno
         directory.querySelector(`[data-directory-count="${group.dataset.directoryGroup}"]`)!.textContent = String(count);
       }
       directory.querySelector('[data-directory-count="all"]')!.textContent = String(total);
-      status.textContent = (status.dataset.template ?? '{{n}}').replace('{{n}}', String(visible));
+      status.textContent = status.dataset.english === 'true' ? (input.value.trim() || filter !== 'all' ? `${visible} of 26 tools` : '26 tools') : (status.dataset.template ?? '{{n}}').replace('{{n}}', String(visible));
+      directory.querySelector<HTMLElement>('[data-directory-search-clear]')!.hidden = !input.value;
+      directory.querySelector<HTMLElement>('kbd')!.hidden = Boolean(input.value);
       empty.hidden = visible > 0;
       emptyCopy.textContent = (emptyCopy.dataset.template ?? '').replace('{{q}}', input.value.trim());
       filters.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.directoryFilter === filter)));
+      if(terms.length)directory.querySelector('[data-directory-group]:not([hidden]) [data-directory-item]:not([hidden]) a')?.setAttribute('data-top','true');
     };
     input.addEventListener('input', update);
     filters.forEach(button => button.addEventListener('click', () => { filter = button.dataset.directoryFilter!; update(); }));
     directory.querySelector('[data-directory-clear]')!.addEventListener('click', () => { input.value = ''; filter = 'all'; update(); input.focus(); });
+    directory.querySelector('[data-directory-search-clear]')!.addEventListener('click', () => { input.value = ''; filter = 'all'; update(); input.focus(); });
     input.addEventListener('keydown', event => {
-      if (event.key === 'Escape') { input.value = ''; update(); }
+      if (event.key === 'Escape') { event.preventDefault();if(input.value){input.value = ''; update();}else input.blur(); }
       if (event.key === 'ArrowDown' || event.key === 'Enter') {
         const first = directory.querySelector<HTMLAnchorElement>('[data-directory-group]:not([hidden]) [data-directory-item]:not([hidden]) a');
         if (first) { event.preventDefault(); event.key === 'Enter' ? first.click() : first.focus(); }
@@ -94,7 +115,7 @@ if (new Set(groupedIds).size !== groupedIds.length || missingIds.length || unkno
     });
     document.addEventListener('keydown', event => {
       const target = event.target as HTMLElement;
-      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey && !target.closest('input,textarea,select,[contenteditable="true"]')) { event.preventDefault(); input.focus(); }
+      if ((event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey || (event.ctrlKey||event.metaKey)&&event.key==='k') && !target.closest('input,textarea,select,[contenteditable="true"]')) { event.preventDefault(); input.focus(); }
     });
   }
 </script>

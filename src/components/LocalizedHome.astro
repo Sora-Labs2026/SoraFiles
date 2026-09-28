@@ -1,117 +1,92 @@
 ---
 import type { LocaleContent } from '../i18n/types';
 import { localizedPath, type LocalePath } from '../i18n/config';
+import prototypeTools from '../data/prototypeHomeTools.json';
 import { liveTools } from '../data/liveTools';
 import { liveText, liveToolCopy } from '../data/liveI18n';
-import { getBrandPositioning } from '../i18n/brandPositioning';
-import { CONTENT_PROVENANCE } from '../data/contentProvenance';
+import PrototypeHomeSections from './PrototypeHomeSections.astro';
+import '../styles/v10-home-exact.css';
 import HeroVisualization from './HeroVisualization.astro';
-import LiveToolCard from './LiveToolCard.astro';
+import {prototypeText} from '../i18n/prototype';
 interface Props { locale: LocalePath; content: LocaleContent; }
 const { locale, content } = Astro.props;
 const t = (key: string) => liveText(locale, key);
-const brand = getBrandPositioning(locale);
 const english = locale === 'en';
-const groups = english ? ['all','pdf','convert','image','security'] : ['all', 'compress', 'convert', 'organize', 'image'];
-const labels:Record<string,string> = {...content.home.categories,...(english?{all:'All',pdf:'PDF',image:'Image',security:'Security'}:{})};
-const orderedIds=['compress-pdf','compress-image','merge-pdf','split-pdf','jpg-to-pdf','pdf-to-jpg','pdf-to-word','word-to-pdf','heic-to-jpg','image-converter','rotate-pdf','remove-pages','watermark-pdf','page-numbers','sign-pdf','edit-image','remove-background','protect-pdf','unlock-pdf','repair-pdf','metadata-remover','pdf-to-excel','excel-to-pdf','pdf-ocr','resize-image','doc-scanner'];
-const orderedTools=orderedIds.map(id=>liveTools.find(tool=>tool.id===id)!);
-const primaryGroup=(id:string)=>/protect-pdf|unlock-pdf|metadata-remover/.test(id)?'security':/-to-|converter/.test(id)?'convert':/image|background|doc-scanner/.test(id)?'image':'pdf';
-const groupFor = (id: string) => [
- id.includes('compress') ? 'compress' : '',
- /-to-|converter/.test(id) ? 'convert' : '',
- /merge|split|rotate|remove-pages|page-numbers/.test(id) ? 'organize' : '',
- /image|heic|background/.test(id) ? 'image' : '',
-].filter(Boolean).join(' ');
-const groupsFor=(id:string)=>english?primaryGroup(id):groupFor(id);
+const pt=(text:string)=>prototypeText(locale,text);
+const groups = ['all','pdf','convert','image','security'];
+const labels:Record<string,string> = {all:pt('All'),pdf:'PDF',convert:pt('Convert'),image:pt('Image'),security:pt('Security')};
+const primaryGroup=(id:string)=>prototypeTools.find(tool=>tool.id===id)!.category;
+const groupsFor=(id:string)=>primaryGroup(id);
 ---
-<main id="main" data-home-root>
+<main id="main" data-home-root data-count-template={pt('{count} tools')} data-filtered-count-template={pt('{count} of {total} tools')}>
  <section class="home-hero sf-container" data-testid="hero-section">
   <div class="home-hero__grid">
    <div>
-    <h1 class="home-hero__title"><span class="sf-line-reveal">{english ? 'Everyday PDF' : brand.heroLine1}</span><span class="sf-line-reveal">{english ? 'and image tools.' : brand.heroLine2}</span></h1>
-    <p class="home-hero__lead" data-hero-lcp>{english ? 'Compress, convert, merge and sign files in your browser. Free, no account.' : t('hero.desc')}</p>
+    <h1 class="home-hero__title t-display"><span class="sf-line-reveal">{pt('Everyday PDF')}</span><span class="sf-line-reveal">{pt('and image tools.')}</span></h1>
+    <p class="home-hero__lead t-lead" data-hero-lcp>{pt('Compress, convert, merge and sign files in your browser. Free, no account.')}</p>
     <form role="search" data-home-search-form class="home-hero__search tool-search">
      <svg class="tool-search__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg>
      <input class="tool-search__input" type="search" data-live-tool-search data-testid="hero-search-input" aria-label={content.home.searchLabel} placeholder={english?`Search ${liveTools.length} tools`:content.home.searchPlaceholder} aria-controls="tools-grid" autocomplete="off" />
-     <button type="button" data-clear-search class="tool-search__clear" aria-label={content.home.clearSearch} hidden>×</button>
+     <button type="button" data-clear-search class="tool-search__clear" aria-label={content.home.clearSearch} hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
      <kbd class="tool-search__kbd" aria-hidden="true">/</kbd>
     </form>
    </div>
    <div class="home-hero__visual"><HeroVisualization {locale}/></div>
   </div>
  </section>
- <section id="tools" class="home-tools sf-container" aria-label={t('nav.allTools')}>
-  <div class="home-tools__bar">
-   <div class="home-chips" role="group" aria-label={t('nav.allTools')}>
-    {groups.map(group => <button type="button" data-home-filter={group} aria-pressed={group === 'all'}>{labels[group]} <span>{group === 'all' ? liveTools.length : liveTools.filter(tool => groupsFor(tool.id).split(' ').includes(group)).length}</span></button>)}
+ <section id="tools" class="tools sf-container" aria-label={t('nav.allTools')}>
+  <div class="tools__bar">
+   <div class="chips" role="group" aria-label={pt('Filter by category')}>
+    {groups.map(group => <button class="chip" type="button" data-home-filter={group} aria-pressed={group === 'all'}>{labels[group]??group} <span class="chip__count tnum">{group === 'all' ? liveTools.length : liveTools.filter(tool => groupsFor(tool.id).split(' ').includes(group)).length}</span></button>)}
    </div>
-   <p class="home-tools__count" data-tool-results-status aria-live="polite">{liveTools.length} {english?'tools':t('nav.allTools').toLowerCase()}</p>
+   <p class="tools__count t-label" data-tool-results-status aria-live="polite">{pt('{count} tools').replace('{count}',String(liveTools.length))}</p>
   </div>
-  <div id="tools-grid" data-tools-grid class="home-tools__grid">
-   {orderedTools.map(tool => <div data-tool-search-item data-tool-id={tool.id} data-groups={groupsFor(tool.id)} data-search={`${liveToolCopy(locale, tool.id).n} ${liveToolCopy(locale, tool.id).d} ${tool.id}`.toLocaleLowerCase()}><LiveToolCard {tool} {locale}/></div>)}
-  </div>
-  <div data-tools-empty hidden class="home-empty"><p>{content.home.noResults}</p><button type="button" data-reset-search class="sf-button">{content.home.clearSearch}</button></div>
+  <ul id="tools-grid" data-tools-grid class="tool-grid" data-collapsed="true">
+   {prototypeTools.map((tool,i) => <li data-tool-search-item data-tool-id={tool.id} data-groups={tool.category} data-name={`${tool.name} ${english?'':liveToolCopy(locale,tool.id).n}`.toLowerCase()} data-search={`${tool.name} ${tool.outcome} ${tool.keywords.join(' ')} ${english?'':liveToolCopy(locale,tool.id).n+' '+liveToolCopy(locale,tool.id).t}`.toLowerCase()} style={`--i:${Math.min(i,12)}`}>
+    <a class="tool-card" href={localizedPath(locale,tool.href)} data-testid={`tool-card-${tool.id}`}><span class="tool-card__icon" aria-hidden="true" set:html={tool.icon}/><span class="tool-card__body"><span class="tool-card__name">{english?tool.name:liveToolCopy(locale,tool.id).n}</span><span class="tool-card__desc">{english?tool.outcome:liveToolCopy(locale,tool.id).t}</span></span><svg class="tool-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg><kbd class="tool-card__enter" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 10 4 15l5 5M20 4v7a4 4 0 0 1-4 4H4"/></svg></kbd></a>
+   </li>)}
+  </ul>
+  <button class="btn btn--md btn--secondary tools__more" type="button" data-show-all>{pt('Show all 26 tools')}</button>
+  <div data-tools-empty hidden class="tools-empty"><p class="t-h3">{english?'No tools match “':content.home.noResults}<span data-empty-query></span>{english?'”':''}</p><p class="t-small tools-empty__hint">{english?'Try a file type like PDF or JPG, or a task like compress.':content.home.searchPlaceholder}</p><button type="button" data-reset-search class="btn btn--sm btn--secondary">{english?'Clear search':content.home.clearSearch}</button></div>
  </section>
- <section class="home-copy sf-container" id="how-it-works" data-privacy-proof>
-  <div class="home-copy__intro"><h2>{content.home.privacyTitle}</h2><p>{content.home.privacyIntro}</p></div>
-  <ol class="home-steps">{content.home.privacySteps.map((step,i) => <li data-privacy-step><span class="home-step__number">0{i+1}</span><h3>{step.title}</h3><p>{step.text}</p></li>)}</ol>
- </section>
- <section class="home-copy sf-container">
-  <h2>{content.home.contentTitle}</h2>
-  <div class="home-articles">{content.home.contentSections.map(section => <article><h3>{section.heading}</h3>{section.paragraphs.map(paragraph => <p>{paragraph}</p>)}</article>)}</div>
- </section>
- {english && <aside class="home-desktop sf-container"><div><h2>Keep your workflow on your desktop.</h2><p>Use SoraFiles from your file manager on Windows, macOS and Linux.</p></div><a class="sf-button sf-button-primary" href="/desktop">Explore SoraFiles Desktop →</a></aside>}
- <section class="home-copy home-faq sf-container">
-  <h2>{content.home.faqTitle}</h2>
-  {content.home.faqs.map(faq => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}
-  <a class="sf-button" href={localizedPath(locale, '/tools')}>{t('nav.allTools')}</a>
-  {english && <p data-content-provenance class="home-provenance">Published {CONTENT_PROVENANCE.publishedLabel} · Updated {CONTENT_PROVENANCE.modifiedLabel} · Reviewed and published by Sora Labs.</p>}
- </section>
+ <PrototypeHomeSections {locale}/>
 </main>
-<style>
-.home-hero{padding-block:clamp(2.5rem,1.4rem + 4.4vw,5.25rem) 3rem}.home-hero__grid{display:grid;align-items:center;gap:2.5rem}
-.home-hero__title{font-size:var(--fs-display);font-weight:800;line-height:1.04;letter-spacing:-.055em;max-width:12ch}.home-hero__title>span{display:block}
-.home-hero__lead{max-width:29rem;margin-top:1.25rem;color:var(--ink-2);font-size:var(--fs-lead);line-height:1.55}
-.home-hero__search{max-width:34rem;margin-top:1.75rem}.home-hero__visual{width:100%;max-width:34rem}
-.tool-search{position:relative;display:flex;align-items:center}.tool-search__icon{position:absolute;inset-inline-start:1.25rem;color:var(--ink-3)}
-.tool-search__input{width:100%;height:3.375rem;padding-inline:3.25rem 3.5rem;border:1px solid var(--line-strong);border-radius:var(--r-pill);background:var(--surface-raised);box-shadow:var(--shadow-field);color:var(--ink)}
-.tool-search__input:focus{outline:2px solid var(--focus);outline-offset:2px}.tool-search__input::-webkit-search-cancel-button{appearance:none}
-.tool-search__kbd,.tool-search__clear{position:absolute;inset-inline-end:1.125rem;color:var(--ink-3)}.tool-search__clear{width:2.25rem;height:2.25rem;border-radius:50%;font-size:22px;background:var(--surface)}
-.home-tools{padding-bottom:var(--section-y);scroll-margin-top:5rem}.home-tools__bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.25rem}.home-chips{display:flex;flex-wrap:wrap;gap:8px}
-.home-chips button{display:flex;align-items:center;gap:7px;min-height:36px;padding:5px 9px 5px 14px;border:1px solid var(--line-strong);border-radius:var(--r-pill);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:600}
-.home-chips button span{border-radius:var(--r-pill);padding:1px 6px;background:var(--wash);font-size:10px}.home-chips button[aria-pressed=true]{background:var(--action);border-color:var(--action);color:var(--on-action)}.home-chips button[aria-pressed=true] span{background:color-mix(in srgb,var(--on-action) 15%,transparent)}
-.home-tools__count{font-size:12px;color:var(--ink-3);white-space:nowrap}.home-tools__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.home-empty{padding:3rem;text-align:center;border:1px dashed var(--line-strong);border-radius:var(--r-lg)}.home-empty p{margin-bottom:1rem}
-.home-copy{padding-block:2.5rem}.home-copy h2,.home-desktop h2{font-size:var(--fs-h2);line-height:1.25}.home-copy p,.home-desktop p{color:var(--ink-2);margin-top:.75rem;line-height:1.7}.home-copy__intro{max-width:42rem}
-.home-steps,.home-articles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2rem;margin-top:2rem}.home-steps h3,.home-articles h3{font-size:1rem;font-weight:700}.home-step__number{display:block;margin-bottom:1rem;color:var(--ink-3);font-size:12px}
-.home-desktop{display:flex;justify-content:space-between;align-items:center;gap:2rem;padding-block:3rem;margin-block:1rem;border-block:1px solid var(--line)}
-.home-faq{max-width:52rem;padding-bottom:5rem}.home-faq h2{margin-bottom:1.5rem}.home-faq details{border-top:1px solid var(--line);padding-block:1rem}.home-faq summary{display:flex;justify-content:space-between;gap:1rem;list-style:none;font-size:14px;font-weight:600;cursor:pointer}.home-faq details[open] summary span{transform:rotate(45deg)}.home-faq>a{margin-top:2rem}
-.home-faq .home-provenance{font-size:11px;margin-top:2rem;color:var(--ink-3)}
-@media(min-width:64rem){.home-hero__grid{grid-template-columns:minmax(0,1fr) minmax(0,27rem)}.home-hero__visual{max-width:none}}
-@media(max-width:63.99rem){.home-tools__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-tools__bar{align-items:flex-start}.home-tools__count{display:none}}
-@media(max-width:39.99rem){.home-tools__grid,.home-steps,.home-articles{grid-template-columns:1fr}.home-desktop{flex-direction:column;align-items:flex-start}.home-chips{gap:8px}.home-hero{padding-bottom:2rem}}
-</style>
+<style>.home-hero__title>span{display:block;overflow:hidden;padding-bottom:.1em;margin-bottom:-.1em}</style>
 <script>
 const home=document.querySelector<HTMLElement>('[data-home-root]');
 if(home){
  const input=home.querySelector<HTMLInputElement>('[data-live-tool-search]')!;
  const cards=[...home.querySelectorAll<HTMLElement>('[data-tool-search-item]')];
  const buttons=[...home.querySelectorAll<HTMLButtonElement>('[data-home-filter]')];
- let group='all';
+ const grid=home.querySelector<HTMLElement>('[data-tools-grid]')!;
+ let group='all',expanded=false;
+ const rank=(card:HTMLElement,query:string)=>{
+  if(!query)return 1;
+  const terms=query.split(/\s+/),name=card.dataset.name!,words=name.split(' '),hay=card.dataset.search!.split(/[^\p{L}\p{N}]+/u);
+  if(!terms.every(term=>hay.some(word=>/[^\x00-\x7f]/.test(term)?word.includes(term):word.startsWith(term))))return 0;
+  return terms.every(term=>words.some(word=>word.startsWith(term)))?3:name.includes(query)?2:1;
+ };
  const apply=()=>{
-  const query=input.value.trim().toLocaleLowerCase();let count=0;
-  cards.forEach(card=>{card.hidden=!(group==='all'||card.dataset.groups?.split(' ').includes(group))||!card.dataset.search?.includes(query);if(!card.hidden)count++});
-  buttons.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.homeFilter===group)));
-  home.querySelector<HTMLElement>('[data-tools-empty]')!.hidden=count>0;
-  home.querySelector<HTMLElement>('[data-tool-results-status]')!.textContent=String(count)+' / '+cards.length;
+  const query=input.value.trim().toLowerCase();
+  const ranked=cards.map((card,index)=>({card,index,score:rank(card,query)}));
+  const visible=ranked.filter(({card,score})=>score&&(group==='all'||card.dataset.groups===group)).sort((a,b)=>b.score-a.score||a.index-b.index);
+  cards.forEach(card=>{card.hidden=true;card.querySelector('a')!.removeAttribute('data-top')});
+  visible.forEach(({card},i)=>{card.hidden=false;card.style.setProperty('--i',String(Math.min(i,12)));grid.append(card);if(query&&i===0)card.querySelector('a')!.setAttribute('data-top','true')});
+  buttons.forEach(button=>{button.setAttribute('aria-pressed',String(button.dataset.homeFilter===group));button.querySelector('span')!.textContent=String(ranked.filter(({card,score})=>score&&(button.dataset.homeFilter==='all'||card.dataset.groups===button.dataset.homeFilter)).length)});
+  const filtered=!!query||group!=='all';grid.dataset.collapsed=String(!filtered&&!expanded);grid.hidden=!visible.length;
+  home.querySelector<HTMLElement>('[data-show-all]')!.hidden=filtered||expanded||!visible.length;
+  home.querySelector<HTMLElement>('[data-tools-empty]')!.hidden=visible.length>0;
+  home.querySelector<HTMLElement>('[data-empty-query]')!.textContent=input.value.trim();
+  home.querySelector<HTMLElement>('[data-tool-results-status]')!.textContent=(filtered?home.dataset.filteredCountTemplate!:home.dataset.countTemplate!).replace('{count}',String(visible.length)).replace('{total}',String(cards.length));
   home.querySelector<HTMLElement>('[data-clear-search]')!.hidden=!query;
   home.querySelector<HTMLElement>('.tool-search__kbd')!.hidden=!!query;
  };
  input.addEventListener('input',apply);
+ home.querySelector('[data-show-all]')!.addEventListener('click',()=>{expanded=true;apply()});
  buttons.forEach(button=>button.addEventListener('click',()=>{group=button.dataset.homeFilter!;apply()}));
  home.querySelectorAll('[data-clear-search],[data-reset-search]').forEach(button=>button.addEventListener('click',()=>{input.value='';group='all';apply();input.focus()}));
- home.querySelector('form')!.addEventListener('submit',event=>{event.preventDefault();const first=cards.find(card=>!card.hidden)?.querySelector<HTMLAnchorElement>('a');first?.focus();home.querySelector('#tools')?.scrollIntoView({block:'start'})});
- input.addEventListener('keydown',event=>{if(event.key==='Escape'){input.value='';apply()}});
+ home.querySelector('form')!.addEventListener('submit',event=>{event.preventDefault();const first=[...grid.querySelectorAll<HTMLElement>('li')].find(card=>!card.hidden)?.querySelector<HTMLAnchorElement>('a');if(first){first.dataset.picked='true';setTimeout(()=>location.assign(first.href),180)}});
+ input.addEventListener('keydown',event=>{if(event.key==='Escape'){if(input.value){event.preventDefault();input.value='';apply()}else input.blur()}else if(event.key==='ArrowDown'){event.preventDefault();[...grid.querySelectorAll<HTMLElement>('li')].find(card=>!card.hidden)?.querySelector<HTMLAnchorElement>('a')?.focus()}});
  document.addEventListener('keydown',event=>{if((event.key==='/'||((event.ctrlKey||event.metaKey)&&event.key==='k'))&&!(event.target instanceof HTMLElement && (event.target.matches('input,textarea,select')||event.target.isContentEditable))){event.preventDefault();input.focus()}});
 }
 </script>

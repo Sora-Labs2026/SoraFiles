@@ -42,7 +42,7 @@ test('real HTTP requires email ownership before checkout and resumes that verifi
  const f=await fixture();try{
   const {client,device}=f.replacement,request={licenseRef:'license',oldDeviceId:f.oldId,licenseKey:f.key,identityToken:randomBytes(32).toString('base64url')};
   await assert.rejects(client.request('replacementRequest',request,device));assert.equal(f.checkoutCalls(),0);
-  const start=await client.replacementEmailStart(f.key);assert.equal(start.replacement.maskedEmail,'p***@example.com');assert.equal(f.mail[0].to,'purchaser@example.com');
+  const start=await client.replacementEmailStart({licenseKey:f.key,email:'purchaser@example.com'});assert.equal(start.replacement.maskedEmail,'p***@example.com');assert.equal(f.mail[0].to,'purchaser@example.com');
   await assert.rejects(client.request('replacementRequest',{...request,identityToken:f.replacement.replacement().verificationId},device));assert.equal(f.checkoutCalls(),0);
   await client.replacementEmailVerify(f.mail.at(-1).code);await client.replacementRequest(f.oldId);assert.equal(f.checkoutCalls(),1);
   const flow=structuredClone(f.replacement.replacement());f.payment().status='succeeded';assert.equal(f.replacements.applyPayment(f.payment()),true);
@@ -64,7 +64,7 @@ test('real HTTP requires email ownership before checkout and resumes that verifi
 
 test('real verified token cannot create or finish another device replacement',async()=>{
  const f=await fixture();try{
-  const {client,device}=f.replacement;await client.replacementEmailStart(f.key);await client.replacementEmailVerify(f.mail.at(-1).code);
+  const {client,device}=f.replacement;await client.replacementEmailStart({licenseKey:f.key,email:'purchaser@example.com'});await client.replacementEmailVerify(f.mail.at(-1).code);
   const token=f.replacement.replacement().identityToken;
   await assert.rejects(client.request('replacementRequest',{licenseRef:'license',oldDeviceId:f.oldId,licenseKey:f.key,identityToken:token},pair()));assert.equal(f.checkoutCalls(),0);
   await client.replacementRequest(f.oldId);const flow=f.replacement.replacement();

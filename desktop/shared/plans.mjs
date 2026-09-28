@@ -1,7 +1,7 @@
 // Amounts are decimal strings, never assumed to be USD or cents.
 export const plans=Object.freeze(Object.fromEntries([
- ['personal-monthly','Personal','monthly','4.99',1],['personal-annual','Personal','annual','49.99',1],['personal-lifetime','Personal','lifetime','249.99',1],
- ['team-monthly','Team','monthly','19.99',5],['team-annual','Team','annual','199.99',5],['team-lifetime','Team','lifetime','999.99',5],
+ ['personal-monthly','Personal','monthly','1.99',1],['personal-annual','Personal','annual','19.99',1],['personal-lifetime','Personal','lifetime','99.99',1],
+ ['team-monthly','Team','monthly','9.99',5],['team-annual','Team','annual','99.99',5],['team-lifetime','Team','lifetime','399.99',5],
 ].map(([id,edition,interval,amount,maxDevices])=>[id,Object.freeze({id,edition,interval,amount,maxDevices,recurring:interval!=='lifetime'})])));
 export function verifiedCatalog(config){
  if(!Array.isArray(config)||config.length!==6)throw Error('Six Dodo product configurations required');

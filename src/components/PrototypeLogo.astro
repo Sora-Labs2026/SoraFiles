@@ -1,0 +1,5 @@
+---
+interface Props { size?:number; href?:string; }
+const {size=22,href='/'}=Astro.props;
+---
+<a class="logo" href={href} aria-label="SoraFiles home"><svg class="logo-mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden="true"><path class="logo-mark__sky" d="M18.5 4H26a2 2 0 0 1 2 2v6.75a2 2 0 0 1-2 2H7.75A10.75 10.75 0 0 1 18.5 4z"/><path class="logo-mark__file" d="M6 17.25h18.25A10.75 10.75 0 0 1 13.5 28H6a2 2 0 0 1-2-2v-6.75a2 2 0 0 1 2-2z"/></svg><span class="logo__word">SoraFiles</span></a>

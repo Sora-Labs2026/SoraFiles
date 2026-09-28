@@ -3,11 +3,12 @@ import {LicenseClient} from '../core/license-client.mjs';
 import {deviceIdentity,verifyEntitlement} from '../shared/entitlement.mjs';
 import {resolveNativeActions,resolveNativeActionRequest,implementedNativeToolIds} from '../shared/native-actions.mjs';
 import {localizeNativeActions} from '../shared/menu-localization.mjs';
+import {replacementMessageList} from '../shared/replacement-messages.mjs';
 
 // Trusted native parent supplies state/config and acknowledges every protected
 // write before execution continues. Renderer fields cannot configure this host.
 export async function runLicenseAction({action,params={},state,config,saveState,fetchImpl,now=Date.now}) {
- const fields={support:[],status:[],prepareTrial:[],initializeTrial:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],validate:[],nativeActions:['files','platform','actionId','outputMode','locale'],replacementState:[],replacementEmailStart:['licenseKey'],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCheckout:[]};
+ const fields={support:[],status:[],prepareTrial:[],initializeTrial:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],validate:[],nativeActions:['files','platform','actionId','outputMode','locale'],replacementState:[],replacementEmailStart:['email','licenseKey'],replacementEmailResend:[],replacementReset:[],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCheckout:[]};
  if(!fields[action]||!params||typeof params!=='object'||Object.keys(params).some(key=>!fields[action].includes(key)))throw Error('Invalid license action');
  if(action==='nativeActions'){
   if(!Array.isArray(params.files)||params.files.length>256)throw Error('Invalid selection');
@@ -51,8 +52,8 @@ export async function runLicenseAction({action,params={},state,config,saveState,
  // device proof, provider validation and a signed entitlement in LicenseClient.
  const activationAvailable=!current.license?.licenseRef&&!current.license?.licenseKey;
  if(action.startsWith('replacement')){
-  try{return await (action==='replacementEmailStart'?client[action](params.licenseKey):action==='replacementEmailVerify'?client[action](params.code):action==='replacementRequest'?client[action](params.oldDeviceId):client[action]());}
-  catch(error){if(/^(Request a new email code\.|Enter the eight-digit email code\.|Verify your email again to continue\.|Choose an active device to revoke\.|Check your existing revocation payment first\.|Please wait a moment and try again\.)$/.test(error.message))throw error;throw Error('Device revocation could not finish. Check your code or payment and try again.');}
+  try{return await (action==='replacementEmailStart'?client[action]({email:params.email,licenseKey:params.licenseKey}):action==='replacementEmailVerify'?client[action](params.code):action==='replacementRequest'?client[action](params.oldDeviceId):client[action]());}
+  catch(error){if(replacementMessageList.includes(error.message)||/^(Enter the eight-digit email code\.|Verify your email again to continue\.|Choose an active device to revoke\.|Please wait a moment and try again\.)$/.test(error.message))throw error;throw Error('Device revocation could not finish. Check your code or payment and try again.');}
  }
  if(action==='validate'){
   const result=await client.validateOnline();

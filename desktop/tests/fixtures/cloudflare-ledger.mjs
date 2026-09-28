@@ -18,7 +18,7 @@ export class Probe {
     case '/paid-release-migration': {
      const ref='migration-release',deviceId=id(21),keyHash='b'.repeat(64);
      s.sync({ref,plan:'personal-lifetime',status:'active',observedAt:now});
-     db.prepare("INSERT INTO paid_replacements(id,license_ref,old_device,instance_id,key_hash,customer_id,plan,amount,currency,product_id,status,created,mode,requester_device) VALUES(?,?,?,?,?,?,'personal-lifetime',4999,'USD','revoke','complete',?,'release',?)").run('migration-first',ref,deviceId,'revoked-instance',keyHash,'owner',now,deviceId);
+     db.prepare("INSERT INTO paid_replacements(id,license_ref,old_device,instance_id,key_hash,customer_id,plan,amount,currency,product_id,status,created,mode,requester_device) VALUES(?,?,?,?,?,?,'personal-lifetime',1999,'USD','revoke','complete',?,'release',?)").run('migration-first',ref,deviceId,'revoked-instance',keyHash,'owner',now,deviceId);
      db.prepare("INSERT INTO activation_attempts VALUES(?,?,'blocked',?,'revoked-instance','owner',?)").run(keyHash,deviceId,ref,now);
      // Restore the prior release schema with its completed receipt, then reopen.
      const sql=db.prepare("SELECT sql FROM sqlite_master WHERE name='paid_replacements'").get().sql;
@@ -29,7 +29,7 @@ export class Probe {
      let oldDenied=false;try{migrated.activate(ref,deviceId,'revoked-instance',now+1);}catch{oldDenied=true;}
      migrated.recordActivation(keyHash,deviceId,{license_key_id:ref,id:'fresh-instance',customer:{customer_id:'owner'}});
      migrated.activate(ref,deviceId,'fresh-instance',now+1,{provisional:true});migrated.finishActivation(keyHash,deviceId,'complete',now+1);
-     db.prepare("INSERT INTO paid_replacements(id,license_ref,old_device,instance_id,key_hash,customer_id,plan,amount,currency,product_id,status,created,mode,requester_device) VALUES(?,?,?,?,?,?,'personal-lifetime',4999,'USD','revoke','pending',?,'release',?)").run('migration-second',ref,deviceId,'fresh-instance',keyHash,'owner',now+2,deviceId);
+     db.prepare("INSERT INTO paid_replacements(id,license_ref,old_device,instance_id,key_hash,customer_id,plan,amount,currency,product_id,status,created,mode,requester_device) VALUES(?,?,?,?,?,?,'personal-lifetime',1999,'USD','revoke','pending',?,'release',?)").run('migration-second',ref,deviceId,'fresh-instance',keyHash,'owner',now+2,deviceId);
      return Response.json({reserved,oldDenied,freshActive:!!migrated.active(ref,deviceId),receipts:db.prepare('SELECT COUNT(*) n FROM paid_replacements WHERE license_ref=?').get(ref).n});
     }
     case '/replacement-email': {
@@ -37,7 +37,7 @@ export class Probe {
      const state={ref:'email-license',plan:'personal-lifetime',status:'active',periodEnd:null,observedAt:now};s.sync(state);s.bind(state.ref,'email-customer');s.activate(state.ref,id(1),'old',now);
      db.prepare("INSERT INTO activation_attempts VALUES(?,?,'complete',?,'old','email-customer',?)").run(keyHash,id(1),state.ref,now);
      let code;const email=new ReplacementEmailService({store:s,guard,now:()=>now,authority:{resolve:async()=>state},dodo:{validate:async()=>({valid:true}),customer:async()=>({customer_id:'email-customer',email:'customer@example.com'})},sendCode:async row=>{code=row.code;}});
-     const issued=await email.start({licenseKey:'synthetic-key'},id(2));let limited=false;try{await email.start({licenseKey:'synthetic-key'},id(3));}catch{limited=true;}
+     const issued=await email.start({licenseKey:'synthetic-key',email:'customer@example.com'},id(2));let limited=false;try{await email.start({licenseKey:'synthetic-key',email:'customer@example.com'},id(3));}catch{limited=true;}
      const verified=email.verify({verificationId:issued.verificationId,code},id(2));let replay=false;try{email.verify({verificationId:issued.verificationId,code},id(2));}catch{replay=true;}
      const identity=email.identity(verified.identityToken,{licenseRef:state.ref,deviceId:id(2),oldDeviceId:id(1),keyHash});
      return Response.json({masked:issued.maskedEmail,limited,replay,verified:identity.verified,rows:db.prepare('SELECT COUNT(*) n FROM replacement_email').get().n});

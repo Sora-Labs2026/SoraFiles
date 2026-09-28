@@ -1,14 +1,14 @@
 ---
-import DesktopLayout from '../../layouts/DesktopLayout.astro';
+import DesktopLayout from '../../layouts/PrototypeDesktopLayout.astro';
 import redemption from '../../../desktop/releases/redemption.json';
 ---
 <DesktopLayout title="Redeem a SoraFiles Desktop invitation" description="Redeem an authorized Desktop giveaway invitation when redemption opens." path="/desktop/redeem" sensitive={true}>
   <script slot="early-head" is:inline>try { history.replaceState(null, '', location.pathname); } catch {}</script>
-  <section class="dw-container redeem-content" data-redemption-enabled={String(redemption.enabled)}>
-    <header class="dw-intro"><p class="dw-eyebrow">SoraFiles Desktop</p>
-    <h1>Redeem your invitation</h1>
-    <p>A giveaway code is an invitation. After verification, your license key activates Desktop on the devices included in your invitation.</p></header>
-    {!redemption.enabled && <div class="mt-8 rounded-3xl border border-line bg-surface p-6"><h2 class="text-xl font-bold">Redemption has not opened yet</h2><p class="mt-3 leading-7 text-muted">Keep your invitation private and follow the instructions from SoraFiles when redemption opens. No code or payment is needed on this page today.</p></div>}
+  <header class="container page-intro"><p class="eyebrow eyebrow--pill page-intro__eyebrow">SoraFiles Desktop</p>
+    <h1 class="t-h1 page-intro__title"><span class="line-reveal"><span class="line-reveal__inner">Redeem your invitation</span></span></h1>
+    <p class="t-lead page-intro__lead">A giveaway code is an invitation. After verification, your license key activates Desktop on the devices included in your invitation.</p></header>
+  <section class="container redeem" aria-label="Redeem your invitation" data-redemption-enabled={String(redemption.enabled)}>
+    {!redemption.enabled && <div class="panel redeem__closed"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><h2 class="t-h3">Redemption has not opened yet</h2><p class="t-small">Keep your invitation private and follow the instructions from SoraFiles when redemption opens. No code or payment is needed on this page today.</p></div>}
     {redemption.enabled && <form data-redemption-form class="mt-8 rounded-3xl border border-line bg-surface p-6">
       <label for="invitation-code" class="block font-semibold">Invitation code</label>
       <input id="invitation-code" name="code" type="password" required maxlength="128" autocomplete="off" spellcheck="false" class="mt-3 min-h-12 w-full rounded-xl border border-line bg-surface px-3" />
@@ -24,12 +24,12 @@ import redemption from '../../../desktop/releases/redemption.json';
       <input id="redemption-license" data-redemption-key hidden readonly autocomplete="off" spellcheck="false" class="mt-4 min-h-12 w-full rounded-xl border border-line bg-surface px-3 font-mono" />
       <div class="mt-5 flex flex-wrap gap-3"><button data-redemption-copy type="button" class="min-h-12 rounded-full bg-action px-6 font-bold text-action-contrast">Copy license key</button><button data-redemption-reveal type="button" aria-expanded="false" aria-controls="redemption-license" class="min-h-12 rounded-full border border-line px-6 font-semibold">Show key</button></div>
     </section>
-    <p class="mt-8 leading-7 text-muted">Discount codes for a purchase belong at checkout. SoraFiles Web remains free.</p>
-    <a href="/contact" class="mt-5 inline-flex min-h-11 items-center font-semibold text-violet underline underline-offset-4">Contact SoraFiles support</a>
+    <p class="t-small redeem__discount">Discount codes for a purchase belong at checkout. SoraFiles Web remains free.</p>
+    <a href="/contact" class="link">Contact SoraFiles support</a>
   </section>
 </DesktopLayout>
 <script>
   import {mountRedemption} from '../../lib/desktop/redemption.js';
   mountRedemption(document);
 </script>
-<style>.redeem-content{max-width:52rem;margin-left:max(var(--gutter,20px),calc((100vw - 72rem)/2));margin-right:auto}.redeem-content>div,.redeem-content>form,.redeem-content>section{max-width:44rem}.redeem-content input{border-color:var(--line-strong)}.redeem-content input:focus-visible{outline:2px solid var(--ink);outline-offset:3px}.redeem-content h2{font-size:20px}.redeem-content>p{max-width:44rem;font-size:14px}</style>
+<style>[data-redemption-status]:empty{display:none}</style>

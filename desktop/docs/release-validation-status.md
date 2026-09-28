@@ -23,7 +23,7 @@ evidence and the authoritative implementation status. Installation, shell
 integration, other OS targets, full parity and release clearance remain pending.
 The older September 17 counts below are historical.
 
-> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. Production Mac releases require signing and notarization.
+> September 17 recovery update: current requirements and evidence are in `../../docs/desktop-implementation-status.md`. Historical results below were obtained on the previous PC and are not current release certification. Support-approved replacement is now implemented; see `device-replacement.md`. The current owner-approved channel permits ad-hoc macOS candidates with Open Anyway guidance; Developer ID signing and notarization remain future public-trust work. See `cross-platform-release-matrix-20260924.md`.
 
 
 **Release incomplete.** September 17: 170 Desktop tests pass; prior unchanged Web
@@ -70,5 +70,5 @@ These are initial workflows, not finished premium workspaces. The other thirteen
 - Complete native output safety and process cancellation/crash/commit recovery. Window-close and quit guards are implemented but await installed-app validation.
 - Deploy the first-party license service and signed trial authority; configure public verification keys, reconciliation and production Dodo readiness. Paid activation stays online and device-bound, with support-approved replacement.
 - Complete bundled engine assets, redistribution/source notices and provenance.
-- Validate installation, shell actions, secure storage, offline processing, updates and uninstall on every advertised OS. Production Mac distribution requires signing and notarization under the September 17 recovery prompt.
+- Validate installation, shell actions, secure storage, offline processing, updates and uninstall on every advertised OS. The current macOS candidate channel remains ad-hoc with automatic updates disabled; Developer ID signing and notarization are future public-trust work.
 - Finish current design/browser reviews, publish actual verified artifacts and verify the deployed website and download links. No fabricated downloads, engine capabilities, platform tests or license-email results.

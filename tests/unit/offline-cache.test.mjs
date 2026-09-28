@@ -21,7 +21,7 @@ test('file uploads and arbitrary document GETs are never cached',async()=>{
 });
 
 test('checkout returns and license-bearing URLs never enter navigation cache, including offline',async()=>{
- const h=harness();for(const path of ['/desktop/purchase','/desktop/purchase/','/desktop/purchase/index.html','/desktop/purchase?license_key=synthetic-key&email=test@example.invalid','/desktop/redeem','/desktop/redeem/','/desktop/redeem/index.html','/desktop/redeem?code=synthetic-code','/elsewhere?license_key=synthetic-key']){
+ const h=harness();for(const path of ['/desktop/purchase','/desktop/purchase/','/desktop/purchase/index.html','/desktop/purchase?license_key=synthetic-key&email=test@example.invalid','/desktop/redeem','/desktop/redeem/','/desktop/redeem/index.html','/desktop/redeem?code=synthetic-code','/elsewhere?license_key=synthetic-key','/ja/desktop/purchase','/ar/desktop/redeem/','/zh-tw/desktop/purchase/index.html']){
   assert.equal(await h.request(path),undefined);
  }assert.equal(h.stores.size,0);h.setOffline();assert.equal(await h.request('/desktop/purchase'),undefined);
 });

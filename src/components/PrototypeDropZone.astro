@@ -1,0 +1,31 @@
+---
+import pages from '../data/prototypeToolSections.json';
+import type { LocalePath } from '../i18n/config';
+import { liveText } from '../data/liveI18n';
+interface Props { toolId:string; dropId:string; chooseId:string; inputId:string; helpId:string; errorId:string; accept:string; multiple?:boolean; description?:string; locale?:LocalePath; }
+const {toolId,dropId,chooseId,inputId,helpId,errorId,accept,multiple=false,description='',locale='en'}=Astro.props;
+const escape=(value:string)=>value.replace(/[&"<>]/g,c=>({'&':'&amp;','"':'&quot;','<':'&lt;','>':'&gt;'}[c]!));
+const page=(pages as Record<string,{drop:string}>)[toolId];
+if(!page)throw new Error(`Missing prototype drop zone: ${toolId}`);
+const source=locale==='en'?page.drop:page.drop
+ .replace(multiple?'Drop your files here':'Drop your file here',escape(liveText(locale,multiple?'wb.dropMany':'wb.dropOne')))
+ .replace(multiple?'Choose files':'Choose file',escape(liveText(locale,multiple?'wb.selectMany':'wb.select')))
+ .replace('Files stay on this device. Nothing is uploaded.',escape(liveText(locale,'wb.orClick')));
+const html=source
+ .replace('class="dropzone enter"',`id="${escape(dropId)}" class="dropzone enter prototype-dropzone"`)
+ .replace('<button ',`<button id="${escape(chooseId)}" `)
+ .replace(/<input\b[^>]*\/?\s*>/,`<input id="${escape(inputId)}" type="file" class="visually-hidden" tabindex="-1" accept="${escape(accept)}" ${multiple?'multiple':''} aria-label="${escape(liveText(locale,multiple?'wb.selectMany':'wb.select'))}" aria-describedby="${escape(helpId)} ${escape(errorId)}"/>`);
+---
+<Fragment set:html={html}/>
+<p id={helpId} class="visually-hidden">{description}</p>
+<p id={errorId} hidden role="alert" tabindex="-1" class="prototype-drop-error"></p>
+<script>
+ document.querySelectorAll<HTMLElement>('.prototype-dropzone').forEach(zone=>{
+  const title=zone.querySelector<HTMLElement>('[data-testid=dropzone-title]');
+  const original=title?.textContent||'';let depth=0;
+  const reset=()=>{depth=0;zone.dataset.over='false';if(title)title.textContent=original;};
+  zone.addEventListener('dragenter',()=>{depth++;zone.dataset.over='true';if(title)title.textContent=original;});
+  zone.addEventListener('dragleave',()=>{if(--depth<=0)reset();});
+  zone.addEventListener('drop',reset);
+ });
+</script>

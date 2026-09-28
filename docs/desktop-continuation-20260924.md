@@ -217,3 +217,26 @@ Provider/verified sender/credential-location question asked while recording work
 No account was created and no email sent. REPLACEMENTS_ENABLED remains false.
 Production trust keys still empty and no public release completed.
 
+## Provider delivery and recovery checked
+
+Latest CI run35982947047 for8d00090 passes all four OS jobs. Original local
+installer index still references earlier runtime-equivalent builds; latest
+artifacts are retained in GitHub Actions and have not been downloaded again.
+Fresh integration process successfully recovered the retained test license and
+device state, activated idempotently, refreshed and authorized offline.
+
+Dodo UI was initially in Live Mode; switched its view to Test Mode. The configured
+endpoint Testing panel dispatched payment.succeeded sample
+msg_3JlrmopERO01bUS0scsZzufPepg. Provider delivery table confirmed Succeeded202,
+779ms, September24 10:44am displayed. No payment or customer email was generated.
+The enable PATCH had cleared filters when omitted; restored all18intended types
+using explicit fields, APIverified, evidence .artifacts/dodo-webhook-filter-verification.json.
+Updated local integration script to preserve fields in future enable requests.
+
+Resend tab2 remains at login; no sender credential is available. Live Dodo API
+credential is also absent (only existing test key). These are access/configuration
+dependencies, not requests to repeat approval for the finished test deployment.
+Browser dodoTab tab3 at Test Mode endpoint; emailTab tab2 at Resend login, marked
+for handoff. Do not claim public release readiness or install test keys into live
+trust configuration to bypass these dependencies.
+
