@@ -21,6 +21,6 @@ test('range progress clamps invalid and out-of-range values safely', () => {
 test('shared range CSS uses the normalized property in Chromium and native progress in Firefox', async () => {
   const css = await readFile(new URL('../../src/styles/global.css', import.meta.url), 'utf8');
   assert.match(css, /\.sf-range::\-webkit-slider-runnable-track\s*\{[^}]*var\(--range-progress\)[^}]*var\(--range-progress\)/s);
-  assert.match(css, /\.sf-range::\-moz-range-progress\s*\{[^}]*background:\s*#7c3aed/s);
+  assert.match(css, /\.sf-range::\-moz-range-progress\s*\{[^}]*background:\s*var\(--ink/s);
   assert.match(css, /\.sf-range::\-webkit-slider-thumb\s*\{[^}]*margin-top:\s*-.375rem/s);
 });
