@@ -36,7 +36,7 @@ const ratioGroups = [
       <figure data-resize-stage data-workspace-canvas class="relative mx-auto flex min-h-48 w-full items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(45deg,#f1f5f9_25%,transparent_25%),linear-gradient(-45deg,#f1f5f9_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f1f5f9_75%),linear-gradient(-45deg,transparent_75%,#f1f5f9_75%)] bg-[length:18px_18px] bg-[position:0_0,0_9px,9px_-9px,-9px_0] p-2 dark:border-white/10 dark:bg-slate-900">
         <div data-resize-canvas-wrap class="relative max-h-[58vh] max-w-full touch-none select-none">
           <canvas data-resize-preview class="block max-h-[58vh] max-w-full rounded-xl object-contain"></canvas>
-          <div data-crop-box class="absolute border-2 border-violet-400 bg-violet-500/5 shadow-[0_0_0_9999px_rgba(15,23,42,.48)]" role="group" aria-label={c3('crop')}>
+          <div data-crop-box tabindex="0" class="absolute border-2 border-violet-400 shadow-[0_0_0_9999px_rgba(15,23,42,.48)]" role="group" aria-label={c3('crop')}>
             {['tl','tr','br','bl'].map((handle) => <button type="button" data-crop-handle={handle} aria-label={`${c3('crop')} ${handle}`} class="absolute h-11 w-11 touch-none rounded-full outline-none before:absolute before:left-1/2 before:top-1/2 before:h-4 before:w-4 before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full before:border-2 before:border-white before:bg-violet-500 before:shadow-md focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2"></button>)}
           </div>
         </div>
@@ -66,6 +66,15 @@ const ratioGroups = [
   [data-crop-handle='tr'] { right: -1.375rem; top: -1.375rem; }
   [data-crop-handle='br'] { bottom: -1.375rem; right: -1.375rem; }
   [data-crop-handle='bl'] { bottom: -1.375rem; left: -1.375rem; }
+  /* A see-through frame, not a fill: thirds grid, a dark hairline outside the
+     violet border for contrast on light images, and drag-to-move. */
+  [data-crop-box] { cursor: move; touch-action: none; outline: 1px solid rgb(15 23 42 / .35); outline-offset: 0; }
+  [data-crop-box]:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  [data-crop-box]::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(to right, transparent calc(33.333% - .5px), rgb(255 255 255 / .7) calc(33.333% - .5px) calc(33.333% + .5px), transparent calc(33.333% + .5px) calc(66.667% - .5px), rgb(255 255 255 / .7) calc(66.667% - .5px) calc(66.667% + .5px), transparent calc(66.667% + .5px)),
+      linear-gradient(to bottom, transparent calc(33.333% - .5px), rgb(255 255 255 / .7) calc(33.333% - .5px) calc(33.333% + .5px), transparent calc(33.333% + .5px) calc(66.667% - .5px), rgb(255 255 255 / .7) calc(66.667% - .5px) calc(66.667% + .5px), transparent calc(66.667% + .5px));
+    filter: drop-shadow(0 0 1px rgb(15 23 42 / .6)); }
   .resize-canvas-workspace [data-workspace-body] { overflow-y: auto; overscroll-behavior: contain; background: var(--color-canvas); padding: 1rem; }
   .resize-canvas-workspace [data-resize-editor] { width: min(100%,88rem); margin: auto; }
   .resize-canvas-workspace [data-resize-stage] { min-height: min(57vh,43rem); background-color: var(--color-surface); }
@@ -196,6 +205,14 @@ const ratioGroups = [
       }
       crop = { x: left, y: top, width: right - left, height: bottom - top }; updateCropBox(); if (lockInput.checked) updateDimensionsFromCrop(); clearResult();
     };
+    // Move the whole frame: drag inside it or use arrow keys (Shift for larger steps).
+    const moveCrop = (x: number, y: number) => { crop = { ...crop, x: Math.min(1 - crop.width, Math.max(0, x)), y: Math.min(1 - crop.height, Math.max(0, y)) }; updateCropBox(); clearResult(); };
+    let dragStart: { pointerX: number; pointerY: number; x: number; y: number } | null = null;
+    cropBox.addEventListener('pointerdown', (event) => { if ((event.target as HTMLElement).closest('[data-crop-handle]')) return; event.preventDefault(); cropBox.setPointerCapture(event.pointerId); dragStart = { pointerX: event.clientX, pointerY: event.clientY, x: crop.x, y: crop.y }; });
+    cropBox.addEventListener('pointermove', (event) => { if (!dragStart || !cropBox.hasPointerCapture(event.pointerId)) return; const rect = preview.getBoundingClientRect(); moveCrop(dragStart.x + (event.clientX - dragStart.pointerX) / rect.width, dragStart.y + (event.clientY - dragStart.pointerY) / rect.height); });
+    const endDrag = () => { dragStart = null; };
+    cropBox.addEventListener('pointerup', endDrag); cropBox.addEventListener('pointercancel', endDrag);
+    cropBox.addEventListener('keydown', (event) => { if (event.target !== cropBox) return; const step = event.shiftKey ? .02 : .005; const moves: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }; const move = moves[event.key]; if (!move) return; event.preventDefault(); moveCrop(crop.x + move[0], crop.y + move[1]); });
     root.querySelectorAll<HTMLButtonElement>('[data-crop-handle]').forEach((handle) => {
       handle.addEventListener('pointerdown', (event) => { event.preventDefault(); handle.setPointerCapture(event.pointerId); });
       handle.addEventListener('pointermove', (event) => { if (!handle.hasPointerCapture(event.pointerId)) return; const rect = preview.getBoundingClientRect(); applyHandle(handle.dataset.cropHandle || 'br', (event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height); });

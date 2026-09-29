@@ -145,3 +145,9 @@ html[dir='rtl'].dark .sf-range::-webkit-slider-runnable-track { background: line
 html .sf-workspace[data-adaptive-workspace] [data-workspace-source] > figure { border: 0; background: transparent; padding: 0; margin-top: 1.25rem; }
 html .sf-workspace[data-adaptive-workspace] [data-workspace-source] canvas { box-shadow: var(--calm-sheet-shadow); border-radius: 2px; }
 html .sf-workspace[data-adaptive-workspace] [data-workspace-source] figcaption { color: var(--ink-3); }
+/* Selected toggles in tool settings (crop ratios and similar aria-pressed
+   buttons) use the site's standard selected state, like the category pills.
+   Unlayered, so Tailwind's layered utilities cannot flatten it. */
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[aria-pressed] { transition: background-color var(--dur-1, .15s) ease, border-color var(--dur-1, .15s) ease, color var(--dur-1, .15s) ease; }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[aria-pressed='false']:hover { border-color: var(--ink-3); color: var(--ink); }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[aria-pressed='true'] { background: var(--action); border-color: var(--action); color: var(--on-action); box-shadow: var(--shadow-btn, none); }
