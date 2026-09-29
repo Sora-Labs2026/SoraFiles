@@ -42,7 +42,8 @@ export function processingOptions(tool:string){
  if(tool==='watermark-pdf')fields='<label>Watermark text<input name="text" type="text" maxlength="256" required placeholder="e.g. DRAFT"></label>'+number('Text size (points)','size',42,6,144)+number('Opacity (%)','opacity',20,1,100)+number('Angle (degrees)','angle',45,-180,180)+number('Minimum page margin (points)','margin',24,0,144)+colour('#667085')+overlayRange('Pages to watermark')+'<p>Text is centred on each selected page. Positive angles rise from left to right; 0 is horizontal. Use a smaller size or shorter text if it does not fit. Review the saved copy; live placement preview is not available yet.</p>';
  if(tool==='jpg-to-pdf')fields=choice('Page size','paper',['a4','letter','image'])+choice('Orientation','orientation',['auto','portrait','landscape']);
  if(['image-converter','resize-image','edit-image'].includes(tool))fields+=choice('Save as','format',['png','jpeg','webp']);
- if(tool==='compress-image'||tool==='image-converter')fields+=number('JPEG / WebP quality','quality',85,40,100);
+ if(tool==='image-converter')fields+=number('JPEG / WebP quality','quality',85,40,100);
+ if(tool==='compress-image')fields+=number('Quality (lower means a smaller file)','quality',75,40,100)+'<label>Maximum width in pixels<input name="width" type="number" min="1" max="16000" placeholder="Keep original size"></label><p>Quality 75 is a good balance for photos; 60 or lower gives much smaller files. Below 90, PNG images use fewer colours. Setting a maximum width saves the most space. Each image keeps its format, and if no smaller result is found an unchanged copy is saved.</p>';
  if(tool==='resize-image')fields+=number('Maximum width in pixels','width',1600,1,16000)+'<p>Height adjusts to keep the original proportions. Smaller images stay their original size.</p>';
  if(tool==='edit-image')fields+=choice('Rotate clockwise','rotation',['0','90','180','270'])+choice('Mirror horizontally','flop',['no','yes'])+'<details class="image-adjustments"><summary>Colour and detail</summary><p>Zero keeps each adjustment unchanged. Review the saved copy; live preview and interactive cropping are not available yet.</p><div class="option-fields">'+manualAdjustmentKeys.map((key:string)=>number(adjustmentLabels[key],'adjust-'+key,0,['blackPoint','definition','sharpness','noiseReduction'].includes(key)?0:-100,100)).join('')+'</div><button type="button" class="secondary" data-reset-adjustments>Reset colour and detail</button></details>';
  return `<form id="processing-form" class="panel processing-options"><h2>Options</h2><div class="option-fields">${fields}</div><button class="primary" type="submit">Process files</button></form>`;
@@ -69,7 +70,7 @@ export function readProcessingOptions(form:HTMLFormElement,tool:string){
   case 'watermark-pdf':return {text:text('text'),size:num('size'),opacity:num('opacity')/100,angle:num('angle'),margin:num('margin'),color:text('color'),...(text('pages').trim()?{selected:parsePageSelection(text('pages'),1000)}:{})};
   case 'jpg-to-pdf':return {paper:text('paper'),orientation:text('orientation')};
   case 'image-converter':return {format:text('format'),quality:num('quality')};
-  case 'compress-image':return {quality:num('quality')};
+  case 'compress-image':return {quality:num('quality'),...(text('width').trim()?{width:num('width')}:{})};
   case 'resize-image':return {format:text('format'),width:num('width')};
   case 'edit-image':return {format:text('format'),rotation:num('rotation'),flop:text('flop')==='yes',adjustments:Object.fromEntries(manualAdjustmentKeys.map((key:string)=>[key,num('adjust-'+key)]))};
   default:throw Error('This tool is not connected yet');

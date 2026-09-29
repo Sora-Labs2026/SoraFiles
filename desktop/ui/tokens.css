@@ -1,5 +1,6 @@
 /* Locked V10 prototype tokens mapped to the native utility's existing names.
-   Working surfaces stay neutral; amber belongs to the shared brand assets. */
+   Working surfaces stay neutral; amber appears only as the website's soft page
+   wash and settings-card glow (see the Warm atmosphere block in layout.css). */
 :root {
   --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -16,8 +17,12 @@
   --tint:#f4f4f5; --focus:#030712; --focus-ring:rgba(3,7,18,.1); --brand-mark:#f4ae0b;
   --success-text:#1f7a4a; --success-bg:#ecfdf3; --success-line:rgba(31,122,74,.3);
   --error-text:#b42318; --error-bg:#fef3f2; --error-line:rgba(180,35,24,.3);
+  /* Website warm atmosphere (LaunchIt amber 251,191,36), same alphas as v10-tokens.css. */
+  --warm-rgb:251,191,36;
+  --surface-warm:rgba(var(--warm-rgb),.16); --surface-warm-field:rgba(253,230,139,.34); --surface-warm-panel:rgba(var(--warm-rgb),.16);
 }
 [data-theme=dark] {
+  --surface-warm:rgba(var(--warm-rgb),.065); --surface-warm-field:rgba(var(--warm-rgb),.03); --surface-warm-panel:rgba(var(--warm-rgb),.08);
   color-scheme:dark;
   --canvas:#0a0b0f; --surface:#101217; --surface-raised:#15171d;
   --nav:#0e1014; --sunken:#07080b; --line:#1f232b; --line-strong:#2f343d;

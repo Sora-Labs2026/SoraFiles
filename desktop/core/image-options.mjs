@@ -9,7 +9,8 @@ export function imageOptions(value) {
   ||page!==undefined&&(!Number.isSafeInteger(page)||page<0||page>999))throw Error('Choose valid image options');
  for(const n of [width,height])if(n!==undefined&&(!Number.isSafeInteger(n)||n<1||n>16000))throw Error('Choose dimensions from 1 to 16000 pixels');
  if(width&&height&&width*height>25_000_000||action==='resize'&&!width&&!height)throw Error('Choose a smaller image size');
- if(['decode','convert','compress'].includes(action)&&[width,height,crop].some(v=>v!==undefined)||action!=='edit'&&(rotation||flip||flop))throw Error('These edits need the image editor');
+ // Compress accepts only a maximum width; it never crops or sets a height.
+ if(['decode','convert'].includes(action)&&[width,height,crop].some(v=>v!==undefined)||action==='compress'&&[height,crop].some(v=>v!==undefined)||action!=='edit'&&(rotation||flip||flop))throw Error('These edits need the image editor');
  if(crop&&(!['left','top','width','height'].every(k=>Number.isSafeInteger(crop[k]))||Object.keys(crop).length!==4||crop.left<0||crop.top<0||crop.width<1||crop.height<1))throw Error('Choose a valid crop');
  if(adjustments!==undefined&&(action!=='edit'||!adjustments||Object.getPrototypeOf(adjustments)!==Object.prototype||Object.entries(adjustments).some(([key,value])=>!manualAdjustmentKeys.includes(key)||typeof value!=='number'||!Number.isFinite(value)||value>100||value<(['blackPoint','definition','sharpness','noiseReduction'].includes(key)?0:-100))))throw Error('Choose valid image adjustments');
  return {action,format,quality,width,height,fit,allowEnlargement,background,crop,rotation,flip,flop,page,...adjustments===undefined?{}:{adjustments}};

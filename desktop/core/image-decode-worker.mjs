@@ -32,10 +32,19 @@ process.once('message',async message=>{
    image=sharp(adjusted.data,{raw:{width:info.width,height:info.height,channels:4}}).timeout({seconds:90});
   }
   const format=options.action==='compress'?metadata.format:decode?'png':options.format;
-  if(format==='jpeg')image=image.flatten({background:options.background}).jpeg({quality:options.quality,chromaSubsampling:'4:4:4',mozjpeg:true});
-  else if(format==='webp')image=image.webp({quality:options.quality,effort:5});
+  // Compression below quality 90 uses standard 4:2:0 chroma (visually close for
+  // photos, much smaller) and a reduced PNG palette; 90+ stays full-chroma/lossless.
+  const shrink=options.action==='compress'&&options.quality<90;let encoded=null;
+  if(format==='jpeg')image=image.flatten({background:options.background}).jpeg({quality:options.quality,chromaSubsampling:shrink?'4:2:0':'4:4:4',mozjpeg:true});
+  else if(format==='webp')image=image.webp({quality:options.quality,effort:options.action==='compress'?6:5});
+  else if(shrink){
+   // Palettes shrink screenshots and graphics dramatically but add dithering noise
+   // to smooth photos, where lossless wins. Encode both and keep the smaller.
+   const [palette,lossless]=await Promise.all([image.clone().png({palette:true,quality:options.quality,effort:10,compressionLevel:9}).toBuffer({resolveWithObject:true}),image.clone().png({compressionLevel:9,adaptiveFiltering:true}).toBuffer({resolveWithObject:true})]);
+   encoded=palette.data.length<lossless.data.length?palette:lossless;
+  }
   else image=image.png({compressionLevel:9,adaptiveFiltering:true});
-  let {data,info}=await image.toBuffer({resolveWithObject:true});
+  let {data,info}=encoded||await image.toBuffer({resolveWithObject:true});
   if(data.length>64*1024*1024)throw Error();
   if(info.width*info.height>25_000_000)throw Error();
   let unchanged=false;

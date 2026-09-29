@@ -28,6 +28,7 @@ test('one JPG offers every connected relevant workflow and explicit conversion c
  const menu=actions([file('JPG')]);
  assert.deepEqual(menu.map(item=>item.id),['convert-to-png','convert-to-webp','jpg-to-pdf','compress-image','resize-image','edit-image','remove-background','metadata-remover','pdf-ocr','doc-scanner','open']);
  assert.equal(menu.find(item=>item.id==='convert-to-png').direct,true);
+ assert.equal(menu.find(item=>item.id==='compress-image').direct,false);assert.equal(menu.find(item=>item.id==='compress-image').requiresUI,true);
  assert.deepEqual(menu.find(item=>item.id==='convert-to-png').options,{format:'png',quality:85});
  for(const id of ['convert-to-webp','jpg-to-pdf'])assert.equal(menu.find(item=>item.id===id).direct,true);
  for(const id of ['resize-image','edit-image','pdf-ocr','doc-scanner'])assert.equal(menu.find(item=>item.id===id).requiresUI,true);
@@ -116,7 +117,7 @@ test('asking for an output folder keeps selections preloaded and prevents unatte
  const input=context([file('PNG')],{outputMode:'ask'}),menu=resolveNativeActions(input);
  assert.ok(menu.every(action=>!action.direct&&action.requiresUI));
  const request=resolveNativeActionRequest('compress-image',input);
- assert.deepEqual(request.options,{quality:85});assert.equal(request.tool,'compress-image');
+ assert.deepEqual(request.options,{quality:75});assert.equal(request.tool,'compress-image');
  request.selection[0].format='PDF';assert.equal(input.files[0].format,'PNG');
 });
 

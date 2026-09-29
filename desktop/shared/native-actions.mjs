@@ -14,7 +14,8 @@ const definitions=[
  {id:'convert-to-jpg',tool:'image-converter',label:'Convert to JPG',many:'Convert all to JPG',formats:[...stillImages,'GIF','TIFF'],target:'JPG',direct:true,options:{format:'jpeg',quality:85}},
  {id:'heic-to-jpg',tool:'heic-to-jpg',label:'Convert to JPG',many:'Convert all to JPG',formats:['HEIC','HEIF'],direct:true,options:{quality:90}},
  {id:'jpg-to-pdf',tool:'jpg-to-pdf',label:'Convert to PDF',many:'Create PDF from images',formats:['JPG','PNG'],combine:true,direct:true,options:{paper:'a4',orientation:'auto'}},
- {id:'compress-image',tool:'compress-image',label:'Compress image',many:'Compress all images',formats:stillImages,direct:true,options:{quality:85}},
+ // Compression is a quality/size trade-off, so it always opens the settings card.
+ {id:'compress-image',tool:'compress-image',label:'Compress image',many:'Compress all images',formats:stillImages,options:{quality:75}},
  {id:'resize-image',tool:'resize-image',label:'Resize image',many:'Resize all images',formats:stillImages,options:{format:'png',width:1600}},
  {id:'edit-image',tool:'edit-image',label:'Rotate, flip and adjust image',many:'Rotate, flip and adjust images',formats:stillImages},
  {id:'remove-background',tool:'remove-background',label:'Remove background',many:'Remove backgrounds',formats:stillImages,direct:true},

@@ -34,3 +34,14 @@ test('invalid resource requests and ambiguous animated input are refused',async(
  const gif=await sharp(frames,{raw:{width:20,height:40,channels:3,pageHeight:20}}).gif({delay:[100,100]}).toBuffer();
  assert.equal((await sharp(gif).metadata()).pages,2);await assert.rejects(processImage(gif,{action:'convert'}));const chosen=await processImage(gif,{action:'convert',page:1});assert.equal(chosen.height,20);await assert.rejects(processImage(gif,{action:'convert',page:2}));
 });
+test('compress settings: lower quality and a maximum width give much smaller files; PNG uses a palette below 90',async()=>{
+ const photo=await sharp({create:{width:1200,height:800,channels:3,background:'#7a9cc6'}}).composite([{input:Buffer.from(`<svg width="1200" height="800"><defs><linearGradient id="g"><stop offset="0" stop-color="#f4ae0b"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient></defs><rect width="1200" height="800" fill="url(#g)"/><circle cx="600" cy="400" r="260" fill="#fff" opacity=".6"/></svg>`)}]).jpeg({quality:95,chromaSubsampling:'4:4:4'}).toBuffer();
+ const balanced=await processImage(photo,{action:'compress',quality:75}),small=await processImage(photo,{action:'compress',quality:50,width:600});
+ assert.ok(balanced.bytes.length<photo.length*0.6,'quality 75 should clearly shrink a high-quality JPEG');
+ assert.ok(small.bytes.length<balanced.bytes.length*0.5,'a lower quality and half the width should be far smaller');
+ assert.equal((await sharp(small.bytes).metadata()).width,600);
+ const png=await sharp(photo).png().toBuffer(),reduced=await processImage(png,{action:'compress',quality:70});
+ assert.ok(reduced.bytes.length<png.length*0.5,'palette PNG should be much smaller');assert.equal((await sharp(reduced.bytes).metadata()).format,'png');
+ const upscale=await processImage(photo,{action:'compress',quality:75,width:5000});assert.equal((await sharp(upscale.bytes).metadata()).width,1200);
+ await assert.rejects(processImage(photo,{action:'compress',height:100}),/image editor|valid/);
+});

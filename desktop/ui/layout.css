@@ -181,3 +181,20 @@ body:not([data-quick-action=true]) :is(.trial-card p,.quit) { font-size:12px; }
 body:not([data-quick-action=true]) .sidebar-bottom>small { font-size:11px; }
 /* Shortcut hint in the UI face, not the system monospace. */
 kbd { font-family:var(--font-sans); font-size:11px; font-weight:600; letter-spacing:.02em; }
+/* Warm atmosphere, matching the website: a page-top wash anchored top-right
+   behind the heading, and a corner glow on settings cards. Never on tool
+   grids, file lists, results or long text; those stay on plain surfaces. */
+body:not([data-quick-action=true]) main {
+ background:
+  radial-gradient(60% 420px at 88% 0, var(--surface-warm), transparent 70%) no-repeat,
+  radial-gradient(36% 300px at 92% 0, var(--surface-warm-field), transparent 72%) no-repeat,
+  var(--canvas);
+}
+body:not([data-quick-action=true]) .processing-options {
+ background:radial-gradient(70% 160px at 100% 0, var(--surface-warm-panel), transparent 70%) no-repeat,var(--surface);
+}
+body[data-quick-action=true] main.quick-action {
+ background:radial-gradient(75% 180px at 100% 0, var(--surface-warm-panel), transparent 70%) no-repeat,var(--surface);
+}
+.quick-heading { background:transparent; }
+.quick-content .panel { background:transparent; }
