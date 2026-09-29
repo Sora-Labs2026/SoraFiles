@@ -13,6 +13,7 @@ mod processing_host;
 mod outputs;
 mod job_status;
 mod checkout;
+mod window_slot;
 #[cfg(debug_assertions)] mod background_smoke;
 #[cfg(windows)] mod file_pins;
 #[cfg(windows)] mod process_job;
@@ -25,7 +26,8 @@ mod checkout;
 use bridge_policy::{DialogLease, local_navigation, valid_request};
 use selection::Selection;
 use serde_json::{json, Value};
-use std::sync::{Mutex, atomic::{AtomicBool, AtomicUsize, Ordering}};
+use std::sync::{Mutex, OnceLock, atomic::{AtomicBool, AtomicUsize, Ordering}};
+use window_slot::{Open, WindowSlot};
 use tauri::{Manager, Emitter, WebviewUrl, WebviewWindowBuilder, RunEvent, DragDropEvent, menu::{Menu, MenuItem}, tray::TrayIconBuilder};
 use tauri_plugin_dialog::DialogExt;
 
@@ -38,10 +40,38 @@ struct WindowMode {
     quick:AtomicBool,
     presented_quick:AtomicBool,
     full_geometry:Mutex<Option<(tauri::PhysicalSize<u32>,bool)>>,
+    slot:WindowSlot,
+}
+static MAIN_THREAD:OnceLock<std::thread::ThreadId>=OnceLock::new();
+fn on_main_thread()->bool { MAIN_THREAD.get().is_none_or(|id|*id==std::thread::current().id()) }
+// Runs `task` on the event loop after the current event has been handled.
+// Posting from another thread matters: on the event-loop thread
+// run_on_main_thread runs immediately, and the event loop holds posted tasks
+// until its current handler, including any nested message pump, returns.
+fn next_turn(app:&tauri::AppHandle,task:impl FnOnce(&tauri::AppHandle)+Send+'static) {
+    let handle=app.clone();
+    std::thread::spawn(move||{let copy=handle.clone();let _=handle.run_on_main_thread(move||task(&copy));});
 }
 fn smoke_output() -> Option<std::path::PathBuf> { let args:Vec<_>=std::env::args().collect();let index=args.iter().position(|arg| arg=="--native-smoke")?;args.get(index+1).map(std::path::PathBuf::from) }
 fn background_smoke() -> bool { cfg!(debug_assertions) && smoke_output().is_some() && std::env::args().any(|arg|arg=="--background-job") }
 fn startup_smoke() -> bool { cfg!(debug_assertions) && smoke_output().is_some() && std::env::args().any(|arg|arg=="--startup-helper") }
+// Needs no fixtures, so release packages can prove single-window recovery too.
+fn window_race_smoke() -> bool { smoke_output().is_some() && std::env::args().any(|arg|arg=="--window-race") }
+// Diagnostic: open requests overlap the view's close and its replacement's
+// WebView creation. Exactly one native window may be built.
+fn window_race(app:&tauri::AppHandle) {
+    let _=open_window(app);let _=open_full_window(app);
+    let (Ok(executable),Some(output))=(std::env::current_exe(),smoke_output()) else {return;};
+    let forwarded=output.with_extension("forwarded.json");
+    for delay in [0,30,60,120,200,350,500] {
+        std::thread::sleep(std::time::Duration::from_millis(delay));
+        // Second instances forward through the single-instance plugin, which
+        // Windows delivers inside any message pump, including WebView2's.
+        let mut command=std::process::Command::new(&executable);command.arg("--native-smoke").arg(&forwarded);
+        #[cfg(windows)] {use std::os::windows::process::CommandExt;command.creation_flags(0x08000000);}
+        if let Ok(mut child)=command.spawn(){std::thread::spawn(move||{let _=child.wait();});}
+    }
+}
 fn diagnostic_step(step: &str) { if smoke_output().is_some() { eprintln!("Native diagnostic: {step}"); } }
 fn receive_launch(app: &tauri::AppHandle, args: &[String]) -> bool {
     let Ok(paths)=launch::selected_paths(args) else { return false; };
@@ -150,12 +180,19 @@ fn persist_preferences(app: &tauri::AppHandle, value: &Value) -> Result<(), Stri
     preferences::save(&directory,&preferences::Preferences::from_value(value)?).map_err(String::from)
 }
 fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
+    // Create and present windows only on the event-loop thread, so re-entry
+    // from its message pump is the only overlap the window slot must handle.
+    if !on_main_thread() {let handle=app.clone();return app.run_on_main_thread(move||{let _=open_window(&handle);});}
     diagnostic_step("opening window");
     let mode=app.state::<WindowMode>();
+    let closing=app.state::<HostState>().window_closing.lock().map_or(true,|closing|*closing);
+    let existing=app.get_webview_window("main");
+    let open=mode.slot.request(closing,existing.is_some());
+    if open==Open::Defer {diagnostic_step("window open deferred");return Ok(());}
     let quick=mode.quick.load(Ordering::SeqCst);
     let language=app_locale(app);
     let (width,height,min_width,min_height)=if quick {(520.0,400.0,440.0,320.0)}else{(1180.0,900.0,760.0,600.0)};
-    if let Some(window) = app.get_webview_window("main") {
+    if let (Open::Present,Some(window))=(&open,existing) {
         if mode.presented_quick.load(Ordering::SeqCst)!=quick {
             if quick {
                 let geometry=(window.inner_size()?,window.is_maximized()?);
@@ -175,24 +212,26 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
             window.set_title(if quick {locale::text(&language,"edit")}else{"SoraFiles Desktop"})?;
             mode.presented_quick.store(quick,Ordering::SeqCst);
         }
-        window.show()?; window.unminimize()?; window.set_focus()?; return Ok(());
+        // Diagnostics keep the view hidden, as when it was first built.
+        if smoke_output().is_none()||cfg!(target_os="linux") {window.show()?; window.unminimize()?; window.set_focus()?;}
+        return Ok(());
     }
     // Serialize accepting a job with closing its originating window.
     if let Ok(mut closing)=app.state::<HostState>().window_closing.lock(){*closing=false;}
     let generation = app.state::<HostState>().window_generation.fetch_add(1, Ordering::SeqCst) + 1;
-    let window = WebviewWindowBuilder::new(app,"main",WebviewUrl::App("index.html".into()))
+    let built = WebviewWindowBuilder::new(app,"main",WebviewUrl::App("index.html".into()))
         .title(if quick {locale::text(&language,"edit")}else{"SoraFiles Desktop"}).inner_size(width,height).min_inner_size(min_width,min_height)
         .initialization_script(format!("window.__SORA_QUICK_ACTION__={quick};window.__SORA_LOCALE__={};",json!(language)))
         // GTK needs a mapped window to allocate the WebView viewport. CI uses Xvfb.
         .visible(smoke_output().is_none() || cfg!(target_os="linux"))
         .on_navigation(local_navigation)
         .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
-        .build()?;
+        .build();
+    let present_again=mode.slot.built(built.is_ok());
+    let window=built?;
     mode.presented_quick.store(quick,Ordering::SeqCst);
-    if !quick {
-        let saved=mode.full_geometry.lock().ok().and_then(|saved|*saved);
-        if let Some((size,maximized))=saved {window.set_size(size)?;if maximized {window.maximize()?;}}
-    }
+    // Register lifecycle handling before any fallible call: only Destroyed
+    // releases the window slot.
     let handle = app.clone();
     window.on_window_event(move |event| match event {
         tauri::WindowEvent::CloseRequested { api, .. } => {
@@ -215,20 +254,36 @@ fn open_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         }
         tauri::WindowEvent::Destroyed => {
             let state=handle.state::<HostState>();
-            if state.window_generation.compare_exchange(generation,generation+1,Ordering::SeqCst,Ordering::SeqCst).is_ok() {
+            let current=state.window_generation.compare_exchange(generation,generation+1,Ordering::SeqCst,Ordering::SeqCst).is_ok();
+            if current {
                 if let Ok(mut selection)=state.selection.lock() { selection.clear(); }
                 if !state.retain_job.load(Ordering::SeqCst) {
                     if let Ok(mut outputs)=state.outputs.lock(){outputs.clear();}
                     if let Ok(mut job)=state.job.lock(){job.clear();}
                 }
             }
+            let mode=handle.state::<WindowMode>();mode.slot.destroyed();
+            // Tauri has now unregistered "main", but the runtime is still
+            // tearing this window down. Free the slot, and open a window
+            // requested meanwhile, only once that has finished.
+            if current {next_turn(&handle,|app|{
+                if app.state::<WindowMode>().slot.release()&&!app.state::<HostState>().quitting.load(Ordering::SeqCst){let _=open_window(app);}
+            });}
         }
         _ => {}
     });
+    if !quick {
+        let saved=mode.full_geometry.lock().ok().and_then(|saved|*saved);
+        if let Some((size,maximized))=saved {window.set_size(size)?;if maximized {window.maximize()?;}}
+    }
+    // Present the latest requested mode for requests made during the build.
+    if present_again {open_window(app)?;}
     Ok(())
 }
 
 fn open_full_window(app:&tauri::AppHandle)->tauri::Result<()> {
+    // Keep the mode switch, window call and launch event in one ordered step.
+    if !on_main_thread() {let handle=app.clone();return app.run_on_main_thread(move||{let _=open_full_window(&handle);});}
     app.state::<WindowMode>().quick.store(false,Ordering::SeqCst);
     if let Ok(mut intent)=app.state::<HostState>().launch_intent.lock(){*intent=Value::Null;}
     open_window(app)?;
@@ -288,13 +343,16 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
             let Some(output)=smoke_output() else { return Err("Unknown action".into()); };
             let mut good=params["heading"]=="File tools for your desktop." && params["tools"]==6 && params["overflow"]==false && params["error"].is_null();
             let count=state.smoke_count.fetch_add(1,Ordering::SeqCst)+1;
+            // One native window per view load, and never two alive at once.
+            let (builds,alive)=app.state::<WindowMode>().slot.counts();
+            good &= builds==count && alive==1;
             if background_smoke() {
                 if count==1 {good &= state.tray_available.load(Ordering::SeqCst);}
                 if count==2 {let status=state.job.lock().map_err(|_|"Job status unavailable")?.snapshot(state.processing_busy.load(Ordering::SeqCst));good &= status["result"]["state"]=="completed" && status["sources"][0]=="Synthetic background fixture.pdf";if let Some(id)=status["result"]["outputId"].as_str(){good &= state.outputs.lock().map_err(|_|"Outputs unavailable")?.resolve(id).is_ok();}else{good=false;};}
                 if count==3 {good &= state.job.lock().map_err(|_|"Job status unavailable")?.snapshot(false)["tool"].is_null();}
             }
             if !good || count>=3 {
-                let report=json!({"status":if good {"PASS"}else{"FAIL"},"os":std::env::consts::OS,"arch":std::env::consts::ARCH,"nativeWindowLoads":count,"closeReopenCycles":count.saturating_sub(1),"ui":params,"backgroundJobState":background_smoke(),"trayOnlyStartup":startup_smoke(),"scope":if background_smoke(){"Native WebView destruction during a real offline synthetic PDF job, verified output, retained result actions and clearing; no installer or production-license certification"}else{"Native UI load and WebView destruction/recreation only; no engine, licensing or installer certification"}});
+                let report=json!({"status":if good {"PASS"}else{"FAIL"},"os":std::env::consts::OS,"arch":std::env::consts::ARCH,"nativeWindowLoads":count,"nativeWindowBuilds":builds,"closeReopenCycles":count.saturating_sub(1),"ui":params,"backgroundJobState":background_smoke(),"windowRace":window_race_smoke(),"trayOnlyStartup":startup_smoke(),"scope":if window_race_smoke(){"Overlapping open requests and forwarded second instances during WebView destruction and creation, one native window and IPC after close/reopen; no engine, licensing or installer certification"}else if background_smoke(){"Native WebView destruction during a real offline synthetic PDF job, verified output, retained result actions and clearing; no installer or production-license certification"}else{"Native UI load and WebView destruction/recreation only; no engine, licensing or installer certification"}});
                 if let Some(parent)=output.parent(){std::fs::create_dir_all(parent).map_err(|_| "Evidence folder unavailable")?;}
                 std::fs::write(output,serde_json::to_vec_pretty(&report).unwrap()).map_err(|_| "Evidence write failed")?;
                 #[cfg(debug_assertions)] if let Ok(mut fixture)=state.smoke_fixture.lock(){fixture.take();}
@@ -305,7 +363,9 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                     state.processing_busy.store(true,Ordering::SeqCst);
                 }
                 window.close().map_err(|_| "Could not close native view")?;
-                let handle=app.clone();std::thread::spawn(move || {
+                let handle=app.clone();
+                if window_race_smoke()&&count==1 {std::thread::spawn(move||window_race(&handle));return Ok(json!({"received":true}));}
+                std::thread::spawn(move || {
                     std::thread::sleep(std::time::Duration::from_millis(800));
                     if background_smoke()&&count==1 {
                         let state=handle.state::<HostState>();
@@ -473,6 +533,8 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
 }
 
 fn main() {
+    // The Tauri event loop runs on this thread; window creation is kept here.
+    let _=MAIN_THREAD.set(std::thread::current().id());
     // Generate once: macOS embeds a single Info.plist symbol per executable.
     let context=tauri::generate_context!();
     let early:Vec<String>=std::env::args().skip(1).collect();
@@ -515,9 +577,13 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app,args,_| {
             let args:Vec<_>=args.into_iter().skip(1).collect();
             if args.len()==1&&args[0]=="--background"{return;}
-            let accepted=receive_launch(app,&args);
-            if args.first().is_some_and(|arg|matches!(arg.as_str(),"--action"|"--edit")) {if accepted {route_native_launch(app,&args);}}
-            else {let _=open_full_window(app);}
+            // Windows delivers the forwarded launch inside any message pump,
+            // including WebView creation and teardown. Act on it afterwards.
+            next_turn(app,move|app|{
+                let accepted=receive_launch(app,&args);
+                if args.first().is_some_and(|arg|matches!(arg.as_str(),"--action"|"--edit")) {if accepted {route_native_launch(app,&args);}}
+                else {let _=open_full_window(app);}
+            });
         }))
         .plugin(tauri_plugin_dialog::init()).manage(HostState::default()).manage(WindowMode::default())
         .invoke_handler(tauri::generate_handler![host_request])

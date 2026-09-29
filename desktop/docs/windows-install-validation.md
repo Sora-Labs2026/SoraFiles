@@ -64,6 +64,9 @@ Keep installation, extraction, native lifecycle, and shell evidence separate:
   release executable. Background-job and startup-helper fixtures exist only in
   debug builds; the runner rejects release results for those modes. Installed
   release processing, sign-in, tray menus and shell actions need separate tests.
+  `--window-race` also runs on release builds: it overlaps open requests and
+  forwarded second launches with WebView close and creation, and requires one
+  native window per view load with working IPC after each close/reopen.
 - Shell integration: `/NS` intentionally excludes shortcut creation. Test normal
   shortcut creation and startup enable/disable/conflicts in a disposable account
   before claiming that integration works.

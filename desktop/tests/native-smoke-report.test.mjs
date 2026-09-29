@@ -13,3 +13,15 @@ test('native diagnostics cannot certify a background job using a release lifecyc
   assert.throws(() => validateNativeSmokeReport(report));
  }
 });
+
+test('window-race diagnostics require one native window build per view load', () => {
+ const lifecycle = {status:'PASS', nativeWindowLoads:3, nativeWindowBuilds:3, closeReopenCycles:2, backgroundJobState:false, trayOnlyStartup:false, windowRace:false};
+ assert.doesNotThrow(() => validateNativeSmokeReport(lifecycle));
+ assert.throws(() => validateNativeSmokeReport(lifecycle,{race:true}));
+ assert.doesNotThrow(() => validateNativeSmokeReport({...lifecycle,windowRace:true},{race:true}));
+ // A duplicate "main" window is built but never counted as a view load.
+ assert.throws(() => validateNativeSmokeReport({...lifecycle,nativeWindowBuilds:4}));
+ assert.throws(() => validateNativeSmokeReport({...lifecycle,windowRace:true,nativeWindowBuilds:4},{race:true}));
+ const {nativeWindowBuilds, ...legacy} = lifecycle;
+ assert.throws(() => validateNativeSmokeReport({...legacy,windowRace:true},{race:true}));
+});
