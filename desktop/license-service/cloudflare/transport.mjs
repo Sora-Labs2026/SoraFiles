@@ -58,5 +58,10 @@ export async function handleLicenseRequest(request,{service,webhooks,limiter,buc
   if(typeof body.publicKey!=='string'||body.publicKey.length>2048||typeof body.signature!=='string'||body.signature.length>128||typeof body.token!=='string'||body.token.length>2048)throw fail(400);
   if(getRuntime)({service}=await getRuntime());
   return json(200,await service.execute(route[1],body));
- }catch(error){return failure(error);}
+ }catch(error){
+  // Operator diagnostics: only our fixed error text and a provider HTTP status.
+  // Never request bodies, keys, emails or provider payloads.
+  if(!error.httpStatus)console.warn(JSON.stringify({route:new URL(request.url).pathname,error:String(error?.message||'').slice(0,120),providerStatus:Number.isInteger(error?.status)?error.status:undefined}));
+  return failure(error);
+ }
 }

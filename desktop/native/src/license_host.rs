@@ -77,7 +77,7 @@ pub(crate) fn validate_state(value:&Value)->Result<(),String>{
   if license.contains_key("revoked")&&(!value["license"]["revoked"].is_boolean()||(value["license"]["revoked"]==true&&(value["license"]["deactivationPending"]!=true||["licenseKey","licenseRef","instanceId","entitlement"].iter().any(|key|license.contains_key(*key))))){return Err("Invalid revoked license state".into());}
  }
  if !value["replacement"].is_null(){let flow=value["replacement"].as_object().ok_or("Invalid private replacement")?;
-  if flow.keys().any(|key|!matches!(key.as_str(),"stage"|"licenseKey"|"verificationId"|"maskedEmail"|"expiresAt"|"resendAfter"|"identityToken"|"licenseRef"|"plan"|"devices"|"oldDeviceId"|"orderId"|"status"|"checkoutUrl"))||value["replacement"].to_string().len()>24576{return Err("Invalid private replacement".into());}
+  if flow.keys().any(|key|!matches!(key.as_str(),"stage"|"licenseKey"|"email"|"verificationId"|"maskedEmail"|"expiresAt"|"resendAfter"|"identityToken"|"licenseRef"|"plan"|"devices"|"oldDeviceId"|"orderId"|"status"|"checkoutUrl"))||value["replacement"].to_string().len()>24576{return Err("Invalid private replacement".into());}
  }
  Ok(())
 }
@@ -104,15 +104,19 @@ pub(crate) fn trusted_checkout(value:&str)->bool{
 }
 fn valid_replacement(value:&Value)->bool{
  let Some(row)=value.as_object()else{return false;};
- row.keys().all(|key|matches!(key.as_str(),"stage"|"maskedEmail"|"expiresAt"|"resendAfter"|"plan"|"devices"|"fee"|"status"|"checkoutAvailable"))
+ // `email` is the address the person typed (shown back to them for editing);
+ // `expired` marks a code that expired before verification.
+ row.keys().all(|key|matches!(key.as_str(),"stage"|"email"|"expired"|"maskedEmail"|"expiresAt"|"resendAfter"|"plan"|"devices"|"fee"|"status"|"checkoutAvailable"))
  &&matches!(value["stage"].as_str(),Some("idle"|"email"|"verified"|"payment"|"complete"))
+ &&(value["email"].is_null()||value["email"].as_str().is_some_and(|s|(3..=254).contains(&s.len())&&s.matches('@').count()==1&&!s.chars().any(|c|c.is_control()||c.is_whitespace())))
+ &&(value["expired"].is_null()||value["expired"].is_boolean())
  &&(value["maskedEmail"].is_null()||value["maskedEmail"].as_str().is_some_and(|s|s.len()<=254&&s.contains('*')&&!s.chars().any(char::is_control)))
  &&(value["expiresAt"].is_null()||value["expiresAt"].as_u64().is_some())&&(value["resendAfter"].is_null()||value["resendAfter"].as_u64().is_some())
  &&(value["plan"].is_null()||matches!(value["plan"].as_str(),Some("personal-monthly"|"personal-annual"|"personal-lifetime"|"team-monthly"|"team-annual"|"team-lifetime")))
  &&(value["devices"].is_null()||validate_result(&json!({"devices":value["devices"]})).is_ok())
  &&(value["status"].is_null()||matches!(value["status"].as_str(),Some("payment-pending"|"payment-confirmed"|"payment-failed"|"complete")))
  &&(value["checkoutAvailable"].is_null()||value["checkoutAvailable"].is_boolean())
- &&(value["fee"].is_null()||value["fee"].as_object().is_some_and(|fee|fee.len()==5&&fee.keys().all(|key|matches!(key.as_str(),"plan"|"amount"|"currency"|"formatted"|"perSeat"))&&value["fee"]["plan"]==value["plan"]&&matches!(value["fee"]["amount"].as_u64(),Some(99|999|4999|399|3999|19999))&&value["fee"]["currency"]=="USD"&&value["fee"]["formatted"].as_str().is_some_and(|s|s.len()<=16)&&value["fee"]["perSeat"].is_boolean()))
+ &&(value["fee"].is_null()||value["fee"].as_object().is_some_and(|fee|fee.len()==5&&fee.keys().all(|key|matches!(key.as_str(),"plan"|"amount"|"currency"|"formatted"|"perSeat"))&&value["fee"]["plan"]==value["plan"]&&matches!(value["fee"]["amount"].as_u64(),Some(99|1999|399|7999))&&value["fee"]["currency"]=="USD"&&value["fee"]["formatted"].as_str().is_some_and(|s|s.len()<=16)&&value["fee"]["perSeat"].is_boolean()))
 }
 fn valid_native_action(value:&Value)->bool{
  let Some(row)=value.as_object() else{return false;};
@@ -125,6 +129,19 @@ fn valid_native_action(value:&Value)->bool{
 #[cfg(test)] mod tests{use super::*;
  #[test]fn replacement_snapshot_cannot_expose_purchaser_proof(){
   assert!(validate_result(&json!({"replacement":{"stage":"email","maskedEmail":"j***@example.com","expiresAt":1900000000,"resendAfter":1800000000}})).is_ok());
+  // Revoke Device opens on an expired saved code, and the typed email is shown back.
+  assert!(validate_result(&json!({"replacement":{"stage":"idle","expired":true}})).is_ok());
+  assert!(validate_result(&json!({"replacement":{"stage":"idle","email":"buyer@example.com","expired":true}})).is_ok());
+  assert!(validate_result(&json!({"replacement":{"stage":"email","email":"buyer@example.com","maskedEmail":"b***@example.com","expiresAt":1900000000,"resendAfter":1800000000}})).is_ok());
+  for bad in [json!("not an email"),json!("a@b@c"),json!(7)]{assert!(validate_result(&json!({"replacement":{"stage":"idle","email":bad}})).is_err());}
+  assert!(validate_result(&json!({"replacement":{"stage":"idle","expired":"yes"}})).is_err());
+  // Current fixed fees only (29 Sep 2026 prices).
+  for (plan,amount) in [("personal-monthly",99),("personal-annual",99),("personal-lifetime",1999),("team-monthly",399),("team-annual",399),("team-lifetime",7999)]{
+   assert!(validate_result(&json!({"replacement":{"stage":"verified","plan":plan,"fee":{"plan":plan,"amount":amount,"currency":"USD","formatted":"$x","perSeat":plan.starts_with("team")}}})).is_ok(),"{plan}");
+  }
+  assert!(validate_result(&json!({"replacement":{"stage":"verified","plan":"personal-lifetime","fee":{"plan":"personal-lifetime","amount":4999,"currency":"USD","formatted":"$49.99","perSeat":false}}})).is_err());
+  let mut state=json!({"schema":1,"device":{"publicKey":"p","privateKey":"k"},"license":null,"replacement":{"stage":"email","email":"buyer@example.com","licenseKey":"k","verificationId":"v","maskedEmail":"b***@example.com","expiresAt":1,"resendAfter":1}});
+  assert!(validate_state(&state).is_ok());state["replacement"]["unexpected"]=json!(1);assert!(validate_state(&state).is_err());
   for key in ["identityToken","licenseKey","verificationId","checkoutUrl"]{assert!(validate_result(&json!({"replacement":{"stage":"email",key:"private"}})).is_err());}
   assert!(trusted_checkout("https://checkout.dodopayments.com/session"));
   for url in ["http://checkout.dodopayments.com/a","https://checkout.dodopayments.com.evil.example/a","https://user@checkout.dodopayments.com/a"]{assert!(!trusted_checkout(url));}
