@@ -30,6 +30,43 @@ const RANKING_CACHE_MS = 300_000;
 let rankingCache;
 let rankingCacheExpires = 0;
 
+// Markdown for Agents: prefer text/markdown only when the client ranks it at
+// least as high as text/html. Browsers never do, so they keep receiving HTML.
+export function prefersMarkdown(accept = '') {
+  const quality = (type) => {
+    for (const part of accept.split(',')) {
+      const [name, ...params] = part.trim().toLowerCase().split(';').map((value) => value.trim());
+      if (name !== type) continue;
+      const q = params.find((param) => param.startsWith('q='));
+      const value = q ? Number(q.slice(2)) : 1;
+      return Number.isFinite(value) ? value : 0;
+    }
+    return 0;
+  };
+  const markdown = quality('text/markdown');
+  return markdown > 0 && markdown >= quality('text/html');
+}
+
+async function markdownResponse(request, env, url) {
+  if (!['GET', 'HEAD'].includes(request.method) || /\.[a-z0-9]+$/i.test(url.pathname)) return null;
+  const mdUrl = new URL(url);
+  mdUrl.search = '';
+  mdUrl.pathname = `${url.pathname.replace(/\/$/, '')}/index.md`;
+  const asset = await env.ASSETS.fetch(new Request(mdUrl, { method: 'GET' }));
+  if (asset.status !== 200) return null;
+  const body = await asset.text();
+  const canonical = new URL(url.pathname, CANONICAL_ORIGIN).href;
+  return new Response(request.method === 'HEAD' ? null : body, { status: 200, headers: {
+    'Content-Type': 'text/markdown; charset=utf-8',
+    'Cache-Control': 'public, max-age=300',
+    Vary: 'Accept',
+    Link: `<${canonical}>; rel="canonical"`,
+    'X-Markdown-Tokens': String(Math.ceil(body.length / 4)),
+    'X-Content-Type-Options': 'nosniff',
+    'Strict-Transport-Security': HSTS,
+  } });
+}
+
 function redirectWithHsts(url) {
   return new Response(null, { status: 301, headers: { Location: url, 'Strict-Transport-Security': HSTS } });
 }
@@ -44,6 +81,11 @@ function preparePublicHtml(response, ranking, pathname = '/') {
   headers.set('Permissions-Policy', PERMISSIONS_POLICY);
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('X-Frame-Options', 'DENY');
+  // The same URL can also answer with Markdown (Accept: text/markdown).
+  headers.append('Vary', 'Accept');
+  if (HOMEPAGE_PATH.test(pathname)) {
+    headers.set('Link', `</llms.txt>; rel="describedby"; type="text/plain", </sitemap.xml>; rel="sitemap"; type="application/xml", <${pathname}>; rel="alternate"; type="text/markdown"`);
+  }
   if (/^\/(?:[a-z]{2}\/|zh-(?:cn|tw)\/)?desktop\/(?:purchase|redeem)(?:\/|\/index\.html)?$/.test(pathname)) {
     headers.set('Referrer-Policy', 'no-referrer');
     headers.set('Cache-Control', 'private, no-store');
@@ -267,6 +309,18 @@ export default {
       const headers = new Headers(response.headers);
       headers.set('Cache-Control', 'public, max-age=300');
       return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+    }
+    if (url.pathname.endsWith('.md')) {
+      // Markdown twins are reachable directly, but the HTML URL stays canonical.
+      const response = await env.ASSETS.fetch(request);
+      const headers = new Headers(response.headers);
+      if (response.ok) headers.set('Content-Type', 'text/markdown; charset=utf-8');
+      headers.set('X-Robots-Tag', 'noindex');
+      return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+    }
+    if (prefersMarkdown(request.headers.get('Accept') || '')) {
+      const markdown = await markdownResponse(request, env, url);
+      if (markdown) return markdown;
     }
     // Keep checkout keys/customer query parameters out of static asset requests.
     const sensitiveReturn = /^\/(?:[a-z]{2}\/|zh-(?:cn|tw)\/)?desktop\/(?:purchase|redeem)(?:\/|\/index\.html)?$/.test(url.pathname);
