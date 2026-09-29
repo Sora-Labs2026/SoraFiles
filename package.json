@@ -99,14 +99,14 @@
     "zetajs": "^1.2.0"
   },
   "devDependencies": {
-    "parse5": "8.0.1",
     "@astrojs/check": "^0.9.10",
     "@napi-rs/canvas": "1.0.9",
     "fast-png": "^6.4.0",
+    "parse5": "8.0.1",
     "playwright": "^1.62.1",
     "tsx": "^4.20.6",
     "typescript": "^6.0.3",
-    "wrangler": "^4.120.0"
+    "wrangler": "^4.143.1"
   },
   "allowScripts": {
     "core-js@3.50.0": true,
