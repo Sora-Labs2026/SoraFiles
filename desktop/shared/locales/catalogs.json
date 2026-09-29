@@ -454,7 +454,8 @@
     "secondary cancel-processing": "secondary cancel-processing",
     "— unavailable": "— unavailable",
     "← All tools": "← All tools",
-    "⌘ K": "⌘ K"
+    "⌘ K": "⌘ K",
+    "Loading…": "Loading…"
   },
   "ja": {
     "Language": "言語",
@@ -928,7 +929,8 @@
     "Too many incorrect codes. Send a new code.": "間違ったコードが多すぎます。新しいコードを送信します。",
     "Send a code first.": "まずコードを送信してください。",
     "Check your existing revocation payment first.": "まず、既存の取り消し支払いを確認してください。",
-    "Email used for purchase": "購入時のメールアドレス"
+    "Email used for purchase": "購入時のメールアドレス",
+    "Loading…": "読み込み中…"
   },
   "ko": {
     "Language": "언어",
@@ -1402,7 +1404,8 @@
     "Too many incorrect codes. Send a new code.": "잘못된 코드가 너무 많습니다. 새 코드를 보내세요.",
     "Send a code first.": "먼저 코드를 보내세요.",
     "Check your existing revocation payment first.": "기존 해지 지급금을 먼저 확인하세요.",
-    "Email used for purchase": "구매에 사용한 이메일"
+    "Email used for purchase": "구매에 사용한 이메일",
+    "Loading…": "불러오는 중…"
   },
   "es": {
     "Language": "Idioma",
@@ -1876,7 +1879,8 @@
     "Too many incorrect codes. Send a new code.": "Demasiados códigos incorrectos. Envía un nuevo código.",
     "Send a code first.": "Envía un código primero.",
     "Check your existing revocation payment first.": "Primero verifique su pago de revocación existente.",
-    "Email used for purchase": "Correo electrónico usado en la compra"
+    "Email used for purchase": "Correo electrónico usado en la compra",
+    "Loading…": "Cargando…"
   },
   "fr": {
     "Language": "Langue",
@@ -2350,7 +2354,8 @@
     "Too many incorrect codes. Send a new code.": "Trop de codes incorrects. Envoyez un nouveau code.",
     "Send a code first.": "Envoyez d'abord un code.",
     "Check your existing revocation payment first.": "Vérifiez d'abord votre paiement de révocation existant.",
-    "Email used for purchase": "E-mail utilisé pour l'achat"
+    "Email used for purchase": "E-mail utilisé pour l'achat",
+    "Loading…": "Chargement…"
   },
   "de": {
     "Language": "Sprache",
@@ -2824,7 +2829,8 @@
     "Too many incorrect codes. Send a new code.": "Zu viele falsche Codes. Senden Sie einen neuen Code.",
     "Send a code first.": "Senden Sie zuerst einen Code.",
     "Check your existing revocation payment first.": "Überprüfen Sie zunächst Ihre bestehende Widerrufszahlung.",
-    "Email used for purchase": "Beim Kauf verwendete E-Mail-Adresse"
+    "Email used for purchase": "Beim Kauf verwendete E-Mail-Adresse",
+    "Loading…": "Wird geladen…"
   },
   "pt": {
     "Language": "Idioma",
@@ -3298,7 +3304,8 @@
     "Too many incorrect codes. Send a new code.": "Muitos códigos incorretos. Envie um novo código.",
     "Send a code first.": "Envie um código primeiro.",
     "Check your existing revocation payment first.": "Verifique primeiro o seu pagamento de revogação existente.",
-    "Email used for purchase": "E-mail usado na compra"
+    "Email used for purchase": "E-mail usado na compra",
+    "Loading…": "Carregando…"
   },
   "zh-cn": {
     "Language": "语言",
@@ -3772,7 +3779,8 @@
     "Too many incorrect codes. Send a new code.": "错误代码太多。发送新代码。",
     "Send a code first.": "先发个代码吧",
     "Check your existing revocation payment first.": "首先检查您现有的撤销付款。",
-    "Email used for purchase": "购买时使用的电子邮件"
+    "Email used for purchase": "购买时使用的电子邮件",
+    "Loading…": "加载中…"
   },
   "zh-tw": {
     "Language": "語言",
@@ -4246,7 +4254,8 @@
     "Too many incorrect codes. Send a new code.": "錯誤代碼太多。發送新代碼。",
     "Send a code first.": "先發個代碼吧",
     "Check your existing revocation payment first.": "首先檢查您現有的撤銷付款。",
-    "Email used for purchase": "購買時使用的電子郵件"
+    "Email used for purchase": "購買時使用的電子郵件",
+    "Loading…": "載入中…"
   },
   "hi": {
     "Language": "भाषा",
@@ -4720,7 +4729,8 @@
     "Too many incorrect codes. Send a new code.": "बहुत सारे ग़लत कोड. एक नया कोड भेजें.",
     "Send a code first.": "पहले एक कोड भेजें.",
     "Check your existing revocation payment first.": "पहले अपने मौजूदा निरस्तीकरण भुगतान की जाँच करें।",
-    "Email used for purchase": "खरीदारी में इस्तेमाल किया गया ईमेल"
+    "Email used for purchase": "खरीदारी में इस्तेमाल किया गया ईमेल",
+    "Loading…": "लोड हो रहा है…"
   },
   "ar": {
     "Language": "اللغة",
@@ -5194,7 +5204,8 @@
     "Too many incorrect codes. Send a new code.": "عدد كبير جدًا من الرموز غير الصحيحة. إرسال رمز جديد.",
     "Send a code first.": "أرسل الرمز أولاً.",
     "Check your existing revocation payment first.": "تحقق من دفعة الإلغاء الحالية أولاً.",
-    "Email used for purchase": "البريد الإلكتروني المستخدم في الشراء"
+    "Email used for purchase": "البريد الإلكتروني المستخدم في الشراء",
+    "Loading…": "جارٍ التحميل…"
   },
   "ru": {
     "Language": "Язык",
@@ -5668,7 +5679,8 @@
     "Too many incorrect codes. Send a new code.": "Слишком много неверных кодов. Отправьте новый код.",
     "Send a code first.": "Сначала отправьте код.",
     "Check your existing revocation payment first.": "Сначала проверьте существующий платеж за отзыв.",
-    "Email used for purchase": "Email, указанный при покупке"
+    "Email used for purchase": "Email, указанный при покупке",
+    "Loading…": "Загрузка…"
   },
   "id": {
     "Language": "Bahasa",
@@ -6142,7 +6154,8 @@
     "Too many incorrect codes. Send a new code.": "Terlalu banyak kode yang salah. Kirim kode baru.",
     "Send a code first.": "Kirim kode terlebih dahulu.",
     "Check your existing revocation payment first.": "Periksa terlebih dahulu pembayaran pencabutan Anda yang ada.",
-    "Email used for purchase": "Email yang digunakan untuk pembelian"
+    "Email used for purchase": "Email yang digunakan untuk pembelian",
+    "Loading…": "Memuat…"
   },
   "it": {
     "Language": "Lingua",
@@ -6616,7 +6629,8 @@
     "Too many incorrect codes. Send a new code.": "Troppi codici errati. Invia un nuovo codice.",
     "Send a code first.": "Invia prima un codice.",
     "Check your existing revocation payment first.": "Controlla prima il pagamento di revoca esistente.",
-    "Email used for purchase": "Email usata per l'acquisto"
+    "Email used for purchase": "Email usata per l'acquisto",
+    "Loading…": "Caricamento…"
   },
   "nl": {
     "Language": "Taal",
@@ -7090,7 +7104,8 @@
     "Too many incorrect codes. Send a new code.": "Te veel onjuiste codes. Stuur een nieuwe code.",
     "Send a code first.": "Stuur eerst een code.",
     "Check your existing revocation payment first.": "Controleer eerst uw bestaande herroepingsbetaling.",
-    "Email used for purchase": "E-mailadres gebruikt bij aankoop"
+    "Email used for purchase": "E-mailadres gebruikt bij aankoop",
+    "Loading…": "Laden…"
   },
   "tr": {
     "Language": "Dil",
@@ -7564,7 +7579,8 @@
     "Too many incorrect codes. Send a new code.": "Çok fazla hatalı kod var. Yeni bir kod gönderin.",
     "Send a code first.": "Önce bir kod gönderin.",
     "Check your existing revocation payment first.": "Öncelikle mevcut iptal ödemenizi kontrol edin.",
-    "Email used for purchase": "Satın alımda kullanılan e-posta"
+    "Email used for purchase": "Satın alımda kullanılan e-posta",
+    "Loading…": "Yükleniyor…"
   },
   "vi": {
     "Language": "Ngôn ngữ",
@@ -8038,7 +8054,8 @@
     "Too many incorrect codes. Send a new code.": "Quá nhiều mã sai. Gửi mã mới.",
     "Send a code first.": "Gửi mã đầu tiên.",
     "Check your existing revocation payment first.": "Trước tiên, hãy kiểm tra khoản thanh toán thu hồi hiện tại của bạn.",
-    "Email used for purchase": "Email đã dùng khi mua"
+    "Email used for purchase": "Email đã dùng khi mua",
+    "Loading…": "Đang tải…"
   },
   "th": {
     "Language": "ภาษา",
@@ -8512,7 +8529,8 @@
     "Too many incorrect codes. Send a new code.": "รหัสไม่ถูกต้องมากเกินไป ส่งรหัสใหม่",
     "Send a code first.": "ส่งรหัสก่อนครับ.",
     "Check your existing revocation payment first.": "ตรวจสอบการชำระเงินการเพิกถอนที่มีอยู่ของคุณก่อน",
-    "Email used for purchase": "อีเมลที่ใช้ในการซื้อ"
+    "Email used for purchase": "อีเมลที่ใช้ในการซื้อ",
+    "Loading…": "กำลังโหลด…"
   },
   "pl": {
     "Language": "Język",
@@ -8986,6 +9004,7 @@
     "Too many incorrect codes. Send a new code.": "Za dużo błędnych kodów. Wyślij nowy kod.",
     "Send a code first.": "Najpierw wyślij kod.",
     "Check your existing revocation payment first.": "Najpierw sprawdź istniejącą opłatę za rezygnację.",
-    "Email used for purchase": "E-mail użyty przy zakupie"
+    "Email used for purchase": "E-mail użyty przy zakupie",
+    "Loading…": "Ładowanie…"
   }
 }

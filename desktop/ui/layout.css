@@ -198,3 +198,17 @@ body[data-quick-action=true] main.quick-action {
 }
 .quick-heading { background:transparent; }
 .quick-content .panel { background:transparent; }
+/* Loading indicator (motion after claude-motion-design: one closed-form loop,
+   no timers). A thin ring whose arc fades from amber to ink, turning on a
+   smooth ease-in-out so it reads as calm rather than busy. It fades in after
+   120ms so instant actions never flash it; reduced motion leaves a still ring. */
+.pending-action:not([hidden]) { display:inline-flex; align-items:center; gap:10px; animation:sf-loader-in var(--dur-2) var(--ease-out) 120ms both; }
+.pending-action::before {
+ content:""; flex:none; width:16px; height:16px; border-radius:50%;
+ background:conic-gradient(from 90deg,transparent 0 18%,rgba(var(--warm-rgb),.55) 45%,var(--text) 100%);
+ -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2.25px),#000 calc(100% - 2px));
+ mask:radial-gradient(farthest-side,transparent calc(100% - 2.25px),#000 calc(100% - 2px));
+ animation:sf-loader-spin 1.1s cubic-bezier(.55,.15,.45,.85) infinite;
+}
+@keyframes sf-loader-spin { to { transform:rotate(1turn); } }
+@keyframes sf-loader-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }

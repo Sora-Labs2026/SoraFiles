@@ -162,7 +162,7 @@ function navigate(page:string){if(quick.active&&!['workspace','native'].includes
 function syncBusy(){
  document.body.dataset.processing=String(state.processing);
  const quickStatus=root.querySelector('.quick-footer>span');if(quickStatus&&state.processing)quickStatus.textContent=t('Processing files…');
- document.querySelector<HTMLElement>('#pending-action')!.textContent=t(state.processing?'Processing files…':'Waiting for Desktop…');
+ document.querySelector<HTMLElement>('#pending-action')!.textContent=t(state.processing?'Processing files…':'Loading…');
  root.querySelectorAll<HTMLInputElement|HTMLSelectElement>('.option-fields input,.option-fields select').forEach(control=>control.disabled=state.busy);
  const cancel=document.querySelector<HTMLButtonElement>('#cancel-processing');if(cancel)cancel.hidden=!state.processing;
  root.querySelectorAll<HTMLButtonElement|HTMLInputElement|HTMLSelectElement>('[data-action]:not([data-action="reveal-key"]),[data-remove],[data-open-output],[data-reveal-output],select,input[type="checkbox"],button[type="submit"]').forEach(control=>control.disabled=state.busy);
