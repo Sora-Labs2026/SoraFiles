@@ -5,6 +5,6 @@ import Footer from '../../components/Footer.astro';
 import html from '../../data/prototypeDesktopHelp.json';
 import '../../styles/v10-site-exact.css';
 ---
-<Layout title="SoraFiles Desktop help" description="Installation, activation and platform guidance for SoraFiles Desktop." canonicalPath="/desktop/help" noIndex={true}>
+<Layout title="SoraFiles Desktop help" description="Installation, activation and platform guidance for SoraFiles Desktop." canonicalPath="/desktop/help" noIndex={Boolean(Astro.params.locale)} hreflang={false}>
  <Header/><main id="main" data-prototype-info><Fragment set:html={html}/></main><Footer/>
 </Layout>

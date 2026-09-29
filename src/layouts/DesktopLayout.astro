@@ -6,7 +6,7 @@ interface Props { title: string; description: string; path: string; sensitive?: 
 const { title, description, path, sensitive = false } = Astro.props;
 const links = [['Overview', '/desktop'], ['Plans', '/desktop/pricing'], ['Downloads', '/desktop/download'], ['Releases', '/desktop/releases'], ['Help', '/desktop/help']];
 ---
-<Layout {title} {description} canonicalPath={path} noIndex={true} analytics={!sensitive} {sensitive}>
+<Layout {title} {description} canonicalPath={path} noIndex={sensitive} analytics={!sensitive} {sensitive}>
   <slot name="early-head" slot="early-head" />
   <Header />
   {path !== '/desktop' && <div class="desktop-subnav"><nav aria-label="SoraFiles Desktop" class="dw-container"><a href="/desktop" class="desktop-subnav-title">SoraFiles Desktop</a><div class="desktop-subnav-links">{links.map(([label, href]) => <a href={href} aria-current={path === href ? 'page' : undefined}>{label}</a>)}</div></nav></div>}

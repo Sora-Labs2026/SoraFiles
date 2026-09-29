@@ -1,6 +1,7 @@
 const CACHE_PREFIX = 'sorafiles-local-';
-const CACHE_NAME = `${CACHE_PREFIX}v5-static`;
-const NAVIGATION_CACHE = `${CACHE_PREFIX}v5-pages`;
+// v6 drops v5 caches that pinned the pre-V10 "S" icons for returning visitors.
+const CACHE_NAME = `${CACHE_PREFIX}v6-static`;
+const NAVIGATION_CACHE = `${CACHE_PREFIX}v6-pages`;
 const CORE = ['/', '/site.webmanifest', '/favicon-48x48.png', '/icon-192.png'];
 const MAX_NAVIGATION_ENTRIES = 20;
 const MAX_STATIC_ENTRIES = 80;
@@ -75,11 +76,23 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (!isCacheableStatic(url)) return;
+  // Hashed bundles and fonts never change under the same URL: cache first.
+  // Icons and the manifest keep fixed names, so fetch them first and fall back
+  // to the cache only offline; a brand update can never get stuck again.
+  const immutable = url.pathname.startsWith('/_astro/') || url.pathname.startsWith('/fonts/');
   event.respondWith((async () => {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-    const response = await fetch(request);
-    event.waitUntil(store(request, response, MAX_STATIC_ENTRIES));
-    return response;
+    if (immutable) {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+    }
+    try {
+      const response = await fetch(request);
+      event.waitUntil(store(request, response, MAX_STATIC_ENTRIES));
+      return response;
+    } catch (error) {
+      const cached = immutable ? undefined : await caches.match(request);
+      if (cached) return cached;
+      throw error;
+    }
   })());
 });

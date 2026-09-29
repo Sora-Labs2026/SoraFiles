@@ -11,7 +11,7 @@ const {title,description,path,sensitive=false,locale=(Astro.params.locale||'en')
 const t=(text:string)=>text==='Downloads'?desktopDownloadText(locale).downloads:prototypeText(locale,text);
 const links=[['Overview','/desktop'],['Plans','/desktop/pricing'],['Downloads','/desktop/download'],['Releases','/desktop/releases'],['Help','/desktop/help']];
 ---
-<Layout {title} {description} {locale} canonicalPath={localizedPath(locale,path)} alternatePath={path} noIndex={true} analytics={!sensitive} {sensitive}>
+<Layout {title} {description} {locale} canonicalPath={localizedPath(locale,path)} alternatePath={path} noIndex={sensitive} analytics={!sensitive} {sensitive}>
  <slot name="early-head" slot="early-head"/><Header {locale}/>
  <main id="main" data-prototype-info><nav class="subnav" aria-label="SoraFiles Desktop" data-testid="desktop-subnav"><div class="container subnav__inner"><span class="eyebrow subnav__title">SoraFiles Desktop</span><ul class="subnav__list">{links.map(([label,href])=><li><a class="subnav__link" href={localizedPath(locale,href)} aria-current={path===href?'page':undefined}>{t(label)}</a></li>)}</ul></div></nav><slot/></main>
  <Footer {locale}/>

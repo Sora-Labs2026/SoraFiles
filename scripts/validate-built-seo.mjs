@@ -2,7 +2,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { liveTools } from '../src/data/liveTools.ts';
 import { guideSitemapUrls } from '../src/data/guides.ts';
-import { localeDefinitions, localizedPath, localizedRoutePaths, publishedLocales } from '../src/i18n/config.ts';
+import { englishOnlyRoutes, localeDefinitions, localizedPath, localizedRoutePaths, publishedLocales } from '../src/i18n/config.ts';
 
 const allPages = process.argv.includes('--all');
 const failures = [];
@@ -12,8 +12,10 @@ const hreflangs = new Set([...publishedLocales.map((locale) => locale.code), 'x-
 const toolBasePaths = new Set(liveTools.map((tool) => `/${tool.slug}`));
 const titleIndex = new Map();
 const descriptionIndex = new Map();
-// Development previews must stay out of search until tested Desktop releases exist.
-const desktopPreviewRoutes = new Set(['/desktop', '/desktop/pricing', '/desktop/download', '/desktop/releases', '/desktop/help', '/desktop/redeem', '/desktop/purchase']);
+// Desktop is published: download and releases form full hreflang clusters; overview,
+// plans and help are English-only (localized copies noindex); license pages stay private.
+const desktopPrivateRoutes = new Set(['/desktop/redeem', '/desktop/purchase']);
+const englishOnly = new Set(englishOnlyRoutes);
 
 const decodeHtml = (value = '') => value
   .replace(/&amp;/g, '&')
@@ -165,8 +167,9 @@ async function validatePage(file) {
     if (canonical !== expectedCanonical) failures.push(`${label}: canonical ${canonical} does not match ${expectedCanonical}.`);
     const alternates = links.filter(({ attributes: attrs }) => attrs.rel === 'alternate' && attrs.hreflang);
     const actualHreflangs = new Set(alternates.map(({ attributes: attrs }) => attrs.hreflang));
-    if (!localizedRoutePaths.includes(base)) {
-      if (alternates.length) failures.push(`${label}: English-only guides must not advertise translations.`);
+    if (englishOnly.has(base) && locale !== 'en') failures.push(`${label}: untranslated copy of an English-only page must be noindex.`);
+    if (!localizedRoutePaths.includes(base) || englishOnly.has(base)) {
+      if (alternates.length) failures.push(`${label}: English-only pages must not advertise translations.`);
     } else if (alternates.length !== hreflangs.size || actualHreflangs.size !== hreflangs.size || [...hreflangs].some((code) => !actualHreflangs.has(code))) failures.push(`${label}: hreflang cluster must contain all ${hreflangs.size} unique languages including x-default.`);
     for (const alternate of alternates) {
       const code = alternate.attributes.hreflang;
@@ -178,7 +181,7 @@ async function validatePage(file) {
     const localeDefinition = localeDefinitions.find((item) => item.path === locale);
     if (htmlTag.lang !== localeDefinition?.code || (htmlTag.dir || 'ltr') !== localeDefinition?.direction) failures.push(`${label}: html lang/dir does not match locale ${locale}.`);
     validateSchemas(text, label, locale, base, schemasFrom(html, label));
-  } else if (!['/404', '/heic'].includes(route) && !route.startsWith('/guides') && !desktopPreviewRoutes.has(base)) {
+  } else if (!['/404', '/heic'].includes(route) && !route.startsWith('/guides') && !desktopPrivateRoutes.has(base) && !(englishOnly.has(base) && locale !== 'en')) {
     failures.push(`${label}: unexpected noindex page.`);
   }
 }
@@ -237,7 +240,7 @@ async function validateSitemapAndRobots() {
   });
   const expectedByUrl = new Map();
   for (const route of localizedRoutePaths) {
-    if (desktopPreviewRoutes.has(route)) continue;
+    if (desktopPrivateRoutes.has(route) || englishOnly.has(route)) continue;
     const alternates = new Map(publishedLocales.map((locale) => [
       locale.code,
       new URL(localizedPath(locale.path, route), siteUrl).toString(),
@@ -247,6 +250,7 @@ async function validateSitemapAndRobots() {
       expectedByUrl.set(new URL(localizedPath(locale.path, route), siteUrl).toString(), alternates);
     }
   }
+  for (const route of englishOnlyRoutes) expectedByUrl.set(new URL(route, siteUrl).toString(), new Map());
   for (const url of guideSitemapUrls()) if (!expectedByUrl.has(url)) expectedByUrl.set(url, new Map());
   const expectedUrls = [...expectedByUrl.keys()];
   const expectedSet = new Set(expectedUrls);

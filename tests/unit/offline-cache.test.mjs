@@ -12,8 +12,8 @@ function harness(){
 }
 test('static assets cannot evict cached pages and navigation cannot trim assets',async()=>{
  const h=harness();await h.request('/rotate-pdf');for(let i=0;i<90;i++)await h.request(`/_astro/${i}.js`,'cors');
- assert.equal(h.stores.get('sorafiles-local-v5-pages').size,1);assert.equal(h.stores.get('sorafiles-local-v5-static').size,80);
- await h.request('/merge-pdf');assert.equal(h.stores.get('sorafiles-local-v5-static').size,80);
+ assert.equal(h.stores.get('sorafiles-local-v6-pages').size,1);assert.equal(h.stores.get('sorafiles-local-v6-static').size,80);
+ await h.request('/merge-pdf');assert.equal(h.stores.get('sorafiles-local-v6-static').size,80);
  h.setOffline();assert.equal((await h.request('/rotate-pdf')).status,200);assert.equal((await h.request('/never-visited')).type,'error');
 });
 test('file uploads and arbitrary document GETs are never cached',async()=>{

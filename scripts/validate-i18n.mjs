@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { localizedPath, localizedRoutePaths, publishedLocales } from '../src/i18n/config.ts';
+import { englishOnlyRoutes, localizedPath, localizedRoutePaths, publishedLocales } from '../src/i18n/config.ts';
+const englishOnly = new Set(englishOnlyRoutes);
 import { liveTools } from '../src/data/liveTools.ts';
 
 const site = 'https://sorafiles.com';
@@ -88,7 +89,12 @@ for (const [locale, language, direction] of locales) {
     if (locale !== 'en' && toolRoutes.has(route)) {
       for (const label of englishWorkbenchLabels) if (html.includes(`>${label}<`)) errors.push(`${locale}${route}: untranslated workbench label “${label}”`);
     }
-    if (!noIndex) {
+    if (!noIndex && englishOnly.has(route)) {
+      // English-only page: indexed once, never claiming translations.
+      if (locale !== 'en') errors.push(`${locale}${route}: untranslated copy of an English-only page must be noindex`);
+      if (alternatePairs.length) errors.push(`${locale}${route}: English-only page must not declare hreflang alternates`);
+      if (!sitemap.includes(`<loc>${expectedUrl}</loc>`)) errors.push(`${locale}${route}: missing sitemap URL ${expectedUrl}`);
+    } else if (!noIndex) {
     if (alternatePairs.length !== locales.length + 1) errors.push(`${locale}${route}: expected 20 head hreflang links, found ${alternatePairs.length}`);
 
     for (const [alternateLocale, alternateLanguage] of locales) {

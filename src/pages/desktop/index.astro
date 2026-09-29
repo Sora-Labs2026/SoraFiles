@@ -4,6 +4,6 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import PrototypeDesktopOverview from '../../components/PrototypeDesktopOverview.astro';
 ---
-<Layout title="SoraFiles Desktop" description="File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free." canonicalPath="/desktop" noIndex={true}>
+<Layout title="SoraFiles Desktop" description="File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free." canonicalPath="/desktop" noIndex={Boolean(Astro.params.locale)} hreflang={false}>
  <Header/><PrototypeDesktopOverview/><Footer/>
 </Layout>

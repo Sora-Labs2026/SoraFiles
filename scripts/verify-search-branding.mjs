@@ -84,12 +84,14 @@ check(!layoutSource.includes('/favicon.svg'), 'Layout must not reference the obs
 
 const html = await readText('dist/index.html');
 const iconTags = [...html.matchAll(/<link[^>]+rel=["']icon["'][^>]*>/gi)].map((match) => match[0]);
-const iconHrefs = iconTags.map((tag) => tag.match(/href=["']([^"']+)["']/i)?.[1]).filter(Boolean);
+// A numeric ?v= cache-buster may be appended (it makes browsers refetch a
+// changed icon); the declared icon files themselves stay fixed.
+const iconHrefs = iconTags.map((tag) => tag.match(/href=["']([^"']+)["']/i)?.[1]?.replace(/\?v=\d+$/, '')).filter(Boolean);
 const requiredHrefs = ['/favicon-48x48.png', '/favicon-96x96.png', '/favicon.png', '/favicon.ico'];
 check(iconHrefs.length === requiredHrefs.length, `Homepage must have exactly ${requiredHrefs.length} complementary rel=icon declarations.`);
 check(new Set(iconHrefs).size === iconHrefs.length, 'Homepage has duplicate rel=icon declarations.');
 for (const href of requiredHrefs) check(iconHrefs.includes(href), `Homepage is missing ${href}.`);
-check(/<link[^>]+rel=["']apple-touch-icon["'][^>]+sizes=["']180x180["'][^>]+href=["']\/apple-touch-icon\.png["']/i.test(html), 'Homepage Apple touch icon is invalid.');
+check(/<link[^>]+rel=["']apple-touch-icon["'][^>]+sizes=["']180x180["'][^>]+href=["']\/apple-touch-icon\.png(?:\?v=\d+)?["']/i.test(html), 'Homepage Apple touch icon is invalid.');
 check(/<title>SoraFiles\b/i.test(html), 'Homepage title must begin with SoraFiles.');
 check(/<meta[^>]+property=["']og:site_name["'][^>]+content=["']SoraFiles["']/i.test(html), 'og:site_name must be SoraFiles.');
 check(/<meta[^>]+name=["']application-name["'][^>]+content=["']SoraFiles["']/i.test(html), 'application-name must be SoraFiles.');

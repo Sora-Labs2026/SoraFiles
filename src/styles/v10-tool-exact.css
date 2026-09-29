@@ -1308,7 +1308,7 @@
 
 :where([data-prototype-tool]) .chips {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 
 :where([data-prototype-tool]) .chip {
@@ -1316,24 +1316,26 @@
   align-items: center;
   gap: 7px;
   height: 2.25rem;
-  padding-inline: 0.875rem 0.5rem;
-  border: 0;
+  /* Right inset equals the badge's vertical inset so the count sits concentric in the pill's curve. */
+  padding-inline: 0.875rem 0.375rem;
+  /* A real border (not an outside ring) cannot be clipped by scroll rows and stays crisp at any scaling. */
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-pill);
   background: var(--surface-raised);
-  box-shadow: 0 0 0 1px var(--line-strong);
   font-size: var(--fs-label);
   font-weight: var(--fw-semibold);
   color: var(--ink-2);
   white-space: nowrap;
   transition:
     background-color var(--dur-1) var(--ease-std),
+    border-color var(--dur-1) var(--ease-std),
     box-shadow var(--dur-1) var(--ease-std),
     color var(--dur-1) var(--ease-std),
     transform var(--dur-1) var(--ease-std);
 }
 
 :where([data-prototype-tool]) .chip:hover {
-  box-shadow: 0 0 0 1px var(--ink-3);
+  border-color: var(--ink-3);
   color: var(--ink);
 }
 
@@ -1342,6 +1344,7 @@
 }
 
 :where([data-prototype-tool]) .chip[aria-pressed="true"] {
+  border-color: var(--action);
   background: var(--action);
   box-shadow: var(--shadow-btn);
   color: var(--on-action);
@@ -1351,8 +1354,9 @@
   display: inline-grid;
   place-items: center;
   min-width: 1.375rem;
-  height: 1.25rem;
+  height: 1.375rem;
   padding-inline: 5px;
+  line-height: 1;
   border-radius: var(--r-pill);
   background: var(--sunken);
   font-size: 0.6875rem;
@@ -1541,8 +1545,8 @@
   }
 
   :where([data-prototype-tool]) .chips {
-    margin-inline: calc(var(--gutter) * -1);
-    padding: 1px var(--gutter);
+    margin: -4px calc(var(--gutter) * -1);
+    padding: 4px var(--gutter);
     overflow-x: auto;
     scrollbar-width: none;
   }
@@ -1553,6 +1557,7 @@
 
   :where([data-prototype-tool]) .chip {
     height: 2.5rem;
+    padding-inline: 0.875rem 0.5rem;
   }
 
   :where([data-prototype-tool]) .tool-card {

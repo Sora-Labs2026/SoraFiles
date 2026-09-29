@@ -5,8 +5,12 @@ import Footer from '../../components/Footer.astro';
 import pricing from '../../data/prototypePricing.json';
 import '../../styles/v10-site-exact.css';
 import '../../styles/v10-contact-controls.css';
+// Only the monthly prices are in the static HTML; annual and lifetime appear via
+// the page toggle, so structured data states just the visible monthly offers.
+const monthly=(name:string,price:string)=>({'@type':'Offer',name,price,priceCurrency:'USD',availability:'https://schema.org/InStock',url:'https://sorafiles.com/desktop/pricing',priceSpecification:{'@type':'UnitPriceSpecification',price,priceCurrency:'USD',unitText:'MONTH'}});
+const schema={'@context':'https://schema.org','@type':'SoftwareApplication',name:'SoraFiles',applicationCategory:'UtilitiesApplication',operatingSystem:'Windows 10+, macOS 13+, Ubuntu 22.04',publisher:{'@type':'Organization',name:'Sora Labs'},url:'https://sorafiles.com/desktop',offers:[monthly('Personal (1 device)','1.99'),monthly('Team (up to 5 devices)','9.99')]};
 ---
-<Layout title="SoraFiles Desktop plans" description="Personal and Team plans for SoraFiles Desktop." canonicalPath="/desktop/pricing" noIndex={true}>
+<Layout title="SoraFiles Desktop plans" description="Personal and Team plans for SoraFiles Desktop." canonicalPath="/desktop/pricing" noIndex={Boolean(Astro.params.locale)} hreflang={false} schema={schema}>
  <Header/><main id="main" data-prototype-info data-prototype-controls><Fragment set:html={pricing.monthly.html}/></main><Footer/>
 </Layout>
 <script>

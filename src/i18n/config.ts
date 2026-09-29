@@ -52,6 +52,9 @@ export const localizedRoutePaths = [
 ] as const;
 
 export type LocalizedRoutePath = (typeof localizedRoutePaths)[number];
+// Indexed in English only: their localized URLs render untranslated copies, so
+// those stay noindex and no hreflang cluster claims translations that do not exist.
+export const englishOnlyRoutes: readonly LocalizedRoutePath[] = ['/desktop', '/desktop/pricing', '/desktop/help'];
 
 export function isLocalePath(value: string): value is LocalePath {
   return localeByPath.has(value as LocalePath);

@@ -23,6 +23,8 @@ interface Props {
   schema?: Record<string, unknown> | Record<string, unknown>[];
   locale?: LocalePath;
   alternatePath?: string;
+  /** False for English-only pages whose localized URLs are untranslated copies. */
+  hreflang?: boolean;
   ogType?: 'website' | 'article';
 }
 
@@ -39,6 +41,7 @@ const {
   schema,
   locale = localeByPath.has(Astro.params.locale as LocalePath) ? Astro.params.locale as LocalePath : 'en',
   alternatePath = basePathFromLocalized(providedCanonicalPath),
+  hreflang = true,
   ogType = 'website',
 } = Astro.props;
 
@@ -50,7 +53,7 @@ const canonical = new URL(canonicalPath, 'https://sorafiles.com');
 const socialImage = new URL(imagePath, 'https://sorafiles.com');
 const serializedSchema = schema ? JSON.stringify(schema).replace(/</g, '\\u003c') : undefined;
 const localeMeta = localeByPath.get(locale) ?? localeByPath.get('en')!;
-const alternates = noIndex ? [] : publishedAlternates(alternatePath);
+const alternates = noIndex || !hreflang ? [] : publishedAlternates(alternatePath);
 // PERMANENT SORAFILES SEARCH BRANDING INVARIANT: SoraFiles is the product; Sora Labs is the company; assets preserve the exact approved V10 amber mark.
 const siteName = 'SoraFiles';
 const documentTitle = title;
@@ -103,11 +106,11 @@ const atmosphere = ['/', '/desktop'].includes(route) ? 'hero' : route === '/desk
     {alternates.map((alternate) => <link rel="alternate" hreflang={alternate.hreflang} href={alternate.href} />)}
     {alternates.length > 0 && <link rel="alternate" hreflang="x-default" href={new URL(alternatePath, 'https://sorafiles.com')} />}
     <link rel="sitemap" href="/sitemap.xml" />
-    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
-    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
-    <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48" href="/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=2" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png?v=2" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png?v=2" />
+    <link rel="icon" type="image/x-icon" sizes="16x16 32x32 48x48" href="/favicon.ico?v=2" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={siteName} />
