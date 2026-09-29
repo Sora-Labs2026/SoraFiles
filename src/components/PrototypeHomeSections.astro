@@ -1,6 +1,7 @@
 ---
 import type {LocalePath} from '../i18n/config';
 import {prototypeText} from '../i18n/prototype';
+import RatingWidget from './RatingWidget.astro';
 interface Props {locale?:LocalePath;}
 const {locale='en'}=Astro.props;
 const t=(text:string)=>prototypeText(locale,text);
@@ -24,6 +25,7 @@ const t=(text:string)=>prototypeText(locale,text);
  </div></div></div>
  <div class="promo__copy"><p class="eyebrow">{t("SoraFiles Desktop · Windows, macOS and Linux")}</p><h2 id="promo-title" class="t-h2">{t("Right-click a file. Pick a tool. Done.")}</h2><p class="promo__text">{t("Run SoraFiles from your file manager, on one file or a whole batch. Fewer steps for repeat work.")}</p><a class="btn btn--md btn--primary btn--chip" href="/desktop" data-testid="desktop-promo-link">{t("Explore Desktop")}<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn__icon btn__icon--end lucide lucide-arrow-right" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></a></div>
 </div></div></section>
+<RatingWidget kind="site" subject="sorafiles" {locale}/>
 <script>
 document.querySelectorAll<HTMLElement>('[data-reveal-threshold]').forEach(el=>{
  const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting){el.dataset.play='true';observer.disconnect()}},{threshold:Number(el.dataset.revealThreshold),rootMargin:'0px 0px -8% 0px'});observer.observe(el);

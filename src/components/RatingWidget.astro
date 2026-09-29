@@ -1,0 +1,147 @@
+---
+// Stars only. The edge fills the summary with the live aggregate (the same
+// numbers it merges into this page's JSON-LD); the browser handles voting.
+import type { LocalePath } from '../i18n/config';
+import { localeByPath } from '../i18n/config';
+import { ratingCopy } from '../i18n/ratings';
+interface Props { kind: 'site' | 'tool'; subject: string; name?: string; locale?: LocalePath; }
+const { kind, subject, name = 'SoraFiles', locale = 'en' } = Astro.props;
+const c = ratingCopy(locale);
+const fill = (text: string, values: Record<string, string | number>) => Object.entries(values).reduce((out, [key, value]) => out.replaceAll(`{${key}}`, String(value)), text);
+const titleId = `sf-rating-${subject}-title`;
+const code = localeByPath.get(locale)?.code ?? locale;
+const clientCopy = { thanks: c.thanks, yours: c.yours, error: c.error };
+---
+<section class={`sf-rating sf-rating--${kind}`} data-sf-rating={subject} data-kind={kind} aria-labelledby={titleId} data-copy={JSON.stringify(clientCopy)}>
+  <div class="container sf-rating__inner">
+    <div class="sf-rating__head">
+      <h2 id={titleId} class="sf-rating__title">{kind === 'site' ? c.siteTitle : fill(c.toolTitle, { tool: name })}</h2>
+      <p class="sf-rating__summary" data-sf-rating-summary={subject} data-template-one={c.one} data-template-many={c.many} data-template-none={c.none} data-locale={code}><span class="sf-rating__text">{c.none}</span></p>
+    </div>
+    <form class="sf-rating__form" data-sf-rating-form hidden={kind === 'tool'}>
+      <fieldset>
+        <legend class="sf-rating__legend">{kind === 'site' ? c.siteQuestion : c.toolAction}<span class="sr-only"> {c.keyboard}</span></legend>
+        <div class="sf-rating__stars" title={kind === 'site' ? c.legendSite : fill(c.legendTool, { tool: name })}>
+          {[1, 2, 3, 4, 5].map((n) => <label class="sf-rating__star"><input type="radio" name={`sf-rating-${subject}`} value={n} aria-label={fill(n === 1 ? c.star : c.stars, { n })} /><span aria-hidden="true">★</span></label>)}
+        </div>
+      </fieldset>
+      <p class="sf-rating__status" data-sf-rating-status role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<script>
+  import { summaryHtml, RATER_ID } from '../lib/ratings/core.js';
+  const RATER_KEY = 'sf-rater-id';
+  const storage = { get: (key: string) => { try { return localStorage.getItem(key); } catch { return null; } }, set: (key: string, value: string) => { try { localStorage.setItem(key, value); } catch {} } };
+  // A random anonymous id, created only when someone first rates. No fingerprinting.
+  const existingRater = () => { const id = storage.get(RATER_KEY); return id && RATER_ID.test(id) ? id : null; };
+  const newRater = () => {
+    const bytes = crypto.getRandomValues(new Uint8Array(24));
+    const id = btoa(String.fromCharCode(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '');
+    storage.set(RATER_KEY, id); return id;
+  };
+  const post = async (subject: string, body: Record<string, unknown>) => {
+    const response = await fetch(`/__sf/ratings/${encodeURIComponent(subject)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), credentials: 'same-origin' });
+    if (!response.ok) throw new Error(String(response.status));
+    return response.json();
+  };
+
+  document.querySelectorAll<HTMLElement>('[data-sf-rating]').forEach((section) => {
+    const subject = section.dataset.sfRating!, kind = section.dataset.kind;
+    const copy = JSON.parse(section.dataset.copy || '{}') as { thanks: string; yours: string; error: string };
+    const form = section.querySelector<HTMLFormElement>('[data-sf-rating-form]')!;
+    const summary = section.querySelector<HTMLElement>('[data-sf-rating-summary]')!;
+    const status = section.querySelector<HTMLElement>('[data-sf-rating-status]')!;
+    const inputs = [...form.querySelectorAll<HTMLInputElement>('input[type="radio"]')];
+    const templates = { one: summary.dataset.templateOne!, many: summary.dataset.templateMany!, none: summary.dataset.templateNone! };
+    const usedKey = `sf-used:${subject}`;
+    const show = () => { form.hidden = false; };
+    const apply = (result: { count: number; average: number | null; userRating: number | null }) => {
+      summary.innerHTML = summaryHtml(templates, result, summary.dataset.locale);
+      inputs.forEach((input) => { input.checked = Number(input.value) === result.userRating; input.dataset.saved = String(input.checked); });
+      if (result.userRating) { show(); status.textContent = copy.yours.replace('{n}', String(result.userRating)); }
+    };
+    if (kind === 'site' || storage.get(usedKey)) show();
+    const known = existingRater();
+    if (known) void post(subject, { rater: known }).then(apply).catch(() => {});
+
+    // Tool pages ask only after the tool produced a result here.
+    if (kind === 'tool') {
+      const workbench = document.querySelector('#workbench');
+      const finished = () => [...(workbench?.querySelectorAll<HTMLAnchorElement>('a[download]') ?? [])].some((link) => link.href.startsWith('blob:') && !link.closest('[hidden]'));
+      if (workbench) new MutationObserver(() => { if (form.hidden && finished()) { storage.set(usedKey, '1'); show(); } })
+        .observe(workbench, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'href'] });
+    }
+
+    let saving = false, byKeyboard = false;
+    const submit = async (input: HTMLInputElement) => {
+      if (saving) return;
+      saving = true; section.setAttribute('aria-busy', 'true');
+      const previous = inputs.find((item) => item !== input && item.dataset.saved === 'true');
+      try {
+        const result = await post(subject, { rater: existingRater() ?? newRater(), rating: Number(input.value) });
+        apply(result); status.textContent = copy.thanks;
+        inputs.forEach((item) => { item.dataset.saved = String(item === input); });
+        // Existing analytics only (no new provider): the star value and tool, nothing identifying.
+        (window as Window & { gtag?: (...args: unknown[]) => void }).gtag?.('event', previous ? 'rating_updated' : 'rating_submitted', { tool_id: subject, surface: 'web', rating: Number(input.value) });
+      } catch { input.checked = false; status.textContent = copy.error; }
+      finally { saving = false; section.removeAttribute('aria-busy'); }
+    };
+    // Pointer: a click rates. Keyboard: arrows only choose; Enter or Space confirms.
+    form.addEventListener('pointerdown', () => { byKeyboard = false; });
+    form.addEventListener('keydown', (event) => {
+      const input = event.target as HTMLInputElement;
+      if (input.type !== 'radio') return;
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) byKeyboard = true;
+      else if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        const chosen = inputs.find((item) => item.checked) ?? (event.key === ' ' ? input : null);
+        if (chosen) { chosen.checked = true; byKeyboard = false; void submit(chosen); }
+      }
+    });
+    form.addEventListener('change', (event) => {
+      const input = event.target as HTMLInputElement;
+      if (input.type === 'radio' && !byKeyboard) void submit(input);
+    });
+  });
+</script>
+
+<style is:global>
+  .sf-rating { padding-block: clamp(2rem, 1.5rem + 2vw, 3.5rem); }
+  .sf-rating--tool { padding-block: 1.5rem 0; }
+  .sf-rating__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; }
+  .sf-rating--site .sf-rating__inner { border-top: 1px solid var(--line); padding-top: clamp(2rem, 1.5rem + 2vw, 3rem); }
+  .sf-rating--tool .sf-rating__inner { border: 1px solid var(--line); border-radius: var(--r-lg, 16px); padding: 1rem 1.25rem; background: var(--surface); }
+  .sf-rating__head { display: grid; gap: .35rem; min-width: 0; }
+  .sf-rating__title { margin: 0; font-size: clamp(1.125rem, 1rem + .5vw, 1.375rem); font-weight: 700; letter-spacing: -.01em; color: var(--ink); }
+  .sf-rating--tool .sf-rating__title { font-size: 1rem; }
+  .sf-rating__summary { margin: 0; display: flex; align-items: center; gap: .5rem; color: var(--ink-2); font-size: .875rem; font-variant-numeric: tabular-nums; }
+  .sf-stars-static { letter-spacing: .08em; font-size: 1rem; background: linear-gradient(90deg, rgb(var(--warm-rgb, 251 191 36)) var(--sf-fill, 0%), var(--line-strong) var(--sf-fill, 0%)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sf-rating__form { display: grid; gap: .35rem; justify-items: end; }
+  .sf-rating__form[hidden] { display: none; }
+  .sf-rating__form fieldset { margin: 0; padding: 0; border: 0; display: flex; align-items: center; gap: .75rem; }
+  .sf-rating__legend { float: left; padding: 0; font-size: .875rem; font-weight: 600; color: var(--ink-2); }
+  .sf-rating__stars { display: flex; gap: .125rem; }
+  .sf-rating__star { position: relative; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; cursor: pointer; border-radius: var(--r-pill, 999px); }
+  .sf-rating__star input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  .sf-rating__star span { pointer-events: none; font-size: 1.625rem; line-height: 1; color: var(--line-strong); transition: color .12s ease, transform .12s ease; }
+  .sf-rating__star:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .sf-rating__stars:has(.sf-rating__star:nth-child(1) input:checked) .sf-rating__star:nth-child(-n+1) span,
+  .sf-rating__stars:has(.sf-rating__star:nth-child(2) input:checked) .sf-rating__star:nth-child(-n+2) span,
+  .sf-rating__stars:has(.sf-rating__star:nth-child(3) input:checked) .sf-rating__star:nth-child(-n+3) span,
+  .sf-rating__stars:has(.sf-rating__star:nth-child(4) input:checked) .sf-rating__star:nth-child(-n+4) span,
+  .sf-rating__stars:has(.sf-rating__star:nth-child(5) input:checked) .sf-rating__star:nth-child(-n+5) span { color: rgb(var(--warm-rgb, 251 191 36)); }
+  @media (hover: hover) {
+    .sf-rating__stars:has(.sf-rating__star:nth-child(1):hover) .sf-rating__star:nth-child(-n+1) span,
+    .sf-rating__stars:has(.sf-rating__star:nth-child(2):hover) .sf-rating__star:nth-child(-n+2) span,
+    .sf-rating__stars:has(.sf-rating__star:nth-child(3):hover) .sf-rating__star:nth-child(-n+3) span,
+    .sf-rating__stars:has(.sf-rating__star:nth-child(4):hover) .sf-rating__star:nth-child(-n+4) span,
+    .sf-rating__stars:has(.sf-rating__star:nth-child(5):hover) .sf-rating__star:nth-child(-n+5) span { color: rgb(var(--warm-rgb, 251 191 36)); transform: scale(1.08); }
+  }
+  .sf-rating[aria-busy="true"] .sf-rating__stars { opacity: .6; }
+  .sf-rating__status { margin: 0; min-height: 1.25rem; font-size: .8125rem; color: var(--ink-3); }
+  html[dir='rtl'] .sf-rating__legend { float: right; }
+  @media (max-width: 640px) { .sf-rating__form { justify-items: start; } .sf-rating__form fieldset { flex-wrap: wrap; } }
+  @media (prefers-reduced-motion: reduce) { .sf-rating__star span { transition: none; } }
+</style>

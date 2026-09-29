@@ -11,12 +11,18 @@ fn selection_ids(ids: &Value) -> bool {
     ids.as_array().is_some_and(|ids| !ids.is_empty() && ids.len() <= 256 && ids.iter().all(|id| id.as_str().is_some_and(|text| text.len() == 32 && text.bytes().all(|b| b.is_ascii_hexdigit()))))
 }
 
+fn rating_subject(subject: &Value) -> bool {
+    subject.as_str().is_some_and(|text| (1..=40).contains(&text.len()) && text.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-'))
+}
+
 pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
     let Some(fields) = params.as_object() else { return false; };
     if params.to_string().len() > 16384 { return false; }
     match method {
         "getState" | "selectFiles" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "supportDetails" | "checkUpdates" | "quit" | "cancelProcessing" | "processingStatus" | "openFullApp" | "closeQuickAction" => fields.is_empty(),
         "previewSelection" => fields.len()==1 && selection_ids(&params["selectionIds"]),
+        "ratingStatus" => fields.len()==1 && rating_subject(&params["subject"]),
+        "ratingSubmit" => fields.len()==2 && rating_subject(&params["subject"]) && params["rating"].as_u64().is_some_and(|n|(1..=5).contains(&n)),
         "processFiles" => fields.len()==3 && params["options"].is_object()
             && matches!(params["tool"].as_str(),Some("remove-background"|"doc-scanner"|"repair-pdf"|"compress-pdf"|"heic-to-jpg"|"pdf-to-word"|"pdf-to-excel"|"metadata-remover"|"protect-pdf"|"pdf-ocr"|"pdf-to-jpg"|"merge-pdf"|"split-pdf"|"rotate-pdf"|"remove-pages"|"page-numbers"|"watermark-pdf"|"sign-pdf"|"jpg-to-pdf"|"image-converter"|"compress-image"|"resize-image"|"edit-image"))
             && params["selectionIds"].as_array().is_some_and(|ids|!ids.is_empty()&&ids.len()<=256&&ids.iter().all(|id|id.as_str().is_some_and(|text|text.len()==32&&text.bytes().all(|b|b.is_ascii_hexdigit())))),
@@ -109,6 +115,9 @@ impl Drop for DialogLease<'_> { fn drop(&mut self) { self.0.store(false, Orderin
         assert!(valid_request("replacementRequest",&json!({"oldDeviceId":"a".repeat(43)}),false));
         assert!(valid_request("replacementCancel",&json!({}),false));
         assert!(valid_request("previewSelection",&json!({"selectionIds":["a".repeat(32)]}),false));
+        assert!(valid_request("ratingStatus",&json!({"subject":"compress-pdf"}),false));
+        assert!(valid_request("ratingSubmit",&json!({"subject":"sorafiles","rating":5}),false));
+        for (method,params) in [("ratingSubmit",json!({"subject":"compress-pdf","rating":0})),("ratingSubmit",json!({"subject":"compress-pdf","rating":6})),("ratingSubmit",json!({"subject":"compress-pdf","rating":4.5})),("ratingSubmit",json!({"subject":"../x","rating":5})),("ratingStatus",json!({"subject":"compress-pdf","rater":"forged"})),("ratingSubmit",json!({"subject":"compress-pdf","rating":5,"average":5}))]{assert!(!valid_request(method,&params,false));}
         for params in [json!({"selectionIds":[]}),json!({"selectionIds":["C:/secret.png"]}),json!({"selectionIds":["a".repeat(32)],"paths":["C:/x"]}),json!({})]{assert!(!valid_request("previewSelection",&params,false));}
         assert!(!valid_request("replacementCancel",&json!({"orderId":"forged"}),false));
         assert!(valid_request("replacementCheckout",&json!({}),false));

@@ -23,7 +23,7 @@
     "build:production": "node scripts/build-production.mjs",
     "preview": "astro preview",
     "preview:cloudflare": "npm run build && wrangler dev",
-    "deploy": "npm run build:production && wrangler deploy && npm run submit:search",
+    "deploy": "npm run build:production && wrangler d1 migrations apply sorafiles-popularity --remote && wrangler deploy && npm run submit:search",
     "indexnow": "node --experimental-strip-types scripts/ping-search-engines.js --live --indexnow-only",
     "indexnow:bing": "node --experimental-strip-types scripts/ping-search-engines.js --live --indexnow-only --indexnow-endpoint https://www.bing.com/indexnow",
     "assets:brand": "node scripts/generate-brand-icons.mjs",

@@ -81,7 +81,11 @@ function validateSchemas(text, label, locale, baseRoute, schemas) {
     if (!schema || typeof schema !== 'object') continue;
     if (schema['@type'] === 'Organization' && schema.name !== 'Sora Labs') failures.push(`${label}: Organization schema must name Sora Labs.`);
     if (schema['@type'] === 'WebSite' && schema.name !== 'SoraFiles') failures.push(`${label}: WebSite schema must name SoraFiles.`);
-    if (['WebApplication', 'SoftwareApplication'].includes(schema['@type']) && schema.name !== 'SoraFiles') failures.push(`${label}: application schema must use the exact SoraFiles product name.`);
+    // A tool page may describe its tool as "<visible tool name> - SoraFiles",
+    // part of the SoraFiles suite; everywhere else the product name is exact.
+    const toolApplication = toolBasePaths.has(baseRoute) && schema.applicationSuite === 'SoraFiles'
+      && /^(.+) - SoraFiles$/.test(schema.name ?? '') && text.includes(decodeHtml(schema.name.replace(/ - SoraFiles$/, '')));
+    if (['WebApplication', 'SoftwareApplication'].includes(schema['@type']) && schema.name !== 'SoraFiles' && !toolApplication) failures.push(`${label}: application schema must use the exact SoraFiles product name.`);
     if (['WebApplication', 'SoftwareApplication'].includes(schema['@type']) && schema.alternateName !== undefined) failures.push(`${label}: application schema must not expose an alternate product name.`);
     if (['WebApplication', 'SoftwareApplication'].includes(schema['@type']) && (schema.review || schema.aggregateRating)) failures.push(`${label}: application schema must not manufacture review-gated rating or review evidence.`);
     if (schema['@type'] === 'FAQPage') {

@@ -1,6 +1,7 @@
 import { BOOTSTRAP_POPULAR_TOOL_IDS, PUBLISHED_TOOL_IDS } from './src/data/popularityRegistry.generated.js';
 import { computePopularityRanking, createBootstrapRanking } from './src/lib/popularity/core.js';
 import { desktopRedemptionRequest } from './src/lib/desktop/redemption-edge.js';
+import { RATER_ID, RATING_LIMITS, SITE_SUBJECT, isRating, pruneRatingLimits, raterKey, readAggregate, readUserRating, saveRating, sha256Hex, summaryHtml, withAggregateRating, withinLimit } from './src/lib/ratings/core.js';
 
 const CANONICAL_HOST = 'sorafiles.com';
 const CANONICAL_ORIGIN = `https://${CANONICAL_HOST}`;
@@ -71,7 +72,7 @@ function redirectWithHsts(url) {
   return new Response(null, { status: 301, headers: { Location: url, 'Strict-Transport-Security': HSTS } });
 }
 
-function preparePublicHtml(response, ranking, pathname = '/') {
+function preparePublicHtml(response, ranking, pathname = '/', env = undefined) {
   if (!/^text\/html\b/i.test(response.headers.get('Content-Type') || '')) return response;
   const headers = new Headers(response.headers);
   headers.set('Content-Type', 'text/html; charset=utf-8');
@@ -104,10 +105,10 @@ function preparePublicHtml(response, ranking, pathname = '/') {
     .filter((directive) => directive && directive.toLowerCase() !== 'no-transform').join(', ');
   headers.set('Cache-Control', cacheControl);
   const secured = new Response(response.body, { status: response.status, statusText: response.statusText, headers });
-  if (!ranking || typeof HTMLRewriter === 'undefined') return secured;
-  return new HTMLRewriter()
-    .on('script[data-popularity-ranking]', { element(element) { element.setInnerContent(JSON.stringify(ranking), { html: true }); } })
-    .transform(secured);
+  if (typeof HTMLRewriter === 'undefined' || (!ranking && !env?.POPULARITY_DB)) return secured;
+  let rewriter = new HTMLRewriter();
+  if (ranking) rewriter = rewriter.on('script[data-popularity-ranking]', { element(element) { element.setInnerContent(JSON.stringify(ranking), { html: true }); } });
+  return withRatings(rewriter, env).transform(secured);
 }
 
 function fallbackRanking(now = new Date()) {
@@ -181,6 +182,93 @@ async function handlePopularityEvent(request, env, ctx) {
   if (ctx?.waitUntil) ctx.waitUntil(Promise.resolve(write).catch(() => {}));
   else await write;
   return noStore(204);
+}
+
+// ---- Star ratings (shared by the website and the desktop app) ----
+const RATING_PATH = /^\/__sf\/ratings\/([a-z0-9-]{1,40})$/;
+const RATING_SUBJECTS = new Set([SITE_SUBJECT, ...PUBLISHED_TOOL_IDS]);
+const RATING_CACHE_MS = 60_000;
+const ratingCache = new Map();
+
+async function cachedAggregate(env, subject) {
+  const now = Date.now(), hit = ratingCache.get(subject);
+  if (hit && hit.expires > now) return hit.value;
+  const value = await readAggregate(env.POPULARITY_DB, subject);
+  ratingCache.set(subject, { value, expires: now + RATING_CACHE_MS });
+  return value;
+}
+
+const ratingJson = (status, body, cacheControl = 'private, no-store') => Response.json(body, { status, headers: {
+  'Cache-Control': cacheControl, 'X-Content-Type-Options': 'nosniff', 'X-Robots-Tag': 'noindex, nofollow, noarchive',
+} });
+
+export async function handleRatings(request, env, subject) {
+  if (!RATING_SUBJECTS.has(subject)) return noStore(404, 'Not Found');
+  const db = env.POPULARITY_DB;
+  if (!db) return noStore(503, 'Unavailable');
+  if (request.method === 'GET' || request.method === 'HEAD') {
+    try { return ratingJson(200, await cachedAggregate(env, subject), 'public, max-age=60'); } catch { return noStore(503, 'Unavailable'); }
+  }
+  if (request.method !== 'POST') return noStore(405, 'Method Not Allowed');
+  // Browsers must be on sorafiles.com (JSON bodies also force a CORS preflight,
+  // which is never granted). The desktop app sends no Origin and names itself.
+  const origin = request.headers.get('Origin');
+  if (origin ? origin !== CANONICAL_ORIGIN : request.headers.get('X-SoraFiles-Client') !== 'desktop') return noStore(403, 'Forbidden');
+  const fetchSite = request.headers.get('Sec-Fetch-Site');
+  if (fetchSite && !['same-origin', 'same-site', 'none'].includes(fetchSite)) return noStore(403, 'Forbidden');
+  if (isAutomatedRequest(request)) return noStore(403, 'Forbidden');
+  if (!/^application\/json(?:;|$)/i.test(request.headers.get('Content-Type') || '')) return noStore(415, 'Unsupported Media Type');
+  if (Number(request.headers.get('Content-Length') || 0) > 256) return noStore(413, 'Payload Too Large');
+  let body;
+  try { const raw = await request.text(); if (raw.length > 256) return noStore(413, 'Payload Too Large'); body = JSON.parse(raw); } catch { return noStore(400, 'Invalid JSON'); }
+  const keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body).sort().join(',') : '';
+  if (!['rater', 'rater,rating'].includes(keys) || typeof body.rater !== 'string' || !RATER_ID.test(body.rater)) return noStore(400, 'Invalid Request');
+  if ('rating' in body && !isRating(body.rating)) return noStore(400, 'Rating must be a whole number from 1 to 5');
+  try {
+    const rater = await raterKey(body.rater);
+    if ('rating' in body) {
+      // Per network-address limits; the address is hashed and never stored.
+      const address = await sha256Hex(`sorafiles-rating-ip-v1:${request.headers.get('CF-Connecting-IP') || 'unknown'}`);
+      for (const window of RATING_LIMITS) {
+        if (!(await withinLimit(db, `${window.name}:${address}`, window))) {
+          return new Response(JSON.stringify({ error: 'Too many ratings. Please try again later.' }), { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(Math.ceil(window.windowMs / 1000)), 'Cache-Control': 'private, no-store' } });
+        }
+      }
+      await saveRating(db, { subject, rater, rating: body.rating, source: origin ? 'web' : 'desktop' });
+      ratingCache.delete(subject);
+    }
+    const [aggregate, userRating] = await Promise.all([readAggregate(db, subject), readUserRating(db, subject, rater)]);
+    return ratingJson(200, { ...aggregate, userRating });
+  } catch {
+    return noStore(503, 'Unavailable');
+  }
+}
+
+// Fills rating summaries and merges the same aggregate into the page's
+// application JSON-LD, so crawlers and visitors see identical numbers.
+function withRatings(rewriter, env) {
+  if (!env?.POPULARITY_DB) return rewriter;
+  const aggregateFor = (subject) => (RATING_SUBJECTS.has(subject) ? cachedAggregate(env, subject).catch(() => null) : Promise.resolve(null));
+  let schemaText = '', schemaSubject = null;
+  return rewriter
+    .on('[data-sf-rating-summary]', { async element(element) {
+      const aggregate = await aggregateFor(element.getAttribute('data-sf-rating-summary'));
+      if (!aggregate) return;
+      const templates = { one: element.getAttribute('data-template-one'), many: element.getAttribute('data-template-many'), none: element.getAttribute('data-template-none') };
+      element.setInnerContent(summaryHtml(templates, aggregate, element.getAttribute('data-locale') || 'en'), { html: true });
+      element.setAttribute('data-count', String(aggregate.count));
+    } })
+    .on('script[data-sf-rating-schema]', {
+      element(element) { schemaSubject = element.getAttribute('data-sf-rating-schema'); schemaText = ''; },
+      async text(chunk) {
+        schemaText += chunk.text;
+        if (!chunk.lastInTextNode) { chunk.remove(); return; }
+        let output = schemaText;
+        const aggregate = await aggregateFor(schemaSubject);
+        if (aggregate?.count) { try { output = JSON.stringify(withAggregateRating(JSON.parse(schemaText), aggregate)).replace(/</g, '\\u003c'); } catch {} }
+        chunk.replace(output, { html: true });
+      },
+    });
 }
 
 async function handleBackgroundRemovalAsset(request, ctx) {
@@ -276,6 +364,8 @@ export default {
       return redirectWithHsts(url.toString());
     }
     if (url.pathname === POPULARITY_EVENT_PATH) return handlePopularityEvent(request, env, ctx);
+    const ratingMatch = url.pathname.match(RATING_PATH);
+    if (ratingMatch) return handleRatings(request, env, ratingMatch[1]);
     if (url.pathname.startsWith(BACKGROUND_REMOVAL_ASSET_PREFIX)) return handleBackgroundRemovalAsset(request, ctx);
     if (url.pathname === POPULARITY_RANKING_PATH) {
       if (request.method !== 'GET') return noStore(405, 'Method Not Allowed');
@@ -327,9 +417,10 @@ export default {
     const assetUrl = new URL(url); if (sensitiveReturn) assetUrl.search = '';
     const response = await env.ASSETS.fetch(sensitiveReturn ? new Request(assetUrl, request) : request);
     const ranking = request.method === 'GET' && HOMEPAGE_PATH.test(url.pathname) ? await getCachedRanking(env) : null;
-    return preparePublicHtml(response, ranking, url.pathname);
+    return preparePublicHtml(response, ranking, url.pathname, env);
   },
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(refreshPopularityRanking(env, new Date(controller.scheduledTime)));
+    if (env.POPULARITY_DB) ctx.waitUntil(pruneRatingLimits(env.POPULARITY_DB, controller.scheduledTime).catch(() => {}));
   },
 };

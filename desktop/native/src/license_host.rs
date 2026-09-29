@@ -83,13 +83,14 @@ pub(crate) fn validate_state(value:&Value)->Result<(),String>{
 }
 fn validate_result(value:&Value)->Result<(),String>{
  let result=value.as_object().ok_or("Invalid license result")?;
- if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"devices"|"activationAvailable"|"trialPending"|"supportDeviceId"|"actions"|"action"|"replacement"|"checkoutUrl")){return Err("Private fields cannot enter the interface".into());}
+ if result.keys().any(|key|!matches!(key.as_str(),"license"|"plan"|"expiresAt"|"maxDevices"|"devices"|"activationAvailable"|"trialPending"|"supportDeviceId"|"actions"|"action"|"replacement"|"checkoutUrl"|"rating")){return Err("Private fields cannot enter the interface".into());}
  for (key,value) in result {let valid=match key.as_str(){
   "license"=>matches!(value.as_str(),Some("not-activated"|"trial"|"active"|"needs-verification"|"revoked")),
   "plan"=>value.as_str().is_some_and(|s|s.len()<64&&s.bytes().all(|b|b.is_ascii_lowercase()||b.is_ascii_digit()||b==b'-')),
   "expiresAt"=>value.is_null()||value.as_u64().is_some(),"maxDevices"=>matches!(value.as_u64(),Some(1|5)),
   "activationAvailable"|"trialPending"=>value.is_boolean(),
   "replacement"=>valid_replacement(value),
+  "rating"=>valid_rating(value),
   "checkoutUrl"=>trusted_checkout(value.as_str().unwrap_or("")),
   "actions"=>value.as_array().is_some_and(|rows|rows.len()<=32&&rows.iter().all(valid_native_action)),
   "action"=>valid_native_action(value),
@@ -98,6 +99,14 @@ fn validate_result(value:&Value)->Result<(),String>{
   if !valid{return Err("Invalid public license response".into());}
  }
  Ok(())
+}
+// Public aggregate only: never a rater id, hash or network detail.
+fn valid_rating(value:&Value)->bool{
+ value.as_object().is_some_and(|fields|fields.len()==4&&fields.keys().all(|key|matches!(key.as_str(),"subject"|"count"|"average"|"userRating")))
+  &&value["subject"].as_str().is_some_and(|s|(1..=40).contains(&s.len())&&s.bytes().all(|b|b.is_ascii_lowercase()||b.is_ascii_digit()||b==b'-'))
+  &&value["count"].as_u64().is_some_and(|n|n<=1_000_000_000)
+  &&(value["average"].is_null()||value["average"].as_f64().is_some_and(|n|(1.0..=5.0).contains(&n)))
+  &&(value["userRating"].is_null()||value["userRating"].as_u64().is_some_and(|n|(1..=5).contains(&n)))
 }
 pub(crate) fn trusted_checkout(value:&str)->bool{
  value.len()<=4096&&tauri::Url::parse(value).is_ok_and(|url|url.scheme()=="https"&&matches!(url.host_str(),Some("checkout.dodopayments.com"|"test.checkout.dodopayments.com"))&&url.username().is_empty()&&url.password().is_none()&&url.port().is_none())
@@ -127,6 +136,13 @@ fn valid_native_action(value:&Value)->bool{
  &&value["options"].is_object()&&value["options"].to_string().len()<=8192&&value["direct"].is_boolean()&&value["requiresUI"].is_boolean()
 }
 #[cfg(test)] mod tests{use super::*;
+ #[test] fn rating_results_carry_only_the_public_aggregate(){
+  assert!(validate_result(&json!({"rating":{"subject":"compress-pdf","count":1284,"average":4.82,"userRating":5}})).is_ok());
+  assert!(validate_result(&json!({"rating":{"subject":"sorafiles","count":0,"average":null,"userRating":null}})).is_ok());
+  for rating in [json!({"subject":"compress-pdf","count":1,"average":4.0,"userRating":4,"rater":"secret"}),json!({"subject":"compress-pdf","count":1,"average":9.0,"userRating":4}),json!({"subject":"compress-pdf","count":1,"average":4.0,"userRating":6}),json!({"subject":"../x","count":1,"average":4.0,"userRating":4})]{
+   assert!(validate_result(&json!({"rating":rating})).is_err());
+  }
+ }
  #[test]fn replacement_snapshot_cannot_expose_purchaser_proof(){
   assert!(validate_result(&json!({"replacement":{"stage":"email","maskedEmail":"j***@example.com","expiresAt":1900000000,"resendAfter":1800000000}})).is_ok());
   // Revoke Device opens on an expired saved code, and the typed email is shown back.

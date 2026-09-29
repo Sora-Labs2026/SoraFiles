@@ -5,11 +5,29 @@ import {resolveNativeActions,resolveNativeActionRequest,implementedNativeToolIds
 import {localizeNativeActions} from '../shared/menu-localization.mjs';
 import {replacementMessageList} from '../shared/replacement-messages.mjs';
 
+// Star ratings share the website's store (sorafiles.com). The anonymous rater id
+// is a one-way HMAC of this installation's private device key: stable, never
+// sent in raw form, and unlinkable to the licence device id (a public-key hash).
+const RATING_ORIGIN='https://sorafiles.com';
+const ratingSubjects=new Set(['sorafiles',...implementedNativeToolIds]);
+async function toolRating({action,params,state,fetchImpl=fetch}){
+ if(!ratingSubjects.has(params.subject)||action==='ratingSubmit'&&!(Number.isInteger(params.rating)&&params.rating>=1&&params.rating<=5))throw Error('Invalid rating');
+ const key=state?.device?.privateKey;if(typeof key!=='string'||!key)throw Error('Ratings are available once SoraFiles is set up');
+ const {createHmac}=await import('node:crypto');
+ const rater=createHmac('sha256',key).update('sorafiles-rating-v1').digest('base64url');
+ const response=await fetchImpl(`${RATING_ORIGIN}/__sf/ratings/${params.subject}`,{method:'POST',headers:{'Content-Type':'application/json','X-SoraFiles-Client':'desktop'},body:JSON.stringify(action==='ratingSubmit'?{rater,rating:params.rating}:{rater}),redirect:'error',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(10000)});
+ if(!response.ok)throw Error(response.status===429?'Too many ratings. Please try again later.':'Ratings are unavailable right now.');
+ const body=await response.json(),rating=value=>value===null||Number.isInteger(value)&&value>=1&&value<=5;
+ if(body?.subject!==params.subject||!Number.isSafeInteger(body.count)||body.count<0||!(body.average===null||typeof body.average==='number'&&body.average>=1&&body.average<=5)||!rating(body.userRating))throw Error('Invalid rating response');
+ return {subject:body.subject,count:body.count,average:body.average,userRating:body.userRating};
+}
+
 // Trusted native parent supplies state/config and acknowledges every protected
 // write before execution continues. Renderer fields cannot configure this host.
 export async function runLicenseAction({action,params={},state,config,saveState,fetchImpl,now=Date.now}) {
- const fields={support:[],status:[],prepareTrial:[],initializeTrial:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],validate:[],nativeActions:['files','platform','actionId','outputMode','locale'],replacementState:[],replacementEmailStart:['email','licenseKey'],replacementEmailResend:[],replacementReset:[],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCancel:[],replacementCheckout:[]};
+ const fields={support:[],status:[],prepareTrial:[],initializeTrial:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],validate:[],nativeActions:['files','platform','actionId','outputMode','locale'],replacementState:[],replacementEmailStart:['email','licenseKey'],replacementEmailResend:[],replacementReset:[],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCancel:[],replacementCheckout:[],ratingStatus:['subject'],ratingSubmit:['subject','rating']};
  if(!fields[action]||!params||typeof params!=='object'||Object.keys(params).some(key=>!fields[action].includes(key)))throw Error('Invalid license action');
+ if(action==='ratingStatus'||action==='ratingSubmit')return {rating:await toolRating({action,params,state,fetchImpl})};
  if(action==='nativeActions'){
   if(!Array.isArray(params.files)||params.files.length>256)throw Error('Invalid selection');
   let authorized=false;

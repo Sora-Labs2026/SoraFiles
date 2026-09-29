@@ -44,6 +44,11 @@ jobs:
         env:
           SORA_BASE_URL: http://localhost:4390
 
+      - name: Test star ratings (placement, keyboard, persistence, tool gating)
+        run: node tests/e2e/ratings.mjs
+        env:
+          SORA_BASE_URL: http://localhost:4390
+
       - name: Test real outputs and recovery for all public tools
         run: npm run test:tools
         env:

@@ -14,6 +14,7 @@ import DocScannerWorkbench from './DocScannerWorkbench.astro';
 import BackgroundRemovalWorkbench from './BackgroundRemovalWorkbench.astro';
 import PrototypeToolSections from './PrototypeToolSections.astro';
 import LocalizedPrototypeToolSections from './LocalizedPrototypeToolSections.astro';
+import RatingWidget from './RatingWidget.astro';
 interface Props { locale: LocalePath; content: LocaleContent; tool: LiveTool; copy?: LocalizedToolCopy; }
 const { locale, tool, content } = Astro.props;
 const t = (path: string) => liveText(locale, path);
@@ -36,5 +37,6 @@ const exactCopy = reviewedCopy ?? fallbackCopy;
       {!dedicatedWorkbenchToolIds.has(tool.id) && <ExtraToolWorkbench {tool} {locale}/>}
     </div>
   </section>
+  <RatingWidget kind="tool" subject={tool.id} name={words.n} {locale}/>
   {locale==='en'?<PrototypeToolSections id={tool.id} part="after"/>:<LocalizedPrototypeToolSections {locale} {tool} copy={exactCopy} part="after"/>}
 </main>

@@ -504,14 +504,14 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                 Ok(json!({"selected":false}))
             }).await.map_err(|_| "Folder picker unavailable")?
         }
-        "startTrial"|"activate"|"licenseStatus"|"refreshLicense"|"licenseDevices"|"supportDetails"|"replacementEmailStart"|"replacementEmailResend"|"replacementReset"|"replacementEmailVerify"|"replacementRequest"|"replacementStatus"|"replacementCancel"|"replacementState"|"replacementCheckout" => {
+        "startTrial"|"activate"|"licenseStatus"|"refreshLicense"|"licenseDevices"|"supportDetails"|"replacementEmailStart"|"replacementEmailResend"|"replacementReset"|"replacementEmailVerify"|"replacementRequest"|"replacementStatus"|"replacementCancel"|"replacementState"|"replacementCheckout"|"ratingStatus"|"ratingSubmit" => {
             let handle=app.clone();tauri::async_runtime::spawn_blocking(move||{
                 let state=handle.state::<HostState>();
                 let deadline=std::time::Instant::now()+std::time::Duration::from_secs(90);
                 let _lease=loop{match DialogLease::acquire(&state.dialog_busy){Ok(lease)=>break lease,Err(_) if method=="licenseStatus"&&std::time::Instant::now()<deadline=>std::thread::sleep(std::time::Duration::from_millis(100)),Err(error)=>return Err(error.to_string())}};
                 let directory=handle.path().app_config_dir().map_err(|_|"Private storage folder unavailable")?;
                 let resources=handle.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
-                let action=match method.as_str(){"startTrial"=>"trial","activate"=>"activate","refreshLicense"=>"refresh","licenseDevices"=>"devices","supportDetails"=>"support",name if name.starts_with("replacement")=>name,_=>"status"};
+                let action=match method.as_str(){"startTrial"=>"trial","activate"=>"activate","refreshLicense"=>"refresh","licenseDevices"=>"devices","supportDetails"=>"support",name if name.starts_with("replacement")||name.starts_with("rating")=>name,_=>"status"};
                 let result=license_host::run(&directory,&resources,action,params)?;
                 if action=="replacementCheckout"{checkout::open(result["checkoutUrl"].as_str().ok_or("Checkout unavailable")?)?;return Ok(json!({"opened":true}));}
                 Ok(result)

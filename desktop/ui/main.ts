@@ -9,6 +9,7 @@ import prototypeToolIcons from './tool-icons.json';
 import {connectedTools,processingOptions,readProcessingOptions,syncProcessingOptions,syncPercentRange} from './processing';
 import {capabilities,relevantActions,searchTools} from '../shared/capabilities.mjs';
 import {CROP_TOOLS,bindCanvas,canvasView,cropPixels,cropSize,hasCropCanvas,loadPreviews} from './canvas';
+import {eligibleForRatingPrompt,readPromptState,recordDismissed,recordRated,recordShown,recordSuccess} from '../shared/rating-prompt.mjs';
 import {host,onNativeSelection,onNativeNotice,onNativeLaunch,onLicenseUpdated} from './host';
 type Selected={id:string;name:string;format:string|null;validated:boolean;bytes:number};
 let batchResults:{source:string;state:string;name?:string;warnings?:string[];cleanupPending?:boolean;outputId?:string}[]=[],savedOutput:{name:string;outputId?:string}|null=null;
@@ -66,17 +67,47 @@ function tools(){
  const groups=toolCategories.map(group=>{const items=list.filter(tool=>(group.tools as readonly string[]).includes(tool.id));return items.length?`<section class="tool-category" aria-labelledby="category-${group.id}"><div class="category-heading"><h2 id="category-${group.id}">${group.label}</h2><span>${t('Tools')}: ${items.length}</span></div><div class="tool-grid">${items.map(toolButton).join('')}</div></section>`:'';}).join('');
  return `${heading('FIND YOUR NEXT STEP','All tools','One place for your PDFs, images and documents.')}<label class="search-box">${icon('search')}<input id="tool-search" type="search" placeholder="Search tools, e.g. merge PDF" value="${escape(state.query)}" aria-label="Search tools" autocomplete="off"><kbd>${state.platform==='macos'?'⌘ K':'Ctrl K'}</kbd></label><div class="category-filters" role="group" aria-label="Tool categories">${[{id:'all',label:'All'},...toolCategories].map(group=>`<button data-category="${group.id}" aria-pressed="${toolCategory===group.id}">${group.label}</button>`).join('')}</div><div id="tool-results"><p class="result-count" role="status">${t('Tools')}: ${list.length}</p>${groups}${!list.length?'<div class="empty"><h2>No tools found</h2><p>Try another category or search.</p><button class="secondary" data-action="reset-search">Clear search</button></div>':''}</div>`;
 }
+// ---- Star ratings: the same shared aggregate as sorafiles.com ----
+const toolRatings:Record<string,{count:number;average:number|null;userRating:number|null}|null>={};
+const PROMPT_KEY='sf-rating-prompts';
+let promptState=readPromptState((()=>{try{return localStorage.getItem(PROMPT_KEY);}catch{return null;}})());
+const savePromptState=()=>{try{localStorage.setItem(PROMPT_KEY,JSON.stringify(promptState));}catch{}};
+let ratingPrompt:{tool:string;status:string;done:boolean}|null=null,promptsThisSession=0;
+function ratingSummary(tool:string){
+ const rating=toolRatings[tool];if(!rating?.count||rating.average===null)return '';
+ const average=rating.average.toFixed(1),count=new Intl.NumberFormat(state.locale).format(rating.count),unit=t(rating.count===1?'rating':'ratings');
+ return `<p class="tool-rating" aria-label="${average} ${t('out of 5')} · ${count} ${unit}"><span aria-hidden="true">★</span> ${average} <span class="tool-rating-count">· ${count} ${unit}</span></p>`;
+}
+// Rating is secondary: failures are silent here and never touch processing.
+function loadToolRating(tool:string){
+ if(!tool||tool in toolRatings||!licenseReady())return;
+ toolRatings[tool]=null;
+ void host('ratingStatus',{subject:tool}).then((result:any)=>{toolRatings[tool]=result.rating;const current=result.rating?.userRating;if(current){promptState=recordRated(promptState,tool,current);savePromptState();}
+  if(state.page==='workspace'&&state.tool===tool){const heading=root.querySelector('.workspace-heading h1');heading?.parentElement?.querySelector('.tool-rating')?.remove();heading?.insertAdjacentHTML('afterend',ratingSummary(tool));}}).catch(()=>{delete toolRatings[tool];});
+}
+function ratingPromptView(){
+ if(!ratingPrompt||ratingPrompt.tool!==state.tool||quick.active)return '';
+ const stars=[1,2,3,4,5].map(n=>`<label class="rating-star"><input type="radio" name="rating-prompt" value="${n}" aria-label="${escape(t(n===1?'1 star':n+' stars'))}"${ratingPrompt!.done?' disabled':''}><span aria-hidden="true">★</span></label>`).join('');
+ return `<section class="rating-prompt" aria-labelledby="rating-prompt-title"><div class="rating-prompt-copy"><h2 id="rating-prompt-title">${t('Enjoying this tool?')}</h2><p>${t('Leave a quick rating')}</p></div><fieldset class="rating-stars"><legend class="sr-only">${t('Your rating')}. ${t('Use the arrow keys to choose, then press Enter.')}</legend>${stars}</fieldset>${ratingPrompt.done?'':`<button class="text-button" data-action="rating-dismiss">${t('Not now')}</button>`}<p class="rating-prompt-status" role="status" aria-live="polite">${escape(ratingPrompt.status)}</p></section>`;
+}
+function afterSuccessfulRun(tool:string){
+ promptState=recordSuccess(promptState,tool);
+ if(!quick.active&&eligibleForRatingPrompt(tool,promptState,{sessionShown:promptsThisSession})){
+  promptState=recordShown(promptState);promptsThisSession++;ratingPrompt={tool,status:'',done:false};
+ }
+ savePromptState();
+}
 function workspace(){
  const tool=capabilities.find(t=>t.id===state.tool)!;
  const output=state.output==='source'?'Beside each original file':state.output==='downloads'?'Your Downloads folder':state.output==='ask'?'Choose a folder each time':'Your chosen folder';
  const picker=state.files.length?`<div class="workspace-file-actions" data-dropzone><button class="secondary" data-action="select">${icon('folder')}Choose files</button><p>Your originals stay untouched.</p></div>`:dropzone(true);
  const action=!licenseReady()?`<div class="action-bar"><div>${icon('lock')}<span>Check your trial or activate a license to process files.</span></div><button class="primary" data-page="license">View license ${icon('arrow')}</button></div>`:connectedTools.has(state.tool)?processingOptions(state.tool):'<section class="panel"><h2>Tool unavailable</h2><p>This tool is not available in this release.</p></section>';
  const saveLocation=`<section class="workspace-output" aria-label="Save location">${icon('folder')}<div><strong>${t('Save results')}: ${t(output)}</strong><p>Existing files are kept. New results get a number if needed.</p></div><button class="text-button" data-page="settings">Change output settings</button></section>`;
- const head=`<button class="text-button back" data-page="tools">← All tools</button><header class="page-heading workspace-heading"><h1 tabindex="-1">${escape(tool.name)}</h1><p>${state.files.length?'':t('Choose files to get started.')+' '}<span translate="no">${escape(tool.formats.join(', '))}</span></p></header>`;
+ const head=`<button class="text-button back" data-page="tools">← All tools</button><header class="page-heading workspace-heading"><h1 tabindex="-1">${escape(tool.name)}</h1>${ratingSummary(state.tool)}<p>${state.files.length?'':t('Choose files to get started.')+' '}<span translate="no">${escape(tool.formats.join(', '))}</span></p></header>`;
  // Before files: one calm column. With files: the selection is the main area and
  // options sit in one predictable side panel with a single primary action.
  if(!state.files.length)return `${head}${feedback()}${batchFeedback()}${picker}${saveLocation}`;
- return `${head}${feedback()}<div class="workspace-grid"><section class="workspace-main" aria-label="Selected files">${batchFeedback()}${canvasView(state.tool,state.files)}${selected()}${picker}</section><aside class="workspace-panel" aria-label="Options">${action}${saveLocation}</aside></div>`;
+ return `${head}${feedback()}<div class="workspace-grid"><section class="workspace-main" aria-label="Selected files">${ratingPromptView()}${batchFeedback()}${canvasView(state.tool,state.files)}${selected()}${picker}</section><aside class="workspace-panel" aria-label="Options">${action}${saveLocation}</aside></div>`;
 }
 function activationForm(){return `<section class="panel"><h2>Already have a license?</h2><p>Find your license key in your purchase email. Check your Spam or Junk folder too. Activation uses one device seat. Unused team seats activate at no extra charge.</p><form id="license-form"><label for="license-key">License key</label><div class="key-field"><input id="license-key" name="license-key" type="password" autocomplete="off" spellcheck="false" required><button type="button" class="text-button" data-action="reveal-key" aria-controls="license-key" aria-pressed="false">Show</button></div><button type="submit" class="secondary" ${state.busy?'disabled':''}>Activate license</button></form></section>`;}
 function supportDetails(){return `<section class="panel"><h2>Free up a device seat</h2><p>Verify your purchase email and pay the one-time fee to revoke a device. Once confirmed, that device needs a fresh online activation with the same or a new license key to process files again.</p><div class="support-actions"><button class="secondary" data-action="replace-device">Revoke Device</button><button class="text-button" data-action="support-details">Show this device ID</button></div>${state.supportDeviceId?`<p class="support-device-id"><code>${escape(state.supportDeviceId)}</code></p>`:''}</section>`;}
@@ -140,7 +171,7 @@ function render(){
   const content=root.querySelector('.quick-content');if(content)content.scrollTop=scroll;
  }else{
   renderFull();
-  if(state.page==='workspace'){loadPreviews(state.files,state.tool,refreshCanvas);applyCanvasToForm();}
+  if(state.page==='workspace'){loadPreviews(state.files,state.tool,refreshCanvas);applyCanvasToForm();loadToolRating(state.tool);}
  }
  localizeUi(root);
  const pending=document.querySelector<HTMLElement>('#pending-action');if(pending)localizeUi(pending);
@@ -236,7 +267,7 @@ root.addEventListener('click',event=>{const target=(event.target as HTMLElement)
   document.querySelector('#announcement')!.textContent=state.files[next].name+' moved to position '+(next+1)+' of '+state.files.length+'.';return;
  }
  if(target.dataset.openOutput||target.dataset.revealOutput){const reveal=!!target.dataset.revealOutput,id=target.dataset.revealOutput||target.dataset.openOutput;void perform(async()=>{await host(reveal?'revealOutput':'openOutput',{id});state.notice=reveal?'Requested the containing folder.':'Requested the saved file in its default application.';});return;}
- switch(target.dataset.action){case 'replace-device':void perform(async()=>{Object.assign(state,await host('replacementState'));if(state.replacement?.stage==='complete')state.replacement={stage:'idle'};state.replacing=true;});break;case 'replacement-back':state.replacing=false;render();break;case 'replacement-activate':state.replacing=false;render();document.querySelector<HTMLInputElement>('#license-key')?.focus();break;case 'replacement-resend':void perform(async()=>{Object.assign(state,await host('replacementEmailResend'));state.notice='A new code has been sent. Check your inbox and Spam folder.';});break;case 'replacement-change-email':void perform(async()=>{Object.assign(state,await host('replacementReset'));});break;case 'replacement-cancel':void perform(async()=>{Object.assign(state,await host('replacementCancel'));state.notice=['verified','idle'].includes(state.replacement?.stage)?'Revocation cancelled. Nothing was charged.':'';});break;case 'replacement-checkout':void perform(async()=>{await host('replacementCheckout');state.notice='Payment page opened in your browser.';});break;case 'replacement-status':void perform(async()=>{Object.assign(state,await host('replacementStatus'));state.notice=state.replacement?.stage==='complete'?'Device revoked. A fresh online activation is required to use that device again.':'Payment checked.';});break;case 'support-details':void perform(async()=>{const details=await host('supportDetails');if(!/^[A-Za-z0-9_-]{43}$/.test(details.supportDeviceId))throw Error('Device support details unavailable');state.supportDeviceId=details.supportDeviceId;});break;case 'select':void perform(async()=>acceptFiles(await host('selectFiles')));break;case 'clear':void perform(async()=>{await host('releaseSelection',{ids:state.files.map(f=>f.id)});state.files=[];batchResults=[];savedOutput=null;state.launchIntent=null;});break;case 'reset-search':state.query='';render();document.querySelector<HTMLInputElement>('#tool-search')?.focus();break;case 'trial':void perform(async()=>{Object.assign(state,await host('startTrial'));state.notice='Trial activated.';});break;case 'refresh-license':void perform(async()=>{Object.assign(state,await host('refreshLicense'));state.notice='License verified.';});break;case 'license-devices':void perform(async()=>{state.devices=(await host('licenseDevices')).devices;});break;case 'folder':void perform(async()=>{const result=await host('chooseFolder');if(result.selected)state.notice='Output folder saved.';});break;case 'updates':void perform(async()=>{const result=await host('checkUpdates');state.notice=result.message;});break;case 'quit':void perform(async()=>{await host('quit');});break;case 'reveal-key':{const input=document.querySelector<HTMLInputElement>('#license-key')!;input.type=input.type==='password'?'text':'password';target.textContent=t(input.type==='password'?'Show':'Hide');target.setAttribute('aria-pressed',String(input.type==='text'));break;}}
+ switch(target.dataset.action){case 'rating-dismiss':if(ratingPrompt){promptState=recordDismissed(promptState,ratingPrompt.tool);savePromptState();ratingPrompt=null;render();}return;case 'replace-device':void perform(async()=>{Object.assign(state,await host('replacementState'));if(state.replacement?.stage==='complete')state.replacement={stage:'idle'};state.replacing=true;});break;case 'replacement-back':state.replacing=false;render();break;case 'replacement-activate':state.replacing=false;render();document.querySelector<HTMLInputElement>('#license-key')?.focus();break;case 'replacement-resend':void perform(async()=>{Object.assign(state,await host('replacementEmailResend'));state.notice='A new code has been sent. Check your inbox and Spam folder.';});break;case 'replacement-change-email':void perform(async()=>{Object.assign(state,await host('replacementReset'));});break;case 'replacement-cancel':void perform(async()=>{Object.assign(state,await host('replacementCancel'));state.notice=['verified','idle'].includes(state.replacement?.stage)?'Revocation cancelled. Nothing was charged.':'';});break;case 'replacement-checkout':void perform(async()=>{await host('replacementCheckout');state.notice='Payment page opened in your browser.';});break;case 'replacement-status':void perform(async()=>{Object.assign(state,await host('replacementStatus'));state.notice=state.replacement?.stage==='complete'?'Device revoked. A fresh online activation is required to use that device again.':'Payment checked.';});break;case 'support-details':void perform(async()=>{const details=await host('supportDetails');if(!/^[A-Za-z0-9_-]{43}$/.test(details.supportDeviceId))throw Error('Device support details unavailable');state.supportDeviceId=details.supportDeviceId;});break;case 'select':void perform(async()=>acceptFiles(await host('selectFiles')));break;case 'clear':void perform(async()=>{await host('releaseSelection',{ids:state.files.map(f=>f.id)});state.files=[];batchResults=[];savedOutput=null;state.launchIntent=null;});break;case 'reset-search':state.query='';render();document.querySelector<HTMLInputElement>('#tool-search')?.focus();break;case 'trial':void perform(async()=>{Object.assign(state,await host('startTrial'));state.notice='Trial activated.';});break;case 'refresh-license':void perform(async()=>{Object.assign(state,await host('refreshLicense'));state.notice='License verified.';});break;case 'license-devices':void perform(async()=>{state.devices=(await host('licenseDevices')).devices;});break;case 'folder':void perform(async()=>{const result=await host('chooseFolder');if(result.selected)state.notice='Output folder saved.';});break;case 'updates':void perform(async()=>{const result=await host('checkUpdates');state.notice=result.message;});break;case 'quit':void perform(async()=>{await host('quit');});break;case 'reveal-key':{const input=document.querySelector<HTMLInputElement>('#license-key')!;input.type=input.type==='password'?'text':'password';target.textContent=t(input.type==='password'?'Show':'Hide');target.setAttribute('aria-pressed',String(input.type==='text'));break;}}
 });
 root.addEventListener('click',event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-reset-adjustments]');if(!button||state.busy)return;button.closest('details')?.querySelectorAll<HTMLInputElement>('input[name^="adjust-"]').forEach(input=>input.value='0');document.querySelector('#announcement')!.textContent='Colour and detail adjustments reset.';});
 root.addEventListener('input',event=>{const range=event.target as HTMLInputElement;if(range.type==='range'&&range.closest('.percent-field'))syncPercentRange(range);});
@@ -278,7 +309,11 @@ root.addEventListener('submit',event=>{
   void perform(async()=>{try{const result=await host('processFiles',{tool,selectionIds,options});
    processingResult(result,sources);
    allSaved=result.state==='completed'||result.state==='batch'&&result.results.length>0&&result.results.every((row:any)=>row.state==='completed');
-  }finally{state.processing=false;}}).then(()=>{if(quick.active&&allSaved&&!state.error)void host('closeQuickAction').catch(()=>{});});return;
+  }finally{state.processing=false;}}).then(()=>{
+   if(allSaved&&!state.error)afterSuccessfulRun(tool);
+   if(quick.active&&allSaved&&!state.error)void host('closeQuickAction').catch(()=>{});
+   else if(ratingPrompt&&!ratingPrompt.done&&state.page==='workspace'){render();}
+  });return;
  }
  if((event.target as HTMLFormElement).id!=='license-form')return;event.preventDefault();const input=document.querySelector<HTMLInputElement>('#license-key')!;const key=input.value.trim();if(!key)return;input.value='';void perform(async()=>{Object.assign(state,await host('activate',{licenseKey:key}));state.notice='License activated.';});});
 root.addEventListener('dragover',event=>{event.preventDefault();(event.target as HTMLElement).closest('[data-dropzone]')?.classList.add('dragging');});root.addEventListener('dragleave',event=>(event.target as HTMLElement).closest('[data-dropzone]')?.classList.remove('dragging'));
@@ -296,6 +331,29 @@ onLicenseUpdated(status=>{Object.assign(state,{trialPending:false},status);if(!s
 root.addEventListener('click',event=>{const id=(event.target as HTMLElement).closest<HTMLElement>('[data-native-action]')?.dataset.nativeAction;if(!id||state.busy)return;const action=state.launchIntent?.actions?.find((item:any)=>item.id===id);if(!action)return;if(!action.direct){applyNativeAction(action);return;}const sources=state.files.map(file=>file.name);state.tool=action.tool;state.page='workspace';state.processing=true;void perform(async()=>{try{processingResult(await host('processFiles',{tool:action.tool,options:action.options,selectionIds:state.files.map(file=>file.id)}),sources);}finally{state.processing=false;}});});
 onNativeNotice(message=>{document.querySelector('#announcement')!.textContent=t(message);if(state.busy)document.querySelector('#pending-action')!.textContent=t(message);});
 bindCanvas(root,()=>({tool:state.tool,files:state.files}),fitSizeToCrop);
+// Pointer: a click rates. Keyboard: arrows only choose; Enter or Space confirms.
+let ratingByKeyboard=false;
+root.addEventListener('pointerdown',event=>{if((event.target as HTMLElement).closest('.rating-stars'))ratingByKeyboard=false;});
+root.addEventListener('keydown',event=>{
+ const input=event.target as HTMLInputElement;if(input.name!=='rating-prompt')return;
+ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))ratingByKeyboard=true;
+ else if(event.key==='Enter'||event.key===' '){event.preventDefault();const checked=root.querySelector<HTMLInputElement>('input[name="rating-prompt"]:checked')??(event.key===' '?input:null);if(checked){checked.checked=true;ratingByKeyboard=false;submitPromptRating(Number(checked.value));}}
+});
+root.addEventListener('change',event=>{
+ const input=event.target as HTMLInputElement;if(input.name!=='rating-prompt'||ratingByKeyboard)return;
+ submitPromptRating(Number(input.value));
+});
+function submitPromptRating(rating:number){
+ if(!ratingPrompt||ratingPrompt.done)return;
+ const prompt=ratingPrompt;
+ root.querySelectorAll<HTMLInputElement>('input[name="rating-prompt"]').forEach(item=>item.disabled=true);
+ void host('ratingSubmit',{subject:prompt.tool,rating}).then((result:any)=>{
+  toolRatings[prompt.tool]=result.rating;promptState=recordRated(promptState,prompt.tool,rating);savePromptState();
+  prompt.done=true;prompt.status=t('Thanks for rating!');
+ }).catch(()=>{prompt.status=t('Your rating could not be sent. Your files are not affected. Please try again later.');})
+  .finally(()=>{if(state.page!=='workspace')return;const checked=rating;render();const again=root.querySelector<HTMLInputElement>(`input[name="rating-prompt"][value="${checked}"]`);if(again)again.checked=true;
+   if(prompt.done)setTimeout(()=>{if(ratingPrompt===prompt){ratingPrompt=null;if(state.page==='workspace')render();}},4000);});
+}
 // Keep aspect ratio: with a known source, width and height follow each other.
 root.addEventListener('input',event=>{
  const input=event.target as HTMLInputElement,form=input.form;

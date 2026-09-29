@@ -26,6 +26,8 @@ interface Props {
   /** False for English-only pages whose localized URLs are untranslated copies. */
   hreflang?: boolean;
   ogType?: 'website' | 'article';
+  /** Rating subject whose live aggregate the edge merges into this page's application JSON-LD. */
+  ratingSubject?: string;
 }
 
 const {
@@ -43,6 +45,7 @@ const {
   alternatePath = basePathFromLocalized(providedCanonicalPath),
   hreflang = true,
   ogType = 'website',
+  ratingSubject,
 } = Astro.props;
 
 const canonicalPath=localizedPath(locale,basePathFromLocalized(providedCanonicalPath));
@@ -147,7 +150,7 @@ const atmosphere = ['/', '/desktop'].includes(route) ? 'hero' : route === '/desk
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImage} />
     <meta name="twitter:image:alt" content={imageAlt} />
-    {serializedSchema && <script type="application/ld+json" is:inline set:html={serializedSchema}></script>}
+    {serializedSchema && <script type="application/ld+json" is:inline data-sf-rating-schema={ratingSubject} set:html={serializedSchema}></script>}
     <title>{documentTitle}</title>
   </head>
   <body class="page min-h-screen font-sans text-ink antialiased" data-atmos={atmosphere}>
