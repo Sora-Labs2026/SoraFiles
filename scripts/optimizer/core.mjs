@@ -12,7 +12,8 @@ export const rollbackPath = path.join(projectRoot, 'optimizer', 'rollback.json')
 export const baselinePath = path.join(projectRoot, 'optimizer', 'baselines', 'current.json');
 export const visualBaselinePath = path.join(projectRoot, 'optimizer', 'baselines', 'visual.json');
 
-export const CONSTITUTION_SHA256 = '1e258b166b4542b307bfcbf8c330f291452d6ab7d82fc8b44f410d9541dc0b8a';
+// Hash of the LF-normalized policy: Git stores LF, Windows checkouts may use CRLF.
+export const CONSTITUTION_SHA256 = 'a50a91de7f616256417bd4480c339279b9eaf74b50de3b2c38dd0f41a4e26706';
 export const RECIPE_IDS = Object.freeze([
   'canonical-locale-root',
   'immutable-astro-cache',
@@ -131,7 +132,7 @@ export function validateRollbackDocument(value, allowedPaths) {
 
 export async function loadConstitution() {
   const raw = await readFile(policyPath);
-  const digest = sha256(raw);
+  const digest = sha256(raw.toString('utf8').replaceAll('\r\n', '\n'));
   if (digest !== CONSTITUTION_SHA256) throw new Error(`Optimizer constitution hash mismatch: ${digest}.`);
   const value = JSON.parse(raw.toString('utf8'));
   exactKeys(value, ['schemaVersion', 'policyId', 'priorities', 'allowedChangeClasses', 'protectedPathPrefixes', 'forbiddenChangeClasses', 'limits'], 'constitution');

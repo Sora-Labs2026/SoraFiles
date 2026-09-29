@@ -1,6 +1,6 @@
-import { publishedLocales, localizedRoutePaths, localizedPath } from '../i18n/config.ts';
+import { publishedLocales, localizedRoutePaths, localizedPath, isIndexableRoute } from '../i18n/config.ts';
 import { guideSitemapUrls } from '../data/guides.ts';
-export const canonicalIndexableUrls = () => [...publishedLocales.flatMap(locale => localizedRoutePaths.map(route => `https://sorafiles.com${localizedPath(locale.path, route) === '/' ? '/' : localizedPath(locale.path, route)}`)), ...guideSitemapUrls()];
+export const canonicalIndexableUrls = () => [...new Set([...publishedLocales.flatMap(locale => localizedRoutePaths.filter(route => isIndexableRoute(route, locale.path)).map(route => `https://sorafiles.com${localizedPath(locale.path, route) === '/' ? '/' : localizedPath(locale.path, route)}`)), ...guideSitemapUrls()])];
 export function filterIndexNowUrls(values: string[], allowed = canonicalIndexableUrls()) {
   const allow = new Set(allowed);
   return [...new Set(values)].filter(value => {
