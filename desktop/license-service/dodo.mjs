@@ -26,7 +26,9 @@ export class DodoClient {
    if(!Array.isArray(result?.items)||result.items.length>100)throw Error('Invalid import lookup');items.push(...result.items);if(result.items.length<100)return items;
   }throw Error('Import lookup limit');
  }
- checkoutStatus(id){return this.call('/checkouts/'+encodeURIComponent(id),{privileged:true});}
+ // GET /checkouts/{id} names the session `id` (only creation returns `session_id`).
+ // Expose it as session_id so callers compare one field for both responses.
+ async checkoutStatus(id){const status=await this.call('/checkouts/'+encodeURIComponent(id),{privileged:true});return status&&typeof status==='object'?{...status,session_id:status.id??status.session_id}:status;}
  payment(id){return this.call('/payments/'+encodeURIComponent(id),{privileged:true});}
  // Narrow compatibility lookup for unattended release of an existing license
  // instance. The caller verifies returned identity and key fingerprint.

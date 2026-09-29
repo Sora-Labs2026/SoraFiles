@@ -248,9 +248,13 @@ root.addEventListener('submit',event=>{
   if(tool==='merge-pdf'&&selectionIds.length<2){state.error='Choose at least two PDFs to merge.';render();return;}
   const sources=state.files.map(file=>file.name);batchResults=[];savedOutput=null;
   state.processing=true;
+  // The compact right-click card closes itself once every file is saved; any
+  // failure, cancellation or error keeps it open so the message stays visible.
+  let allSaved=false;
   void perform(async()=>{try{const result=await host('processFiles',{tool,selectionIds,options});
    processingResult(result,sources);
-  }finally{state.processing=false;}});return;
+   allSaved=result.state==='completed'||result.state==='batch'&&result.results.length>0&&result.results.every((row:any)=>row.state==='completed');
+  }finally{state.processing=false;}}).then(()=>{if(quick.active&&allSaved&&!state.error)void host('closeQuickAction').catch(()=>{});});return;
  }
  if((event.target as HTMLFormElement).id!=='license-form')return;event.preventDefault();const input=document.querySelector<HTMLInputElement>('#license-key')!;const key=input.value.trim();if(!key)return;input.value='';void perform(async()=>{Object.assign(state,await host('activate',{licenseKey:key}));state.notice='License activated.';});});
 root.addEventListener('dragover',event=>{event.preventDefault();(event.target as HTMLElement).closest('[data-dropzone]')?.classList.add('dragging');});root.addEventListener('dragleave',event=>(event.target as HTMLElement).closest('[data-dropzone]')?.classList.remove('dragging'));

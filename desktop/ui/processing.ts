@@ -5,7 +5,7 @@ export const connectedTools=new Set(['merge-pdf','split-pdf','rotate-pdf','remov
 const number=(label:string,name:string,value:number,min:number,max:number)=>`<label>${label}<input name="${name}" type="number" value="${value}" min="${min}" max="${max}" required></label>`;
 // Whole-percent slider with a live readout; the fill starts at the right place
 // without waiting for script, and syncPercentRange keeps it in step while dragging.
-const percent=(label:string,name:string,value:number,min:number,max:number)=>`<label class="percent-field"><span>${label}<output>${value}%</output></span><input name="${name}" type="range" min="${min}" max="${max}" step="1" value="${value}" aria-valuetext="${value}%" style="--range-progress:${(value-min)/(max-min)*100}%"></label>`;
+const percent=(label:string,name:string,value:number,min:number,max:number)=>`<label class="percent-field"><span>${label}<output>${value}%</output></span><input name="${name}" type="range" aria-label="${label}" min="${min}" max="${max}" step="1" value="${value}" aria-valuetext="${value}%" style="--range-progress:${(value-min)/(max-min)*100}%"></label>`;
 export function syncPercentRange(input:HTMLInputElement){
  const min=Number(input.min),max=Number(input.max),value=Number(input.value);
  input.style.setProperty('--range-progress',`${(value-min)/(max-min)*100}%`);input.setAttribute('aria-valuetext',`${value}%`);

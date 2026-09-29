@@ -53,7 +53,7 @@ export async function runLicenseAction({action,params={},state,config,saveState,
  const activationAvailable=!current.license?.licenseRef&&!current.license?.licenseKey;
  if(action.startsWith('replacement')){
   try{return await (action==='replacementEmailStart'?client[action]({email:params.email,licenseKey:params.licenseKey}):action==='replacementEmailVerify'?client[action](params.code):action==='replacementRequest'?client[action](params.oldDeviceId):client[action]());}
-  catch(error){if(replacementMessageList.includes(error.message)||/^(Enter the eight-digit email code\.|Verify your email again to continue\.|Choose an active device to revoke\.|Please wait a moment and try again\.)$/.test(error.message))throw error;throw Error('Device revocation could not finish. Check your code or payment and try again.');}
+  catch(error){if(replacementMessageList.includes(error.message)||/^(Enter the eight-digit email code\.|Verify your email again to continue\.|Choose an active device to revoke\.|No revocation payment to cancel\.|Please wait a moment and try again\.)$/.test(error.message))throw error;throw Error('Device revocation could not finish. Check your code or payment and try again.');}
  }
  if(action==='validate'){
   const result=await client.validateOnline();
