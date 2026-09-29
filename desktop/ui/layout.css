@@ -155,3 +155,29 @@ body:not([data-quick-action=true]) .setting-row:has(>select)>select { flex:1 1 1
 .workspace-panel .workspace-output>.text-button { grid-column:2; justify-self:start; }
 .workspace-panel .workspace-output p { font-size:12px; }
 .workspace-main [aria-label="Batch results"] ul { padding-left:18px; margin:10px 0 0; }
+/* Typography pass (29 Sep 2026). Plus Jakarta Sans has a narrow word space, and
+   the earlier layers stacked negative tracking and 750–800 weights on headings,
+   which collapsed gaps ("All tools" read as one word). This block is the single
+   source for the full window's type scale: gentle tracking, open word spacing,
+   and no text below 11px. Quick-action cards keep their own compact scale. */
+:root { font-kerning:normal; text-rendering:optimizeLegibility; word-spacing:.04em; }
+body:not([data-quick-action=true]) { font-size:14px; line-height:1.55; }
+body:not([data-quick-action=true]) h1 { font-size:26px; line-height:1.25; font-weight:700; letter-spacing:-.012em; word-spacing:.06em; }
+body:not([data-quick-action=true]) main>.workspace-heading h1 { font-size:22px; }
+body:not([data-quick-action=true]) h2 { font-weight:650; letter-spacing:-.006em; word-spacing:.05em; }
+body:not([data-quick-action=true]) .eyebrow { font-size:11px; font-weight:600; letter-spacing:.1em; word-spacing:.12em; margin-bottom:8px; }
+body:not([data-quick-action=true]) .page-heading>p:last-child { font-size:14px; line-height:1.6; margin-top:8px; }
+body:not([data-quick-action=true]) nav button { font-size:13.5px; font-weight:550; }
+body:not([data-quick-action=true]) nav button[aria-current=page] { font-weight:650; }
+body:not([data-quick-action=true]) .brand span { font-size:10px; letter-spacing:.14em; }
+body:not([data-quick-action=true]) .tool-card strong { font-size:14px; font-weight:650; line-height:1.45; }
+body:not([data-quick-action=true]) .tool-card small { font-size:12.5px; margin-top:3px; color:var(--caption); }
+body:not([data-quick-action=true]) :is(.primary,.secondary) { font-size:13.5px; font-weight:650; }
+body:not([data-quick-action=true]) .text-button { font-size:13.5px; font-weight:600; }
+body:not([data-quick-action=true]) .category-filters button { font-size:13px; font-weight:600; }
+body:not([data-quick-action=true]) :is(.setting-row p,.panel>small,.dropzone small,.privacy-note,.selected li>span small,.settings-note p) { font-size:12.5px; line-height:1.6; }
+body:not([data-quick-action=true]) :is(.result-count,.category-heading span,.quiet-badge,.badge) { font-size:12px; }
+body:not([data-quick-action=true]) :is(.trial-card p,.quit) { font-size:12px; }
+body:not([data-quick-action=true]) .sidebar-bottom>small { font-size:11px; }
+/* Shortcut hint in the UI face, not the system monospace. */
+kbd { font-family:var(--font-sans); font-size:11px; font-weight:600; letter-spacing:.02em; }
