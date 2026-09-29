@@ -237,3 +237,40 @@ test('revoked device without prior trial cannot obtain one but can activate a di
   assert.equal(activated.licenseRef,'new-license');assert.equal(s.verifyGrant(activated.entitlement,device).plan,'personal-lifetime');
  }finally{s.store.close();}
 });
+
+test('cancel: in-progress payment blocks it, unpaid order cancels, late payment is flagged for refund, paid order wins',async()=>{
+ const s=setup(),old=pair(),next=pair(),intruder=pair();try{
+  await s.execute('activate',{licenseKey:'key'},old);
+  const body={licenseRef:'lic',oldDeviceId:deviceIdentity(old.publicKey),licenseKey:'key',identityToken:'owner'};
+  const order=await s.execute('replacementRequest',body,next),cancel={orderId:order.orderId,licenseKey:'key',identityToken:'owner'};
+  await assert.rejects(s.execute('replacementCancel',cancel,intruder),/unavailable/);
+  await assert.rejects(s.execute('replacementCancel',cancel,next),error=>error.reason==='payment-in-progress'&&error.httpStatus===409);
+  assert.equal(s.replacements.row(order.orderId).status,'pending');
+  // No payment attempt yet: the order is cancelled and the seat is untouched.
+  const status=s.dodo.checkoutStatus;s.dodo.checkoutStatus=async id=>({session_id:id});
+  assert.equal((await s.execute('replacementCancel',cancel,next)).status,'cancelled');
+  assert.equal((await s.execute('replacementCancel',cancel,next)).status,'cancelled');
+  assert.ok(s.store.active('lic',body.oldDeviceId));assert.equal(s.deactivateCalls(),0);
+  // A stale payment page completed afterwards never revokes; it is recorded for refund once.
+  const stale={...s.payment(),status:'succeeded'};
+  assert.equal(s.replacements.applyPayment(stale),false);assert.equal(s.replacements.applyPayment(stale),false);
+  const row=s.replacements.row(order.orderId);assert.equal(row.status,'refund-required');assert.equal(row.payment_id,stale.payment_id);
+  assert.ok(s.store.active('lic',body.oldDeviceId));
+  // A cancelled order does not block choosing again: a fresh order and checkout.
+  s.dodo.checkoutStatus=status;
+  const second=await s.execute('replacementRequest',body,next);assert.notEqual(second.orderId,order.orderId);assert.equal(s.checkoutCalls(),2);
+  // Payment already succeeded: cancel completes the revocation instead.
+  s.payment().status='succeeded';
+  const result=await s.execute('replacementCancel',{...cancel,orderId:second.orderId},next);
+  assert.equal(result.status,'complete');assert.equal(result.replacementAuthorized,true);assert.equal(s.store.active('lic',body.oldDeviceId),undefined);
+ }finally{s.store.close();}
+});
+
+test('cancel: a failed payment can be cancelled',async()=>{
+ const s=setup(),old=pair(),next=pair();try{
+  await s.execute('activate',{licenseKey:'key'},old);
+  const order=await s.execute('replacementRequest',{licenseRef:'lic',oldDeviceId:deviceIdentity(old.publicKey),licenseKey:'key',identityToken:'owner'},next);
+  s.payment().status='failed';
+  assert.equal((await s.execute('replacementCancel',{orderId:order.orderId,licenseKey:'key',identityToken:'owner'},next)).status,'cancelled');
+ }finally{s.store.close();}
+});

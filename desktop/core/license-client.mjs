@@ -145,6 +145,21 @@ export class LicenseClient {
   });
   return result;
  }
+ // Cancels the unpaid order on the server, then returns to device selection while
+ // the email verification is still valid (otherwise to the email form). If the
+ // server reports the payment already went through, the normal status path runs.
+ async replacementCancel(){
+  const cancelled=await this.exclusive(async()=>{
+   const flow=await this.readReplacement();if(flow?.stage!=='payment'||!flow.orderId)throw Error('No revocation payment to cancel.');
+   const response=await this.request('replacementCancel',{orderId:flow.orderId,licenseKey:flow.licenseKey,identityToken:flow.identityToken},await this.readDevice());
+   if(response?.status!=='cancelled'){validateReplacementOrder(response,flow.plan);if(response.orderId!==flow.orderId)throw Error('Invalid replacement payment response');return false;}
+   if(response.orderId!==flow.orderId)throw Error('Invalid replacement payment response');
+   const {orderId,oldDeviceId,status,checkoutUrl,...rest}=flow;
+   await this.saveReplacement(futureTime(flow.expiresAt,this.now())?{...rest,stage:'verified'}:{stage:'idle',email:flow.email});
+   return true;
+  });
+  return cancelled?this.replacementState():this.replacementStatus();
+ }
  async replacementCheckout(){const flow=await this.readReplacement();if(flow?.stage!=='payment'||!trustedCheckout(flow.checkoutUrl))throw Error('Payment page unavailable.');return {checkoutUrl:flow.checkoutUrl};}
  async validateOnline(){return this.exclusive(async()=>{
   const device=await this.readDevice(),saved=await this.readLicense();

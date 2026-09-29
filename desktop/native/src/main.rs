@@ -444,7 +444,7 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
                 Ok(json!({"selected":false}))
             }).await.map_err(|_| "Folder picker unavailable")?
         }
-        "startTrial"|"activate"|"licenseStatus"|"refreshLicense"|"licenseDevices"|"supportDetails"|"replacementEmailStart"|"replacementEmailResend"|"replacementReset"|"replacementEmailVerify"|"replacementRequest"|"replacementStatus"|"replacementState"|"replacementCheckout" => {
+        "startTrial"|"activate"|"licenseStatus"|"refreshLicense"|"licenseDevices"|"supportDetails"|"replacementEmailStart"|"replacementEmailResend"|"replacementReset"|"replacementEmailVerify"|"replacementRequest"|"replacementStatus"|"replacementCancel"|"replacementState"|"replacementCheckout" => {
             let handle=app.clone();tauri::async_runtime::spawn_blocking(move||{
                 let state=handle.state::<HostState>();
                 let deadline=std::time::Instant::now()+std::time::Duration::from_secs(90);

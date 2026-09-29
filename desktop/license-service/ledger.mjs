@@ -34,11 +34,21 @@ export class LicenseLedger {
  // activation of the same device can later be revoked independently.
  this.transaction(()=>{
   const definition=this.db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='paid_replacements'").get().sql;
-  if(definition.includes('UNIQUE(license_ref,old_device,instance_id)'))return;
+  if(definition.includes('UNIQUE(license_ref,old_device,instance_id)')||this.db.prepare("SELECT 1 FROM sqlite_master WHERE type='index' AND name='paid_replacements_open'").get())return;
   this.db.exec(`CREATE TABLE paid_replacements_v3(id TEXT PRIMARY KEY,license_ref TEXT NOT NULL REFERENCES licenses(ref),old_device TEXT NOT NULL,new_device TEXT,instance_id TEXT NOT NULL,key_hash TEXT NOT NULL,customer_id TEXT NOT NULL,plan TEXT NOT NULL,amount INTEGER NOT NULL,currency TEXT NOT NULL,product_id TEXT NOT NULL,status TEXT NOT NULL,created INTEGER NOT NULL,checkout_id TEXT UNIQUE,checkout_url TEXT,payment_id TEXT UNIQUE,paid INTEGER,completed INTEGER,activated INTEGER,mode TEXT NOT NULL DEFAULT 'transfer' CHECK(mode IN ('transfer','release')),requester_device TEXT,UNIQUE(license_ref,old_device,instance_id),UNIQUE(license_ref,new_device));
    INSERT INTO paid_replacements_v3 SELECT * FROM paid_replacements;
    DROP TABLE paid_replacements;
    ALTER TABLE paid_replacements_v3 RENAME TO paid_replacements;`);
+ });
+ // A cancelled (or cancelled-then-refunded) order must not block a new order for
+ // the same activation. Uniqueness now covers open orders only.
+ this.transaction(()=>{
+  if(this.db.prepare("SELECT 1 FROM sqlite_master WHERE type='index' AND name='paid_replacements_open'").get())return;
+  this.db.exec(`CREATE TABLE paid_replacements_v4(id TEXT PRIMARY KEY,license_ref TEXT NOT NULL REFERENCES licenses(ref),old_device TEXT NOT NULL,new_device TEXT,instance_id TEXT NOT NULL,key_hash TEXT NOT NULL,customer_id TEXT NOT NULL,plan TEXT NOT NULL,amount INTEGER NOT NULL,currency TEXT NOT NULL,product_id TEXT NOT NULL,status TEXT NOT NULL,created INTEGER NOT NULL,checkout_id TEXT UNIQUE,checkout_url TEXT,payment_id TEXT UNIQUE,paid INTEGER,completed INTEGER,activated INTEGER,mode TEXT NOT NULL DEFAULT 'transfer' CHECK(mode IN ('transfer','release')),requester_device TEXT,UNIQUE(license_ref,new_device));
+   INSERT INTO paid_replacements_v4 SELECT * FROM paid_replacements;
+   DROP TABLE paid_replacements;
+   ALTER TABLE paid_replacements_v4 RENAME TO paid_replacements;
+   CREATE UNIQUE INDEX paid_replacements_open ON paid_replacements(license_ref,old_device,instance_id) WHERE status NOT IN ('cancelled','refund-required');`);
  });
  // Migrate old completed registrations once. Reopening a second service replica
  // must not turn another replica's in-flight provisional registration permanent.

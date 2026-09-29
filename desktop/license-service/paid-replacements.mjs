@@ -47,7 +47,9 @@ export class PaidReplacementService {
   const result=this.store.transaction(()=>{
    const old=this.store.active(licenseRef,oldDeviceId);
    if(approvedInstanceId&&old&&approvedInstanceId!==old.instance_id)throw Error('Activation changed; verify email again');
-   const previous=this.store.db.prepare("SELECT * FROM paid_replacements WHERE license_ref=? AND old_device=? AND (status<>'complete' OR instance_id=? OR ? IS NULL) ORDER BY created DESC,id DESC LIMIT 1").get(licenseRef,oldDeviceId,old?.instance_id??null,old?.instance_id??null);
+   // Cancelled orders (and cancelled orders paid late, awaiting refund) never
+   // block a new request for the same device.
+   const previous=this.store.db.prepare("SELECT * FROM paid_replacements WHERE license_ref=? AND old_device=? AND status NOT IN ('cancelled','refund-required') AND (status<>'complete' OR instance_id=? OR ? IS NULL) ORDER BY created DESC,id DESC LIMIT 1").get(licenseRef,oldDeviceId,old?.instance_id??null,old?.instance_id??null);
    if(previous){if(previous.requester_device!==newDevice||previous.key_hash!==keyHash)throw Error('Replacement already pending');return {row:previous,created:false};}
    if(!old||!this.store.db.prepare('SELECT 1 FROM permanent_devices WHERE license_ref=? AND device_id=?').get(licenseRef,oldDeviceId)
     ||!this.store.db.prepare("SELECT 1 FROM activation_attempts WHERE license_ref=? AND device_id=? AND key_hash=? AND status='complete'").get(licenseRef,oldDeviceId,keyHash))throw Error('Completed activation required');
@@ -83,6 +85,13 @@ export class PaidReplacementService {
     ||!Array.isArray(payment.refunds)||payment.refunds.length||!Array.isArray(payment.disputes)||payment.disputes.length)throw Error('Replacement payment mismatch');
    if(row.payment_id&&row.payment_id!==payment.payment_id)throw Error('Payment already associated');
    if(row.status==='complete'||row.status==='paid')return true;
+   // A stale payment page paid after cancellation never revokes a device. Record
+   // it once for an operator refund instead of retrying forever.
+   if(row.status==='refund-required')return false;
+   if(row.status==='cancelled'){
+    if(payment.status==='succeeded')this.store.db.prepare("UPDATE paid_replacements SET status='refund-required',payment_id=?,paid=? WHERE id=? AND status='cancelled'").run(payment.payment_id,this.now(),row.id);
+    return false;
+   }
    if(!['pending','failed'].includes(row.status))throw pending();
    if(payment.status==='failed'||payment.status==='cancelled'){
     this.store.db.prepare("UPDATE paid_replacements SET status='failed' WHERE id=?").run(row.id);return false;
@@ -109,6 +118,29 @@ export class PaidReplacementService {
   if(checkout.payment_id){const payment=await this.dodo.payment(checkout.payment_id);if(payment?.payment_id!==checkout.payment_id)throw Error('Payment identity mismatch');this.applyPayment(payment);}
   if(this.row(row.id).status==='paid')await this.finishRelease(this.row(row.id),licenseKey);
   return this.public(this.row(row.id));
+ }
+ // Cancels an unpaid order for the same proved device and key as status(). Dodo is
+ // asked first: a completed payment always wins, and a payment still in progress
+ // blocks cancellation so money is never taken without the revocation.
+ async cancel(body,newDevice){
+  const {orderId,licenseKey}=body;if(!id(orderId))throw Error('Invalid replacement');
+  const row=this.row(orderId);if(!row||row.requester_device!==newDevice||row.key_hash!==this.guard.activationFingerprint(licenseKey))throw Error('Replacement unavailable');
+  if(row.status==='cancelled')return {orderId:row.id,status:'cancelled',fee:replacementPrice(row.plan)};
+  if(row.status==='creating')throw pending();
+  if(['pending','failed'].includes(row.status)){
+   const checkout=await this.dodo.checkoutStatus(row.checkout_id);
+   if(checkout?.session_id!==row.checkout_id)throw Error('Checkout identity mismatch');
+   if(checkout.payment_id){
+    const payment=await this.dodo.payment(checkout.payment_id);if(payment?.payment_id!==checkout.payment_id)throw Error('Payment identity mismatch');
+    this.applyPayment(payment);
+    if(!['succeeded','failed','cancelled'].includes(payment.status))throw Object.assign(Error('Payment in progress'),{httpStatus:409,reason:'payment-in-progress'});
+   }
+  }
+  const current=this.row(row.id);
+  if(current.status==='paid')await this.finishRelease(current,licenseKey);
+  if(!['pending','failed'].includes(this.row(row.id).status))return this.public(this.row(row.id));
+  this.store.db.prepare("UPDATE paid_replacements SET status='cancelled',completed=? WHERE id=? AND status IN ('pending','failed')").run(this.now(),row.id);
+  return {orderId:row.id,status:'cancelled',fee:replacementPrice(row.plan)};
  }
  async providerKey(row){
   // Prefer current grants. Imported/older licenses may require the documented

@@ -8,7 +8,7 @@ import {replacementMessageList} from '../shared/replacement-messages.mjs';
 // Trusted native parent supplies state/config and acknowledges every protected
 // write before execution continues. Renderer fields cannot configure this host.
 export async function runLicenseAction({action,params={},state,config,saveState,fetchImpl,now=Date.now}) {
- const fields={support:[],status:[],prepareTrial:[],initializeTrial:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],validate:[],nativeActions:['files','platform','actionId','outputMode','locale'],replacementState:[],replacementEmailStart:['email','licenseKey'],replacementEmailResend:[],replacementReset:[],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCheckout:[]};
+ const fields={support:[],status:[],prepareTrial:[],initializeTrial:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],validate:[],nativeActions:['files','platform','actionId','outputMode','locale'],replacementState:[],replacementEmailStart:['email','licenseKey'],replacementEmailResend:[],replacementReset:[],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCancel:[],replacementCheckout:[]};
  if(!fields[action]||!params||typeof params!=='object'||Object.keys(params).some(key=>!fields[action].includes(key)))throw Error('Invalid license action');
  if(action==='nativeActions'){
   if(!Array.isArray(params.files)||params.files.length>256)throw Error('Invalid selection');

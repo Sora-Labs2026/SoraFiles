@@ -15,9 +15,9 @@ export class LicenseService {
    if(!this.replacementEmail)throw Object.assign(Error('Email verification is unavailable'),{code:'providerUnavailable'});
    return this.replacementEmail[action==='replacementEmailStart'?'start':'verify'](body,deviceId);
   }
-  if(action==='replacementRequest'||action==='replacementStatus'){
+  if(action==='replacementRequest'||action==='replacementStatus'||action==='replacementCancel'){
    if(!this.replacements)throw Object.assign(Error('Replacement configuration required'),{code:'providerUnavailable'});
-   return this.replacements[action==='replacementRequest'?'request':'status'](body,deviceId);
+   return this.replacements[action==='replacementRequest'?'request':action==='replacementCancel'?'cancel':'status'](body,deviceId);
   }
   if(action==='validate')return this.validate(body,deviceId);
   if(action==='trial'){

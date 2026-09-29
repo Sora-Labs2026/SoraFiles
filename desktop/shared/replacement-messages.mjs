@@ -16,6 +16,7 @@ export const replacementMessages=Object.freeze({
  'license-key-required':'Enter your license key.',
  'send-first':'Send a code first.',
  'payment-pending':'Check your existing revocation payment first.',
+ 'payment-in-progress':'A payment is still being processed, so it cannot be cancelled yet. Check payment again in a minute.',
 });
 export const replacementMessageList=Object.freeze(Object.values(replacementMessages));
 export function replacementError(reason){return Object.assign(Error(replacementMessages[reason]||replacementMessages['license-unverified']),{reason});}

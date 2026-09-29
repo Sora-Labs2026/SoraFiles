@@ -106,3 +106,21 @@ test('checking an old completed order never clears a newer activation on the sam
  f.client.request=async()=>({orderId:'order',status:'complete',replacementAuthorized:true,revokedInstanceId:'old-instance',fee:replacementPrice('personal-monthly')});
  const result=await f.client.replacementStatus();assert.equal(result.license,undefined);assert.deepEqual(f.license(),saved);
 });
+test('cancel revocation returns to device choice (or the email form once verification expires) and never leaks the order',async()=>{
+ const f=fixture();await assert.rejects(f.client.replacementCancel(),/No revocation payment/);
+ await f.client.replacementEmailStart({licenseKey:'private-key',email});await f.client.replacementEmailVerify('12345678');await f.client.replacementRequest(f.old);
+ const request=f.client.request;f.client.request=async(action,body)=>{f.calls.push({action,body});if(action==='replacementCancel')return {orderId:'order',status:'cancelled',fee:replacementPrice('personal-monthly')};return request(action,body);};
+ const cancelled=await f.client.replacementCancel();
+ assert.equal(cancelled.replacement.stage,'verified');assert.equal(cancelled.replacement.status,undefined);assert.equal(cancelled.replacement.checkoutAvailable,undefined);
+ assert.deepEqual(f.calls.at(-1).body,{orderId:'order',licenseKey:'private-key',identityToken:'private-identity'});
+ assert.equal(f.read().orderId,undefined);assert.equal(f.read().checkoutUrl,undefined);assert.equal(JSON.stringify(cancelled).includes('private-'),false);
+ // A new device choice creates a new order.
+ assert.equal((await f.client.replacementRequest(f.old)).replacement.stage,'payment');
+ // Verification expired: cancelling returns to the email form with the typed email.
+ f.advance(1801000);const later=await f.client.replacementCancel();assert.deepEqual(later.replacement,{stage:'idle',email:'buyer@example.com'});
+});
+test('cancel after payment went through follows the normal payment status path',async()=>{
+ const f=fixture();await f.client.replacementEmailStart({licenseKey:'private-key',email});await f.client.replacementEmailVerify('12345678');await f.client.replacementRequest(f.old);
+ f.client.request=async action=>action==='replacementCancel'?{orderId:'order',status:'payment-confirmed',fee:replacementPrice('personal-monthly')}:{orderId:'order',status:'payment-confirmed',fee:replacementPrice('personal-monthly')};
+ const result=await f.client.replacementCancel();assert.equal(result.replacement.stage,'payment');assert.equal(result.replacement.status,'payment-confirmed');assert.equal(f.read().orderId,'order');
+});
