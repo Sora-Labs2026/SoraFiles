@@ -70,6 +70,7 @@ jobs:
           node desktop/scripts/build-ui.mjs
           node desktop/tests/quick-action-ui-qa.mjs
           node desktop/tests/replacement-ui-qa.mjs
+          node desktop/tests/canvas-ui-qa.mjs
           node desktop/tests/language-ui-qa.mjs
           node desktop/tests/ui-qa.mjs --desktop-only
       - name: Measure processing resources and reject source-checkout links

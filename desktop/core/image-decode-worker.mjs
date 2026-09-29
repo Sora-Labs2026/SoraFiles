@@ -21,10 +21,14 @@ process.once('message',async message=>{
   if((metadata.pages||1)>1&&(decode||options.page===undefined)||options.page!==undefined&&options.page>=(metadata.pages||1))throw Error();
   if(options.action==='compress'&&!['jpeg','png','webp'].includes(metadata.format))throw Error();
   image=image.autoOrient().toColourspace('srgb');
-  if(options.crop){const c=options.crop,sw=metadata.autoOrient?.width||metadata.width,sh=metadata.autoOrient?.height||metadata.height;if(c.left+c.width>sw||c.top+c.height>sh)throw Error();image=image.extract(c);}
+  const sourceWidth=metadata.autoOrient?.width||metadata.width,sourceHeight=metadata.autoOrient?.height||metadata.height;
+  if(options.crop){const c=options.crop;if(c.left+c.width>sourceWidth||c.top+c.height>sourceHeight)throw Error();image=image.extract(c);}
   if(options.rotation)image=image.rotate(options.rotation);
   if(options.flip)image=image.flip();if(options.flop)image=image.flop();
-  if(options.width||options.height)image=image.resize({width:options.width,height:options.height,fit:options.fit,kernel:'lanczos3',withoutEnlargement:!options.allowEnlargement,background:options.background});
+  let {width,height}=options;
+  if(options.percent){const baseWidth=options.crop?.width??sourceWidth,baseHeight=options.crop?.height??sourceHeight;width=Math.max(1,Math.round(baseWidth*options.percent/100));height=Math.max(1,Math.round(baseHeight*options.percent/100));if(width>16000||height>16000||width*height>25_000_000)throw Error();}
+  const padding=options.background==='transparent'?{r:0,g:0,b:0,alpha:0}:options.background;
+  if(width||height)image=image.resize({width,height,fit:options.fit,kernel:'lanczos3',withoutEnlargement:!options.allowEnlargement&&!options.percent,background:padding});
   if(options.action==='edit'&&hasManualAdjustments(normalizeManualAdjustments(options.adjustments))){
    const {ImageData}=await import('@napi-rs/canvas');globalThis.ImageData=ImageData;
    const {data,info}=await image.ensureAlpha().raw().toBuffer({resolveWithObject:true});
@@ -35,7 +39,7 @@ process.once('message',async message=>{
   // Compression below quality 90 uses standard 4:2:0 chroma (visually close for
   // photos, much smaller) and a reduced PNG palette; 90+ stays full-chroma/lossless.
   const shrink=options.action==='compress'&&options.quality<90;let encoded=null;
-  if(format==='jpeg')image=image.flatten({background:options.background}).jpeg({quality:options.quality,chromaSubsampling:shrink?'4:2:0':'4:4:4',mozjpeg:true});
+  if(format==='jpeg')image=image.flatten({background:options.background==='transparent'?'#ffffff':options.background}).jpeg({quality:options.quality,chromaSubsampling:shrink?'4:2:0':'4:4:4',mozjpeg:true});
   else if(format==='webp')image=image.webp({quality:options.quality,effort:options.action==='compress'?6:5});
   else if(shrink){
    // Palettes shrink screenshots and graphics dramatically but add dithering noise
@@ -51,7 +55,7 @@ process.once('message',async message=>{
   if(options.action==='compress'&&data.length>=bytes.length){data=bytes;info={width:metadata.autoOrient?.width||metadata.width,height:metadata.autoOrient?.height||metadata.height};unchanged=true;}
   // Force a complete second decode of the produced file before publishing it.
   await sharp(data,settings).raw().toBuffer();
-  process.send({ok:true,bytes:data,width:info.width,height:info.height,format,unchanged},()=>process.exit(0));
+  process.send({ok:true,bytes:data,width:info.width,height:info.height,sourceWidth,sourceHeight,format,unchanged},()=>process.exit(0));
  }catch{process.send({ok:false},()=>process.exit(1));}
 });
 process.once('disconnect',()=>process.exit(1));

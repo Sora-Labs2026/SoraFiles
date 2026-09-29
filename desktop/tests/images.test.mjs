@@ -45,3 +45,19 @@ test('compress settings: lower quality and a maximum width give much smaller fil
  const upscale=await processImage(photo,{action:'compress',quality:75,width:5000});assert.equal((await sharp(upscale.bytes).metadata()).width,1200);
  await assert.rejects(processImage(photo,{action:'compress',height:100}),/image editor|valid/);
 });
+test('resize modes: percentage of the cropped source, stretch, and transparent padding',async()=>{
+ const photo=await sharp({create:{width:400,height:200,channels:3,background:'#336699'}}).png().toBuffer();
+ const half=await processImage(photo,{action:'resize',format:'png',percent:50});
+ assert.deepEqual([half.width,half.height,half.sourceWidth,half.sourceHeight],[200,100,400,200]);
+ const cropped=await processImage(photo,{action:'resize',format:'png',percent:200,crop:{left:0,top:0,width:100,height:50}});
+ assert.deepEqual([cropped.width,cropped.height],[200,100]);
+ const stretched=await processImage(photo,{action:'resize',format:'png',width:100,height:100,fit:'fill'});
+ assert.deepEqual([stretched.width,stretched.height],[100,100]);
+ const padded=await processImage(photo,{action:'resize',format:'png',width:100,height:100,fit:'contain',background:'transparent'});
+ const {data,info}=await sharp(padded.bytes).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+ assert.deepEqual([info.width,info.height],[100,100]);assert.equal(data[3],0,'padding is transparent');
+ const jpeg=await processImage(photo,{action:'resize',format:'jpeg',width:100,height:100,fit:'contain',background:'transparent'});
+ assert.equal((await sharp(jpeg.bytes).metadata()).format,'jpeg');
+ await assert.rejects(processImage(photo,{action:'resize',format:'png',percent:50,width:10}),/percentage/);
+ await assert.rejects(processImage(photo,{action:'convert',format:'png',percent:50}),/percentage/);
+});

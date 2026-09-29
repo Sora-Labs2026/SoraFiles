@@ -4,7 +4,7 @@ import {PDFDocument,PDFName,PDFNumber} from 'pdf-lib';
 const require=createRequire(import.meta.url),assets=dirname(require.resolve('pdfjs-dist/package.json'));
 const assetFolder=name=>join(assets,name).replaceAll('\\','/')+'/';
 export async function rasterPdf(input,{dpi=150,format='jpeg',quality=95,selected,maxPages=1000,maxTotalPixels=1_000_000_000,signal}={}){
- if(!(input instanceof Uint8Array)||input.length<1||input.length>256*1024*1024||!Number.isInteger(dpi)||dpi<72||dpi>300
+ if(!(input instanceof Uint8Array)||input.length<1||input.length>256*1024*1024||!Number.isInteger(dpi)||dpi<24||dpi>300
   ||!['jpeg','png'].includes(format)||!Number.isInteger(quality)||quality<40||quality>100)throw Error('Choose valid PDF image settings');
  signal?.throwIfAborted();
  // PDF.js can silently discard an oversized image operator. Reject declared

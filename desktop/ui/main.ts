@@ -8,6 +8,7 @@ import {confirmDisableQuickAction} from './startup-confirmation';
 import prototypeToolIcons from './tool-icons.json';
 import {connectedTools,processingOptions,readProcessingOptions,syncProcessingOptions,syncPercentRange} from './processing';
 import {capabilities,relevantActions,searchTools} from '../shared/capabilities.mjs';
+import {CROP_TOOLS,bindCanvas,canvasView,cropPixels,cropSize,hasCropCanvas,loadPreviews} from './canvas';
 import {host,onNativeSelection,onNativeNotice,onNativeLaunch,onLicenseUpdated} from './host';
 type Selected={id:string;name:string;format:string|null;validated:boolean;bytes:number};
 let batchResults:{source:string;state:string;name?:string;warnings?:string[];cleanupPending?:boolean;outputId?:string}[]=[],savedOutput:{name:string;outputId?:string}|null=null;
@@ -75,7 +76,7 @@ function workspace(){
  // Before files: one calm column. With files: the selection is the main area and
  // options sit in one predictable side panel with a single primary action.
  if(!state.files.length)return `${head}${feedback()}${batchFeedback()}${picker}${saveLocation}`;
- return `${head}${feedback()}<div class="workspace-grid"><section class="workspace-main" aria-label="Selected files">${batchFeedback()}${selected()}${picker}</section><aside class="workspace-panel" aria-label="Options">${action}${saveLocation}</aside></div>`;
+ return `${head}${feedback()}<div class="workspace-grid"><section class="workspace-main" aria-label="Selected files">${batchFeedback()}${canvasView(state.tool,state.files)}${selected()}${picker}</section><aside class="workspace-panel" aria-label="Options">${action}${saveLocation}</aside></div>`;
 }
 function activationForm(){return `<section class="panel"><h2>Already have a license?</h2><p>Find your license key in your purchase email. Check your Spam or Junk folder too. Activation uses one device seat. Unused team seats activate at no extra charge.</p><form id="license-form"><label for="license-key">License key</label><div class="key-field"><input id="license-key" name="license-key" type="password" autocomplete="off" spellcheck="false" required><button type="button" class="text-button" data-action="reveal-key" aria-controls="license-key" aria-pressed="false">Show</button></div><button type="submit" class="secondary" ${state.busy?'disabled':''}>Activate license</button></form></section>`;}
 function supportDetails(){return `<section class="panel"><h2>Free up a device seat</h2><p>Verify your purchase email and pay the one-time fee to revoke a device. Once confirmed, that device needs a fresh online activation with the same or a new license key to process files again.</p><div class="support-actions"><button class="secondary" data-action="replace-device">Revoke Device</button><button class="text-button" data-action="support-details">Show this device ID</button></div>${state.supportDeviceId?`<p class="support-device-id"><code>${escape(state.supportDeviceId)}</code></p>`:''}</section>`;}
@@ -137,10 +138,33 @@ function render(){
   syncBusy();
   if(focused?.name)root.querySelector<HTMLElement>('#processing-form [name="'+CSS.escape(focused.name)+'"]')?.focus({preventScroll:true});
   const content=root.querySelector('.quick-content');if(content)content.scrollTop=scroll;
- }else renderFull();
+ }else{
+  renderFull();
+  if(state.page==='workspace'){loadPreviews(state.files,state.tool,refreshCanvas);applyCanvasToForm();}
+ }
  localizeUi(root);
  const pending=document.querySelector<HTMLElement>('#pending-action');if(pending)localizeUi(pending);
  const cancel=document.querySelector<HTMLElement>('#cancel-processing');if(cancel)cancel.textContent=t('Cancel processing');
+}
+// Previews arrive after the page is drawn: replace only the canvas so options
+// the person already changed are kept.
+function refreshCanvas(){
+ if(quick.active||state.page!=='workspace')return;
+ const canvas=root.querySelector('#workspace-canvas');
+ if(canvas){canvas.outerHTML=canvasView(state.tool,state.files);localizeUi(root.querySelector<HTMLElement>('#workspace-canvas')!);}
+ applyCanvasToForm();
+}
+function applyCanvasToForm(){
+ const cropping=hasCropCanvas(state.tool,state.files);
+ root.querySelectorAll<HTMLElement>('#processing-form [data-crop-only]').forEach(group=>group.hidden=!cropping);
+ if(cropping)fitSizeToCrop();
+}
+// Like the website: choosing a crop sets the output size to the cropped area.
+function fitSizeToCrop(){
+ const size=cropSize(state.files),form=root.querySelector<HTMLFormElement>('#processing-form');
+ if(!size||!form||state.tool!=='resize-image')return;
+ const width=form.querySelector<HTMLInputElement>('input[name="width"]'),height=form.querySelector<HTMLInputElement>('input[name="height"]');
+ if(width&&height){width.value=String(size.width);height.value=String(size.height);}
 }
 function quickActionView(){
  const tool=capabilities.find(item=>item.id===state.tool),workspace=state.page==='workspace'&&tool;
@@ -217,7 +241,7 @@ root.addEventListener('click',event=>{const target=(event.target as HTMLElement)
 root.addEventListener('click',event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-reset-adjustments]');if(!button||state.busy)return;button.closest('details')?.querySelectorAll<HTMLInputElement>('input[name^="adjust-"]').forEach(input=>input.value='0');document.querySelector('#announcement')!.textContent='Colour and detail adjustments reset.';});
 root.addEventListener('input',event=>{const range=event.target as HTMLInputElement;if(range.type==='range'&&range.closest('.percent-field'))syncPercentRange(range);});
 root.addEventListener('input',event=>{const input=event.target as HTMLInputElement;if(input.id!=='tool-search')return;state.query=input.value;const position=input.selectionStart;render();const replacement=document.querySelector<HTMLInputElement>('#tool-search')!;replacement.focus();try{replacement.setSelectionRange(position,position);}catch{}});
-root.addEventListener('change',async event=>{const input=event.target as HTMLInputElement;if(input.name==='mode'&&input.form)syncProcessingOptions(input.form);if(input.id==='output-mode'||input.id==='theme'||input.id==='language'||input.id==='startup'||input.id==='shellEntry'){
+root.addEventListener('change',async event=>{const input=event.target as HTMLInputElement;if(input.form?.id==='processing-form')syncProcessingOptions(input.form);if(input.id==='output-mode'||input.id==='theme'||input.id==='language'||input.id==='startup'||input.id==='shellEntry'){
  const value=input.type==='checkbox'?input.checked:input.value;
  if((input.id==='startup'||input.id==='shellEntry')&&!value){input.checked=state[input.id];if(!await confirmDisableQuickAction(input.id,state.platform))return;}
  void perform(async()=>{const settings=await host('saveSettings',{[input.id==='output-mode'?'output':input.id]:value});Object.assign(state,settings);});
@@ -242,7 +266,7 @@ root.addEventListener('submit',event=>{
  if((event.target as HTMLFormElement).id==='processing-form'){
   event.preventDefault();if(state.busy)return;
   const tool=state.tool,selectionIds=state.files.map(file=>file.id);let options;
-  try{options=readProcessingOptions(event.target as HTMLFormElement,tool);}catch(error){state.error=(error as Error).message;render();return;}
+  try{options=readProcessingOptions(event.target as HTMLFormElement,tool,{crop:CROP_TOOLS.has(tool)?cropPixels(state.files):undefined});}catch(error){state.error=(error as Error).message;render();return;}
   if(tool==='protect-pdf')(event.target as HTMLFormElement).querySelectorAll<HTMLInputElement>('input[type="password"]').forEach(input=>input.value='');
   if(!selectionIds.length){state.error='Choose files first.';render();return;}
   if(tool==='merge-pdf'&&selectionIds.length<2){state.error='Choose at least two PDFs to merge.';render();return;}
@@ -271,6 +295,16 @@ onNativeLaunch(()=>{void loadNativeLaunch().catch(()=>{});});
 onLicenseUpdated(status=>{Object.assign(state,{trialPending:false},status);if(!state.busy)render();});
 root.addEventListener('click',event=>{const id=(event.target as HTMLElement).closest<HTMLElement>('[data-native-action]')?.dataset.nativeAction;if(!id||state.busy)return;const action=state.launchIntent?.actions?.find((item:any)=>item.id===id);if(!action)return;if(!action.direct){applyNativeAction(action);return;}const sources=state.files.map(file=>file.name);state.tool=action.tool;state.page='workspace';state.processing=true;void perform(async()=>{try{processingResult(await host('processFiles',{tool:action.tool,options:action.options,selectionIds:state.files.map(file=>file.id)}),sources);}finally{state.processing=false;}});});
 onNativeNotice(message=>{document.querySelector('#announcement')!.textContent=t(message);if(state.busy)document.querySelector('#pending-action')!.textContent=t(message);});
+bindCanvas(root,()=>({tool:state.tool,files:state.files}),fitSizeToCrop);
+// Keep aspect ratio: with a known source, width and height follow each other.
+root.addEventListener('input',event=>{
+ const input=event.target as HTMLInputElement,form=input.form;
+ if(state.tool!=='resize-image'||form?.id!=='processing-form'||!['width','height'].includes(input.name))return;
+ const size=cropSize(state.files),value=Number(input.value);
+ if(!size||!value||!form.querySelector<HTMLInputElement>('input[name="keep"]')?.checked)return;
+ const other=form.querySelector<HTMLInputElement>(`input[name="${input.name==='width'?'height':'width'}"]`);
+ if(other)other.value=String(Math.max(1,Math.round(input.name==='width'?value*size.height/size.width:value*size.width/size.height)));
+});
 render();void host('getState').then(data=>{quick.active=data.quickAction===true;Object.assign(state,data);if(data.launchIntent?.action)applyNativeAction(data.launchIntent.action);else{if(data.launchIntent?.actions)state.page='native';render();}restoreJob(data.job);void host('licenseStatus').then(status=>{Object.assign(state,status);render();}).catch(()=>{});}).catch(error=>{state.error=error.message;render();});
 
 const cancelProcessing=document.createElement('button');cancelProcessing.id='cancel-processing';cancelProcessing.className='secondary cancel-processing';cancelProcessing.textContent=t('Cancel processing');cancelProcessing.hidden=true;document.body.append(cancelProcessing);cancelProcessing.addEventListener('click',()=>{cancelProcessing.disabled=true;void host('cancelProcessing').catch(()=>{state.error='Cancellation could not be requested.';}).finally(()=>{cancelProcessing.disabled=false;});});

@@ -22,7 +22,8 @@ export function runImageProcess(bytes,options,{signal}={}) {
    if(!message?.ok||!(message.bytes instanceof Uint8Array)||!message.bytes.length||message.bytes.length>MAX_IMAGE_BYTES
     ||!Number.isSafeInteger(message.width)||!Number.isSafeInteger(message.height)||message.width<1||message.height<1||message.width*message.height>MAX_IMAGE_PIXELS)return stop(Error('The image could not be decoded safely'));
    if(!['png','jpeg','webp'].includes(message.format))return stop(Error('Invalid image output format'));
-   result={bytes:message.bytes,width:message.width,height:message.height,format:message.format,unchanged:message.unchanged===true};
+   if(!Number.isSafeInteger(message.sourceWidth)||!Number.isSafeInteger(message.sourceHeight)||message.sourceWidth<1||message.sourceHeight<1)return stop(Error('The image could not be decoded safely'));
+   result={bytes:message.bytes,width:message.width,height:message.height,sourceWidth:message.sourceWidth,sourceHeight:message.sourceHeight,format:message.format,unchanged:message.unchanged===true};
   });
   child.on('close',code=>{clearTimeout(timer);signal?.removeEventListener('abort',abort);if(error||code!==0||!result)reject(error||Error('The image could not be decoded safely'));else resolve(result);});
   child.send({bytes,options},err=>{if(err)stop(Error('Image decoder unavailable'));});

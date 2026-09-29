@@ -6,7 +6,7 @@ const MAX_BYTES=256*1024*1024;
 // options only. Device keys, selected paths and licensing state stay in the parent.
 // Process isolation is not an OS sandbox or a hard native-memory limit.
 export function rasterPdf(input,{dpi=150,format='jpeg',quality=95,selected,maxPages=1000,maxTotalPixels=1_000_000_000,signal}={}){
- if(!(input instanceof Uint8Array)||!input.length||input.length>MAX_BYTES||!Number.isInteger(dpi)||dpi<72||dpi>300
+ if(!(input instanceof Uint8Array)||!input.length||input.length>MAX_BYTES||!Number.isInteger(dpi)||dpi<24||dpi>300
   ||!['jpeg','png'].includes(format)||!Number.isInteger(quality)||quality<40||quality>100
   ||!Number.isInteger(maxPages)||maxPages<1||maxPages>1000||!Number.isSafeInteger(maxTotalPixels)||maxTotalPixels<1||maxTotalPixels>1_000_000_000
   ||selected!==undefined&&(!Array.isArray(selected)||!selected.length||selected.length>maxPages||selected.some(page=>!Number.isInteger(page)||page<0||page>=1000)||new Set(selected).size!==selected.length))return Promise.reject(Error('Choose valid PDF image settings'));

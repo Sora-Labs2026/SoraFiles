@@ -523,6 +523,12 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
             let path=state.outputs.lock().map_err(|_|"Outputs unavailable")?.resolve(params["id"].as_str().ok_or("Invalid output")?)?;
             outputs::open(&path,method=="revealOutput")?;Ok(json!({"opened":true}))
         },
+        "previewSelection" => {
+            let ids:Vec<String>=serde_json::from_value(params["selectionIds"].clone()).map_err(|_|"Choose files first")?;
+            let paths=state.selection.lock().map_err(|_|"Selection unavailable")?.resolve(&ids)?;
+            let resources=app.path().resource_dir().map_err(|_|"Desktop components unavailable")?;
+            tauri::async_runtime::spawn_blocking(move||processing_host::run_preview(&resources,&paths)).await.map_err(|_|"Preview unavailable")?
+        },
         "processFiles" => {
             let handle=app.clone();tauri::async_runtime::spawn_blocking(move||run_processing(&handle,params,Some(generation))).await.map_err(|_|"Processing could not finish")?
         },

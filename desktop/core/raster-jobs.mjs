@@ -4,6 +4,8 @@ export function createRasterJobQueue({resolveSelection,readLicenseState,selectOu
  return new JobQueue({concurrency:1,onChange,authorize:async()=>{const state=await readLicenseState();verifyEntitlement(state.token,state.verification);},engines:{'pdf-to-jpg':async(request,{signal,commit})=>{
   if(!Array.isArray(request.selectionIds)||request.selectionIds.length!==1)throw Error('Choose one PDF');
   const paths=await resolveSelection(request.selectionIds);if(paths.length!==1)throw Error('Selection expired');
+  // Below 72 dpi is reserved for on-screen page previews, never saved images.
+  if(request.options?.dpi!==undefined&&!(Number.isInteger(request.options.dpi)&&request.options.dpi>=72))throw Error('Choose valid PDF image settings');
   const input=await readLocalInput(paths[0],{signal}),pages=await rasterPdf(input,{...request.options,signal});
   const extension=pages.length===1?pages[0].extension:'zip',bytes=pages.length===1?pages[0].bytes:zipSync(Object.fromEntries(pages.map(page=>['page-'+String(page.page).padStart(4,'0')+'.'+page.extension,page.bytes])),{level:0});
   const folder=await selectOutputFolder(paths[0]);signal.throwIfAborted();return commit(()=>writer({source:paths[0],tool:'pdf-to-jpg',folder,extension,bytes,signal,validate:async path=>(await readFile(path)).equals(Buffer.from(bytes))}));
