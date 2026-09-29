@@ -22,7 +22,7 @@
         "n": "03",
         "title": "Analytics",
         "body": [
-          "Ahrefs Web Analytics may process page activity, device information, and approximate location, but not the contents of files processed locally. Its script loads asynchronously and does not receive file contents."
+          "Ahrefs Web Analytics and Google Analytics may process page activity, device information, and approximate location, but not the contents of files processed locally. Their scripts load asynchronously and do not receive file contents. Neither runs on license checkout-return pages."
         ]
       },
       {

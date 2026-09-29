@@ -241,7 +241,7 @@ export const en: LocaleContent = {
       sections: [
         { heading: 'Local file processing', paragraphs: ['Image, HEIC, PDF, ZIP, and DOCX tools process selected files inside this browser. File contents and results are not uploaded to a SoraFiles processing server.'] },
         { heading: 'Temporary browser data', paragraphs: ['Previews and download URLs exist temporarily in the open page and are released when a file is removed or the page is closed.'] },
-        { heading: 'Analytics', paragraphs: ['Ahrefs Web Analytics may process page activity, device information, and approximate location, but not the contents of files processed locally. Its script loads asynchronously and does not receive file contents.'] },
+        { heading: 'Analytics', paragraphs: ['Ahrefs Web Analytics and Google Analytics may process page activity, device information, and approximate location, but not the contents of files processed locally. Their scripts load asynchronously and do not receive file contents. Neither runs on license checkout-return pages.'] },
         { heading: 'Contact form', paragraphs: ['Your name, email address, subject, message, and optional attachment are sent through FormSubmit for delivery to SoraFiles support. Do not attach confidential files.'] },
         { heading: 'Public source and contributions', paragraphs: ['The SoraFiles application source is published at github.com/Sora-Labs2026/SoraFiles under the GNU Affero General Public License v3.0. Local file processing does not send selected files to GitHub. Information or attachments that you voluntarily post in a public GitHub issue, discussion, or pull request are publicly visible, so do not submit confidential files or personal data there.'] },
       ],

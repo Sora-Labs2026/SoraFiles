@@ -161,14 +161,20 @@ test('Ahrefs analytics uses one direct low-priority asynchronous head tag', asyn
   assert.doesNotMatch(layout, /GTM-[A-Z0-9]+/);
 });
 
-test('Google Analytics runtime and measurement ID stay removed', async () => {
-  const layout = await readFile('src/layouts/Layout.astro', 'utf8');
+test('Google Analytics and Ahrefs load together on public pages and never on license return pages', async () => {
   await assert.rejects(access('src/components/GoogleServices.astro', constants.F_OK));
-  assert.doesNotMatch(layout, /GoogleServices|googletagmanager|google-analytics|G-GQ973RY74K|\bgtag\s*\(/i);
+  const gtag = /https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=G-GQ973RY74K/g, ahrefs = /https:\/\/analytics\.ahrefs\.com\/analytics\.js/g;
   for (const path of ['dist/index.html', 'dist/privacy/index.html', 'dist/ja/index.html']) {
     const html = await readFile(path, 'utf8');
-    assert.doesNotMatch(html, /googletagmanager|google-analytics|G-GQ973RY74K|data-sf-google-analytics|\bgtag\s*\(/i, path);
+    assert.equal((html.match(gtag) ?? []).length, 1, path);assert.equal((html.match(ahrefs) ?? []).length, 1, path);
+    assert.ok(html.indexOf('googletagmanager') < html.indexOf('<meta charset'), `${path}: Google tag starts the head`);
   }
+  for (const path of ['dist/desktop/purchase/index.html', 'dist/desktop/redeem/index.html']) {
+    const html = await readFile(path, 'utf8');
+    assert.doesNotMatch(html, /googletagmanager|analytics\.ahrefs\.com|\bgtag\s*\(/i, path);
+  }
+  const privacy = await readFile('dist/privacy/index.html', 'utf8');
+  assert.match(privacy, /Google Analytics/);
 });
 
 test('localized home metadata uses the reviewed native catalog instead of visual hero fragments', async () => {

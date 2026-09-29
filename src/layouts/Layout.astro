@@ -68,6 +68,17 @@ const atmosphere = ['/', '/desktop'].includes(route) ? 'hero' : route === '/desk
 <!doctype html>
 <html lang={localeMeta.code} dir={localeMeta.direction} data-locale={locale}>
   <head>
+    {analytics && !sensitive && <Fragment>
+      <!-- Google tag (gtag.js). Never on license return pages: their URLs can carry keys. -->
+      <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-GQ973RY74K"></script>
+      <script is:inline>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-GQ973RY74K');
+      </script>
+    </Fragment>}
     <meta charset="utf-8" />
     {locale!=='en'&&route.startsWith('/desktop')&&<DesktopPageLanguage {locale}/>}
     {sensitive && <meta name="referrer" content="no-referrer" />}
