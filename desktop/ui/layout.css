@@ -212,3 +212,14 @@ body[data-quick-action=true] main.quick-action {
 }
 @keyframes sf-loader-spin { to { transform:rotate(1turn); } }
 @keyframes sf-loader-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+/* Percent sliders (quality): a thin track whose ink fill follows the handle, a
+   live readout beside the label, and the same look in the card and workspace. */
+.percent-field>span { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+.percent-field output { font-variant-numeric:tabular-nums; font-weight:650; color:var(--text); }
+body .option-fields input[type=range] { -webkit-appearance:none; appearance:none; width:100%; min-height:0; height:22px; margin:0; padding:0; border:0; border-radius:0; background:transparent; cursor:pointer; }
+body .option-fields input[type=range]::-webkit-slider-runnable-track { height:4px; border-radius:999px; background:linear-gradient(to right,var(--action) 0 var(--range-progress,0%),var(--line-strong) var(--range-progress,0%) 100%); }
+[dir=rtl] body .option-fields input[type=range]::-webkit-slider-runnable-track { background:linear-gradient(to left,var(--action) 0 var(--range-progress,0%),var(--line-strong) var(--range-progress,0%) 100%); }
+body .option-fields input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; margin-top:-7px; border:2px solid var(--action); border-radius:50%; background:var(--surface); box-shadow:0 1px 3px rgb(0 0 0 / .2); transition:transform var(--dur-1) var(--ease-std); }
+body .option-fields input[type=range]:active::-webkit-slider-thumb { transform:scale(1.1); }
+body .option-fields input[type=range]:focus-visible { outline:none; }
+body .option-fields input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px var(--focus-ring); }
