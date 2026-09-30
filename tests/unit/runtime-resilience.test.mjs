@@ -144,12 +144,15 @@ test('homepage metadata and decorative brand marks satisfy the Part 14 contract'
   assert.ok(description.length >= 120 && description.length <= 160, `homepage description length is ${description.length}`);
   assert.match(description, /processing happens locally on your device/i);
 
-  for (const file of ['src/components/Header.astro', 'src/components/Footer.astro']) {
+  // V10 header and footer share one logo: a named home link with a decorative inline mark.
+  for (const file of ['src/components/PrototypeHeader.astro', 'src/components/PrototypeFooter.astro']) {
     const source = await readFile(file, 'utf8');
-    assert.match(source, /src="\/brand\/sorafiles-logo-full-color\.svg" alt="SoraFiles"/);
-    assert.match(source, /src="\/brand\/sorafiles-logo-full-color-dark\.svg" alt="SoraFiles"/);
+    assert.match(source, /<PrototypeLogo\b/);
     assert.doesNotMatch(source, /background-image: url\('\/favicon/);
   }
+  const logo = await readFile('src/components/PrototypeLogo.astro', 'utf8');
+  assert.match(logo, /aria-label="SoraFiles home"/);
+  assert.match(logo, /<svg class="logo-mark"[^>]*aria-hidden="true"/);
 });
 
 test('Ahrefs analytics uses one direct low-priority asynchronous head tag', async () => {
@@ -179,8 +182,8 @@ test('Google Analytics and Ahrefs load together on public pages and never on lic
 
 test('localized home metadata uses the reviewed native catalog instead of visual hero fragments', async () => {
   const route = await readFile('src/pages/[locale]/[...path].astro', 'utf8');
-  assert.match(route, /const title = isHome \? brand\.homeTitle/);
-  assert.match(route, /const description = isHome \? brand\.description/);
+  assert.match(route, /const title = (?:guideMeta\?\.title \?\? \()?isHome \? brand\.homeTitle/);
+  assert.match(route, /const description = (?:guideMeta\?\.description \?\? \()?isHome \? brand\.description/);
   assert.doesNotMatch(route, /isHome \? `SoraFiles — \$\{liveText\(locale, 'hero\.l1b'\)\}/);
 });
 

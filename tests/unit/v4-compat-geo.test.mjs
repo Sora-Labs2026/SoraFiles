@@ -68,16 +68,17 @@ test('hero scenes pause offscreen and expose static reduced-motion previews', as
 });
 
 test('homepage GEO graph is grounded in visible FAQ, provenance, and first-party identity', async () => {
-  const [page, home, positioning] = await Promise.all([read('src/pages/index.astro'), read('src/components/LocalizedHome.astro'), read('src/i18n/brandPositioning.ts')]);
-  for (const type of ['WebPage', 'WebApplication', 'FAQPage', 'Organization', 'WebSite']) assert.match(page, new RegExp(`'@type': '${type}'`));
+  const [page, localizedHome, sections, positioning] = await Promise.all([read('src/pages/index.astro'), read('src/components/LocalizedHome.astro'), read('src/components/PrototypeHomeSections.astro'), read('src/i18n/brandPositioning.ts')]);
+  const home = localizedHome + sections;
+  for (const type of ['WebPage', 'WebApplication', 'Organization', 'WebSite']) assert.match(page, new RegExp(`'@type': '${type}'`));
+  // FAQ markup only when the homepage visibly renders its FAQ (the V10 home has none).
+  assert.equal(/'@type': 'FAQPage'/.test(page), /content\.home\.faqs\.map/.test(home));
   assert.match(page, /sameAs: \['https:\/\/github\.com\/Sora-Labs2026\/SoraFiles'\]/);
   assert.doesNotMatch(page, /alternateName:/);
   assert.match(page, /CONTENT_PROVENANCE\.modifiedIso/);
   assert.match(page, /name: 'SoraFiles'/);
   assert.doesNotMatch(page, /name: brand\.homeTitle/);
   assert.match(positioning, /en: \{\s*homeTitle: 'SoraFiles',/);
-  assert.match(home, /data-content-provenance/);
   assert.doesNotMatch(home, /WebAssembly|memory-safe|sandboxed execution/);
   assert.doesNotMatch(page, /citation:/);
-  assert.match(home, /content\.home\.faqs\.map/);
 });

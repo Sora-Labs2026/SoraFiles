@@ -126,7 +126,13 @@ test('every primary tool uploader uses the shared premium drop-zone contract', a
   ];
   for (const file of files) {
     const source = await readFile(`src/components/${file}`, 'utf8');
-    assert.match(source, /sf-upload-dropzone/, `${file} is missing the shared upload surface.`);
+    // V10 converter and document tools use the shared PrototypeDropZone component.
+    assert.match(source, /sf-upload-dropzone|<PrototypeDropZone\b/, `${file} is missing the shared upload surface.`);
+  }
+  // PrototypeDropZone only draws the surface; each workbench reads the dropped files.
+  for (const file of ['ImageConverterWorkbench.astro', 'DocumentActionWorkbench.astro']) {
+    const source = await readFile(`src/components/${file}`, 'utf8');
+    assert.match(source, /dragenter/); assert.match(source, /dragover/); assert.match(source, /dataTransfer/);
   }
   const [background, resize, scanner] = await Promise.all(['src/lib/background-workbench.ts', 'src/components/ResizeImageWorkbench.astro', 'src/components/DocScannerWorkbench.astro'].map((file) => readFile(file, 'utf8')));
   for (const [file, source] of [['BackgroundRemovalWorkbench.astro', background], ['ResizeImageWorkbench.astro', resize], ['DocScannerWorkbench.astro', scanner]]) {
