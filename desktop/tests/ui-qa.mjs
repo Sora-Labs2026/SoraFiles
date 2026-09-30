@@ -166,7 +166,7 @@ try{
  await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('compress pdf');await page.locator('[data-tool="compress-pdf"]').click();
  assert.match(await page.locator('.processing-options').innerText(),/unchanged copy/);
  await page.getByRole('button',{name:'Process files',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
- assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.options,{});
+ assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.options,{strength:60});
  checks.push('PDF compression declares structural-only scope and unchanged-output behavior');
  await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('repair pdf');await page.locator('[data-tool="repair-pdf"]').click();
  assert.match(await page.locator('.processing-options').innerText(),/Missing or truncated data cannot be recovered/);

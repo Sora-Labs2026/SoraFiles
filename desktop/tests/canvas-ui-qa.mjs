@@ -80,6 +80,17 @@ try{
  await openTool('image converter');await choose('many');
  await page.locator('.thumb-grid li').first().waitFor();assert.equal(await page.locator('.thumb-grid li').count(),2);
  assert.equal(await page.locator('.canvas-frame').count(),0);checks.push('Several files show a thumbnail grid');
+ await openTool('compress pdf');await choose('pdf');
+ const strength=page.getByLabel('Compression strength',{exact:true});
+ assert.equal(await page.locator('.strength-field output').innerText(),'60 · Balanced');
+ assert.equal(await page.getByLabel('At strength 100 only, allow a smaller-file option').isDisabled(),true);
+ await strength.focus();await page.keyboard.press('End');
+ assert.equal(await page.locator('.strength-field output').innerText(),'100 · Maximum safe');
+ await page.getByLabel('At strength 100 only, allow a smaller-file option').check();
+ await page.getByRole('button',{name:'Process files',exact:true}).click();
+ await page.waitForFunction(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1)?.params.tool==='compress-pdf');
+ assert.deepEqual((await lastProcess()).options,{strength:100,smallest:true});
+ checks.push('Compress PDF: strength slider shows the level name; smaller-file option unlocks only at 100');
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({status:'PASS',checks},null,1));
 }catch(error){

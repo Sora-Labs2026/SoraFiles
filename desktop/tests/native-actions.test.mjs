@@ -50,7 +50,7 @@ test('one and multiple PDFs keep page, password, order and text choices interact
  assert.ok(!ids([file('PDF')]).includes('merge-pdf'));
  const menu=actions([file('PDF'),file('PDF')]);
  assert.equal(menu[0].id,'merge-pdf');assert.equal(menu[0].direct,false);assert.equal(menu[0].combine,true);
- assert.equal(menu.find(item=>item.id==='compress-pdf').direct,true);
+ assert.equal(menu.find(item=>item.id==='compress-pdf').direct,false);assert.deepEqual(menu.find(item=>item.id==='compress-pdf').options,{strength:60});
  for(const id of ['split-pdf','rotate-pdf','protect-pdf','pdf-to-jpg','pdf-to-word','page-numbers','watermark-pdf'])assert.equal(menu.find(item=>item.id===id).requiresUI,true);
  assert.ok(!menu.some(item=>item.id==='sign-pdf'));
 });

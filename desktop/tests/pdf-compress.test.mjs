@@ -23,3 +23,25 @@ test('compression refuses encrypted, signed, malformed, over-limit and cancelled
  const tooMany=await PDFDocument.create();for(let i=0;i<1001;i++)tooMany.addPage([100,100]);await assert.rejects(compressPdf(await tooMany.save()),/1000 pages/);
  const controller=new AbortController(),pending=compressPdf(input,{signal:controller.signal});controller.abort();await assert.rejects(pending,{name:'AbortError'});
 });
+test('strength levels recompress oversized photos, keep text and pages, and follow the website levels',async()=>{
+ const {pdfLevel}=await import('../core/pdf-compress.mjs');
+ assert.deepEqual([0,29,30,54,55,74,75,89,90,100].map(s=>pdfLevel(s)),['safe','safe','quality','quality','balanced','balanced','strong','strong','max-safe','max-safe']);
+ assert.equal(pdfLevel(100,true),'smallest');assert.equal(pdfLevel(99,true),'max-safe','smallest needs strength 100');
+ for(const bad of [-1,101,50.5,'60'])assert.throws(()=>pdfLevel(bad));
+ // A4 page with a noisy 3000x2000 photo stored at JPEG quality 95.
+ const noise=Buffer.alloc(3000*2000*3);for(let i=0;i<noise.length;i++)noise[i]=(i*2654435761>>>24)&255;
+ const photo=await sharp(noise,{raw:{width:3000,height:2000,channels:3}}).blur(1.2).jpeg({quality:95}).toBuffer();
+ const doc=await PDFDocument.create(),page=doc.addPage([595,842]);page.drawText('Quarterly report 2026',{x:40,y:780,size:18});
+ page.drawImage(await doc.embedJpg(photo),{x:40,y:300,width:515,height:343});
+ const input=await doc.save({useObjectStreams:false});
+ const structure=await compressPdf(input),balanced=await compressPdf(input,{strength:60}),strongest=await compressPdf(input,{strength:100,smallest:true});
+ assert.ok(balanced.bytes.length<structure.bytes.length*0.8,`photos shrink (${structure.bytes.length} -> ${balanced.bytes.length})`);
+ assert.ok(strongest.bytes.length<balanced.bytes.length,'smallest is smaller than balanced');
+ assert.match(balanced.warnings[0],/1 photo was recompressed \(up to 200 dpi, JPEG quality 84\)/);
+ assert.match(structure.warnings[0],/without reducing image resolution/);
+ const out=await PDFDocument.load(balanced.bytes);assert.equal(out.getPageCount(),1);
+ const image=[...out.context.enumerateIndirectObjects()].map(([,object])=>object).find(object=>object.dict?.get(PDFName.of('Subtype'))===PDFName.of('Image'));
+ assert.ok(image.dict.get(PDFName.of('Width')).asNumber()<=Math.ceil(200*842/72),'capped to the level dpi for the page');
+ const text=(await (await (await getDocument({data:new Uint8Array(balanced.bytes)}).promise).getPage(1)).getTextContent()).items.map(item=>item.str).join('');
+ assert.match(text,/Quarterly report 2026/,'text is untouched');
+});

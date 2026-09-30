@@ -19,7 +19,8 @@ const definitions=[
  {id:'resize-image',tool:'resize-image',label:'Resize image',many:'Resize all images',formats:stillImages,options:{format:'png',width:1600}},
  {id:'edit-image',tool:'edit-image',label:'Rotate, flip and adjust image',many:'Rotate, flip and adjust images',formats:stillImages},
  {id:'remove-background',tool:'remove-background',label:'Remove background',many:'Remove backgrounds',formats:stillImages,direct:true},
- {id:'compress-pdf',tool:'compress-pdf',label:'Compress PDF',many:'Compress all PDFs',formats:pdf,direct:true},
+ // Compression strength is a trade-off, so it opens the settings card.
+ {id:'compress-pdf',tool:'compress-pdf',label:'Compress PDF',many:'Compress all PDFs',formats:pdf,options:{strength:60}},
  {id:'pdf-to-jpg',tool:'pdf-to-jpg',label:'PDF to images',many:'Convert PDFs to images',formats:pdf},
  {id:'split-pdf',tool:'split-pdf',label:'Split or extract PDF pages',many:'Split or extract pages from PDFs',formats:pdf},
  {id:'rotate-pdf',tool:'rotate-pdf',label:'Rotate PDF pages',many:'Rotate pages in PDFs',formats:pdf},

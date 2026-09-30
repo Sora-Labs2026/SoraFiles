@@ -1,15 +1,19 @@
 import {ocrLanguages} from '../shared/ocr-options.mjs';
 import {parsePageSelection} from '../shared/pdf-options.mjs';
 import {manualAdjustmentKeys} from '../shared/image-adjustments.mjs';
+import {t} from './localization';
 export const connectedTools=new Set(['merge-pdf','split-pdf','rotate-pdf','remove-pages','page-numbers','watermark-pdf','jpg-to-pdf','image-converter','compress-image','resize-image','edit-image','pdf-to-jpg','pdf-ocr','protect-pdf','metadata-remover','pdf-to-excel','pdf-to-word','heic-to-jpg','compress-pdf','repair-pdf','doc-scanner','remove-background']);
 const number=(label:string,name:string,value:number,min:number,max:number)=>`<label>${label}<input name="${name}" type="number" value="${value}" min="${min}" max="${max}" required></label>`;
 // Whole-percent slider with a live readout; the fill starts at the right place
 // without waiting for script, and syncPercentRange keeps it in step while dragging.
 const percent=(label:string,name:string,value:number,min:number,max:number)=>`<label class="percent-field"><span>${label}<output>${value}%</output></span><input name="${name}" type="range" aria-label="${label}" min="${min}" max="${max}" step="1" value="${value}" aria-valuetext="${value}%" style="--range-progress:${(value-min)/(max-min)*100}%"></label>`;
+// Compression strength shows its level name, like the website ("60 · Balanced").
+export const strengthLevel=(value:number)=>value<=29?'Safe optimization':value<=54?'Quality':value<=74?'Balanced':value<=89?'Strong':'Maximum safe';
 export function syncPercentRange(input:HTMLInputElement){
- const min=Number(input.min),max=Number(input.max),value=Number(input.value);
- input.style.setProperty('--range-progress',`${(value-min)/(max-min)*100}%`);input.setAttribute('aria-valuetext',`${value}%`);
- const output=input.closest('.percent-field')?.querySelector('output');if(output)output.textContent=`${value}%`;
+ const min=Number(input.min),max=Number(input.max),value=Number(input.value),field=input.closest('.percent-field');
+ const text=field?.classList.contains('strength-field')?`${value} · ${t(strengthLevel(value))}`:`${value}%`;
+ input.style.setProperty('--range-progress',`${(value-min)/(max-min)*100}%`);input.setAttribute('aria-valuetext',text);
+ const output=field?.querySelector('output');if(output)output.textContent=text;
 }
 const adjustmentLabels:Record<string,string>={exposure:'Exposure',highlights:'Highlights',shadows:'Shadows',contrast:'Contrast',brightness:'Brightness',blackPoint:'Black point',definition:'Definition',sharpness:'Sharpness',noiseReduction:'Noise reduction',saturation:'Saturation'};
 const labels:Record<string,string>={jpeg:'JPG',png:'PNG',webp:'WebP',each:'One file per page','odd-even':'Odd and even pages','bottom-center':'Bottom centre','bottom-left':'Bottom left','bottom-right':'Bottom right','top-center':'Top centre',a4:'A4',letter:'US Letter',image:'Fit the image',auto:'Match the image',portrait:'Portrait',landscape:'Landscape',no:'No',yes:'Yes','0':'No rotation','90':'90°','180':'180°','270':'270°','150':'Standard','300':'High'};
@@ -34,6 +38,9 @@ export function syncProcessingOptions(form:HTMLFormElement){
   const [name,values]=group.dataset.when!.split('=');const active=values.split('|').includes(String(data.get(name)??''));
   group.hidden=!active;group.querySelectorAll<HTMLInputElement|HTMLSelectElement>('input,select').forEach(input=>input.disabled=!active);
  });
+ // The smaller-file option exists only at full strength.
+ const strength=form.querySelector<HTMLInputElement>('input[name="strength"]'),smallest=form.querySelector<HTMLInputElement>('input[name="smallest"]');
+ if(strength&&smallest){smallest.disabled=Number(strength.value)!==100;if(smallest.disabled)smallest.checked=false;}
  const mode=data.get('mode');
  form.querySelectorAll<HTMLElement>('[data-split-option]').forEach(group=>{
   const active=group.dataset.splitOption===mode;group.hidden=!active;
@@ -45,7 +52,7 @@ export function processingOptions(tool:string){
  if(tool==='remove-background')fields='<p>Remove the background from still JPG, PNG or WebP images, up to 64 MB and 12 megapixels each. A transparent PNG is saved with existing transparency preserved.</p><p>Review hair, fine edges, glass and low-contrast areas. Manual mask editing is not available yet.</p>';
  if(tool==='doc-scanner')fields='<p>Combine 1 to 20 still JPG, PNG or WebP images in the order shown. Up to 12 megapixels and 64 MB per image, 60 megapixels and 256 MB together. Originals are kept.</p><p>Review faint markings after filtering. Camera capture, perspective cropping and searchable text are not available yet.</p>'+choice('Scan filter','filter',['enhanced','original','color','grayscale','bw','contrast','receipt'])+choice('Rotate clockwise','rotation',['0','90','180','270'])+choice('Page size','paper',['a4','letter','image']);
  if(tool==='repair-pdf')fields='<p>Rewrite readable PDF structure, up to 64 MB and 100 pages. This may fix broken cross-reference information. Missing or truncated data cannot be recovered.</p><p>Encrypted or digitally signed PDFs are not processed. Review every page, attachment and form in the saved copy.</p>';
- if(tool==='compress-pdf')fields='<p>Compress PDF structure without reducing image resolution, up to 64 MB and 1000 pages. Encrypted or digitally signed PDFs are not processed.</p><p>If no smaller result is found, an unchanged copy is saved. Image recompression and target-size controls are not available yet.</p>';
+ if(tool==='compress-pdf')fields=`<label class="percent-field strength-field"><span>Compression strength<output>60 · ${t('Balanced')}</output></span><input name="strength" type="range" min="0" max="100" step="1" value="60" aria-label="Compression strength" aria-valuetext="60 · ${t('Balanced')}" style="--range-progress:60%"></label><label class="check"><input type="checkbox" name="smallest" disabled>At strength 100 only, allow a smaller-file option</label>`+'<p>Higher strength recompresses photos inside the PDF to a lower resolution and JPEG quality; text, vector graphics, links and forms are not changed. The smaller-file option reduces photos further.</p><p>Up to 64 MB and 1000 pages. Encrypted or digitally signed PDFs are not processed. If no smaller result is found, an unchanged copy is saved.</p>';
  if(tool==='heic-to-jpg')fields=percent('JPG quality','quality',90,40,100)+'<p>Convert the primary photo from each still HEIC file, up to 64 MB and 25 megapixels. Additional images, sequences, HDR/depth data and metadata are not exported. Review orientation and colour before sharing.</p>';
  if(tool==='pdf-to-word')fields='<p>Convert selectable text to an editable Word document, up to 60 pages and 64 MB per PDF. Every page must contain text; scanned and blank pages are not supported yet.</p><p>Source page breaks are kept. Images, forms, annotations and original layout are not copied. Review reading order and tables.</p>'+choice('Text direction','direction',['ltr','rtl']);
  if(tool==='pdf-to-excel')fields='<p>Extract tables from selectable PDF text into an Excel workbook. Each detected table gets its own sheet. Up to 100 pages and 64 MB per PDF.</p><p>Values stay as text to preserve identifiers, dates and number formatting. Review table alignment before using the workbook. Scanned tables and full-page visual sheets are not supported yet.</p>';
@@ -80,7 +87,7 @@ export function readProcessingOptions(form:HTMLFormElement,tool:string,extra:{cr
   case 'remove-background':return {};
   case 'doc-scanner':return {filter:text('filter'),rotation:num('rotation'),paper:text('paper')};
   case 'repair-pdf':return {};
-  case 'compress-pdf':return {};
+  case 'compress-pdf':{const strength=num('strength');return {strength,...(strength===100&&fields.get('smallest')==='on'?{smallest:true}:{})};}
   case 'heic-to-jpg':return {quality:num('quality')};
   case 'pdf-to-word':return {direction:text('direction')};
   case 'pdf-to-excel':return {};
