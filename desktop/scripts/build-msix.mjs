@@ -16,16 +16,25 @@ import {pathToFileURL} from 'node:url';
 const root = resolve(import.meta.dirname, '../..');
 const read = path => readFile(join(root, path), 'utf8');
 
+// App catalog locale -> the language tag the Store lists the package under.
+const STORE_LANGUAGES = {en: 'en-us', ja: 'ja-jp', ko: 'ko-kr', es: 'es-es', fr: 'fr-fr', de: 'de-de', pt: 'pt-pt',
+  'zh-cn': 'zh-cn', 'zh-tw': 'zh-tw', hi: 'hi-in', ar: 'ar-sa', ru: 'ru-ru', id: 'id-id', it: 'it-it', nl: 'nl-nl',
+  tr: 'tr-tr', vi: 'vi-vn', th: 'th-th', pl: 'pl-pl'};
+
 export async function appFacts() {
-  const [registration, shell, store, config] = await Promise.all([
+  const [registration, shell, store, config, catalogs] = await Promise.all([
     read('desktop/native/src/explorer_registration.rs'), read('desktop/native/src/shell_entry.rs'),
-    read('desktop/native/src/store_package.rs'), read('desktop/native/tauri.conf.json')]);
+    read('desktop/native/src/store_package.rs'), read('desktop/native/tauri.conf.json'), read('desktop/shared/locales/catalogs.json')]);
+  const locales = Object.keys(JSON.parse(catalogs));
+  const missing = locales.filter(locale => !STORE_LANGUAGES[locale]);
+  if (missing.length) throw Error(`No Store language tag for app locale(s): ${missing.join(', ')}`);
+  const languages = locales.map(locale => STORE_LANGUAGES[locale]);
   const clsid = registration.match(/const CLSID: &str = "\{([0-9A-F-]{36})\}"/)?.[1];
   const extensions = [...(shell.match(/const EXTENSIONS: &\[&str\] = &\[([^\]]+)\]/)?.[1] ?? '').matchAll(/"(\.[a-z0-9]+)"/g)].map(m => m[1]);
   const startupTask = store.match(/pub const STARTUP_TASK_ID: &str = "([A-Za-z0-9]+)"/)?.[1];
   const version = JSON.parse(config).version;
   if (!clsid || !extensions.length || !startupTask || !/^\d+\.\d+\.\d+$/.test(version)) throw Error('Could not read app identifiers from source');
-  return {clsid, extensions, startupTask, version};
+  return {clsid, extensions, startupTask, version, languages};
 }
 
 // Store packages need a four-part version whose last part is 0.
@@ -33,7 +42,7 @@ export const msixVersion = version => `${version}.0`;
 
 const xml = value => String(value).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'}[c]));
 
-export function manifest({clsid, extensions, startupTask, version}, identity) {
+export function manifest({clsid, extensions, startupTask, version, languages}, identity) {
   const types = extensions.map(ext => `            <desktop5:ItemType Type="${ext}"><desktop5:Verb Id="SoraFilesDesktop" Clsid="${clsid}"/></desktop5:ItemType>`).join('\n');
   return `<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -54,7 +63,7 @@ export function manifest({clsid, extensions, startupTask, version}, identity) {
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0"/>
   </Dependencies>
   <Resources>
-    <Resource Language="en-us"/>
+${languages.map(language => `    <Resource Language="${language}"/>`).join('\n')}
   </Resources>
   <Applications>
     <Application Id="SoraFilesDesktop" Executable="sorafiles-desktop.exe" EntryPoint="Windows.FullTrustApplication">

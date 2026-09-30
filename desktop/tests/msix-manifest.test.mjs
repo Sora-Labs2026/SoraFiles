@@ -20,6 +20,15 @@ test('Store startup task is off until the user turns it on',async()=>{
  assert.match(xml,/<desktop:StartupTask TaskId="SoraFilesStartup" Enabled="false"/);
 });
 
+test('Store package declares every app language, English first',async()=>{
+ const facts=await appFacts(),xml=manifest(facts,identity);
+ assert.equal(facts.languages.length,19);
+ assert.equal(facts.languages[0],'en-us');
+ const declared=[...xml.matchAll(/<Resource Language="([a-z]{2}-[a-z]{2})"\/>/g)].map(m=>m[1]);
+ assert.deepEqual(declared,facts.languages);
+ assert.ok(declared.includes('ja-jp')&&declared.includes('zh-tw')&&declared.includes('ar-sa'));
+});
+
 test('Store version is four-part with a zero revision and identity is XML-escaped',async()=>{
  const facts=await appFacts();
  assert.match(msixVersion(facts.version),/^\d+\.\d+\.\d+\.0$/);
