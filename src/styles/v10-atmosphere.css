@@ -31,6 +31,10 @@
 
 .atmos::before {
   background: var(--atmos-bg, none);
+  /* Fade the wash out before the box ends, so glows anchored near the bottom
+     edge (the hero's lower-left field) never leave a hard horizontal line. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
 }
 
 /* Faint dot grid, fading out before the content below the intro */
