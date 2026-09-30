@@ -13,7 +13,7 @@ const requirements=[[t.memory,t.memoryDetail],[t.processor,t.processorDetail],[t
 const platformMinimum=(platform:string,rows:typeof published)=>{
  const minimums=[...new Set(rows.map(row=>row.minOS))];
  if(!minimums.length)return '';
- if(platform==='windows')return `Windows ${minimums.map(value=>value==='10.0'?'10':value).join(' / ')} ${t.later} · x64 · Microsoft Edge WebView2 Runtime`;
+ if(platform==='windows')return `Windows ${minimums.map(value=>value==='10.0'?'10':value).join(' / ')} ${t.later} · x64`;
  if(platform==='macos')return `macOS ${minimums.join(' / ')} ${t.later} · ${t.apple}`;
  return `Ubuntu ${minimums.join(' / ')} ${t.later} · x64`;
 };

@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "releases": [
+    {
+      "version": "0.1.1",
+      "date": "2026-09-30",
+      "tag": "v0.1.1",
+      "platforms": ["Windows x64", "macOS arm64", "macOS x64", "Linux x64"],
+      "changes": [
+        "Preview canvas: crop images on a live preview and click PDF pages to choose them.",
+        "Resize, Edit image, Compress PDF, Protect PDF and Doc scanner now have the website's full options.",
+        "Tools accept only the file types they support.",
+        "Revoke Device checks your purchase email before sending a code and can be cancelled before payment.",
+        "Optional star ratings, new prices, and every new option in 19 languages."
+      ]
+    },
+    {
+      "version": "0.1.0",
+      "date": "2026-09-25",
+      "tag": "v0.1.0",
+      "platforms": ["Windows x64", "macOS arm64", "macOS x64", "Linux x64"],
+      "changes": [
+        "First public release for Windows, macOS (Apple Silicon and Intel) and Linux.",
+        "Local PDF and image tools, with actions in your file manager.",
+        "Automatic updates are off; install new versions manually."
+      ]
+    }
+  ]
+}

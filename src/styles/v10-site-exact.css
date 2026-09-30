@@ -779,7 +779,18 @@
 
 /* Releases and Redeem */
 :where([data-prototype-info]) .releases {
+  display: grid;
+  gap: var(--s-5);
   padding-bottom: var(--section-y);
+}
+
+:where([data-prototype-info]) .release__changes {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding-inline-start: 1.1em;
+  color: var(--ink-secondary);
+  list-style: disc;
 }
 
 :where([data-prototype-info]) .release {

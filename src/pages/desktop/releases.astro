@@ -1,11 +1,14 @@
 ---
 import DesktopLayout from '../../layouts/PrototypeDesktopLayout.astro';
 import releaseManifest from '../../../desktop/releases/manifest.json';
+import releaseHistory from '../../../desktop/releases/history.json';
 import icons from '../../data/prototypeIcons.json';
 const published=releaseManifest.releases.filter(release=>['active','maintenance'].includes(release.status)&&release.security==='clear');
-const versions=[...new Set(published.map(release=>release.version))].sort((a,b)=>b.localeCompare(a,undefined,{numeric:true}));
+const latest=[...new Set(published.map(release=>release.version))].sort((a,b)=>b.localeCompare(a,undefined,{numeric:true}))[0]??'';
+// History keeps every published version; the manifest lists only current downloads.
+const history=releaseHistory.releases.filter(release=>release.version.localeCompare(latest,undefined,{numeric:true})<=0).sort((a,b)=>b.version.localeCompare(a.version,undefined,{numeric:true}));
 ---
 <DesktopLayout title="SoraFiles Desktop release notes" description="Published release history for SoraFiles Desktop." path="/desktop/releases">
  <header class="container page-intro"><h1 class="t-h1 page-intro__title"><span class="line-reveal"><span class="line-reveal__inner">Release notes</span></span></h1></header>
- <section class="container releases" aria-label="Release notes">{versions.map(version=>{const rows=published.filter(release=>release.version===version);return <article class="panel release" aria-labelledby={`release-${version}`}><span class="tag tnum">{version}</span><h2 class="t-h2" id={`release-${version}`}>SoraFiles Desktop {version}</h2><p class="t-small">Published artifacts: {rows.map(release=>`${release.platform} ${release.arch}`).join(', ')}.</p><a class="btn btn--secondary btn--md" href="/desktop/download"><Fragment set:html={icons.Download.replace('class="','class="btn__icon ')}/><span class="btn__label">Download this release</span></a></article>})}</section>
+ <section class="container releases" aria-label="Release notes">{history.map(release=><article class="panel release" aria-labelledby={`release-${release.version}`}><span class="tag tnum">{release.version}</span><h2 class="t-h2" id={`release-${release.version}`}>SoraFiles Desktop {release.version}</h2><p class="t-small"><time datetime={release.date}>{release.date}</time> · {release.platforms.join(', ')}</p><ul class="release__changes">{release.changes.map(change=><li>{change}</li>)}</ul>{release.version===latest?<a class="btn btn--secondary btn--md" href="/desktop/download"><Fragment set:html={icons.Download.replace('class="','class="btn__icon ')}/><span class="btn__label">Download this release</span></a>:<a class="btn btn--tertiary btn--md" href={`https://github.com/Sora-Labs2026/SoraFiles/releases/tag/${release.tag}`} rel="noopener"><span class="btn__label">View on GitHub</span></a>}</article>)}</section>
 </DesktopLayout>

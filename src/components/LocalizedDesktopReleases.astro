@@ -1,16 +1,22 @@
 ---
 import DesktopLayout from '../layouts/PrototypeDesktopLayout.astro';
 import releaseManifest from '../../desktop/releases/manifest.json';
+import releaseHistory from '../../desktop/releases/history.json';
+import catalogs from '../i18n/desktop-web.json';
 import icons from '../data/prototypeIcons.json';
 import {localizedPath,type LocalePath} from '../i18n/config';
 import {desktopDownloadText} from '../i18n/desktopDownload';
 interface Props {locale?:LocalePath}
 const {locale='en'}=Astro.props;
 const t=desktopDownloadText(locale);
+const catalog:Record<string,string>=(catalogs as Record<string,Record<string,string>>)[locale]??{};
+const tr=(text:string)=>catalog[text]??text;
 const published=releaseManifest.releases.filter(release=>['active','maintenance'].includes(release.status)&&release.security==='clear');
-const versions=[...new Set(published.map(release=>release.version))].sort((a,b)=>b.localeCompare(a,undefined,{numeric:true}));
+const latest=[...new Set(published.map(release=>release.version))].sort((a,b)=>b.localeCompare(a,undefined,{numeric:true}))[0]??'';
+// History keeps every published version; the manifest lists only current downloads.
+const history=releaseHistory.releases.filter(release=>release.version.localeCompare(latest,undefined,{numeric:true})<=0).sort((a,b)=>b.version.localeCompare(a.version,undefined,{numeric:true}));
 ---
 <DesktopLayout title={`SoraFiles Desktop — ${t.releases}`} description={t.releases} path="/desktop/releases" {locale}>
  <header class="container page-intro"><h1 class="t-h1 page-intro__title"><span class="line-reveal"><span class="line-reveal__inner">{t.releases}</span></span></h1></header>
- <section class="container releases" aria-label={t.releases}>{versions.map(version=>{const rows=published.filter(release=>release.version===version);return <article class="panel release" aria-labelledby={`release-${version}`}><span class="tag tnum">{version}</span><h2 class="t-h2" id={`release-${version}`}>SoraFiles Desktop {version}</h2><p class="t-small">{t.published} {rows.map(release=>`${release.platform} ${release.arch}`).join(', ')}.</p><a class="btn btn--secondary btn--md" href={localizedPath(locale,'/desktop/download')}><Fragment set:html={icons.Download.replace('class="','class="btn__icon ')}/><span class="btn__label">{t.downloadRelease}</span></a></article>})}</section>
+ <section class="container releases" aria-label={t.releases}>{history.map(release=><article class="panel release" aria-labelledby={`release-${release.version}`}><span class="tag tnum">{release.version}</span><h2 class="t-h2" id={`release-${release.version}`}>SoraFiles Desktop {release.version}</h2><p class="t-small"><time datetime={release.date}>{release.date}</time> · {release.platforms.join(', ')}</p><ul class="release__changes">{release.changes.map(change=><li>{tr(change)}</li>)}</ul>{release.version===latest?<a class="btn btn--secondary btn--md" href={localizedPath(locale,'/desktop/download')}><Fragment set:html={icons.Download.replace('class="','class="btn__icon ')}/><span class="btn__label">{t.downloadRelease}</span></a>:<a class="btn btn--tertiary btn--md" href={`https://github.com/Sora-Labs2026/SoraFiles/releases/tag/${release.tag}`} rel="noopener"><span class="btn__label">{tr('View on GitHub')}</span></a>}</article>)}</section>
 </DesktopLayout>
