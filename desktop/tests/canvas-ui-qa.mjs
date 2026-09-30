@@ -77,7 +77,7 @@ try{
  await openTool('split pdf');await page.locator('.page-thumb[data-page-number="2"]').click();
  assert.equal(await page.getByLabel('Split into').inputValue(),'selected');assert.equal(await page.getByLabel('Pages to extract').inputValue(),'2');
  checks.push('Picking a page in Split switches to selected pages');
- await openTool('image converter');await choose('many');
+ await openTool('metadata');await choose('many');
  await page.locator('.thumb-grid li').first().waitFor();assert.equal(await page.locator('.thumb-grid li').count(),2);
  assert.equal(await page.locator('.canvas-frame').count(),0);checks.push('Several files show a thumbnail grid');
  await openTool('compress pdf');await choose('pdf');
@@ -102,6 +102,23 @@ try{
  await page.waitForFunction(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1)?.params.tool==='protect-pdf');
  assert.deepEqual((await lastProcess()).options,{password:'open-pass',ownerPassword:'owner-pass',allowPrinting:false,allowCopying:true,allowModifying:true});
  checks.push('Protect PDF: permissions need a separate permissions password and reach processing');
+ await openTool('doc scanner');await choose('image');
+ await page.getByLabel('Save as',{exact:true}).selectOption('jpg');
+ assert.equal(await page.getByLabel('Make text searchable (OCR)').isVisible(),false,'OCR applies only to PDF');
+ await page.getByLabel('Save as',{exact:true}).selectOption('pdf');
+ await page.getByLabel('Make text searchable (OCR)').check();await page.getByLabel('Text language',{exact:true}).selectOption('deu');
+ await page.getByRole('button',{name:'Process files',exact:true}).click();
+ await page.waitForFunction(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1)?.params.tool==='doc-scanner');
+ assert.deepEqual((await lastProcess()).options,{filter:'enhanced',rotation:0,paper:'a4',format:'pdf',searchable:true,language:'deu'});
+ checks.push('Doc scanner: export as PDF, JPG or PNG; searchable PDF with a chosen language');
+ await openTool('compress pdf');await choose('many');
+ assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='selectFiles').at(-1))).params,{formats:['PDF']},'the dialog offers only PDFs');
+ const rows=page.locator('.selected li');await rows.nth(1).waitFor();assert.equal(await rows.count(),2);
+ assert.match(await page.locator('.selected li.unsupported').innerText(),/One\.png[\s\S]*Not supported by this tool/);
+ await page.getByRole('button',{name:'Process files',exact:true}).click();
+ await page.waitForFunction(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1)?.params.tool==='compress-pdf'&&window.__hostCalls.filter(call=>call.method==='processFiles').length>0);
+ assert.deepEqual((await lastProcess()).selectionIds,['d'.repeat(32)],'only the PDF is processed');
+ checks.push('Tools accept only their formats: filtered dialog, unsupported files marked and never processed');
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({status:'PASS',checks},null,1));
 }catch(error){

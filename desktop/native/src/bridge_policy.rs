@@ -19,7 +19,9 @@ pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
     let Some(fields) = params.as_object() else { return false; };
     if params.to_string().len() > 16384 { return false; }
     match method {
-        "getState" | "selectFiles" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "supportDetails" | "checkUpdates" | "quit" | "cancelProcessing" | "processingStatus" | "openFullApp" | "closeQuickAction" => fields.is_empty(),
+        "getState" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "supportDetails" | "checkUpdates" | "quit" | "cancelProcessing" | "processingStatus" | "openFullApp" | "closeQuickAction" => fields.is_empty(),
+        // A tool may narrow the file dialog to the formats it accepts.
+        "selectFiles" => fields.is_empty() || (fields.len()==1 && params["formats"].as_array().is_some_and(|formats|!formats.is_empty()&&formats.len()<=16&&formats.iter().all(|format|format.as_str().is_some_and(|name|!crate::file_formats::extensions(name).is_empty())))),
         "previewSelection" => fields.len()==1 && selection_ids(&params["selectionIds"]),
         "ratingStatus" => fields.len()==1 && rating_subject(&params["subject"]),
         "ratingSubmit" => fields.len()==2 && rating_subject(&params["subject"]) && params["rating"].as_u64().is_some_and(|n|(1..=5).contains(&n)),
@@ -116,6 +118,9 @@ impl Drop for DialogLease<'_> { fn drop(&mut self) { self.0.store(false, Orderin
         assert!(valid_request("replacementCancel",&json!({}),false));
         assert!(valid_request("previewSelection",&json!({"selectionIds":["a".repeat(32)]}),false));
         assert!(valid_request("ratingStatus",&json!({"subject":"compress-pdf"}),false));
+        assert!(valid_request("selectFiles",&json!({}),false));
+        assert!(valid_request("selectFiles",&json!({"formats":["PDF","JPG"]}),false));
+        for params in [json!({"formats":[]}),json!({"formats":["EXE"]}),json!({"formats":["PDF"],"path":"C:/"}),json!({"formats":"PDF"})]{assert!(!valid_request("selectFiles",&params,false));}
         assert!(valid_request("ratingSubmit",&json!({"subject":"sorafiles","rating":5}),false));
         for (method,params) in [("ratingSubmit",json!({"subject":"compress-pdf","rating":0})),("ratingSubmit",json!({"subject":"compress-pdf","rating":6})),("ratingSubmit",json!({"subject":"compress-pdf","rating":4.5})),("ratingSubmit",json!({"subject":"../x","rating":5})),("ratingStatus",json!({"subject":"compress-pdf","rater":"forged"})),("ratingSubmit",json!({"subject":"compress-pdf","rating":5,"average":5}))]{assert!(!valid_request(method,&params,false));}
         for params in [json!({"selectionIds":[]}),json!({"selectionIds":["C:/secret.png"]}),json!({"selectionIds":["a".repeat(32)],"paths":["C:/x"]}),json!({})]{assert!(!valid_request("previewSelection",&params,false));}

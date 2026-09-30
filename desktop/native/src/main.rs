@@ -14,6 +14,7 @@ mod outputs;
 mod job_status;
 mod checkout;
 mod window_slot;
+mod file_formats;
 #[cfg(debug_assertions)] mod background_smoke;
 #[cfg(windows)] mod file_pins;
 #[cfg(windows)] mod process_job;
@@ -383,13 +384,16 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
             }
             Ok(json!({"received":true}))
         }
-        "selectFiles" if params.as_object().unwrap().is_empty() => {
+        "selectFiles" => {
+            let filter:Vec<&'static str>=params["formats"].as_array().map(|formats|formats.iter().filter_map(Value::as_str).flat_map(file_formats::extensions).copied().collect()).unwrap_or_default();
             let handle=app.clone();
             tauri::async_runtime::spawn_blocking(move || {
                 let state=handle.state::<HostState>();
                 let _lease=DialogLease::acquire(&state.dialog_busy)?;
                 if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose files again.".into()); }
-                let files=handle.dialog().file().set_title(locale::dialog_text(&app_locale(&handle),"Choose files for SoraFiles")).blocking_pick_files().unwrap_or_default();
+                let mut dialog=handle.dialog().file().set_title(locale::dialog_text(&app_locale(&handle),"Choose files for SoraFiles"));
+                if !filter.is_empty(){dialog=dialog.add_filter(locale::dialog_text(&app_locale(&handle),"Supported files"),&filter);}
+                let files=dialog.blocking_pick_files().unwrap_or_default();
                 if state.window_generation.load(Ordering::SeqCst)!=generation { return Err("The original window was closed. Choose files again.".into()); }
                 let paths=files.into_iter().filter_map(|file| file.into_path().ok()).collect();
                 let mut selection=state.selection.lock().map_err(|_| "Selection unavailable")?;

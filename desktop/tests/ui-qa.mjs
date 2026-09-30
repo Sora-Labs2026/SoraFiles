@@ -11,7 +11,7 @@ await page.addInitScript(()=>{
  window.__hostDelay=0;window.__folderSelected=true;window.__selectionRejected=false;window.__allowSyntheticActivation=false;
  const deliver=data=>listeners.forEach(fn=>fn({data}));
  const reply=message=>{calls.push(message);let result,ok=true,error;
-  switch(message.method){case 'supportDetails':result={supportDeviceId:'a'.repeat(43)};break;case 'getState':result=settings;break;case 'selectFiles':result=[{id:'pdf-a',name:'Invoice <private> & sample.pdf',format:'PDF',validated:true,bytes:12345},{id:'pdf-b',name:'Second document.pdf',format:'PDF',validated:true,bytes:12345}];break;case 'saveSettings':Object.assign(settings,message.params);result=settings;break;case 'chooseFolder':result={selected:true};break;case 'activate':case 'startTrial':ok=false;error='License activation is not configured in this development build.';break;case 'checkUpdates':result={message:'No Desktop releases are published yet.'};break;default:ok=false;error='Unavailable';}
+  switch(message.method){case 'supportDetails':result={supportDeviceId:'a'.repeat(43)};break;case 'getState':result=settings;break;case 'selectFiles':result=window.__selectionFiles||[{id:'pdf-a',name:'Invoice <private> & sample.pdf',format:'PDF',validated:true,bytes:12345},{id:'pdf-b',name:'Second document.pdf',format:'PDF',validated:true,bytes:12345}];break;case 'saveSettings':Object.assign(settings,message.params);result=settings;break;case 'chooseFolder':result={selected:true};break;case 'activate':case 'startTrial':ok=false;error='License activation is not configured in this development build.';break;case 'checkUpdates':result={message:'No Desktop releases are published yet.'};break;default:ok=false;error='Unavailable';}
   if(message.method==='releaseSelection'){ok=true;error=undefined;result={released:true};}
   if(message.method==='chooseFolder')result={selected:window.__folderSelected};
   if(message.method==='selectFiles')result={files:result,rejected:window.__selectionRejected};
@@ -22,6 +22,9 @@ await page.addInitScript(()=>{
  };
  window.chrome=window.chrome||{};Object.defineProperty(window.chrome,'webview',{value:{postMessage:reply,addEventListener:(_name,fn)=>listeners.push(fn)}});
 });
+// Tools accept only their own formats; image-only steps add a photo first.
+const addPhoto=async()=>{await page.evaluate(()=>{window.__selectionFiles=[{id:'photo-a',name:'Photo.png',format:'PNG',validated:true,bytes:4096}];});await page.locator('[data-action="select"]').first().click();await page.locator('[data-remove="photo-a"]').waitFor();await page.evaluate(()=>{window.__selectionFiles=null;});};
+const removePhoto=async()=>{await page.locator('[data-remove="photo-a"]').click();await page.locator('[data-remove="photo-a"]').waitFor({state:'detached'});};
 try{
  await page.goto('http://127.0.0.1:'+server.address().port);await page.getByRole('heading',{name:'File tools for your desktop.'}).waitFor();
  assert.equal(await page.locator('[data-tool]').count(),6);checks.push('Home shows six common tools');
@@ -159,9 +162,11 @@ try{
  assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.options,{direction:'rtl'});
  checks.push('Word text conversion exposes direction and honest scan/layout limits');
  await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('heic');await page.locator('[data-tool="heic-to-jpg"]').click();
+ await page.evaluate(()=>{window.__selectionFiles=[{id:'heic-a',name:'Photo.heic',format:'HEIC',validated:true,bytes:4096}];});await page.locator('[data-action="select"]').first().click();await page.locator('[data-remove="heic-a"]').waitFor();await page.evaluate(()=>{window.__selectionFiles=null;});
  await page.getByLabel('JPG quality',{exact:true}).fill('92');assert.match(await page.locator('.processing-options').innerText(),/primary photo/);
  await page.getByRole('button',{name:'Process files',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
- assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.options,{quality:92});
+ const heicCall=(await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params;assert.deepEqual(heicCall.options,{quality:92});assert.deepEqual(heicCall.selectionIds,['heic-a'],'only the HEIC photo is sent to HEIC to JPG');
+ await page.locator('[data-remove="heic-a"]').click();await page.locator('[data-remove="heic-a"]').waitFor({state:'detached'});
  checks.push('HEIC conversion declares primary-photo limits and submits bounded JPG quality');
  await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('compress pdf');await page.locator('[data-tool="compress-pdf"]').click();
  assert.match(await page.locator('.processing-options').innerText(),/unchanged copy/);
@@ -174,15 +179,19 @@ try{
  assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.options,{});
  checks.push('PDF repair explains recoverability limits before submitting a rewrite');
  await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('scanner');await page.locator('[data-tool="doc-scanner"]').click();
- assert.match(await page.locator('.processing-options').innerText(),/perspective cropping and searchable text are not available/);
+ await page.evaluate(()=>{window.__selectionFiles=[{id:'scan-a',name:'Page 1.jpg',format:'JPG',validated:true,bytes:4096},{id:'scan-b',name:'Page 2.png',format:'PNG',validated:true,bytes:4096}];});await page.locator('[data-action="select"]').first().click();await page.locator('[data-remove="scan-b"]').waitFor();await page.evaluate(()=>{window.__selectionFiles=null;});
+ assert.match(await page.locator('.processing-options').innerText(),/Camera capture and perspective cropping are not available/);
  await page.getByLabel('Scan filter',{exact:true}).selectOption('receipt');await page.getByLabel('Rotate clockwise',{exact:true}).selectOption('90');
  await page.getByRole('button',{name:'Process files',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
- assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.options,{filter:'receipt',rotation:90,paper:'a4'});
+ assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.options,{filter:'receipt',rotation:90,paper:'a4',format:'pdf'});
+ assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.selectionIds,['scan-a','scan-b'],'only the photos are scanned');
+ for(const id of ['scan-a','scan-b']){await page.locator(`[data-remove="${id}"]`).click();await page.locator(`[data-remove="${id}"]`).waitFor({state:'detached'});}
  checks.push('Scanner exposes bounded image-only processing, filters, rotation and paper size');
- await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('remove background');await page.locator('[data-tool="remove-background"]').click();
+ await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('remove background');await page.locator('[data-tool="remove-background"]').click();await addPhoto();
  assert.match(await page.locator('.processing-options').innerText(),/existing transparency preserved/);
  await page.getByRole('button',{name:'Process files',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
  assert.deepEqual((await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.options,{});
+ await removePhoto();
  checks.push('Background removal explains local input limits, transparency and mask review');
  await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('pdf to jpg');await page.locator('[data-tool="pdf-to-jpg"]').click();
  await page.getByLabel('Pages to export',{exact:true}).fill('3, 1');await page.getByLabel('JPG quality',{exact:true}).fill('82');
@@ -191,12 +200,13 @@ try{
  await page.getByLabel('Pages to export',{exact:true}).fill('3-1');const rasterCalls=await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').length);
  await page.getByRole('button',{name:'Process files',exact:true}).click();await page.getByRole('alert').waitFor();assert.equal(await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').length),rasterCalls);
  checks.push('PDF image export exposes quality and ordered ranges; invalid ranges never invoke processing');
- await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('edit image');await page.locator('[data-tool="edit-image"]').click();
+ await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('edit image');await page.locator('[data-tool="edit-image"]').click();await addPhoto();
  const disclosure=page.locator('summary',{hasText:'Colour and detail'});await disclosure.focus();await page.keyboard.press('Enter');
  await page.getByLabel('Brightness',{exact:true}).fill('35');await page.getByLabel('Sharpness',{exact:true}).fill('20');
  await page.getByRole('button',{name:'Process files',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
  const adjustments=(await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.options.adjustments;assert.equal(adjustments.brightness,35);assert.equal(adjustments.sharpness,20);assert.equal(Object.keys(adjustments).length,10);
  await disclosure.click();await page.getByLabel('Brightness',{exact:true}).fill('45');await page.getByRole('button',{name:'Reset colour and detail'}).click();assert.equal(await page.getByLabel('Brightness',{exact:true}).inputValue(),'0');
+ await removePhoto();
  checks.push('Image adjustment disclosure works with keyboard; all ten controls reach processing and reset is local');
  await page.setViewportSize(scaledViewport);await page.evaluate(()=>document.documentElement.style.zoom='2');
  for(const tool of ['merge-pdf','split-pdf','rotate-pdf','metadata-remover','pdf-to-word','pdf-to-jpg','edit-image','watermark-pdf','page-numbers']){

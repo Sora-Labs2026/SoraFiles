@@ -15,7 +15,7 @@ async function fixture(viewport,theme,tool='watermark-pdf'){
  const page=await browser.newPage({viewport});page.setDefaultTimeout(5000);page.on('pageerror',error=>errors.push(error.message));
  await page.addInitScript(({theme,tool})=>{
   const callbacks=new Map();window.__SORA_QUICK_ACTION__=true;window.__calls=[];window.__complete=null;window.__emit=(name,payload)=>callbacks.get(name)?.({payload});
-  const settings={quickAction:true,platform:'windows',theme,output:'source',license:'trial',plan:'trial',expiresAt:1900000000,files:[{id:'selected-a',name:'Long selected <private> file name with spaces.pdf',format:'PDF',validated:true,bytes:12345}],launchIntent:{action:{id:tool,tool,options:{},direct:false,requiresUI:true}}};
+  const settings={quickAction:true,platform:'windows',theme,output:'source',license:'trial',plan:'trial',expiresAt:1900000000,files:[tool==='edit-image'?{id:'selected-a',name:'Long selected <private> photo name with spaces.png',format:'PNG',validated:true,bytes:12345}:{id:'selected-a',name:'Long selected <private> file name with spaces.pdf',format:'PDF',validated:true,bytes:12345}],launchIntent:{action:{id:tool,tool,options:{},direct:false,requiresUI:true}}};
   window.__TAURI__={event:{listen:async(name,callback)=>{callbacks.set(name,callback);return ()=>callbacks.delete(name);}},core:{invoke:async(command,{method,params})=>{
    if(command!=='host_request')throw Error('Unexpected command');window.__calls.push({method,params});
    if(method==='getState')return settings;

@@ -311,3 +311,6 @@ button.page-thumb[aria-pressed=true] { border-color:var(--action); background:va
 .rating-prompt-status { flex-basis:100%; margin:0!important; min-height:0; }
 .rating-prompt-status:empty { display:none; }
 @media (prefers-reduced-motion:reduce) { .rating-star span { transition:none; } }
+/* Files the current tool cannot use: listed, clearly marked, never processed. */
+.selected li.unsupported { opacity:.62; }
+.unsupported-note { color:var(--error-text); font-weight:600; }
