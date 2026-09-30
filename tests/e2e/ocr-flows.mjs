@@ -5,7 +5,7 @@ import { baseUrl, ensureAstroServer } from './run-server.mjs';
 
 test('OCR stays a dedicated localized, privacy-first tool', async () => {
   await ensureAstroServer();
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ executablePath: process.env.SORA_BROWSER_PATH });
   const page = await browser.newPage();
 
   try {

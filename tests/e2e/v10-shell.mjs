@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 const base=process.env.SORA_BASE_URL??'http://127.0.0.1:4396';
 const out='.artifacts/v10-review';await mkdir(out,{recursive:true});
-const browser=await chromium.launch({channel:'msedge'});
+const browser=await chromium.launch({executablePath:process.env.SORA_BROWSER_PATH});
 const results=[];const errors=[];
 try{
  for(const theme of ['light','dark']){
@@ -22,13 +22,17 @@ try{
     results.push({route,width,theme,overflow:false});
    }
    await page.goto(base+'/');
+   // The home grid starts collapsed; "Show all" reveals every tool.
+   const showAll=async()=>{const button=page.locator('[data-show-all]');if(await button.isVisible())await button.click();};
+   assert.ok(await page.locator('[data-tool-search-item]:visible').count()>0);
+   await showAll();
    assert.equal(await page.locator('[data-tool-search-item]:visible').count(),26);
    await page.locator('[data-live-tool-search]').fill('merge');
    assert.equal(await page.locator('[data-tool-search-item]:visible').count(),1);
    assert.match(await page.locator('[data-tool-search-item]:visible a').getAttribute('href'),/merge-pdf/);
    await page.locator('[data-live-tool-search]').fill('no-such-tool-xyz');
    await page.locator('[data-tools-empty]').waitFor({state:'visible'});
-   await page.locator('[data-reset-search]').click();
+   await page.locator('[data-reset-search]').click();await showAll();
    assert.equal(await page.locator('[data-tool-search-item]:visible').count(),26);
    await page.locator('[data-home-filter="image"]').click();
    assert.ok(await page.locator('[data-tool-search-item]:visible').count()>0);
@@ -37,9 +41,11 @@ try{
    assert.equal(await page.locator('[data-preview-scene="rotate"]').isVisible(),true);
    assert.equal(await page.locator('[data-hero-visualization]').getAttribute('data-running'),'false','Reduced motion');
    await page.goto(base+'/desktop/pricing');
-   await page.locator('[data-billing-period="lifetime"]').click();
-   assert.equal(await page.locator('[data-plan-period="lifetime"]:visible').count(),2);
-   assert.equal(await page.locator('[data-plan-period="monthly"]:visible').count(),0);
+   // One billing radio group switches both plans between monthly, annual and lifetime prices.
+   assert.equal(await page.locator('[data-testid="plan-personal-price"]').innerText(),'$1.99');
+   await page.locator('[data-testid="billing-period-lifetime"]').check({force:true});
+   assert.equal(await page.locator('[data-testid="plan-personal-price"]').innerText(),'$99.99');
+   assert.equal(await page.locator('[data-testid="plan-team-price"]').innerText(),'$399.99');
    await context.close();
   }
  }

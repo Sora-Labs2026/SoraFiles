@@ -60,7 +60,7 @@
     "test:ocr": "node tests/e2e/ocr-flows.mjs",
     "test:ocr:languages": "node tests/e2e/ocr-flows.mjs --all-languages",
     "test:unit": "node scripts/run-unit-tests.mjs",
-    "test:site": "npm run build && node tests/e2e/site-shell.mjs",
+    "test:site": "npm run build && node tests/e2e/v10-shell.mjs",
     "test:ads": "node tests/e2e/monetization-layout.mjs",
     "test:resilience": "node scripts/optimizer/visual-resilience.mjs --stress",
     "astro": "astro"
