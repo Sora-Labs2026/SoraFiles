@@ -10,11 +10,17 @@ import { summaryText, withAggregateRating } from '../../src/lib/ratings/core.js'
 async function database() {
   const db = new DatabaseSync(':memory:');
   for (const file of ['migrations/0001_popularity.sql', 'migrations/0002_ratings.sql']) db.exec(await readFile(file, 'utf8'));
-  const prepare = (sql) => { const statement = db.prepare(sql); return { bind: (...args) => ({
-    first: async () => statement.get(...args) ?? null,
-    run: async () => statement.run(...args),
-    all: async () => ({ results: statement.all(...args) }),
-  }) }; };
+  // D1 binds ?NNN by number, even when one is repeated. Older node:sqlite
+  // binds positionally, so expand each ?N into a plain ? with its own value.
+  const prepare = (sql) => {
+    const order = [...sql.matchAll(/\?(\d+)/g)].map((match) => Number(match[1]) - 1);
+    const statement = db.prepare(sql.replace(/\?\d+/g, '?'));
+    return { bind: (...values) => { const args = order.length ? order.map((index) => values[index]) : values; return {
+      first: async () => statement.get(...args) ?? null,
+      run: async () => statement.run(...args),
+      all: async () => ({ results: statement.all(...args) }),
+    }; } };
+  };
   return { raw: db, env: { POPULARITY_DB: { prepare } } };
 }
 const rater = (n) => `rater-${String(n).padStart(2, '0')}-abcdefghijklmnopqrstuv`;
