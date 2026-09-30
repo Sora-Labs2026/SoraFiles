@@ -91,6 +91,17 @@ try{
  await page.waitForFunction(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1)?.params.tool==='compress-pdf');
  assert.deepEqual((await lastProcess()).options,{strength:100,smallest:true});
  checks.push('Compress PDF: strength slider shows the level name; smaller-file option unlocks only at 100');
+ await openTool('protect pdf');
+ await page.getByLabel('Opening password',{exact:true}).fill('open-pass');await page.getByLabel('Confirm password',{exact:true}).fill('open-pass');
+ await page.getByLabel('Allow printing',{exact:true}).uncheck();
+ await page.getByRole('button',{name:'Process files',exact:true}).click();
+ await page.getByRole('alert').waitFor();assert.match(await page.getByRole('alert').innerText(),/permissions password/);
+ await page.getByLabel('Opening password',{exact:true}).fill('open-pass');await page.getByLabel('Confirm password',{exact:true}).fill('open-pass');
+ await page.getByLabel('Allow printing',{exact:true}).uncheck();await page.getByLabel('Permissions password',{exact:true}).fill('owner-pass');
+ await page.getByRole('button',{name:'Process files',exact:true}).click();
+ await page.waitForFunction(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1)?.params.tool==='protect-pdf');
+ assert.deepEqual((await lastProcess()).options,{password:'open-pass',ownerPassword:'owner-pass',allowPrinting:false,allowCopying:true,allowModifying:true});
+ checks.push('Protect PDF: permissions need a separate permissions password and reach processing');
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({status:'PASS',checks},null,1));
 }catch(error){
