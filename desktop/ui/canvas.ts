@@ -1,10 +1,12 @@
 import {host} from './host';
 import {syncProcessingOptions} from './processing';
+import {t} from './localization';
 
 // Workspace canvas: image preview with a movable crop frame, PDF page grid
 // with click-to-select pages, or a thumbnail grid for several files. Previews
 // are small data URLs made by the native preview component; the UI never
-// reads the files themselves.
+// reads the files themselves. Captions keep each fixed phrase apart from the
+// numbers beside it, so the exact-match catalog can translate every phrase.
 type ImagePreview={index:number;kind:'image';src:string;width:number;height:number;sourceWidth:number;sourceHeight:number};
 type PdfPreview={index:number;kind:'pdf';pages:number;thumbs:{page:number;src:string;width:number;height:number}[]};
 type Preview=ImagePreview|PdfPreview;
@@ -56,37 +58,37 @@ export function cropSize(files:FileItem[]){
 
 function cropCaption(image:ImagePreview,files:FileItem[],tool:string){
  const size=cropSize(files)!;
- return `${image.sourceWidth} × ${image.sourceHeight} px${CROP_TOOLS.has(tool)&&(size.width!==image.sourceWidth||size.height!==image.sourceHeight)?` · <strong>Crop ${size.width} × ${size.height} px</strong>`:''}`;
+ return `<bdi>${image.sourceWidth} × ${image.sourceHeight} px</bdi>${CROP_TOOLS.has(tool)&&(size.width!==image.sourceWidth||size.height!==image.sourceHeight)?` · <strong><span>${t('Crop')}</span> <bdi>${size.width} × ${size.height} px</bdi></strong>`:''}`;
 }
 function imageStage(image:ImagePreview,file:FileItem,tool:string,files:FileItem[]){
  const cropping=CROP_TOOLS.has(tool);
- const box=cropping?`<div class="crop-box" tabindex="0" role="group" aria-label="Crop area. Drag to move it, drag a corner to resize, or use the arrow keys." style="${boxStyle()}">${['tl','tr','br','bl'].map(handle=>`<span class="crop-handle" data-handle="${handle}" aria-hidden="true"></span>`).join('')}</div>`:'';
- return `<div class="canvas-stage"><div class="canvas-frame${cropping?' is-cropping':''}" style="aspect-ratio:${image.width}/${image.height};width:min(100%,calc(56vh * ${image.width} / ${image.height}))"><img src="${image.src}" alt="Preview of ${escape(file.name)}" draggable="false">${box}</div><p class="canvas-caption" data-crop-caption>${cropCaption(image,files,tool)}</p></div>`;
+ const box=cropping?`<div class="crop-box" tabindex="0" role="group" aria-label="${escape(t('Crop area. Drag to move it, drag a corner to resize, or use the arrow keys.'))}" style="${boxStyle()}">${['tl','tr','br','bl'].map(handle=>`<span class="crop-handle" data-handle="${handle}" aria-hidden="true"></span>`).join('')}</div>`:'';
+ return `<div class="canvas-stage"><div class="canvas-frame${cropping?' is-cropping':''}" style="aspect-ratio:${image.width}/${image.height};width:min(100%,calc(56vh * ${image.width} / ${image.height}))"><img src="${image.src}" alt="${escape(t('Preview'))}: ${escape(file.name)}" draggable="false">${box}</div><p class="canvas-caption" data-crop-caption>${cropCaption(image,files,tool)}</p></div>`;
 }
 function pageGrid(preview:PdfPreview,tool:string){
  const picking=PAGE_TOOLS.has(tool);
  const thumbs=preview.thumbs.map(thumb=>picking
-  ?`<button type="button" class="page-thumb" data-page-number="${thumb.page}" aria-pressed="${pickedPages.has(thumb.page)}" aria-label="Page ${thumb.page}"><img src="${thumb.src}" alt="" draggable="false"><span>${thumb.page}</span></button>`
-  :`<figure class="page-thumb"><img src="${thumb.src}" alt="Page ${thumb.page}" draggable="false"><figcaption>${thumb.page}</figcaption></figure>`).join('');
- const more=preview.pages>preview.thumbs.length?` Showing the first ${preview.thumbs.length} of ${preview.pages} pages.`:'';
- return `<p class="canvas-caption">${preview.pages} ${preview.pages===1?'page':'pages'}.${picking?' Click pages to choose them, or type page numbers in the options.':''}${more}</p><div class="page-grid${picking?' is-picking':''}">${thumbs}</div>`;
+  ?`<button type="button" class="page-thumb" data-page-number="${thumb.page}" aria-pressed="${pickedPages.has(thumb.page)}" aria-label="${escape(t('Page'))} ${thumb.page}"><img src="${thumb.src}" alt="" draggable="false"><span>${thumb.page}</span></button>`
+  :`<figure class="page-thumb"><img src="${thumb.src}" alt="${escape(t('Page'))} ${thumb.page}" draggable="false"><figcaption>${thumb.page}</figcaption></figure>`).join('');
+ const more=preview.pages>preview.thumbs.length?` · <span>${t('Preview shows the first pages only.')}</span> <bdi>${preview.thumbs.length} / ${preview.pages}</bdi>`:'';
+ return `<p class="canvas-caption"><span>${t('Pages')}</span> <bdi>${preview.pages}</bdi>${more}${picking?`<br><span>${t('Click pages to choose them, or type page numbers in the options.')}</span>`:''}</p><div class="page-grid${picking?' is-picking':''}">${thumbs}</div>`;
 }
 function fileGrid(files:FileItem[]){
  return `<ul class="thumb-grid">${files.slice(0,24).map((file,index)=>{
   const preview=previews.get(file.id);
   const src=preview?.kind==='image'?preview.src:preview?.kind==='pdf'?preview.thumbs[0]?.src:undefined;
-  return `<li><figure>${src?`<img src="${src}" alt="" draggable="false">`:`<span class="thumb-empty" aria-hidden="true">${escape(file.format||'File')}</span>`}<figcaption><span class="thumb-order">${index+1}</span><bdi data-user-text>${escape(file.name)}</bdi>${preview?.kind==='pdf'?` · ${preview.pages} p.`:''}</figcaption></figure></li>`;
- }).join('')}</ul>${files.length>24?`<p class="canvas-caption">Showing the first 24 of ${files.length} files.</p>`:''}`;
+  return `<li><figure>${src?`<img src="${src}" alt="" draggable="false">`:`<span class="thumb-empty" aria-hidden="true">${escape(file.format||'File')}</span>`}<figcaption><span class="thumb-order">${index+1}</span><bdi data-user-text>${escape(file.name)}</bdi>${preview?.kind==='pdf'?` · <span>${t('Pages')}</span> <bdi>${preview.pages}</bdi>`:''}</figcaption></figure></li>`;
+ }).join('')}</ul>${files.length>24?`<p class="canvas-caption"><span>${t('Preview shows the first 24 files only.')}</span> <bdi>24 / ${files.length}</bdi></p>`:''}`;
 }
 export function canvasView(tool:string,files:FileItem[]){
  if(!files.length)return '';
  let inner='';
- if(loading)inner='<div class="canvas-loading" role="status"><span class="canvas-spinner" aria-hidden="true"></span>Loading preview…</div>';
+ if(loading)inner=`<div class="canvas-loading" role="status"><span class="canvas-spinner" aria-hidden="true"></span>${t('Loading preview…')}</div>`;
  else if(files.length===1){
   const preview=previews.get(files[0].id);
   inner=preview?.kind==='image'?imageStage(preview,files[0],tool,files):preview?.kind==='pdf'?pageGrid(preview,tool):'';
  }else if(previews.size)inner=fileGrid(files);
- return inner?`<section id="workspace-canvas" class="canvas" aria-label="Preview">${inner}</section>`:'<section id="workspace-canvas" class="canvas" hidden></section>';
+ return inner?`<section id="workspace-canvas" class="canvas" aria-label="${escape(t('Preview'))}">${inner}</section>`:'<section id="workspace-canvas" class="canvas" hidden></section>';
 }
 
 // ---- Crop frame ----
