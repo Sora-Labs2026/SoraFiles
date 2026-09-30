@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "target": "x86_64-pc-windows-msvc",
+  "version": "0.1.0",
+  "commit": null,
+  "run": null,
+  "builtAt": "2026-09-17T16:46:30.633Z",
+  "publicRelease": false,
+  "artifacts": [
+    {
+      "file": "nsis/SoraFiles Desktop_0.1.0_x64-setup.exe",
+      "bytes": 114970410,
+      "sha256": "e42d4f0f00b97d60385e11efc0b92c3c307a61f7187ad2320db9a67725ee3799"
+    }
+  ],
+  "remaining": "Native runtime, full processing, licensing, install/uninstall and release clearance"
+}

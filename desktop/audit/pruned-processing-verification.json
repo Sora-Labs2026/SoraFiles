@@ -1,0 +1,24 @@
+{
+  "platform": "win32",
+  "arch": "x64",
+  "status": "PASS",
+  "checks": [
+    "isolated bundled runtime and current-platform dependencies",
+    "runtime and OCR license notices verified",
+    "private-pipe synthetic entitlement",
+    "PDF structure compression decoded",
+    "PDF damaged-offset repair decoded",
+    "scanner preserves selected page count",
+    "background model removes known background and keeps subject alpha",
+    "PDF rotation decoded",
+    "Word DOCX text verified",
+    "PDF metadata properties removed",
+    "PDF tables preserve text cells without formulas",
+    "batch PDFs decoded with separate collision-safe names",
+    "image resize decoded",
+    "PDF image decoded with page dimensions",
+    "OCR with bundled language data recognizes invoice number",
+    "protected PDF requires its password"
+  ],
+  "scope": "No installed-app, OS key-store, remaining engines or live license certification"
+}

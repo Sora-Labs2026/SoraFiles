@@ -1,0 +1,169 @@
+{
+  "privacy": {
+    "eyebrow": "Privacy Policy",
+    "title": "Private by architecture, not by promise.",
+    "intro": "How SoraFiles handles your data — written to match exactly how the app behaves. Last reviewed: 2026.",
+    "sections": [
+      {
+        "n": "01",
+        "title": "Local file processing",
+        "body": [
+          "Image, HEIC, PDF, ZIP, and DOCX tools process selected files inside this browser. File contents and results are not uploaded to a SoraFiles processing server."
+        ]
+      },
+      {
+        "n": "02",
+        "title": "Temporary browser data",
+        "body": [
+          "Previews and download URLs exist temporarily in the open page and are released when a file is removed or the page is closed."
+        ]
+      },
+      {
+        "n": "03",
+        "title": "Analytics",
+        "body": [
+          "Ahrefs Web Analytics and Google Analytics may process page activity, device information, and approximate location, but not the contents of files processed locally. Their scripts load asynchronously and do not receive file contents. Neither runs on license checkout-return pages."
+        ]
+      },
+      {
+        "n": "04",
+        "title": "Contact form",
+        "body": [
+          "Your name, email address, subject, message, and optional attachment are sent through FormSubmit for delivery to SoraFiles support. Do not attach confidential files."
+        ]
+      },
+      {
+        "n": "05",
+        "title": "Public source and contributions",
+        "body": [
+          "The SoraFiles application source is published at github.com/Sora-Labs2026/SoraFiles under the GNU Affero General Public License v3.0. Local file processing does not send selected files to GitHub. Information or attachments that you voluntarily post in a public GitHub issue, discussion, or pull request are publicly visible, so do not submit confidential files or personal data there."
+        ]
+      },
+      {
+        "n": "06",
+        "title": "Anonymous tool-usage ranking",
+        "body": [
+          "After a tool successfully finishes, SoraFiles sends only the tool identifier and a success event to first-party Cloudflare storage. Daily totals are used to rank Popular Tools. File names, sizes, contents, outputs, IP addresses, user-agent strings, and persistent user identifiers are never stored in this dataset. Daily counts older than 120 days are deleted."
+        ]
+      }
+    ]
+  },
+  "terms": {
+    "eyebrow": "Terms of Service",
+    "title": "Fair terms, plainly written.",
+    "intro": "The rules for using SoraFiles. Last reviewed: 2026.",
+    "sections": [
+      {
+        "n": "01",
+        "title": "The service",
+        "body": [
+          "SoraFiles provides free browser-based PDF and image tools, provided as-is without warranties."
+        ]
+      },
+      {
+        "n": "02",
+        "title": "Your files",
+        "body": [
+          "You retain all rights to your files and to the outputs you generate. SoraFiles claims no ownership over either, and you are responsible for having the right to process the files you select."
+        ]
+      },
+      {
+        "n": "03",
+        "title": "Sensible use",
+        "body": [
+          "Use the tools lawfully and don't attempt to disrupt the service."
+        ]
+      },
+      {
+        "n": "04",
+        "title": "Realistic expectations",
+        "body": [
+          "Browser and device capabilities affect processing; conversions can alter characteristics such as layout or fidelity. Review outputs before relying on them for anything important."
+        ]
+      },
+      {
+        "n": "05",
+        "title": "Changes",
+        "body": [
+          "Material changes to these terms will be posted on this page."
+        ]
+      }
+    ]
+  },
+  "about": {
+    "eyebrow": "About SoraFiles",
+    "title": "One web app. Private by architecture.",
+    "intro": "SoraFiles is a privacy-first web application built by Sora Labs for working with files directly in the browser. Supported file processing happens locally on your device.",
+    "features": [
+      {
+        "title": "Files stay on your device",
+        "body": [
+          "Processing happens in your browser — files aren't uploaded for processing."
+        ]
+      },
+      {
+        "title": "Fast by Design",
+        "body": [
+          "Your device does the work, without waiting for a file upload."
+        ]
+      },
+      {
+        "title": "Open by Default",
+        "body": [
+          "You can view the code behind SoraFiles on the Open Source page."
+        ]
+      }
+    ],
+    "sections": [
+      {
+        "n": "01",
+        "title": "Why we exist",
+        "body": [
+          "Most online file tools ask you to upload documents to someone else's server. SoraFiles does the work locally instead — contracts, records, and photos stay on the device they're already on."
+        ]
+      },
+      {
+        "n": "02",
+        "title": "What you can expect",
+        "body": [
+          "No accounts, no watermarks, and no account-based usage limits. Processing capacity depends on your device and browser. Your original files are never modified — every tool creates a separate download you can inspect before relying on it."
+        ]
+      },
+      {
+        "n": "03",
+        "title": "Honest limitations",
+        "body": [
+          "Browsers and devices differ. Very large files or unusual formats may hit memory limits, and conversions can involve trade-offs, which each tool discloses before you process."
+        ]
+      }
+    ]
+  },
+  "open-source": {
+    "eyebrow": "Open Source",
+    "title": "Standing on open shoulders.",
+    "intro": "SoraFiles is built with open-source browser engines. Key libraries:",
+    "sections": [
+      {
+        "n": "01",
+        "title": "Core libraries",
+        "body": [
+          "PDF.js, pdf-lib, qpdf WebAssembly (ISC), GhostPDL/Ghostscript WebAssembly (AGPL-3.0-or-later), jSquash MozJPEG/OxiPNG/WebP codecs (Apache-2.0), jsPDF, Mammoth.js, docx, fflate, libheif, UTIF, and ag-psd power supported PDF, document, archive, HEIC, TIFF, and PSD workflows. Each library remains subject to its respective upstream license and copyright terms. ZetaJS (MIT) · LibreOffice WebAssembly (MPL-2.0 / LGPL-3.0+) · IMG.LY Background Removal (AGPL-3.0) · ONNX Runtime Web (MIT) · SheetJS CE (Apache-2.0)."
+        ]
+      },
+      {
+        "n": "02",
+        "title": "How this supports local processing",
+        "body": [
+          "The library code is delivered as part of the website, but files selected in supported tools are processed on your device and are not sent to a SoraFiles processing server."
+        ]
+      },
+      {
+        "n": "03",
+        "title": "Application source",
+        "body": [
+          "The complete SoraFiles application source is published at github.com/Sora-Labs2026/SoraFiles under the GNU Affero General Public License v3.0 only (AGPL-3.0-only). Contributions and modified network deployments must follow that license."
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+---
+import Overview from '../../desktop/index.astro';
+import Pricing from '../../desktop/pricing.astro';
+import Downloads from '../../desktop/download.astro';
+import Releases from '../../desktop/releases.astro';
+import Help from '../../desktop/help.astro';
+import Purchase from '../../desktop/purchase.astro';
+import Redeem from '../../desktop/redeem.astro';
+import {publishedLocales} from '../../../i18n/config';
+export function getStaticPaths(){return publishedLocales.filter(locale=>locale.path!=='en').flatMap(locale=>[undefined,'pricing','download','releases','help','purchase','redeem'].map(page=>({params:{locale:locale.path,page}})));}
+const pages={overview:Overview,pricing:Pricing,download:Downloads,releases:Releases,help:Help,purchase:Purchase,redeem:Redeem};
+const Page=pages[(Astro.params.page||'overview') as keyof typeof pages];
+---
+<Page/>

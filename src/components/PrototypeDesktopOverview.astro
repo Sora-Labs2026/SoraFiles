@@ -1,0 +1,50 @@
+---
+import html from '../data/prototypeDesktopOverview.json';
+import '../styles/v10-desktop-exact.css';
+---
+<main id="main" data-prototype-desktop><Fragment set:html={html}/></main>
+<script>
+const overview=document.querySelector<HTMLElement>('[data-prototype-desktop]');
+if(overview){
+ overview.querySelectorAll<HTMLElement>('.reveal').forEach(el=>{const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting){el.dataset.inview='true';observer.disconnect()}},{threshold:.15,rootMargin:'0px 0px -8% 0px'});observer.observe(el)});
+ overview.querySelectorAll<HTMLButtonElement>('.faq__q').forEach(button=>button.addEventListener('click',()=>{const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));button.closest<HTMLElement>('.faq__item')!.dataset.open=String(open)}));
+ const stage=overview.querySelector<HTMLElement>('.fm')!,rowA=stage.querySelector<HTMLElement>('[data-testid=demo-row-scan-a]')!,rowB=stage.querySelector<HTMLElement>('[data-testid=demo-row-scan-b]')!;
+ const menu=stage.querySelector<HTMLElement>('.fm__menu')!,sub=stage.querySelector<HTMLElement>('.fm__sub')!,edit=menu.querySelector<HTMLElement>('.ctx-menu__item:last-child')!,compress=sub.querySelector<HTMLElement>('.ctx-menu__item')!;
+ const status=stage.querySelector<HTMLElement>('.fm__status')!,toggle=overview.querySelector<HTMLButtonElement>('[data-testid=demo-play-toggle]')!;
+ const buttons=[...overview.querySelectorAll<HTMLButtonElement>('.demo-step')],motion=matchMedia('(prefers-reduced-motion: reduce)');
+ const phases=['idle','select-a','select-b','menu','submenu','choose','processing','saved'],durations=[900,800,1100,1300,1000,600,1500,3600],step=[0,0,0,1,2,2,3,3];
+ const cursor=document.createElement('span');cursor.className='fm__cursor';stage.append(cursor);
+ const pointer='<svg class="pointer" width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M2 1.5v16.2l4.3-4 2.9 6.6 2.7-1.2-2.8-6.5h6.1z"/></svg>';
+ const spinner='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="spin" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10"/></svg>';
+ const check='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>';
+ let phase=motion.matches?7:0,playing=!motion.matches,visible=false,timer:ReturnType<typeof setTimeout>|undefined;
+ function geometry(){
+  const W=stage.clientWidth,H=stage.clientHeight,nameX=rowA.offsetLeft+Math.min(150,rowA.offsetWidth*.42),pa={x:nameX,y:rowA.offsetTop+rowA.offsetHeight/2},pb={x:nameX+14,y:pa.y+rowA.offsetHeight};
+  const mw=menu.offsetWidth,mh=menu.offsetHeight,mx=Math.min(pb.x+2,W-mw-8),my=Math.min(pb.y+2,H-mh-8),sw=sub.offsetWidth,sh=sub.offsetHeight;
+  let sx=mx+mw-4,sy=my+edit.offsetTop-5;
+  if(sx+sw>W-8)sx=mx-sw+4;
+  if(sx<8){sx=Math.min(mx+28,W-sw-8);sy=my+edit.offsetTop+edit.offsetHeight+2}
+  sy=Math.min(sy,H-sh-8);menu.style.left=`${mx}px`;menu.style.top=`${my}px`;sub.style.left=`${sx}px`;sub.style.top=`${sy}px`;
+  const point=[{x:W*.7,y:H-26},pa,pb,pb,{x:mx+Math.min(150,mw*.8),y:my+edit.offsetTop+edit.offsetHeight/2},{x:sx+Math.min(124,sw*.8),y:sy+compress.offsetTop+compress.offsetHeight/2},{x:W*.7,y:H-26},{x:W*.7,y:H-26}][phase];
+  cursor.style.transform=`translate(${point.x}px, ${point.y}px)`;
+ }
+ function paint(){
+  stage.dataset.phase=phases[phase];const selectedA=phase>=1&&phase<=6,selectedB=phase>=2&&phase<=6;
+  rowA.classList.toggle('is-selected',selectedA);rowB.classList.toggle('is-selected',selectedB);
+  rowA.querySelector('.fm-row__size')!.innerHTML=phase===6?spinner:'24.6 MB';rowB.querySelector('.fm-row__size')!.innerHTML=phase===6?spinner:'18.2 MB';
+  stage.querySelectorAll<HTMLElement>('.fm-row--out').forEach(row=>row.dataset.shown=String(phase===7));
+  menu.dataset.open=String(phase>=3&&phase<=5);sub.dataset.open=String(phase===4||phase===5);edit.classList.toggle('is-hot',phase===4||phase===5);compress.classList.toggle('is-hot',phase===5);compress.classList.toggle('is-pressed',phase===5);
+  status.dataset.saved=String(phase===7);status.innerHTML=phase===0?'5 items':phase===1?'1 of 5 selected':phase===6?spinner+'Compressing 2 files…':phase===7?check+'2 files saved beside the originals':'2 of 5 selected';
+  buttons.forEach((button,i)=>{if(i===step[phase])button.setAttribute('aria-current','step');else button.removeAttribute('aria-current')});
+  toggle.querySelector('.btn__label')!.textContent=playing?'Pause':'Play';toggle.querySelector('svg')!.innerHTML=playing?'<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>':'<path d="m6 3 14 9-14 9V3z"/>';
+  cursor.innerHTML=([1,2,3,5].includes(phase)?'<span class="fm__click"></span>':'')+pointer;geometry();
+ }
+ function schedule(){clearTimeout(timer);if(playing&&visible&&!document.hidden)timer=setTimeout(()=>{phase=(phase+1)%8;paint();schedule()},durations[phase])}
+ toggle.addEventListener('click',()=>{playing=!playing;paint();schedule()});
+ overview.querySelector('[data-testid=demo-replay]')!.addEventListener('click',()=>{phase=0;playing=true;paint();schedule()});
+ buttons.forEach((button,i)=>button.addEventListener('click',()=>{phase=[2,3,5,7][i];paint();schedule()}));
+ motion.addEventListener('change',()=>{if(motion.matches){playing=false;phase=7}paint();schedule()});
+ new ResizeObserver(geometry).observe(stage);new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;schedule()},{threshold:.25,rootMargin:'0px'}).observe(overview.querySelector('.demo__grid')!);
+ document.addEventListener('visibilitychange',schedule);paint();
+}
+</script>

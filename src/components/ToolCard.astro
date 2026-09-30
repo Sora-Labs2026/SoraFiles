@@ -45,9 +45,9 @@ const toneClasses = {
       <ToolIcon icon={tool.icon} />
     </span>
     {tool.status === 'basic' ? (
-      <span class="rounded-full border border-amber/20 bg-amber-soft px-2 py-1 text-[9px] font-bold text-amber">{labels.basic}</span>
+      <span class="rounded-full border border-amber/20 bg-amber-soft px-2 py-1 text-[11px] font-bold text-amber">{labels.basic}</span>
     ) : (
-      <span class="rounded-full border border-green/15 bg-green-soft px-2 py-1 text-[9px] font-bold text-green">{labels.local}</span>
+      <span class="rounded-full border border-green/15 bg-green-soft px-2 py-1 text-[11px] font-bold text-green">{labels.local}</span>
     )}
   </div>
 
@@ -55,7 +55,7 @@ const toneClasses = {
   <p class="mt-2 line-clamp-3 text-xs font-medium leading-5 text-muted">{short}</p>
 
   <div class="mt-auto flex items-center justify-between gap-3 pt-5">
-    <span class="truncate text-[10px] font-bold uppercase text-muted">{tool.formats.slice(0, 3).join(' · ')}</span>
+    <span class="truncate text-[11px] font-bold uppercase text-muted">{tool.formats.slice(0, 3).join(' · ')}</span>
     <span class="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-violet">
       {labels.open}
       <svg aria-hidden="true" viewBox="0 0 16 16" class="h-3.5 w-3.5 transition-transform group-hover:translate-x-1 rtl:rotate-180" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 8h9M9 4.5 12.5 8 9 11.5" stroke-linecap="round" stroke-linejoin="round"/></svg>

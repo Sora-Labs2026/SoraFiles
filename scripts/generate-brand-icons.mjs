@@ -1,104 +1,75 @@
+import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 import sharp from 'sharp';
 
-const sourceUrl = new URL('../favicon.png', import.meta.url);
-const source = await readFile(sourceUrl);
-const sourceMetadata = await sharp(source).metadata();
-
-if (sourceMetadata.format !== 'png' || !sourceMetadata.width || !sourceMetadata.height) {
-  throw new Error('The authoritative project-root favicon.png must be a valid PNG image.');
-}
-
-const { data: sourcePixels, info: sourceInfo } = await sharp(source).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-const alphaAt = (x, y) => sourcePixels[((y * sourceInfo.width) + x) * sourceInfo.channels + 3];
-const transparentPixels = sourcePixels.filter((_, index) => index % sourceInfo.channels === 3 && sourcePixels[index] === 0).length;
-const opaquePixels = sourcePixels.filter((_, index) => index % sourceInfo.channels === 3 && sourcePixels[index] === 255).length;
-const transparentSamples = [
-  [0, 0],
-  [sourceInfo.width - 1, 0],
-  [0, sourceInfo.height - 1],
-  [sourceInfo.width - 1, sourceInfo.height - 1],
-  [Math.floor(sourceInfo.width / 2), Math.floor(sourceInfo.height * 0.3)],
-  [Math.floor(sourceInfo.width / 2), Math.floor(sourceInfo.height * 0.65)],
-];
-
-if (
-  !sourceMetadata.hasAlpha
-  || transparentPixels < sourceInfo.width * sourceInfo.height * 0.25
-  || opaquePixels < sourceInfo.width * sourceInfo.height * 0.25
-  || transparentSamples.some(([x, y]) => alphaAt(x, y) > 8)
-) {
-  throw new Error('favicon.png must preserve the transparent exterior and internal negative space around the gradient S.');
-}
-
-const renderPng = (size) => sharp(source)
-  .resize(size, size, {
-    fit: 'contain',
-    background: { r: 0, g: 0, b: 0, alpha: 0 },
-    kernel: sharp.kernel.lanczos3,
-  })
-  .png({ compressionLevel: 9, adaptiveFiltering: true, palette: false, effort: 10 })
-  .toBuffer();
-
-const sizes = [16, 32, 48, 96, 180, 192, 512];
-const rendered = new Map(await Promise.all(sizes.map(async (size) => [size, await renderPng(size)])));
-
-const ogIcon = await sharp(rendered.get(512))
-  .resize(420, 420, { fit: 'contain', kernel: sharp.kernel.lanczos3 })
-  .png({ compressionLevel: 9, adaptiveFiltering: true, palette: false, effort: 10 })
-  .toBuffer();
-const ogOverlay = Buffer.from(`
-  <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
-    <rect width="1200" height="630" fill="#111318"/>
-    <rect x="64" y="64" width="4" height="502" fill="#22d3ee"/>
-    <text x="96" y="218" fill="#f8fafc" font-family="Arial, sans-serif" font-size="76" font-weight="700">SoraFiles</text>
-    <text x="96" y="286" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="34">Private PDF &amp; image tools</text>
-    <text x="96" y="352" fill="#94a3b8" font-family="Arial, sans-serif" font-size="24">Process files locally in your browser.</text>
-    <text x="96" y="524" fill="#64748b" font-family="Arial, sans-serif" font-size="22">Sora Labs</text>
-  </svg>
-`);
-const ogImage = await sharp({
-  create: { width: 1200, height: 630, channels: 4, background: { r: 17, g: 19, b: 24, alpha: 1 } },
-})
-  .composite([{ input: ogOverlay }, { input: ogIcon, left: 700, top: 105 }])
-  .png({ compressionLevel: 9, adaptiveFiltering: true, palette: false, effort: 10 })
-  .toBuffer();
-
-const icoSizes = [16, 32, 48];
-const icoHeader = Buffer.alloc(6 + (16 * icoSizes.length));
-icoHeader.writeUInt16LE(0, 0);
-icoHeader.writeUInt16LE(1, 2);
-icoHeader.writeUInt16LE(icoSizes.length, 4);
-
-let icoOffset = icoHeader.length;
-icoSizes.forEach((size, index) => {
-  const image = rendered.get(size);
-  const entryOffset = 6 + (16 * index);
-  icoHeader.writeUInt8(size, entryOffset);
-  icoHeader.writeUInt8(size, entryOffset + 1);
-  icoHeader.writeUInt8(0, entryOffset + 2);
-  icoHeader.writeUInt8(0, entryOffset + 3);
-  icoHeader.writeUInt16LE(1, entryOffset + 4);
-  icoHeader.writeUInt16LE(32, entryOffset + 6);
-  icoHeader.writeUInt32LE(image.length, entryOffset + 8);
-  icoHeader.writeUInt32LE(icoOffset, entryOffset + 12);
-  icoOffset += image.length;
+// Locked owner-approved V10 handoff. Raster bytes are exact; SVG line endings
+// are normalized so Windows and Unix checkouts enforce the same artwork.
+export const approvedBrandDigests = Object.freeze({
+  'sorafiles-app-icon-1024.png':'45eacdab646fc292a1b5e6a511dc38554f7a69d340a9a0344d9e586aaaa5d610',
+  'sorafiles-app-icon-512.png':'bf5edab3ac6e93fa2b8a5443d5f89c3e2bbd84496d4ed3bb73c4d574085b7d69',
+  'sorafiles-app-icon.svg':'9ce498527d97a04aaf0a0bd156c323cc285d2bac7cdb2ab0e6ef891fb4bad69a',
+  'sorafiles-logo-black.svg':'b773b1d368752c657d2f121ea868cc7f2252151ff5a13223c29de5954884bb5f',
+  'sorafiles-logo-full-color-dark.svg':'38cdaed45ce199e7e728eefb73a5a639f695786d67dd6b3fefc99ccc5f1dddcf',
+  'sorafiles-logo-full-color.svg':'494c6215d2e2fe397d63da226a3852820c990cbd3900f3e9f2f32c8a09ca9629',
+  'sorafiles-logo-one-color.svg':'4f03a71401ec212ec1d40d238fb319e4df18be7b3e4516aee4a5f272aa3b45d3',
+  'sorafiles-logo-white.svg':'3dc5d8b961d2eea341d7f6bef2600f907170c54c122a8afe22d44a052eee41ff',
+  'sorafiles-mark-black.svg':'35c69be0d466102173a0d688e50090760cb0ae7befa50971f0c5c4ffc2ea7b7d',
+  'sorafiles-mark-full-color.svg':'03dc7c25bb88689fcf020a17d278e2e77da34116a0efc12e494ea899073fe7b2',
+  'sorafiles-mark-one-color.svg':'81a94828cc46b90e476abafdf82fdac7cf6fab302780e895c1e52153759b3311',
+  'sorafiles-mark-white.svg':'aa072ed5dbe8f0936b292082514f9865d63f619e40682d05eb2f70486ca9fc3a',
 });
+export const approvedOgDigest = 'bb9f60b5a6b2ed16cb0733a10bd5ee09153c649422a16235e5e99b337722f508';
+const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 
-const outputs = [
-  ['../public/favicon.png', rendered.get(512)],
-  ['../public/favicon-16x16.png', rendered.get(16)],
-  ['../public/favicon-32x32.png', rendered.get(32)],
-  ['../public/favicon-48x48.png', rendered.get(48)],
-  ['../public/favicon-96x96.png', rendered.get(96)],
-  ['../public/apple-touch-icon.png', rendered.get(180)],
-  ['../public/icon-192.png', rendered.get(192)],
-  ['../public/icon-512.png', rendered.get(512)],
-  ['../public/reddit-avatar.png', rendered.get(512)],
-  ['../public/og-image.png', ogImage],
-  ['../public/favicon.ico', Buffer.concat([icoHeader, ...icoSizes.map((size) => rendered.get(size))])],
-];
+export async function readApprovedBrand() {
+  const assets = new Map();
+  for (const [name, digest] of Object.entries(approvedBrandDigests)) {
+    const bytes = await readFile(new URL('../public/brand/'+name, import.meta.url));
+    const canonical = name.endsWith('.svg') ? Buffer.from(bytes.toString('utf8').replaceAll('\r\n','\n').trim()) : bytes;
+    if (hash(canonical) !== digest) throw new Error('public/brand/'+name+' differs from the locked V10 handoff. Restore the approved asset before generating derivatives.');
+    assets.set(name, bytes);
+  }
+  // The approved OG composition is supplied artwork, not a new generated design.
+  const og = await readFile(new URL('../public/og-image.png', import.meta.url));
+  if (hash(og) !== approvedOgDigest) throw new Error('public/og-image.png differs from the approved V10 composition. Restore it from the locked handoff.');
+  return { source:assets.get('sorafiles-app-icon-512.png'), og };
+}
 
-await Promise.all(outputs.map(([path, data]) => writeFile(new URL(path, import.meta.url), data)));
+export const renderBrandPng = (source, size) => sharp(source)
+  .resize(size, size, {fit:'contain',background:{r:0,g:0,b:0,alpha:0},kernel:sharp.kernel.lanczos3})
+  .png({compressionLevel:9,adaptiveFiltering:true,palette:false,effort:10})
+  .toBuffer();
 
-console.log(`Generated transparent official SoraFiles favicon assets from favicon.png (${sourceMetadata.width}x${sourceMetadata.height}).`);
+async function generateBrandIcons() {
+  const { source } = await readApprovedBrand();
+  const sizes = [16,32,48,96,180,192,512];
+  const rendered = new Map(await Promise.all(sizes.map(async size => [size,await renderBrandPng(source,size)])));
+  const icoSizes = [16,32,48], header = Buffer.alloc(6+16*icoSizes.length);
+  header.writeUInt16LE(1,2);header.writeUInt16LE(icoSizes.length,4);
+  let offset = header.length;
+  icoSizes.forEach((size,index) => {
+    const frame=rendered.get(size),entry=6+16*index;
+    header.writeUInt8(size,entry);header.writeUInt8(size,entry+1);
+    header.writeUInt16LE(1,entry+4);header.writeUInt16LE(32,entry+6);
+    header.writeUInt32LE(frame.length,entry+8);header.writeUInt32LE(offset,entry+12);offset+=frame.length;
+  });
+  const outputs = [
+    ['../favicon.png',source],
+    ['../public/favicon.png',rendered.get(512)],
+    ['../public/favicon-16x16.png',rendered.get(16)],
+    ['../public/favicon-32x32.png',rendered.get(32)],
+    ['../public/favicon-48x48.png',rendered.get(48)],
+    ['../public/favicon-96x96.png',rendered.get(96)],
+    ['../public/apple-touch-icon.png',rendered.get(180)],
+    ['../public/icon-192.png',rendered.get(192)],
+    ['../public/icon-512.png',rendered.get(512)],
+    ['../public/reddit-avatar.png',rendered.get(512)],
+    ['../public/favicon.ico',Buffer.concat([header,...icoSizes.map(size=>rendered.get(size))])],
+  ];
+  await Promise.all(outputs.map(([path,data])=>writeFile(new URL(path,import.meta.url),data)));
+  console.log('Generated deterministic SoraFiles icons from the approved amber/white mark on its black tile; preserved the approved V10 Open Graph image.');
+}
+
+// Importing the validators/render helper never writes assets.
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) await generateBrandIcons();

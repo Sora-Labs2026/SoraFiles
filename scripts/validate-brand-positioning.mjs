@@ -4,6 +4,9 @@ import { brandPositioning } from '../src/i18n/brandPositioning.ts';
 import { publishedLocales } from '../src/i18n/config.ts';
 import { liveToolById } from '../src/data/liveTools.ts';
 import liveCopy from '../src/data/liveCopy.ts';
+import { build } from 'esbuild';
+const prototypeBundle=await build({entryPoints:['src/i18n/prototype.ts'],bundle:true,platform:'node',format:'esm',write:false,logLevel:'silent'});
+const {prototypeText}=await import(`data:text/javascript;base64,${Buffer.from(prototypeBundle.outputFiles[0].text).toString('base64')}`);
 
 const failures = [];
 const check = (condition, message) => { if (!condition) failures.push(message); };
@@ -40,10 +43,18 @@ if (existsSync('dist/index.html')) {
     const homepage = read(join(prefix, 'index.html'));
     const about = read(join(prefix, 'about', 'index.html'));
     const copy = brandPositioning[locale];
-    check(homepage.includes(copy.heroLine1) && homepage.includes(copy.heroLine2), `${locale}: homepage is missing one-app hero positioning.`);
+    const heroLines = ['Everyday PDF', 'and image tools.'].map(line => prototypeText(locale,line));
+    check(heroLines.every(line => homepage.includes(line)), `${locale}: homepage is missing approved hero positioning.`);
     check(homepage.includes(copy.description), `${locale}: homepage is missing localized privacy-first description.`);
     check(about.includes(copy.aboutTitle) && about.includes(copy.aboutIntro), `${locale}: About page is missing localized one-app positioning.`);
-    check(!countLedBranding.test(homepage) && !countLedBranding.test(about), `${locale}: rendered brand page contains a historical tool-count claim.`);
+    // V10 displays the actual registry count in search/filter controls. Brand
+    // titles, headings and descriptions must still avoid historical count claims.
+    const brandingText = [homepage, about].flatMap(html => [
+      ...(html.match(/<title[^>]*>[\s\S]*?<\/title>/gi) ?? []),
+      ...(html.match(/<h1[^>]*>[\s\S]*?<\/h1>/gi) ?? []),
+      ...(html.match(/<meta[^>]*name="description"[^>]*>/gi) ?? []),
+    ]).join(' ');
+    check(!countLedBranding.test(brandingText), `${locale}: rendered brand identity contains a historical tool-count claim.`);
   }
 
   const workflowIds = ['compress-pdf', 'merge-pdf', 'split-pdf', 'sign-pdf', 'pdf-ocr', 'pdf-to-word', 'word-to-pdf', 'compress-image', 'metadata-remover'];

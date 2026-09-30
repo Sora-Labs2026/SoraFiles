@@ -1,0 +1,5 @@
+**
+!license-service/
+!license-service/*.mjs
+!shared/
+!shared/*.mjs

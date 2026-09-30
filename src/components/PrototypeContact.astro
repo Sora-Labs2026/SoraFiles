@@ -1,0 +1,41 @@
+---
+import '../styles/v10-site-exact.css';
+import '../styles/v10-contact-controls.css';
+interface ContactCopy {overline:string;title:string;cards:{t:string;d:string}[]}
+interface FormCopy {name:string;namePh:string;email:string;emailPh:string;subject:string;subjectPh:string;message:string;messagePh:string;attachment:string;chooseFile:string;attachmentHint:string;tooBig:string;send:string;sentTitle:string;sentBody:string}
+interface Props {autoresponse:string;locale?:string;page?:ContactCopy;formCopy?:FormCopy}
+const {autoresponse,locale='en',page,formCopy}=Astro.props;
+const fields=[['name',formCopy?.name??'Name',formCopy?.namePh??'Your name','name'],['email',formCopy?.email??'Email',formCopy?.emailPh??'you@example.com','email'],['subject',formCopy?.subject??'Subject',formCopy?.subjectPh??"What's this about?",'off']];
+const nextPath=locale==='en'?'/contact?sent=1':`/${locale}/contact?sent=1`;
+---
+<main id="main" data-prototype-info>
+ <div class="container page-intro"><p class="eyebrow eyebrow--pill page-intro__eyebrow">{page?.overline??'Contact'}</p><h1 class="t-h1 page-intro__title"><span class="line-reveal"><span class="line-reveal__inner">{page?.title??'Say hello.'}</span></span></h1></div>
+ <div class="container contact"><dl class="contact__info"><div><dt class="t-label">{page?.cards[0]?.t??'Get in touch'}</dt><dd><a class="link tnum" href="mailto:contact@sorafiles.com">contact@sorafiles.com</a></dd></div><div><dt class="t-label">{page?.cards[1]?.t??'Response time'}</dt><dd>{page?.cards[1]?.d??'Usually within 2 business days'}</dd></div><div><dt class="t-label">{page?.cards[2]?.t??'Privacy note'}</dt><dd>{page?.cards[2]?.d??"Please don't attach sensitive documents."}</dd></div></dl>
+ <form class="panel contact__form" data-contact-form data-testid="contact-form" action="https://formsubmit.co/soralabs2026@gmail.com" method="POST" enctype="multipart/form-data" novalidate aria-labelledby="contact-form-title" data-prototype-contact>
+  <input type="hidden" name="_subject" value={`SoraFiles — ${formCopy?.subject??'Subject'}`}/><input type="hidden" name="_next" value={`https://sorafiles.com${nextPath}`}/><input type="hidden" name="_template" value="table"/><input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off"/>
+  <input type="hidden" name="_captcha" value="true"/><input type="hidden" name="_autoresponse" value={autoresponse}/>
+  <h2 id="contact-form-title" class="t-h3">{formCopy?.message??'Message'}</h2>
+  {fields.map(([name,label,placeholder,autocomplete])=><div class="field"><label for={`cf-${name}`} class="field__label">{label}</label><input id={`cf-${name}`} data-testid={`cf-${name}`} class="field__input" name={name} type={name==='email'?'email':'text'} placeholder={placeholder} autocomplete={autocomplete} required maxlength={name==='subject'?200:name==='name'?120:254} aria-invalid="false" aria-describedby={`cf-${name}-error`}/><p hidden id={`cf-${name}-error`} class="field__error" data-validation-error={name}></p></div>)}
+  <div class="field"><label for="cf-message" class="field__label">{formCopy?.message??'Message'}</label><textarea id="cf-message" class="field__input" data-testid="cf-message" name="message" required maxlength="5000" placeholder={formCopy?.messagePh??"Tell us what's on your mind…"} aria-invalid="false" aria-describedby="cf-message-error"></textarea><p hidden class="field__error" id="cf-message-error" data-validation-error="message"></p></div>
+  <div class="field"><span class="field__label">{formCopy?.attachment??'Attachment (optional)'}</span><div class="attach"><button type="button" class="btn btn--secondary btn--sm" data-contact-attach><svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m21.4 11.6-9.2 9.2a6 6 0 0 1-8.5-8.5l10-10a4 4 0 0 1 5.7 5.7l-10 10a2 2 0 0 1-2.8-2.8l9.2-9.2"/></svg><span>{formCopy?.chooseFile??'Choose a file'}</span></button><span class="attach__file" data-attachment-chip hidden><span data-contact-file-name></span><span class="t-caption tnum" data-attachment-size></span><button type="button" class="icon-btn" data-attachment-remove aria-label="Remove attachment">×</button></span></div><input type="file" name="attachment" data-contact-file data-testid="cf-attachment" id="cf-attachment" class="sr-only" tabindex="-1" aria-hidden="true" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.txt,.xlsx,.csv"/><p class="field__hint">{formCopy?.attachmentHint??'One file, up to 10 MB. PDF, image, or document.'}</p><p class="field__error" data-contact-file-error hidden role="alert" tabindex="-1">{formCopy?.tooBig??'That file is over the 10 MB limit. Please attach a smaller file.'}</p></div>
+  <button type="submit" class="btn btn--primary btn--lg contact__send" data-testid="cf-submit"><span>{formCopy?.send??'Send message'}</span></button>
+  <div role="status" aria-live="polite"><p data-contact-success hidden>{locale==='en'?'Message sent! Thank you for getting in touch.':`${formCopy?.sentTitle??''} ${autoresponse}`}</p></div>
+ </form></div>
+</main>
+<script>
+const contactForm=document.querySelector<HTMLFormElement>('[data-prototype-contact]');
+if(contactForm){
+ contactForm.addEventListener('submit',event=>{
+  let invalid=false;
+  for(const name of ['name','email','subject','message']){
+   const field=contactForm.elements.namedItem(name) as HTMLInputElement|HTMLTextAreaElement;
+   const message=!field.value.trim()||!field.checkValidity()?field.validationMessage:'';
+   const label=contactForm.querySelector<HTMLElement>(`[data-validation-error=${name}]`)!;label.textContent=message;label.hidden=!message;field.setAttribute('aria-invalid',String(!!message));invalid ||= !!message;
+  }
+  if(invalid){event.preventDefault();event.stopImmediatePropagation()}
+ },{capture:true});
+ const input=contactForm.querySelector<HTMLInputElement>('[data-contact-file]')!,chip=contactForm.querySelector<HTMLElement>('[data-attachment-chip]')!;
+ input.addEventListener('change',()=>{const file=input.files?.[0],fileError=contactForm.querySelector<HTMLElement>('[data-contact-file-error]')!,tooBig=Boolean(file&&file.size>10*1024*1024);fileError.hidden=!tooBig;if(tooBig){input.value='';chip.hidden=true;fileError.focus();return}chip.hidden=!file;if(file)contactForm.querySelector('[data-attachment-size]')!.textContent=file.size>=1e6?`${(file.size/1e6).toFixed(1)} MB`:`${Math.round(file.size/1e3)} KB`});
+ contactForm.querySelector('[data-attachment-remove]')!.addEventListener('click',()=>{input.value='';chip.hidden=true;contactForm.querySelector<HTMLElement>('[data-contact-file-error]')!.hidden=true});
+}
+</script>

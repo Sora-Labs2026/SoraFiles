@@ -20,6 +20,51 @@ test('worker never marks unhashed public assets immutable', async () => {
   assert.doesNotMatch(response.headers.get('Cache-Control') ?? '', /immutable/i);
 });
 
+test('background worker opts into the isolated document policy without changing ordinary scripts', async () => {
+  const env = { ASSETS: { fetch: async () => new Response('self.onmessage = () => {};', { headers: { 'Content-Type': 'text/javascript' } }) } };
+  const response = await worker.fetch(new Request('https://sorafiles.com/_astro/background-removal.worker-KWKD31ZM.js'), env);
+  assert.equal(response.headers.get('Cross-Origin-Embedder-Policy'), 'require-corp');
+  assert.equal(response.headers.get('Cross-Origin-Resource-Policy'), 'same-origin');
+  assert.equal(response.headers.get('Content-Type'), 'text/javascript');
+  assert.equal(await response.text(), 'self.onmessage = () => {};');
+  const ordinary = await worker.fetch(new Request('https://sorafiles.com/_astro/home.abcdefgh.js'), env);
+  assert.equal(ordinary.headers.get('Cross-Origin-Embedder-Policy'), null);
+});
+
+test('worker serves background-removal model assets through a cacheable same-origin route', { concurrency: false }, async () => {
+  const originalFetch = globalThis.fetch;
+  const originalCaches = globalThis.caches;
+  const upstreamRequests = [];
+  const cachedResponses = [];
+  try {
+    globalThis.fetch = async (request) => {
+      upstreamRequests.push(String(request));
+      return new Response('{"model":"ok"}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+    };
+    globalThis.caches = { default: {
+      match: async () => undefined,
+      put: async (request, response) => cachedResponses.push({ request: String(request.url || request), body: await response.text() }),
+    } };
+    const pending = [];
+    const response = await worker.fetch(
+      new Request('https://sorafiles.com/__sf/background-removal/resources.json'),
+      { ASSETS: { fetch: async () => new Response('unused') } },
+      { waitUntil: (promise) => pending.push(promise) },
+    );
+    await Promise.all(pending);
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), '{"model":"ok"}');
+    assert.deepEqual(upstreamRequests, ['https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/resources.json']);
+    assert.equal(cachedResponses.length, 1);
+    assert.match(response.headers.get('Cache-Control') || '', /max-age=86400/);
+    assert.equal(response.headers.get('Cross-Origin-Resource-Policy'), 'same-origin');
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalCaches === undefined) delete globalThis.caches;
+    else globalThis.caches = originalCaches;
+  }
+});
+
 test('worker secures HTML while allowing native Cloudflare compression', async () => {
   const env = {
     ASSETS: {
@@ -99,11 +144,15 @@ test('homepage metadata and decorative brand marks satisfy the Part 14 contract'
   assert.ok(description.length >= 120 && description.length <= 160, `homepage description length is ${description.length}`);
   assert.match(description, /processing happens locally on your device/i);
 
-  for (const file of ['src/components/Header.astro', 'src/components/Footer.astro']) {
+  // V10 header and footer share one logo: a named home link with a decorative inline mark.
+  for (const file of ['src/components/PrototypeHeader.astro', 'src/components/PrototypeFooter.astro']) {
     const source = await readFile(file, 'utf8');
-    assert.match(source, /aria-hidden="true"[^>]+background-image: url\('\/favicon-48x48\.png'\)/);
-    assert.doesNotMatch(source, /<img[^>]+favicon-48x48\.png/);
+    assert.match(source, /<PrototypeLogo\b/);
+    assert.doesNotMatch(source, /background-image: url\('\/favicon/);
   }
+  const logo = await readFile('src/components/PrototypeLogo.astro', 'utf8');
+  assert.match(logo, /aria-label="SoraFiles home"/);
+  assert.match(logo, /<svg class="logo-mark"[^>]*aria-hidden="true"/);
 });
 
 test('Ahrefs analytics uses one direct low-priority asynchronous head tag', async () => {
@@ -115,20 +164,26 @@ test('Ahrefs analytics uses one direct low-priority asynchronous head tag', asyn
   assert.doesNotMatch(layout, /GTM-[A-Z0-9]+/);
 });
 
-test('Google Analytics runtime and measurement ID stay removed', async () => {
-  const layout = await readFile('src/layouts/Layout.astro', 'utf8');
+test('Google Analytics and Ahrefs load together on public pages and never on license return pages', async () => {
   await assert.rejects(access('src/components/GoogleServices.astro', constants.F_OK));
-  assert.doesNotMatch(layout, /GoogleServices|googletagmanager|google-analytics|G-GQ973RY74K|\bgtag\s*\(/i);
+  const gtag = /https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=G-GQ973RY74K/g, ahrefs = /https:\/\/analytics\.ahrefs\.com\/analytics\.js/g;
   for (const path of ['dist/index.html', 'dist/privacy/index.html', 'dist/ja/index.html']) {
     const html = await readFile(path, 'utf8');
-    assert.doesNotMatch(html, /googletagmanager|google-analytics|G-GQ973RY74K|data-sf-google-analytics|\bgtag\s*\(/i, path);
+    assert.equal((html.match(gtag) ?? []).length, 1, path);assert.equal((html.match(ahrefs) ?? []).length, 1, path);
+    assert.ok(html.indexOf('googletagmanager') < html.indexOf('<meta charset'), `${path}: Google tag starts the head`);
   }
+  for (const path of ['dist/desktop/purchase/index.html', 'dist/desktop/redeem/index.html']) {
+    const html = await readFile(path, 'utf8');
+    assert.doesNotMatch(html, /googletagmanager|analytics\.ahrefs\.com|\bgtag\s*\(/i, path);
+  }
+  const privacy = await readFile('dist/privacy/index.html', 'utf8');
+  assert.match(privacy, /Google Analytics/);
 });
 
 test('localized home metadata uses the reviewed native catalog instead of visual hero fragments', async () => {
   const route = await readFile('src/pages/[locale]/[...path].astro', 'utf8');
-  assert.match(route, /const title = isHome \? brand\.homeTitle/);
-  assert.match(route, /const description = isHome \? brand\.description/);
+  assert.match(route, /const title = (?:guideMeta\?\.title \?\? \()?isHome \? brand\.homeTitle/);
+  assert.match(route, /const description = (?:guideMeta\?\.description \?\? \()?isHome \? brand\.description/);
   assert.doesNotMatch(route, /isHome \? `SoraFiles — \$\{liveText\(locale, 'hero\.l1b'\)\}/);
 });
 

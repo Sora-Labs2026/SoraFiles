@@ -1,0 +1,425 @@
+{
+  "recordedAt": "2026-09-17T16:11:23.995Z",
+  "platform": "win32",
+  "arch": "x64",
+  "scope": "Generated development resource pack. Not installer download size or installed app size.",
+  "files": 4026,
+  "bytes": 462457716,
+  "groups": [
+    [
+      "node_modules/onnxruntime-web",
+      96395633
+    ],
+    [
+      "node.exe",
+      93580104
+    ],
+    [
+      "node_modules/tesseract.js-core",
+      45262431
+    ],
+    [
+      "assets/background",
+      44349506
+    ],
+    [
+      "node_modules/@napi-rs/canvas-win32-x64-msvc",
+      38313506
+    ],
+    [
+      "node_modules/pdfjs-dist",
+      34497725
+    ],
+    [
+      "assets/ocr",
+      34197642
+    ],
+    [
+      "node_modules/pdf-lib",
+      19495077
+    ],
+    [
+      "node_modules/@img/sharp-win32-x64",
+      19407388
+    ],
+    [
+      "node_modules/xlsx",
+      8076339
+    ],
+    [
+      "node_modules/docx",
+      4668758
+    ],
+    [
+      "node_modules/zlibjs",
+      3731492
+    ],
+    [
+      "desktop",
+      3340723
+    ],
+    [
+      "node_modules/protobufjs",
+      3034479
+    ],
+    [
+      "node_modules/@types/node",
+      2392887
+    ],
+    [
+      "node_modules/tesseract.js",
+      1411341
+    ],
+    [
+      "node_modules/@neslinesli93/qpdf-wasm",
+      1381642
+    ],
+    [
+      "node_modules/sharp",
+      960214
+    ],
+    [
+      "node_modules/@pdf-lib/standard-fonts",
+      818507
+    ],
+    [
+      "node_modules/fflate",
+      796742
+    ],
+    [
+      "node_modules/pako",
+      788283
+    ],
+    [
+      "node_modules/jszip",
+      762000
+    ],
+    [
+      "node_modules/@pdf-lib/upng",
+      707597
+    ],
+    [
+      "node_modules/bmp-js",
+      645720
+    ],
+    [
+      "node_modules/onnxruntime-common",
+      542361
+    ],
+    [
+      "node_modules/xml-js",
+      420550
+    ],
+    [
+      "node_modules/flatbuffers",
+      288122
+    ],
+    [
+      "node_modules/tr46",
+      268388
+    ],
+    [
+      "licenses",
+      239301
+    ],
+    [
+      "node_modules/@pdfsmaller/pdf-encrypt",
+      188947
+    ],
+    [
+      "node_modules/node-fetch",
+      162253
+    ],
+    [
+      "node_modules/long",
+      139458
+    ],
+    [
+      "node_modules/@napi-rs/canvas",
+      125557
+    ],
+    [
+      "node_modules/undici-types",
+      116546
+    ],
+    [
+      "node_modules/semver",
+      101065
+    ],
+    [
+      "node_modules/readable-stream",
+      88115
+    ],
+    [
+      "node_modules/@img/colour",
+      73264
+    ],
+    [
+      "node_modules/sax",
+      61678
+    ],
+    [
+      "node_modules/lie",
+      59145
+    ],
+    [
+      "node_modules/idb-keyval",
+      55849
+    ],
+    [
+      "node_modules/whatwg-url",
+      49886
+    ],
+    [
+      "node_modules/platform",
+      47052
+    ],
+    [
+      "node_modules/@protobufjs/utf8",
+      42558
+    ],
+    [
+      "node_modules/hash.js",
+      41697
+    ],
+    [
+      "node_modules/wasm-feature-detect",
+      34200
+    ],
+    [
+      "node_modules/safe-buffer",
+      31686
+    ],
+    [
+      "node_modules/regenerator-runtime",
+      27759
+    ],
+    [
+      "node_modules/@protobufjs/float",
+      26968
+    ],
+    [
+      "node_modules/detect-libc",
+      26437
+    ],
+    [
+      "node_modules/xml",
+      23400
+    ],
+    [
+      "node_modules/string_decoder",
+      15298
+    ],
+    [
+      "node_modules/@protobufjs/fetch",
+      14872
+    ],
+    [
+      "node_modules/immediate",
+      14646
+    ],
+    [
+      "node_modules/webidl-conversions",
+      12370
+    ],
+    [
+      "node_modules/@protobufjs/eventemitter",
+      10310
+    ],
+    [
+      "node_modules/@protobufjs/codegen",
+      9749
+    ],
+    [
+      "node_modules/@protobufjs/base64",
+      9224
+    ],
+    [
+      "node_modules/@protobufjs/aspromise",
+      9055
+    ],
+    [
+      "node_modules/setimmediate",
+      8558
+    ],
+    [
+      "node_modules/@protobufjs/path",
+      7770
+    ],
+    [
+      "node_modules/is-url",
+      6582
+    ],
+    [
+      "node_modules/@protobufjs/pool",
+      6249
+    ],
+    [
+      "node_modules/util-deprecate",
+      5481
+    ],
+    [
+      "node_modules/core-util-is",
+      4982
+    ],
+    [
+      "node_modules/guid-typescript",
+      4549
+    ],
+    [
+      "node_modules/inherits",
+      3958
+    ],
+    [
+      "node_modules/isarray",
+      3886
+    ],
+    [
+      "node_modules/opencollective-postinstall",
+      3687
+    ],
+    [
+      "processing-pack.json",
+      3304
+    ],
+    [
+      "node_modules/process-nextick-args",
+      3175
+    ],
+    [
+      "node_modules/minimalistic-assert",
+      1547
+    ],
+    [
+      "runtime.json",
+      434
+    ],
+    [
+      "config.json",
+      52
+    ]
+  ],
+  "largest": [
+    {
+      "path": "node.exe",
+      "bytes": 93580104
+    },
+    {
+      "path": "assets/background/isnet-quint8.onnx",
+      "bytes": 44348940
+    },
+    {
+      "path": "node_modules/@napi-rs/canvas-win32-x64-msvc/skia.win32-x64-msvc.node",
+      "bytes": 27436032
+    },
+    {
+      "path": "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.wasm",
+      "bytes": 23914392
+    },
+    {
+      "path": "node_modules/@img/sharp-win32-x64/lib/libvips-42.dll",
+      "bytes": 18614784
+    },
+    {
+      "path": "node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm",
+      "bytes": 12666427
+    },
+    {
+      "path": "node_modules/@napi-rs/canvas-win32-x64-msvc/icudtl.dat",
+      "bytes": 10876560
+    },
+    {
+      "path": "node_modules/onnxruntime-web/dist/ort.all.js",
+      "bytes": 5667551
+    },
+    {
+      "path": "node_modules/onnxruntime-web/dist/ort.all.mjs",
+      "bytes": 5590120
+    },
+    {
+      "path": "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs.map",
+      "bytes": 5440888
+    },
+    {
+      "path": "node_modules/pdfjs-dist/build/pdf.worker.mjs.map",
+      "bytes": 5234813
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core-relaxedsimd.wasm.js",
+      "bytes": 4697227
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core-simd.wasm.js",
+      "bytes": 4690932
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core.wasm.js",
+      "bytes": 4687944
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core-relaxedsimd-lstm.wasm.js",
+      "bytes": 3905767
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core-simd-lstm.wasm.js",
+      "bytes": 3899472
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core-lstm.wasm.js",
+      "bytes": 3896484
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core-relaxedsimd.wasm",
+      "bytes": 3456075
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core-simd.wasm",
+      "bytes": 3451410
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core.wasm",
+      "bytes": 3449168
+    },
+    {
+      "path": "node_modules/onnxruntime-web/dist/ort.webgl.js",
+      "bytes": 3408299
+    },
+    {
+      "path": "node_modules/onnxruntime-web/dist/ort.webgl.mjs",
+      "bytes": 3358381
+    },
+    {
+      "path": "desktop/shared/heif-decoder.cjs",
+      "bytes": 3160702
+    },
+    {
+      "path": "node_modules/onnxruntime-web/dist/ort.all.bundle.min.mjs.map",
+      "bytes": 3110624
+    },
+    {
+      "path": "assets/ocr/lang/nld.traineddata.gz",
+      "bytes": 3005696
+    },
+    {
+      "path": "node_modules/onnxruntime-web/dist/ort.all.min.js.map",
+      "bytes": 2965108
+    },
+    {
+      "path": "node_modules/onnxruntime-web/dist/ort.all.min.mjs.map",
+      "bytes": 2964981
+    },
+    {
+      "path": "assets/ocr/lang/eng.traineddata.gz",
+      "bytes": 2952873
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core-relaxedsimd-lstm.wasm",
+      "bytes": 2862266
+    },
+    {
+      "path": "node_modules/tesseract.js-core/tesseract-core-simd-lstm.wasm",
+      "bytes": 2857601
+    }
+  ],
+  "desktop/native/target/debug/sorafiles-desktop.exe": 19379712
+}

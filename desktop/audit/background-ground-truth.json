@@ -1,0 +1,60 @@
+{
+  "status": "MEASURED",
+  "scope": "Existing three synthetic fixtures and CPU uint8 outputs, cleanup disabled. Independent generator mask is intended subject; metrics do not certify photographic quality.",
+  "results": [
+    {
+      "fixture": "product",
+      "engine": "web",
+      "truthSha256": "d3295c6f44864b805a75907da249789c8de8290eb0bd794ce877ffca2d54a98d",
+      "alphaMAE": 0.546738125,
+      "missingAlphaFraction": 0.00510348083020255,
+      "extraAlphaFraction": 0.003220038995224291,
+      "foregroundIoU": 0.998258464251285
+    },
+    {
+      "fixture": "product",
+      "engine": "desktop",
+      "truthSha256": "d3295c6f44864b805a75907da249789c8de8290eb0bd794ce877ffca2d54a98d",
+      "alphaMAE": 0.548176875,
+      "missingAlphaFraction": 0.005091501475986794,
+      "extraAlphaFraction": 0.003253921823153047,
+      "foregroundIoU": 0.9982342939355626
+    },
+    {
+      "fixture": "hair",
+      "engine": "web",
+      "truthSha256": "5dbd6a0b3504313940a98367161f829776a2f95ea8e19458da2c7a67c0dd2d0f",
+      "alphaMAE": 1.69276375,
+      "missingAlphaFraction": 0.009894439181706608,
+      "extraAlphaFraction": 0.018194773524006003,
+      "foregroundIoU": 0.987250720221102
+    },
+    {
+      "fixture": "hair",
+      "engine": "desktop",
+      "truthSha256": "5dbd6a0b3504313940a98367161f829776a2f95ea8e19458da2c7a67c0dd2d0f",
+      "alphaMAE": 1.705774375,
+      "missingAlphaFraction": 0.009702346369827511,
+      "extraAlphaFraction": 0.018602760735241926,
+      "foregroundIoU": 0.9869990011237358
+    },
+    {
+      "fixture": "soft-alpha",
+      "engine": "web",
+      "truthSha256": "b257bdf5be1ad33306360625d610499728dc59a77784f7982d03a7c1b7bc1eff",
+      "alphaMAE": 1.93507375,
+      "missingAlphaFraction": 0.03220336255819254,
+      "extraAlphaFraction": 0,
+      "foregroundIoU": 0.980723084306511
+    },
+    {
+      "fixture": "soft-alpha",
+      "engine": "desktop",
+      "truthSha256": "b257bdf5be1ad33306360625d610499728dc59a77784f7982d03a7c1b7bc1eff",
+      "alphaMAE": 1.938475,
+      "missingAlphaFraction": 0.032259965923775405,
+      "extraAlphaFraction": 0,
+      "foregroundIoU": 0.9809043886311524
+    }
+  ]
+}

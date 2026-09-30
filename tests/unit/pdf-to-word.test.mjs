@@ -137,3 +137,11 @@ test('DOCX generation converts pages to Blob', async () => {
   assert.ok(blob instanceof Blob);
   assert.ok(blob.size > 0);
 });
+
+test('DOCX generation accepts inferred headings, lists, and tabular rows', async () => {
+  const blob = await createDocxFromPages([
+    { pageNumber: 1, source: 'embedded', lines: ['REPORT SUMMARY', '• First item', 'Name\tAmount', 'Paper\t1250'] },
+  ], 'ltr');
+  assert.ok(blob instanceof Blob);
+  assert.ok(blob.size > 0);
+});

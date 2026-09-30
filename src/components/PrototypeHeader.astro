@@ -1,0 +1,38 @@
+---
+import { localizedPath,basePathFromLocalized,type LocalePath } from '../i18n/config';
+import PrototypeLogo from './PrototypeLogo.astro';
+import icons from '../data/prototypeIcons.json';
+import {liveText} from '../data/liveI18n';
+import prototypeTools from '../data/prototypeHomeTools.json';
+import {prototypeText} from '../i18n/prototype';
+import '../styles/v10-layout-exact.css';
+interface Props {locale?:LocalePath;}
+const {locale='en'}=Astro.props;
+const t=(text:string)=>prototypeText(locale,text);
+const desktop=basePathFromLocalized(Astro.url.pathname).startsWith('/desktop');
+const links=[[t('Tools'),localizedPath(locale,'/tools')],[t('Desktop'),localizedPath(locale,'/desktop')],[t('Help'),localizedPath(locale,'/desktop/help')]];
+const pathname=Astro.url.pathname.replace(/\/$/,'');
+const current=(href:string)=>pathname===href?'page':href===localizedPath(locale,'/tools')&&prototypeTools.some(tool=>localizedPath(locale,tool.href)===pathname)?'true':href===localizedPath(locale,'/desktop')&&desktop&&basePathFromLocalized(pathname)!=='/desktop/help'?'true':undefined;
+---
+<header class="site-header" data-scrolled="false" data-testid="site-header">
+ <div class="sf-container site-header__inner"><PrototypeLogo href={localizedPath(locale,'/')}/>
+  <nav class="site-nav" aria-label={t('Main')}><ul class="site-nav__list">{links.map(([label,href])=><li><a class="nav-link" href={href} aria-current={current(href)}>{label}</a></li>)}</ul></nav>
+  <div class="site-header__actions"><div class="theme-toggle" role="group" aria-label={t('Theme')} data-testid="theme-toggle">
+   {(['light','dark'] as const).map(theme=><button type="button" class="theme-toggle__option" data-theme-choice={theme} data-theme-option={theme} aria-pressed="false" aria-label={t(`${theme==='light'?'Light':'Dark'} theme`)} title={t(`${theme==='light'?'Light':'Dark'} theme`)} set:html={theme==='light'?icons.Sun:icons.Moon}/>)}
+  </div>{desktop&&<a class="btn btn--secondary btn--sm site-header__download" href="/desktop/download"><Fragment set:html={icons.Download}/>Download</a>}
+  <button class="btn btn--icon btn--md btn--square site-header__menu-btn" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label={liveText(locale,'nav.openMenu')} data-open-label={liveText(locale,'nav.openMenu')} data-close-label={liveText(locale,'nav.closeMenu')} data-prototype-menu><span data-menu-open-icon set:html={icons.Menu}/><span data-menu-close-icon hidden set:html={icons.X}/></button></div>
+ </div>
+ <div id="mobile-menu" class="mobile-menu" data-open="false" inert><nav class="sf-container" aria-label="Mobile"><ul class="mobile-menu__list">{links.map(([label,href])=><li><a class="nav-link" href={href} aria-current={current(href)}>{label}</a></li>)}</ul>{desktop&&<a class="btn btn--primary btn--lg mobile-menu__cta" href="/desktop/download"><Fragment set:html={icons.Download}/>Download</a>}</nav></div>
+</header>
+<script>
+const header=document.querySelector<HTMLElement>('.site-header');
+if(header){
+ const button=header.querySelector<HTMLButtonElement>('[data-prototype-menu]')!,panel=header.querySelector<HTMLElement>('#mobile-menu')!;
+ const scroll=()=>header.dataset.scrolled=String(scrollY>4||panel.dataset.open==='true');
+ const toggle=(open:boolean,focus=false)=>{panel.dataset.open=String(open);panel.inert=!open;button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',(open?button.dataset.closeLabel:button.dataset.openLabel)!);header.querySelector<HTMLElement>('[data-menu-open-icon]')!.hidden=open;header.querySelector<HTMLElement>('[data-menu-close-icon]')!.hidden=!open;scroll();if(open)panel.querySelector('a')?.focus();else if(focus)button.focus()};
+ button.addEventListener('click',()=>toggle(panel.dataset.open!=='true'));
+ window.addEventListener('keydown',event=>{if(event.key==='Escape'&&panel.dataset.open==='true')toggle(false,true)});
+ window.addEventListener('pointerdown',event=>{if(event.target instanceof Node&&!header.contains(event.target))toggle(false)});
+ window.addEventListener('scroll',scroll,{passive:true});scroll();
+}
+</script>

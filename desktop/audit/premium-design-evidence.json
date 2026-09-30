@@ -1,0 +1,168 @@
+{
+  "recordedAt": "2026-09-12T20:10:47.925Z",
+  "status": "SCOPED DESIGN CHECKS PASS; DESKTOP RELEASE INCOMPLETE",
+  "platform": {
+    "os": "win32",
+    "release": "10.0.19045",
+    "arch": "x64"
+  },
+  "desktopUi": {
+    "status": "PASS",
+    "scope": "Browser UI with explicit fake native bridge",
+    "checks": [
+      "Home shows six common tools",
+      "Selection names escaped; PDF suggestions exclude image actions",
+      "Ctrl K, search, Enter and Escape work",
+      "All 26 tools open their independent workspace",
+      "License key is masked by default and cleared after submission; failure announced",
+      "Settings roundtrip; unsupported startup preference reverts with an explanation",
+      "Native actions announce pending state, prevent duplicate requests, restore focus; cancelling folder selection does not claim success",
+      "Remove and Clear release native selection IDs before updating the view",
+      "Partially rejected selections explain file limits while keeping accepted files",
+      "Late native responses preserve text entered on a different screen",
+      "Five screens have no horizontal overflow at 1920, 1180, 800, 640, 380 CSS pixels in light and dark",
+      "200% CSS scaling at a 760×600 viewport preserves screen content and Quit; native DPI still requires platform validation",
+      "Keyboard focus is visible with reduced motion",
+      "Five normal-text token pairs exceed 4.5:1 in both themes, including feedback and primary actions"
+    ],
+    "contrast": [
+      {
+        "theme": "light",
+        "ratios": [
+          {
+            "fg": "--text",
+            "bg": "--surface",
+            "ratio": 19.181824904635512
+          },
+          {
+            "fg": "--muted",
+            "bg": "--surface",
+            "ratio": 6.12974004713741
+          },
+          {
+            "fg": "--action-text",
+            "bg": "--action",
+            "ratio": 19.181824904635512
+          },
+          {
+            "fg": "--success-text",
+            "bg": "--success-bg",
+            "ratio": 6.966398902792585
+          },
+          {
+            "fg": "--error-text",
+            "bg": "--error-bg",
+            "ratio": 7.8354058513661755
+          }
+        ]
+      },
+      {
+        "theme": "dark",
+        "ratios": [
+          {
+            "fg": "--text",
+            "bg": "--surface",
+            "ratio": 16.31110411909386
+          },
+          {
+            "fg": "--muted",
+            "bg": "--surface",
+            "ratio": 7.319316851900949
+          },
+          {
+            "fg": "--action-text",
+            "bg": "--action",
+            "ratio": 17.045834925058767
+          },
+          {
+            "fg": "--success-text",
+            "bg": "--success-bg",
+            "ratio": 9.706540753522798
+          },
+          {
+            "fg": "--error-text",
+            "bg": "--error-bg",
+            "ratio": 10.020910363049833
+          }
+        ]
+      }
+    ]
+  },
+  "website": {
+    "checks": [
+      "Production promotion remains disabled and no public Redeem page exists",
+      "1280px light: popup bounds, 3:4 image, dismissal after refresh and all five pages",
+      "1280px dark: popup bounds, 3:4 image, dismissal after refresh and all five pages",
+      "768px light: popup bounds, 3:4 image, dismissal after refresh and all five pages",
+      "768px dark: popup bounds, 3:4 image, dismissal after refresh and all five pages",
+      "375px light: popup bounds, 3:4 image, dismissal after refresh and all five pages",
+      "375px dark: popup bounds, 3:4 image, dismissal after refresh and all five pages",
+      "320px light: popup bounds, 3:4 image, dismissal after refresh and all five pages",
+      "320px dark: popup bounds, 3:4 image, dismissal after refresh and all five pages",
+      "Keyboard Escape restores focus; main popup click opens /desktop",
+      "sessionStorage dismissal fallback",
+      "No repeated promotion when both persistence stores are blocked",
+      "320px light: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "320px dark: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "430px light: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "430px dark: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "768px light: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "768px dark: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "1366px light: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "1366px dark: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "1920px light: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "1920px dark: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "2560px light: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "2560px dark: homepage, tools, PDF, merge, image converter, Guides, About and Privacy shell bounds",
+      "Representative Web and Desktop pages tolerate 200% CSS scaling; reduced transparency removes header blur",
+      "Popup remains dismissible in a short viewport"
+    ],
+    "errors": [],
+    "scope": "Built-site UI only; no installer, shell integration or live Dodo transaction tested."
+  },
+  "native": {
+    "title": "SoraFiles Desktop",
+    "heading": "File tools for your desktop.",
+    "tools": 6,
+    "overflow": false,
+    "errors": null
+  },
+  "zoom": {
+    "zoom": 2,
+    "viewport": [
+      372,
+      280
+    ],
+    "checkedScreens": 5,
+    "overflow": false,
+    "quitVisible": true
+  },
+  "captures": {
+    "home.png": {
+      "sha256": "f0d4cab71c7d9aef3f2175a19dff22be6556b43270a158677e24ab60226597fc",
+      "capturedAt": "2026-09-12T20:10:21.403Z"
+    },
+    "settings-native-200.png": {
+      "sha256": "4dbb90af583b0f43b2e298d8735773cb4fa5e5a9d3fbcc338d95f4ca02ed3835",
+      "capturedAt": "2026-09-12T20:10:22.461Z"
+    }
+  },
+  "sourceHashes": {
+    "desktop/ui/main.ts": "582f7adcfce2bd4f94672655b2e54d15f2cc1149c6e99f95d3351d0473611cbb",
+    "desktop/ui/styles.css": "a949281392abf734cd5ed372adefa21d0d21a34bc7d5c5f07970763b651ec41e",
+    "desktop/ui/brand.css": "c709e5c8e781abe8d57e7a605570bc73934b23abc99e0df161d4f72b11ba0af0",
+    "desktop/ui/host.ts": "563cfdc48094c62b9e47dd7f26c0b894ecd4355b09e0785bd74851746ef0904e",
+    "desktop/prototypes/DesktopUiProbe.cs": "69696165e90b4750b0bc22d9711e48b09e3180d8defd2d94a5ad40d303d3e803",
+    "desktop/tests/NativeUiContractProbe.cs": "cf521ede666721af48197cd9821305ec1b5bb1ad2c72ab200182bf1cca3bf97f",
+    "desktop/tests/ui-qa.mjs": "2b79ad06a45c1e24fb1b19ee2be60f49c3b37bac3ec0cb2dedaa734d49e044fa",
+    "desktop/tests/website-qa.mjs": "8fccc82dabce705dbe7ba64483026430d8ced75b6b00d9211a10c0461b46538b",
+    "src/components/DesktopPromo.astro": "4a02bc68c693cba8e0af1977938fa3976ba5181c4bc2410bbab517b0aeacf88d",
+    "src/styles/global.css": "d3fd726afe418cd2358a46aa57b38bf4c8a97125a709d713d03241cfbe1f8289"
+  },
+  "limits": [
+    "Browser UI uses an explicit fake native bridge.",
+    "Native WebView2 zoom and selection contract checks cover Windows only.",
+    "No installer, macOS/Linux host, real Dodo purchase, native processing/result flow or screen-reader certification.",
+    "Homepage promotion is disabled pending the three-OS launch."
+  ]
+}

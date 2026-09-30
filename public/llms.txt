@@ -7,8 +7,26 @@ Sitemap: https://sorafiles.com/sitemap.xml
 All tools: https://sorafiles.com/tools
 About: https://sorafiles.com/about
 Privacy: https://sorafiles.com/privacy
+Open source: https://sorafiles.com/open-source
+Source repository: https://github.com/Sora-Labs2026/SoraFiles
 
 Published tool categories include PDF compression and organization, PDF conversion, image conversion and compression, OCR, document protection, and metadata removal. Individual capabilities and limitations are stated on each tool page.
+
+## SoraFiles Desktop
+
+SoraFiles Desktop is a paid companion app for Windows 10+ (x64), macOS 13+ (Apple Silicon and Intel) and Ubuntu 22.04 (x64). It processes PDFs and images on the user's computer and adds file-manager actions (for example, right-click Edit with SoraFiles on Windows). The SoraFiles web tools stay free.
+
+- Trial: seven days, starting on first launch.
+- Personal (1 active device): $1.99/month, $19.99/year or $99.99 lifetime.
+- Team (up to 5 active devices): $9.99/month, $99.99/year or $399.99 lifetime.
+- Revoke Device frees an occupied seat for a one-time fee: Personal $0.99 (monthly/annual) or $19.99 (lifetime); Team $3.99 (monthly/annual) or $79.99 (lifetime) per occupied seat. Unused Team seats activate free.
+- Prices are in USD. License activation and device changes are verified online; files are not uploaded for processing.
+
+Desktop overview: https://sorafiles.com/desktop
+Plans and prices: https://sorafiles.com/desktop/pricing
+Downloads: https://sorafiles.com/desktop/download
+Release notes: https://sorafiles.com/desktop/releases
+Help: https://sorafiles.com/desktop/help
 
 Product: SoraFiles
 Developer: Sora Labs

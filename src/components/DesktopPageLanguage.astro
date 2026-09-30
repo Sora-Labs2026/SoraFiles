@@ -1,0 +1,23 @@
+---
+import catalogs from '../i18n/desktop-web.json';
+import {localizedRoutePaths,type LocalePath} from '../i18n/config';
+const {locale}=Astro.props as {locale:LocalePath};
+const dictionary=catalogs[locale];
+---
+<script is:inline type="application/json" id="desktop-page-language" set:html={JSON.stringify({locale,dictionary,routes:localizedRoutePaths}).replaceAll('<','\u003c')}/>
+<script>
+// Static dictionary only. Never translate input values, license keys or user data.
+const data=document.getElementById('desktop-page-language');
+if(data){const {locale,dictionary,routes}=JSON.parse(data.textContent||'{}');
+ const translate=(root:Node)=>{
+  if((root instanceof Element?root:root.parentElement)?.closest('script,style,svg,code,input,textarea,.prototype-language,[translate=no],[data-user-text]'))return;
+  if(root.nodeType===Node.TEXT_NODE){const source=root.textContent||'',key=source.trim();if(!['SoraFiles','SoraFiles Desktop','Sora Labs'].includes(key)&&Object.hasOwn(dictionary,key)&&dictionary[key]!==key)root.textContent=source.replace(key,dictionary[key]);return;}
+  if(root instanceof Element){for(const name of ['aria-label','title','placeholder','alt']){const key=root.getAttribute(name);if(key&&Object.hasOwn(dictionary,key)&&dictionary[key]!==key)root.setAttribute(name,dictionary[key]);}
+   if(root instanceof HTMLAnchorElement){const href=root.getAttribute('href')||'',base=href.split(/[?#]/)[0].replace(/\/$/,'')||'/';if(routes.includes(base))root.setAttribute('href',`/${locale}${base==='/'?'':base}${href.slice(base==='/'?1:base.length)}`);}
+  }
+  for(const child of root.childNodes)translate(child);
+ };
+ const mount=()=>{translate(document.body);new MutationObserver(records=>{for(const record of records){if(record.type==='characterData'||record.type==='attributes')translate(record.target);else for(const node of record.addedNodes)translate(node);}}).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['aria-label','title','placeholder','alt','href']});};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+}
+</script>

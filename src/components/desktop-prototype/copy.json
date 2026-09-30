@@ -1,0 +1,230 @@
+{
+  "subnav": {
+    "label": "SoraFiles Desktop",
+    "overview": "Overview",
+    "plans": "Plans",
+    "downloads": "Downloads",
+    "releases": "Releases",
+    "help": "Help"
+  },
+  "pricing": {
+    "eyebrow": "Plans",
+    "title": "Choose your Desktop plan",
+    "lead": "All prices are in USD and include applicable taxes. Every plan includes a 7-day trial and local file processing. Personal covers one active device; Team covers up to five.",
+    "webFree": "SoraFiles Web stays free.",
+    "periodLabel": "Billing period",
+    "plans": {
+      "personal": {
+        "name": "Personal",
+        "devices": "1 active device"
+      },
+      "team": {
+        "name": "Team",
+        "devices": "Up to 5 active devices"
+      }
+    },
+    "features": [
+      "7-day free trial",
+      "Local file processing",
+      "Works offline after setup"
+    ],
+    "periods": {
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "lifetime": "Lifetime"
+    },
+    "per": {
+      "monthly": "/ month",
+      "annual": "/ year",
+      "lifetime": "once"
+    },
+    "choose": {
+      "monthly": "Choose monthly",
+      "annual": "Choose annual",
+      "lifetime": "Choose lifetime"
+    },
+    "checkoutNote": "Checkout is handled securely by Dodo Payments. Your license key is delivered after payment and can be pasted into Desktop.",
+    "keyEmail": "Your license key is emailed to your checkout address. Check your Spam or Junk folder too.",
+    "deviceTitle": "Need to move an occupied device?",
+    "deviceText": "Device replacement starts inside Desktop and verifies the purchaser email before showing the one-time replacement checkout. Each plan card above shows its one-time replacement fee.",
+    "replaceLabel": "{period} device replacement",
+    "oneTime": "one-time",
+    "howReplacement": "How device replacement works",
+    "feesCaption": "One-time device replacement fee",
+    "teamSeat": "An unused Team seat activates without a replacement fee.",
+    "afterDownload": "Download Desktop",
+    "afterMiddle": " after checkout, or ",
+    "afterWeb": "use the free web tools",
+    "afterEnd": " without a purchase."
+  },
+  "download": {
+    "eyebrow": "SoraFiles Desktop",
+    "title": "Download for your computer",
+    "lead": "Choose the installer for your operating system. Every published file includes a SHA-256 checksum so you can verify the download before opening it.",
+    "available": "Available",
+    "cols": {
+      "version": "Version",
+      "package": "Package",
+      "size": "Size",
+      "checksum": "Checksum",
+      "download": "Download"
+    },
+    "download": "Download",
+    "downloadLabel": "Download {pkg}",
+    "platforms": {
+      "windows": {
+        "name": "Windows",
+        "req": "Windows 11 or later on 64-bit Intel or AMD."
+      },
+      "macos": {
+        "name": "macOS",
+        "req": "macOS 13 or later on Apple Silicon or Intel. macOS may ask you to approve SoraFiles on first launch."
+      },
+      "linux": {
+        "name": "Linux",
+        "req": "Ubuntu 22.04 or later on 64-bit Intel or AMD. Other distributions are not yet validated."
+      }
+    },
+    "sysreq": {
+      "title": "System requirements",
+      "lead": "SoraFiles Desktop is designed to be lightweight and processes files locally. It works offline after setup.",
+      "head": "Requirement",
+      "detail": "Details",
+      "rows": [
+        {
+          "id": "memory",
+          "label": "Memory",
+          "value": "No special requirement beyond what your operating system normally needs"
+        },
+        {
+          "id": "processor",
+          "label": "Processor",
+          "value": "A modern 64-bit processor"
+        },
+        {
+          "id": "storage",
+          "label": "Storage",
+          "value": "Enough free space for SoraFiles and the files you work with"
+        },
+        {
+          "id": "internet",
+          "label": "Internet",
+          "value": "Needed for setup, activation and online services. File processing works offline"
+        }
+      ],
+      "note": "Larger PDFs, images, or batch jobs may naturally use more memory and storage while processing.",
+      "footnote": "Linux packages target Ubuntu 22.04 x64. macOS first-launch approval steps are in ",
+      "footnoteLink": "Help"
+    }
+  },
+  "help": {
+    "title": "Desktop help",
+    "sections": [
+      {
+        "id": "guides",
+        "title": "Desktop guides",
+        "body": [
+          "New to SoraFiles Desktop? These short guides explain what it is and how it works with your file manager."
+        ],
+        "guides": true
+      },
+      {
+        "id": "install",
+        "title": "Installing Desktop",
+        "body": [
+          "Download the installer for your operating system from {downloads}. Verify the published SHA-256 checksum before opening it. Desktop does not update itself automatically."
+        ]
+      },
+      {
+        "id": "smartscreen",
+        "title": "Windows SmartScreen",
+        "body": [
+          "The current Windows installer is distributed unsigned, so Microsoft Defender SmartScreen may say that Windows protected your PC. After verifying the SHA-256 checksum and confirming that you downloaded the installer from the SoraFiles release page, select More info, then Run anyway. A publisher warning may continue until SoraFiles ships a certificate-signed installer."
+        ]
+      },
+      {
+        "id": "macos-open-anyway",
+        "title": "Opening SoraFiles on macOS",
+        "body": [
+          "macOS may block SoraFiles the first time you open it. If you downloaded it from sorafiles.com, follow these steps:"
+        ],
+        "steps": [
+          "Open the DMG, drag SoraFiles Desktop to Applications, then try opening it once.",
+          "Open System Settings, select Privacy & Security, and scroll to the message about SoraFiles Desktop.",
+          "Select Open Anyway, then confirm Open when prompted."
+        ],
+        "after": [
+          "This allows SoraFiles on this Mac only. If macOS says the app is damaged or will harm your computer, do not override that alert. See {apple}."
+        ]
+      },
+      {
+        "id": "trial",
+        "title": "Trial and activation",
+        "body": [
+          "Your free 7-day trial begins automatically during Windows installation, or when you first open the app on macOS or Linux. To continue after the trial, choose License → Activate License and paste the key from your purchase email. Works offline after setup; file processing stays on your device."
+        ]
+      },
+      {
+        "id": "license-email",
+        "title": "Can't find your license email?",
+        "body": [
+          "Check the inbox for the email address used at checkout, including Spam or Junk. Look for “Your License Key is Ready” from {sender}. If it landed in Spam, mark it as not spam. If you still cannot find it, {contact} for help."
+        ]
+      },
+      {
+        "id": "replace-device",
+        "title": "Replacing a device",
+        "body": [
+          "Open License → Replace device. SoraFiles sends a short-lived code to the purchaser email on the verified order. The address is masked in Desktop. After verification, the one-time replacement checkout opens; payment alone cannot bypass email verification."
+        ],
+        "fees": true,
+        "after": [
+          "An unused Team seat activates without a replacement fee."
+        ]
+      },
+      {
+        "id": "promo-code",
+        "title": "Where do I enter a promo code?",
+        "body": [
+          "Enter a discount code in Dodo checkout before payment. SoraFiles Web remains free."
+        ]
+      },
+      {
+        "id": "web-tools",
+        "title": "Need to work on a file now?",
+        "body": [
+          "{tools} remain available with no Desktop purchase required."
+        ]
+      }
+    ],
+    "links": {
+      "downloads": "Downloads",
+      "apple": "Apple’s opening instructions",
+      "sender": "noreply@dodopayments.com",
+      "contact": "contact us",
+      "tools": "The free web tools"
+    }
+  },
+  "releases": {
+    "title": "Release notes",
+    "version": "SoraFiles Desktop {v}",
+    "artifacts": "Published artifacts: {list}.",
+    "link": "Download this release"
+  },
+  "redeem": {
+    "eyebrow": "SoraFiles Desktop",
+    "title": "Redeem your invitation",
+    "lead": "A giveaway code is an invitation. After verification, your license key activates Desktop on the devices included in your invitation.",
+    "closedTitle": "Redemption has not opened yet",
+    "closedText": "Keep your invitation private and follow the instructions from SoraFiles when redemption opens. No code or payment is needed on this page today.",
+    "discount": "Discount codes for a purchase belong in Dodo checkout. SoraFiles Web remains free.",
+    "contact": "Contact SoraFiles support",
+    "open": {
+      "code": "Invitation code",
+      "placeholder": "XXXX-XXXX-XXXX",
+      "submit": "Redeem invitation",
+      "checkCode": "Check your invitation code.",
+      "notIncluded": "Redemption isn’t included in this frontend prototype. Nothing was sent."
+    }
+  }
+}

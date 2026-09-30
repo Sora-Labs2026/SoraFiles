@@ -1,0 +1,25 @@
+---
+import DesktopLayout from '../layouts/PrototypeDesktopLayout.astro';
+import icons from '../data/prototypeIcons.json';
+import releaseManifest from '../../desktop/releases/manifest.json';
+import {localizedPath,type LocalePath} from '../i18n/config';
+import {desktopDownloadText} from '../i18n/desktopDownload';
+interface Props {locale?:LocalePath}
+const {locale='en'}=Astro.props;
+const t=desktopDownloadText(locale);
+const published=releaseManifest.releases.filter(release=>['active','maintenance'].includes(release.status)&&release.security==='clear');
+const platforms=[{id:'windows',name:'Windows'},{id:'macos',name:'macOS'},{id:'linux',name:'Linux'}];
+const requirements=[[t.memory,t.memoryDetail],[t.processor,t.processorDetail],[t.storage,t.storageDetail],[t.internet,t.internetDetail]];
+const platformMinimum=(platform:string,rows:typeof published)=>{
+ const minimums=[...new Set(rows.map(row=>row.minOS))];
+ if(!minimums.length)return '';
+ if(platform==='windows')return `Windows ${minimums.map(value=>value==='10.0'?'10':value).join(' / ')} ${t.later} · x64`;
+ if(platform==='macos')return `macOS ${minimums.join(' / ')} ${t.later} · ${t.apple}`;
+ return `Ubuntu ${minimums.join(' / ')} ${t.later} · x64`;
+};
+---
+<DesktopLayout title={`SoraFiles Desktop — ${t.downloads}`} description={t.lead} path="/desktop/download" {locale}>
+ <header class="container page-intro"><p class="eyebrow eyebrow--pill page-intro__eyebrow">SoraFiles Desktop</p><h1 class="t-h1 page-intro__title"><span class="line-reveal"><span class="line-reveal__inner">{t.title}</span></span></h1><p class="t-lead page-intro__lead">{t.lead}</p></header>
+ <section class="container downloads" aria-label={t.title}>{platforms.map(platform=>{const rows=published.filter(release=>release.platform===platform.id);return <article class="dl-platform" id={platform.id} aria-labelledby={`dl-${platform.id}`}><div class="dl-platform__head"><h2 id={`dl-${platform.id}`} class="t-h2">{platform.name}</h2>{rows.length>0&&<span class="tag tag--accent">{t.available}</span>}<p class="t-small dl-platform__req">{platformMinimum(platform.id,rows)}</p></div>{rows.length?<table class="dl-table"><thead><tr>{[t.version,t.package,t.size,t.checksum,t.download].map(label=><th scope="col">{label}</th>)}</tr></thead><tbody>{rows.map(release=><tr><td data-label={t.version} class="tnum">{release.version}</td><td data-label={t.package} class="tnum">{release.package} · {release.arch}</td><td data-label={t.size} class="tnum">{(release.bytes/1024**2).toFixed(1)} MB</td><td data-label={t.checksum} class="code dl-table__sum" dir="ltr">{release.sha256}</td><td class="dl-table__act"><a class="btn btn--secondary btn--sm" href={release.url} rel="noreferrer" aria-label={`${t.download} ${platform.name} ${release.arch} ${release.package} ${release.version}`}><Fragment set:html={icons.Download.replace('class="','class="btn__icon ')}/><span class="btn__label">{t.download}</span></a></td></tr>)}</tbody></table>:<p>{t.unavailable}</p>}</article>})}</section>
+ <section class="section section--ruled sysreq" aria-labelledby="sysreq-title"><div class="container"><h2 id="sysreq-title" class="t-h2">{t.requirements}</h2><p class="t-lead sysreq__lead">{t.requirementsLead}</p><table class="sysreq__table"><thead><tr><th scope="col">{t.requirement}</th><th scope="col"><span class="sr-only">{t.details}</span></th></tr></thead><tbody>{requirements.map(([name,description])=><tr><th scope="row">{name}</th><td>{description}</td></tr>)}</tbody></table><p class="t-small sysreq__note">{t.resourceNote}</p><p class="t-small sysreq__foot">{t.platformNote} <a href={`${localizedPath(locale,'/desktop/help')}#macos-open-anyway`} class="link">{t.help}</a>.</p></div></section>
+</DesktopLayout>

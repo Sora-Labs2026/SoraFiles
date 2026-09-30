@@ -17,7 +17,7 @@ export interface BrandPositioning {
 // Workflow names and workflow-page SEO copy continue to live in their existing registries.
 export const brandPositioning: Record<LocalePath, BrandPositioning> = {
   en: {
-    homeTitle: 'SoraFiles - Private File Processing in Your Browser',
+    homeTitle: 'SoraFiles',
     description: 'SoraFiles is a privacy-first web app for working with PDFs and images directly in your browser. Supported file processing happens locally on your device.',
     heroLine1: 'A Privacy-First',
     heroLine2: 'Web App.',
@@ -29,7 +29,7 @@ export const brandPositioning: Record<LocalePath, BrandPositioning> = {
   ja: {
     homeTitle: 'SoraFiles - ブラウザでプライベートにファイル処理',
     description: 'SoraFilesは、PDFや画像をブラウザ上で直接扱える、プライバシー重視のWebアプリです。対応するファイル処理はお使いの端末内で行われます。',
-    heroLine1: 'プライバシー重視の', heroLine2: 'Webアプリ。',
+    heroLine1: '毎日のPDF・', heroLine2: '画像ツール。',
     aboutTitle: 'ひとつのWebアプリ。設計からプライベート。',
     aboutIntro: 'SoraFilesは、ブラウザ上で直接ファイルを扱うためにSora Labsが開発した、プライバシー重視のWebアプリです。対応するファイル処理はお使いの端末内で行われます。',
     oneAppA: 'ひとつの', oneAppB: 'Webアプリ', oneAppSummary: 'PDFと画像の作業を一か所で。',

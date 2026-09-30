@@ -1,0 +1,2 @@
+import {parentPort,workerData} from 'node:worker_threads';import {LicenseStore} from '../license-service/store.mjs';
+const store=new LicenseStore(workerData.file);parentPort.postMessage({ready:true});parentPort.once('message',()=>{try{store.activate('license',workerData.device,workerData.device,1800000000);parentPort.postMessage({activated:true});}catch(error){parentPort.postMessage({activated:false,error:error.message});}finally{store.close();}});

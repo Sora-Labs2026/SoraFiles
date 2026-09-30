@@ -1,0 +1,128 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {generateKeyPairSync,randomBytes} from 'node:crypto';
+import {LicenseClient} from '../core/license-client.mjs';import {LicenseService} from '../license-service/service.mjs';import {LicenseStore} from '../license-service/store.mjs';import {RequestGuard} from '../license-service/request-guard.mjs';import {createLicenseHttpServer} from '../license-service/http.mjs';
+import {replaceDevice} from '../license-service/replacements.mjs';
+import {deviceIdentity} from '../shared/entitlement.mjs';
+function pair(){const keys=generateKeyPairSync('ed25519');return {publicKey:keys.publicKey.export({type:'spki',format:'pem'}),privateKey:keys.privateKey.export({type:'pkcs8',format:'pem'})};}
+async function fixture(){
+ const signer=pair(),device=pair(),store=new LicenseStore(':memory:');let now=1800000000000,saved=null,online=true,calls=0;
+ const guard=new RequestGuard({store,secret:randomBytes(32),now:()=>Math.floor(now/1000)}),service=new LicenseService({store,guard,signing:{privateKey:signer.privateKey,kid:'test'},now:()=>Math.floor(now/1000),dodo:{activate:async()=>({id:'instance',license_key_id:'license',customer:{customer_id:'customer'}}),validate:async()=>({valid:true}),deactivate:async()=>{}},authority:{resolve:async()=>({ref:'license',plan:'personal-monthly',status:'active',periodEnd:Math.floor(now/1000)+86400,maxDevices:1,observedAt:Math.floor(now/1000)})}});
+ const server=createLicenseHttpServer({service,webhooks:{},rateSecret:randomBytes(32)});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const options={origin:'http://127.0.0.1:'+server.address().port,allowLocalTesting:true,keys:{test:signer.publicKey},readDevice:async()=>device,readLicense:async()=>saved,saveLicense:async value=>{saved=value;},now:()=>now,fetchImpl:async(...args)=>{calls++;if(!online)throw Error('offline');return fetch(...args);}};
+ return {options,service,store,guard,device,client:new LicenseClient(options),read:()=>saved,set:value=>saved=value,advance:seconds=>now+=seconds*1000,offline:()=>online=false,online:()=>online=true,calls:()=>calls,async close(){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));store.close();}};
+}
+test('real HTTP device trial verifies before storage and then authorizes offline',async()=>{
+ const f=await fixture();try{
+  const result=await f.client.trial();assert.deepEqual(Object.keys(result),['plan','expiresAt']);assert.equal(result.plan,'trial');assert.ok(f.read().entitlement);assert.equal(f.calls(),2);
+  f.offline();f.advance(3600);assert.equal((await f.client.authorize()).plan,'trial');assert.equal(f.calls(),2);
+  f.advance(-1000);await assert.rejects(f.client.authorize(),/Clock/);f.advance(7*86400);await assert.rejects(f.client.authorize(),/expired/);
+ }finally{await f.close();}
+});
+test('tampered stored token and a token copied to another device never authorize',async()=>{
+ const f=await fixture();try{await f.client.trial();const original=f.read();
+  f.set({...original,entitlement:original.entitlement.slice(0,-10)+'altered'});await assert.rejects(f.client.authorize());
+  f.set(original);const other=new LicenseClient({...f.options,readDevice:async()=>pair()});await assert.rejects(other.authorize(),/claims/);
+ }finally{await f.close();}
+});
+test('untrusted service locations and oversized response bodies fail closed',async()=>{
+ const f=await fixture();try{
+  for(const origin of ['http://license.sorafiles.com','https://elsewhere.example','https://license.sorafiles.com/extra','https://user:pass@license.sorafiles.com'])assert.throws(()=>new LicenseClient({...f.options,origin}),/Untrusted/);
+  let stored=false;const huge=new LicenseClient({...f.options,saveLicense:async()=>{stored=true;},fetchImpl:async()=>new Response('x'.repeat(20000),{headers:{'Content-Type':'application/json'}})});
+  await assert.rejects(huge.trial(),/too large/);assert.equal(stored,false);
+  const wrong=new LicenseClient({...f.options,fetchImpl:async()=>new Response(JSON.stringify({challenge:{},token:'fake'}),{headers:{'Content-Type':'application/json'}})});await assert.rejects(wrong.trial(),/challenge/);
+ }finally{await f.close();}
+});
+test('protected-storage failure does not report trial success and retry retains its deadline',async()=>{
+ const f=await fixture();try{
+  const failing=new LicenseClient({...f.options,saveLicense:async()=>{throw Error('Protected storage unavailable');}});
+  await assert.rejects(failing.trial(),/Protected storage/);assert.equal(f.read(),null);f.advance(3600);
+  const result=await f.client.trial();assert.equal(result.expiresAt,1800000000+7*86400);
+ }finally{await f.close();}
+});
+test('paid activation goes through HTTP proof and stores authority only after signature verification',async()=>{
+ const f=await fixture();try{const result=await f.client.activate('synthetic-dodo-key');assert.equal(result.plan,'personal-monthly');assert.equal(result.maxDevices,1);assert.equal(JSON.stringify(result).includes('synthetic-dodo-key'),false);assert.equal(f.read().licenseRef,'license');assert.equal(f.read().instanceId,'instance');await assert.rejects(f.client.trial(),/paid license/);f.offline();assert.equal((await f.client.authorize()).plan,'personal-monthly');}finally{await f.close();}
+});
+test('first activation and trial require an online response and cannot unlock from a pasted key alone',async()=>{
+ const f=await fixture();try{
+  f.offline();await assert.rejects(f.client.activate('synthetic-dodo-key'),/offline/);assert.equal(f.read(),null);
+  await assert.rejects(f.client.trial(),/offline/);assert.equal(f.read(),null);
+  await assert.rejects(f.client.authorize(),/Start a trial or activate/);
+ }finally{await f.close();}
+});
+test('subscription refresh requires internet and renews only a verified existing license',async()=>{
+ const f=await fixture();try{
+  const initial=await f.client.activate('synthetic-dodo-key');f.advance(3600);
+  const refreshed=await f.client.refresh();assert.ok(refreshed.expiresAt>initial.expiresAt);
+  const devices=await f.client.devices();assert.equal(devices.length,1);assert.equal(devices[0].current,true);assert.equal(devices[0].active,true);
+  const saved=f.read();f.offline();await assert.rejects(f.client.refresh(),/offline/);assert.deepEqual(f.read(),saved);assert.equal((await f.client.authorize()).plan,'personal-monthly');
+  f.advance(86401);await assert.rejects(f.client.authorize(),/expired/);
+ }finally{await f.close();}
+});
+test('a bound client has no deactivation action and cannot replace its paid license',async()=>{
+ const f=await fixture();try{await f.client.activate('synthetic-dodo-key');const saved=structuredClone(f.read()),calls=f.calls();
+  assert.equal(f.client.deactivate,undefined);await assert.rejects(f.client.activate('different-key'),/already bound/);assert.deepEqual(f.read(),saved);assert.equal(f.calls(),calls);
+  const origin=f.options.origin;
+  const removed=await fetch(origin+'/v1/deactivate',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});assert.equal(removed.status,404);
+  const challenge=await fetch(origin+'/v1/challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deactivate',body:{},publicKey:(await f.options.readDevice()).publicKey})});assert.equal(challenge.status,400);
+  assert.equal((await f.client.authorize()).plan,'personal-monthly');
+ }finally{await f.close();}
+});
+test('legacy interrupted-deactivation state stays locked and cannot silently release a seat',async()=>{
+ const f=await fixture();try{await f.client.activate('synthetic-dodo-key');f.set({...f.read(),deactivationPending:true});await assert.rejects(f.client.authorize(),/verification/);await assert.rejects(f.client.refresh(),/verification/);assert.equal(f.read().licenseRef,'license');}finally{await f.close();}
+});
+
+test('real HTTP online validation refreshes signed authority and offline failure preserves the saved grant',async()=>{
+ const f=await fixture();try{
+  await f.client.activate('synthetic-dodo-key');f.advance(3600);
+  const active=await f.client.validateOnline();assert.equal(active.active,true);assert.equal(active.checked,true);
+  const saved=structuredClone(f.read());f.offline();await assert.rejects(f.client.validateOnline(),/offline/);
+  assert.deepEqual(f.read(),saved);assert.equal((await f.client.authorize()).plan,'personal-monthly');
+ }finally{await f.close();}
+});
+
+test('partial provider validation followed by authority failure never locks a working offline license',async()=>{
+ const f=await fixture();try{
+  await f.client.activate('synthetic-dodo-key');const saved=structuredClone(f.read());
+  // Even a provider denial is incomplete until the full authoritative lookup finishes.
+  f.service.dodo.validate=async()=>({valid:false});
+  f.service.authority.resolve=async()=>{throw Object.assign(Error('authority unavailable'),{code:'providerUnavailable'});};
+  await assert.rejects(f.client.validateOnline(),/verification could not finish/);
+  assert.deepEqual(f.read(),saved);assert.equal((await f.client.authorize()).plan,'personal-monthly');
+ }finally{await f.close();}
+});
+
+test('replacement locks the original real HTTP client on its next online check, including during provider outage',async()=>{
+ const f=await fixture();try{
+  await f.client.activate('synthetic-dodo-key');const saved=structuredClone(f.read());
+  await replaceDevice({store:f.store,guard:f.guard,dodo:f.service.dodo,authority:f.service.authority,licenseKey:'synthetic-dodo-key',request:{ticket:'verified-ticket',operator:'operator',licenseRef:'license',oldDeviceId:deviceIdentity(f.device.publicKey),newDeviceId:deviceIdentity(pair().publicKey),reason:'lost'},now:1800000000});
+  f.offline();assert.equal((await f.client.authorize()).plan,'personal-monthly');f.online();
+  f.service.dodo.validate=async()=>{throw Error('provider offline');};
+  assert.deepEqual(await f.client.validateOnline(),{checked:true,active:false,revoked:true});assert.equal(f.read().deactivationPending,true);
+  assert.equal(f.read().entitlement,undefined);assert.equal(f.read().licenseKey,undefined);await assert.rejects(f.client.authorize(),/verification/);
+ }finally{await f.close();}
+});
+
+test('revoked local state permits explicit online activation with a supplied key and never a trial fallback',async()=>{
+ for(const key of ['previous-license-key','new-license-key']){
+  const f=await fixture();try{
+   const revoked={revoked:true,deactivationPending:true,lastTrustedTime:1800000000000};f.set(revoked);
+   await assert.rejects(f.client.trial(),/license key/);assert.equal(f.calls(),0);
+   f.offline();await assert.rejects(f.client.activate(key),/offline/);assert.deepEqual(f.read(),revoked);
+   f.online();const result=await f.client.activate(key);assert.equal(result.plan,'personal-monthly');
+   assert.equal(f.read().licenseKey,key);assert.equal(f.read().revoked,undefined);assert.equal((await f.client.authorize()).plan,'personal-monthly');
+  }finally{await f.close();}
+ }
+});
+
+test('a replayed genuine online validation response cannot update or unlock stored authority',async()=>{
+ const f=await fixture();try{
+  await f.client.activate('synthetic-dodo-key');let captured;
+  const intercept=new LicenseClient({...f.options,fetchImpl:async(...args)=>{
+   const response=await f.options.fetchImpl(...args);if(args[0].endsWith('/v1/validate'))captured=await response.clone().text();return response;
+  }});
+  await intercept.validateOnline();const saved=structuredClone(f.read());
+  const replay=new LicenseClient({...f.options,fetchImpl:async(...args)=>args[0].endsWith('/v1/validate')?new Response(captured,{headers:{'Content-Type':'application/json'}}):f.options.fetchImpl(...args)});
+  await assert.rejects(replay.validateOnline(),/claims/);assert.deepEqual(f.read(),saved);
+  f.set({...saved,deactivationPending:true});const locked=structuredClone(f.read());
+  await assert.rejects(replay.validateOnline(),/claims/);assert.deepEqual(f.read(),locked);await assert.rejects(replay.authorize(),/verification/);
+ }finally{await f.close();}
+});

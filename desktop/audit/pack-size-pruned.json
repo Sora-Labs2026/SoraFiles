@@ -1,0 +1,9 @@
+{
+  "recordedAt": "2026-09-17T16:26:28.698Z",
+  "beforeBytes": 462457716,
+  "afterBytes": 315984793,
+  "savedBytes": 146472923,
+  "reductionPercent": 31.672716863048294,
+  "files": 1973,
+  "scope": "Generated Windows x64 resource pack; final isolated verification running; not installer/installed footprint"
+}

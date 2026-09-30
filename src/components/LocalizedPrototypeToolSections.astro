@@ -1,0 +1,64 @@
+---
+import type { LocalePath } from '../i18n/config';
+import { localizedPath } from '../i18n/config';
+import type { LocalizedToolCopy } from '../i18n/types';
+import { getLocaleContent } from '../i18n';
+import type { LiveTool } from '../data/liveTools';
+import { liveToolById } from '../data/liveTools';
+import { liveText, liveToolCopy } from '../data/liveI18n';
+import pages from '../data/prototypeToolSections.json';
+import LiveToolCard from './LiveToolCard.astro';
+import '../styles/v10-tool-exact.css';
+
+interface Props { locale: LocalePath; tool: LiveTool; copy: LocalizedToolCopy; part: 'hero' | 'after'; }
+const { locale, tool, copy, part } = Astro.props;
+const reference = pages[tool.id as keyof typeof pages];
+if (!reference) throw new Error(`Missing prototype tool: ${tool.id}`);
+const content = getLocaleContent(locale);
+const words = liveToolCopy(locale, tool.id);
+const t = (key: string) => liveText(locale, key);
+const href = (path: string) => localizedPath(locale, path);
+const hasGuide = reference.after.includes('data-testid="tool-guide"');
+const hasFaq = reference.after.includes('data-testid="tool-faq"');
+const faqs = copy.faqs.slice(0, reference.faqs.length);
+const related = tool.related.slice(0, 3).map((id) => liveToolById.get(id)).filter((item): item is LiveTool => Boolean(item));
+const steps = [
+  [t('steps.s1t'), t('steps.s1d')],
+  [t('steps.s2t'), t('steps.s2d')],
+  [t('steps.s3t'), t('steps.s3d')],
+];
+---
+{part === 'hero' ?
+  <div class="container tool-hero" data-testid="tool-hero">
+    <nav class="crumbs" aria-label={t('nav.home')} data-testid="breadcrumb"><ol>
+      <li><a class="crumbs__link" data-testid="breadcrumb-link-0" href={href('/')}>{t('nav.home')}</a></li>
+      <li><a class="crumbs__link" data-testid="breadcrumb-link-1" href={href('/tools')}>{t('nav.allTools')}</a></li>
+      <li><span aria-current="page">{words.n}</span></li>
+    </ol></nav>
+    <h1 class="t-h1 tool-hero__title" data-testid="tool-title"><span class="line-reveal"><span class="line-reveal__inner" style="--i:0">{words.n}</span></span></h1>
+    <p class="t-lead tool-hero__lead enter" style="--d:1" data-testid="tool-lead">{words.t}</p>
+  </div> : <>
+    <section class="section section--ruled how" aria-labelledby="how-title" data-testid="how-it-works">
+      <div class="reveal container" data-inview="false">
+        <p class="eyebrow">{t('peek.howTitle')}</p>
+        <h2 id="how-title" class="t-h2 how__title">{content.common.localProcessing}</h2>
+        <ol class="how__steps">{steps.map(([title, detail], index) => <li class="how__step"><span class="how__num tnum">{String(index + 1).padStart(2, '0')}</span><h3 class="t-h3">{title}</h3><p class="t-small">{detail}</p></li>)}</ol>
+      </div>
+    </section>
+    {hasGuide && <section class="section section--ruled tool-guide" aria-labelledby="guide-title" data-testid="tool-guide">
+      <div class="reveal container tool-guide__grid" data-inview="false">
+        <div><p class="eyebrow">{content.common.localProcessing}</p><h2 id="guide-title" class="t-h2 tool-guide__title">{copy.sectionTitle}</h2></div>
+        <div class="tool-guide__body">{copy.paragraphs.map((paragraph) => <p>{paragraph}</p>)}{copy.note && <p class="opt-note opt-note--info"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>{copy.note}</span></p>}</div>
+      </div>
+    </section>}
+    {hasFaq && <section class="section section--ruled faq" id="faq" aria-labelledby="faq-title" data-testid="tool-faq">
+      <div class="container"><div class="faq__grid"><h2 id="faq-title" class="t-h2">{content.home.faqTitle}</h2><div class="faq__list">
+        {faqs.map((faq, index) => <div class="faq__item" data-open={index === 0 ? 'true' : 'false'}><h3><button type="button" id={`faq-q-${index}`} class="faq__q" aria-expanded={index === 0 ? 'true' : 'false'} aria-controls={`faq-a-${index}`} data-testid={`faq-question-${index}`}>{faq.question}<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="faq__icon" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></h3><div id={`faq-a-${index}`} role="region" aria-labelledby={`faq-q-${index}`} class="faq__panel" data-testid={`faq-answer-${index}`}><div><p>{faq.answer}</p></div></div></div>)}
+      </div></div></div>
+    </section>}
+    <section class="section section--ruled related" aria-labelledby="related-title" data-testid="related-tools"><div class="container"><h2 id="related-title" class="t-h2 related__title">{content.common.relatedTools}</h2><ul class="tool-grid related__grid">{related.map((item, index) => <li style={`--i:${index}`}><LiveToolCard tool={item} href={href(`/${item.slug}`)} {locale} exact/></li>)}</ul></div></section>
+  </>}
+<script>
+document.querySelectorAll<HTMLElement>('[data-prototype-tool] .reveal').forEach(el=>{const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting){el.dataset.inview='true';observer.disconnect()}},{threshold:.15,rootMargin:'0px 0px -8% 0px'});observer.observe(el)});
+document.querySelectorAll<HTMLButtonElement>('[data-prototype-tool] .faq__q').forEach(button=>button.addEventListener('click',()=>{const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));button.closest<HTMLElement>('.faq__item')!.dataset.open=String(open)}));
+</script>

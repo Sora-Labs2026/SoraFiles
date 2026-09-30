@@ -12,12 +12,17 @@ import { liveRaw, liveText, liveToolCopy } from '../../data/liveI18n';
 import { localeContent, getLocaleContent } from '../../i18n';
 import { localeByPath, localizedPath, localizedRoutePaths, type LocalePath, type LocalizedRoutePath } from '../../i18n/config';
 import { getBrandPositioning } from '../../i18n/brandPositioning';
+import { CONTENT_PROVENANCE } from '../../data/contentProvenance';
+import type { LocalizedToolCopy } from '../../i18n/types';
+import prototypeToolSections from '../../data/prototypeToolSections.json';
+import LocalizedGuidePage from '../../components/LocalizedGuidePage.astro';
+import {guidePageMeta} from '../../i18n/guides';
 
 type InfoSlug = 'about' | 'contact' | 'privacy' | 'terms' | 'open-source';
 const infoSlugs = new Set<InfoSlug>(['about', 'contact', 'privacy', 'terms', 'open-source']);
 
 export function getStaticPaths() {
-  return Object.keys(localeContent).filter((locale) => locale !== 'en').flatMap((locale) => localizedRoutePaths.map((route) => ({
+  return Object.keys(localeContent).filter((locale) => locale !== 'en').flatMap((locale) => localizedRoutePaths.filter(route=>!route.startsWith('/desktop')).map((route) => ({
     params: { locale, path: route === '/' ? undefined : route.slice(1) },
     props: { locale, basePath: route },
   })));
@@ -44,12 +49,17 @@ const reviewedInfoPage = infoSlug === 'about'
           ? content.pages.openSource
           : undefined;
 const toolWords = tool ? liveToolCopy(locale, tool.id) : undefined;
+const reviewedToolCopy = tool ? (content.tools as Record<string, LocalizedToolCopy>)[tool.id] : undefined;
+const prototypeSection = tool ? prototypeToolSections[tool.id as keyof typeof prototypeToolSections] : undefined;
+const visibleFaqs = prototypeSection?.after.includes('data-testid="tool-faq"') ? reviewedToolCopy?.faqs.slice(0,prototypeSection.faqs.length) ?? [] : [];
 const isHome = basePath === '/';
 const isToolsHub = basePath === '/tools';
+const isGuide = basePath === '/guides' || basePath.startsWith('/guides/');
+const guideMeta = isGuide ? guidePageMeta(locale,basePath) : undefined;
 const canonicalPath = localizedPath(locale, basePath);
 const infoTitle = infoSlug === 'about' ? brand.aboutTitle : infoPage?.title;
-const title = isHome ? brand.homeTitle : toolWords ? `${toolWords.n} | SoraFiles` : isToolsHub ? `${liveText(locale, 'nav.allTools')} | SoraFiles` : infoTitle ? `${infoTitle} | SoraFiles` : 'SoraFiles';
-const description = isHome ? brand.description : toolWords ? `${toolWords.t} ${toolWords.d}` : isToolsHub ? `${liveText(locale, 'nav.allTools')}. ${liveText(locale, 'hero.desc')}` : infoSlug === 'about' ? brand.aboutIntro : reviewedInfoPage?.intro || infoPage?.intro.replace('{{n}}', String(liveTools.length)) || liveText(locale, 'hero.desc');
+const title = guideMeta?.title ?? (isHome ? brand.homeTitle : toolWords ? `${toolWords.n} | SoraFiles` : isToolsHub ? `${liveText(locale, 'nav.allTools')} | SoraFiles` : infoTitle ? `${infoTitle} | SoraFiles` : 'SoraFiles');
+const description = guideMeta?.description ?? (isHome ? brand.description : toolWords ? `${toolWords.t} ${toolWords.d}` : isToolsHub ? `${liveText(locale, 'nav.allTools')}. ${liveText(locale, 'hero.desc')}` : infoSlug === 'about' ? brand.aboutIntro : reviewedInfoPage?.intro || infoPage?.intro.replace('{{n}}', String(liveTools.length)) || liveText(locale, 'hero.desc'));
 const schema = isHome ? {
   '@context': 'https://schema.org', '@graph': [
     { '@type': 'CollectionPage', name: title, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description },
@@ -57,8 +67,9 @@ const schema = isHome ? {
   ],
 } : tool ? {
   '@context': 'https://schema.org', '@graph': [
-    { '@type': 'WebPage', name: `${toolWords?.n} — SoraFiles`, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description, isPartOf: { '@id': 'https://sorafiles.com/#website' } },
+    { '@type': 'WebPage', name: `${toolWords?.n} — SoraFiles`, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description, isPartOf: { '@id': 'https://sorafiles.com/#website' }, dateModified: CONTENT_PROVENANCE.modifiedIso, author: { '@id': CONTENT_PROVENANCE.publisherId }, publisher: { '@id': CONTENT_PROVENANCE.publisherId }, ...(visibleFaqs.length ? { mainEntity: { '@id': `${new URL(canonicalPath, 'https://sorafiles.com')}#faq` } } : {}) },
     { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: liveText(locale, 'nav.home'), item: new URL(localizedPath(locale, '/'), 'https://sorafiles.com').toString() }, { '@type': 'ListItem', position: 2, name: toolWords?.n, item: new URL(canonicalPath, 'https://sorafiles.com').toString() }] },
+    ...(visibleFaqs.length ? [{ '@type': 'FAQPage', '@id': `${new URL(canonicalPath, 'https://sorafiles.com')}#faq`, url: `${new URL(canonicalPath, 'https://sorafiles.com')}#faq`, inLanguage: localeMeta.code, dateModified: CONTENT_PROVENANCE.modifiedIso, author: { '@id': CONTENT_PROVENANCE.publisherId }, publisher: { '@id': CONTENT_PROVENANCE.publisherId }, mainEntity: visibleFaqs.map((faq) => ({ '@type': 'Question', name: faq.question, acceptedAnswer: { '@type': 'Answer', text: faq.answer } })) }] : []),
   ],
 } : { '@context': 'https://schema.org', '@type': infoSlug === 'contact' ? 'ContactPage' : infoSlug === 'about' ? 'AboutPage' : 'WebPage', name: infoPage?.title ?? title, url: new URL(canonicalPath, 'https://sorafiles.com').toString(), inLanguage: localeMeta.code, description };
 ---
@@ -68,5 +79,6 @@ const schema = isHome ? {
   {tool && <LocalizedToolPage {locale} {content} {tool} />}
   {isToolsHub && <LiveToolsHub {locale} />}
   {infoSlug && <LiveInfoPage slug={infoSlug} {locale} />}
+  {isGuide && <LocalizedGuidePage {locale} {basePath} />}
   <Footer {locale} />
 </Layout>

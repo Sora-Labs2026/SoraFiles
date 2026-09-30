@@ -1,5 +1,5 @@
 import type { OcrEngine } from '../ocr/types';
-import { classifyPageText, type PdfTextItemLike } from '../ocr/text-items';
+import { classifyPageText, type PdfTextItemLike } from '../ocr/text-items.ts';
 
 export interface ExtractedPage {
   pageNumber: number;
@@ -36,8 +36,11 @@ export interface ExtractPdfForWordOptions {
 }
 
 export class PdfToWordError extends Error {
-  constructor(readonly code: 'page-limit' | 'cancelled' | 'ocr-unavailable') {
+  readonly code: 'page-limit' | 'cancelled' | 'ocr-unavailable';
+
+  constructor(code: 'page-limit' | 'cancelled' | 'ocr-unavailable') {
     super(code);
+    this.code = code;
   }
 }
 

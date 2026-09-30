@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-09-24T20:51:02.5516927Z",
+  "installer": "desktop/native/target/x86_64-pc-windows-msvc/release/bundle/nsis/SoraFiles Desktop_0.1.0_x64-setup.exe",
+  "installerBytes": 115117829,
+  "sha256": "194a3b907dd87747126a981db36563a9833863bac8fd8df42f633cb30286c665",
+  "signatureStatus": "NotSigned",
+  "nativeExe": "desktop/native/target/x86_64-pc-windows-msvc/release/sorafiles-desktop.exe",
+  "nativeExeBytes": 4847616,
+  "explorerDll": "desktop/native/target/x86_64-pc-windows-msvc/release/sorafiles-explorer.dll",
+  "explorerDllBytes": 180736,
+  "template": "desktop/native/target/x86_64-pc-windows-msvc/release/nsis/x64/installer.nsi",
+  "templateSha256": "b0905d361c86c2266499d185199b8ab54734d0197eb26a3384b732f4ad451565",
+  "templateChecks": {
+    "installModeCurrentUser": true,
+    "productName": true,
+    "manufacturer": true,
+    "mainBinaryName": true,
+    "noShortcutSwitch": true,
+    "webview2DownloadBootstrapper": true
+  },
+  "preflight": {
+    "script": "desktop/scripts/verify-installed-windows.ps1",
+    "status": "PREFLIGHT_BLOCKED",
+    "exitCode": 2,
+    "reason": "Existing current-user SoraFiles installation, Explorer entries, app data, and shortcuts detected; script is read-only and intentionally refuses to launch installer when conflicts exist.",
+    "webview2": "LocalMachine Registry32 version 153.0.4234.48",
+    "scope": "No extraction/installation/lifecycle/shell/uninstall validation"
+  },
+  "installedComparison": {
+    "installRoot": "C:\\Users\\Drishya\\AppData\\Local\\SoraFiles Desktop",
+    "stagedNativeSha256": "2603BDBEB07FC25D37AFF87E48D1EFFA88AE59FA0CA8C6A8F218E7EDEDF587CB",
+    "installedNativeSha256": "0E69C3C2B3D8D1B326D0A7A19A504B26CB66F4A6AD67FDD766507FD051ABF4F3",
+    "nativeMatch": false,
+    "stagedDllSha256": "1128C8D0BD0B8A858C79EF1A3B2E51CA4254ED35BFD9AD6C247FC22DDD4CEFB9",
+    "installedDllSha256": "1FB0E1D68AC30E27E7D5BC835BC8E711013C748377864AC4A49CBB654BF24D00",
+    "dllMatch": false,
+    "note": "Installed files predate current package; no overwrite performed."
+  },
+  "caveats": [
+    "Installer is unsigned (expected until signing certificate is supplied).",
+    "Preflight does not launch or install; full install/uninstall lifecycle remains unverified.",
+    "No external services or secrets touched."
+  ]
+}

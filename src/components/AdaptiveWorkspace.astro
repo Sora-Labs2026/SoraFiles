@@ -1,0 +1,255 @@
+---
+interface Props {
+  id: string;
+  mode: 'canvas' | 'preview' | 'quick';
+  title: string;
+  resetTarget: string;
+  canvasControls?: boolean;
+  class?: string;
+}
+
+const { id, mode, title, resetTarget, canvasControls = true, class: className = '' } = Astro.props;
+---
+
+<div
+  id={id}
+  data-adaptive-workspace
+  data-workspace-mode={mode}
+  data-workspace-reset-target={resetTarget}
+  data-mobile-view="canvas"
+  hidden
+  class:list={['sf-workspace', className]}
+>
+  <button data-workspace-backdrop type="button" tabindex="-1" aria-label="Close editor" class="sf-workspace__backdrop"></button>
+  <section
+    data-workspace-surface
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby={`${id}-title`}
+    tabindex="-1"
+    class="sf-workspace__surface"
+  >
+    <header class="sf-workspace__header">
+      <div class="sf-workspace__identity">
+        <p id={`${id}-title`} class="sf-workspace__title">{title}</p>
+        <p data-workspace-filename class="sf-workspace__filename">Local file</p>
+      </div>
+
+      {canvasControls && <div data-workspace-canvas-controls class="sf-workspace__canvas-controls">
+        <button data-workspace-command="undo" type="button" class="sf-workspace__icon-button" aria-label="Undo" title="Undo">↶</button>
+        <button data-workspace-command="redo" type="button" class="sf-workspace__icon-button" aria-label="Redo" title="Redo">↷</button>
+        <span class="sf-workspace__control-divider" aria-hidden="true"></span>
+        <button data-workspace-command="zoom-out" type="button" class="sf-workspace__icon-button" aria-label="Zoom out" title="Zoom out">−</button>
+        <output data-workspace-zoom class="sf-workspace__zoom" aria-live="polite">Fit</output>
+        <button data-workspace-command="zoom-in" type="button" class="sf-workspace__icon-button" aria-label="Zoom in" title="Zoom in">+</button>
+        <button data-workspace-command="fit" type="button" class="sf-workspace__fit-button">Fit</button>
+      </div>}
+
+      <button data-workspace-close type="button" class="sf-workspace__close" aria-label={`Close ${title}`}>×</button>
+    </header>
+
+    <div data-workspace-body class="sf-workspace__body">
+      <slot />
+    </div>
+
+    {mode !== 'quick' && (
+      <nav data-workspace-mobile-nav aria-label="Editor panels" class="sf-workspace__mobile-nav">
+        {mode === 'canvas' && <button data-mobile-panel="pages" type="button">Pages</button>}
+        <button data-mobile-panel="canvas" type="button" aria-current="page">{mode === 'preview' ? 'Preview' : 'File'}</button>
+        <button data-mobile-panel="inspector" type="button">{mode === 'preview' ? 'Options' : 'Adjust'}</button>
+      </nav>
+    )}
+
+    <div data-workspace-discard hidden class="sf-workspace__discard" role="alertdialog" aria-modal="true" aria-labelledby={`${id}-discard-title`}>
+      <div class="sf-workspace__discard-card">
+        <p id={`${id}-discard-title`} class="text-base font-semibold text-ink">Discard your changes?</p>
+        <p class="mt-1 text-sm leading-6 text-muted">Your file stays on this device, but edits in this workspace will be lost.</p>
+        <div class="mt-5 flex justify-end gap-2">
+          <button data-workspace-keep type="button" class="min-h-11 rounded-control px-4 text-sm font-medium text-ink hover:bg-canvas">Keep editing</button>
+          <button data-workspace-confirm-discard type="button" class="min-h-11 rounded-control bg-coral px-4 text-sm font-medium text-white hover:opacity-90">Discard</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script is:inline>
+  const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  const setupWorkspace = (workspace) => {
+    if (workspace.dataset.adaptiveReady === 'true') return;
+    workspace.dataset.adaptiveReady = 'true';
+    const surface = workspace.querySelector('[data-workspace-surface]');
+    const discard = workspace.querySelector('[data-workspace-discard]');
+    const filename = workspace.querySelector('[data-workspace-filename]');
+    const mobileNav = workspace.querySelector('[data-workspace-mobile-nav]');
+    let returnFocus = null;
+    let dirty = false;
+
+    if (mobileNav) {
+      const hasPages = Boolean(workspace.querySelector('[data-workspace-pages]'));
+      const hasCanvas = Boolean(workspace.querySelector('[data-workspace-canvas], [data-workspace-source]'));
+      const hasInspector = Boolean(workspace.querySelector('[data-workspace-inspector]'));
+      if (!hasCanvas || !hasInspector) mobileNav.hidden = true;
+      else if (!hasPages) { const pagesButton = mobileNav.querySelector('[data-mobile-panel="pages"]'); if (pagesButton) pagesButton.hidden = true; mobileNav.style.gridTemplateColumns = 'repeat(2,minmax(0,1fr))'; }
+    }
+
+    const resetMobileView = () => {
+      workspace.dataset.mobileView = 'canvas';
+      workspace.querySelectorAll('[data-mobile-panel]').forEach((button) => {
+        if (button.dataset.mobilePanel === 'canvas') button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+      });
+    };
+
+    const syncFilename = () => {
+      const root = workspace.closest('[data-workbench]');
+      const selectedName = root?.querySelector('[data-workspace-source-name], #action-file-list li span span, [data-file-name]');
+      if (filename) filename.textContent = root?.dataset.workspaceFilename || selectedName?.textContent?.trim() || root?.querySelector('input[type="file"]')?.files?.[0]?.name || 'Local file';
+    };
+
+    const setOpen = (open) => {
+      if (open) {
+        // Closing an editor should not replay the surrounding page entrance.
+        document.querySelectorAll('.sf-enter').forEach(node => { node.style.animation = 'none'; node.style.opacity = '1'; node.style.transform = 'none'; });
+        returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        document.documentElement.classList.add('sf-workspace-open');
+        resetMobileView();
+        syncFilename();
+        requestAnimationFrame(() => {
+          workspace.dataset.open = 'true';
+          surface?.focus({ preventScroll: true });
+        });
+      } else {
+        delete workspace.dataset.open;
+        document.documentElement.classList.remove('sf-workspace-open');
+        returnFocus?.focus({ preventScroll: true });
+      }
+    };
+
+    const finishClose = (reset) => {
+      dirty = false;
+      workspace.dataset.dirty = 'false';
+      if (discard) discard.hidden = true;
+      setOpen(false);
+      window.setTimeout(() => {
+        if (reset) {
+          const root = workspace.closest('[data-workbench]') ?? document;
+          root.querySelector(workspace.dataset.workspaceResetTarget || '')?.click();
+        } else {
+          workspace.hidden = true;
+        }
+      }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 170);
+    };
+
+    const requestClose = () => {
+      if (!dirty) { finishClose(true); return; }
+      if (discard) discard.hidden = false;
+      discard?.querySelector('[data-workspace-keep]')?.focus();
+    };
+
+    new MutationObserver(() => {
+      if (!workspace.hidden && workspace.dataset.open !== 'true') setOpen(true);
+      if (workspace.hidden && workspace.dataset.open === 'true') setOpen(false);
+    }).observe(workspace, { attributes: true, attributeFilter: ['hidden'] });
+    if (!workspace.hidden) setOpen(true);
+
+    workspace.querySelector('[data-workspace-close]')?.addEventListener('click', requestClose);
+    workspace.querySelector('[data-workspace-backdrop]')?.addEventListener('click', requestClose);
+    workspace.querySelector('[data-workspace-keep]')?.addEventListener('click', () => { if (discard) discard.hidden = true; surface?.focus(); });
+    workspace.querySelector('[data-workspace-confirm-discard]')?.addEventListener('click', () => finishClose(true));
+    workspace.addEventListener('workspace-clean', () => { dirty = false; workspace.dataset.dirty = 'false'; });
+    workspace.addEventListener('workspace-dirty', () => { dirty = true; workspace.dataset.dirty = 'true'; });
+    workspace.addEventListener('workspace-complete', () => {
+      dirty = false; workspace.dataset.dirty = 'false';
+      const root = workspace.closest('[data-workbench]');
+      const result = root?.querySelector('[data-workbench-result]');
+      if (result && result.parentElement !== surface) { result.dataset.workspaceResult = ''; surface?.append(result); }
+    });
+    workspace.addEventListener('input', (event) => { if (event.isTrusted) { dirty = true; workspace.dataset.dirty = 'true'; } });
+    workspace.addEventListener('change', (event) => { if (event.isTrusted) { dirty = true; workspace.dataset.dirty = 'true'; } });
+
+    workspace.querySelectorAll('[data-workspace-command]').forEach((button) => button.addEventListener('click', () => {
+      workspace.dispatchEvent(new CustomEvent('workspace-command', { detail: { command: button.dataset.workspaceCommand } }));
+    }));
+    workspace.querySelectorAll('[data-mobile-panel]').forEach((button) => button.addEventListener('click', () => {
+      const panel = button.dataset.mobilePanel || 'canvas';
+      workspace.dataset.mobileView = panel;
+      workspace.querySelectorAll('[data-mobile-panel]').forEach((candidate) => { if (candidate === button) candidate.setAttribute('aria-current', 'page'); else candidate.removeAttribute('aria-current'); });
+      const target = panel === 'inspector'
+        ? workspace.querySelector('[data-workspace-inspector]')
+        : panel === 'pages'
+          ? workspace.querySelector('[data-workspace-pages]')
+          : workspace.querySelector('[data-workspace-canvas], [data-workspace-source]');
+      if (target instanceof HTMLElement) target.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }));
+
+    workspace.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (discard && !discard.hidden) { discard.hidden = true; surface?.focus(); } else requestClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const scope = discard?.hidden ? surface : discard;
+      const focusable = [...(scope?.querySelectorAll(focusableSelector) ?? [])].filter((item) => item.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0]; const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    });
+  };
+
+  document.querySelectorAll('[data-adaptive-workspace]').forEach(setupWorkspace);
+</script>
+
+<style>
+  :global(html.sf-workspace-open) { overflow: hidden; }
+  :global(html.sf-workspace-open .sf-enter) { animation: none !important; transform: none !important; }
+  :global(html.sf-workspace-open .live-workbench section[data-workbench] > div) { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  :global(html.sf-workspace-open [data-extra-workbench]) { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .sf-workspace { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: clamp(.75rem, 2vw, 2rem); color: var(--color-ink); }
+  .sf-workspace__backdrop { position: absolute; inset: 0; border: 0; background: rgb(8 12 28 / .64); opacity: 0; backdrop-filter: blur(7px); transition: opacity 190ms ease; }
+  .sf-workspace__surface { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); width: min(96vw, 106rem); height: min(92vh, 68rem); overflow: hidden; border: 1px solid color-mix(in srgb, var(--color-line) 72%, transparent); border-radius: 1.35rem; background: color-mix(in srgb, var(--color-surface) 96%, transparent); box-shadow: 0 28px 90px rgb(6 10 28 / .35), 0 2px 8px rgb(6 10 28 / .16); opacity: 0; transform: scale(.98) translateY(5px); transition: opacity 190ms ease, transform 190ms cubic-bezier(.2,.7,.25,1); outline: none; }
+  [data-open='true'] .sf-workspace__backdrop, [data-open='true'] .sf-workspace__surface { opacity: 1; transform: none; }
+  [data-workspace-mode='preview'] .sf-workspace__surface { width: min(90vw, 78rem); height: min(86vh, 58rem); }
+  [data-workspace-mode='quick'] .sf-workspace__surface { width: min(94vw, 36rem); height: auto; max-height: min(88vh, 48rem); }
+  .sf-workspace__header { min-width: 0; display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 1rem; min-height: 4rem; padding: .65rem .8rem .65rem 1.15rem; border-bottom: 1px solid var(--color-line); background: color-mix(in srgb, var(--color-surface) 92%, transparent); }
+  .sf-workspace__identity { min-width: 0; }
+  .sf-workspace__title { font-size: .875rem; line-height: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+  .sf-workspace__filename { max-width: 34rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: .1rem; font-size: .7rem; line-height: 1rem; color: var(--color-muted); }
+  .sf-workspace__canvas-controls { display: flex; align-items: center; gap: .15rem; padding: .2rem; border-radius: .7rem; background: var(--color-canvas); }
+  [data-workspace-mode='quick'] .sf-workspace__canvas-controls, [data-workspace-mode='preview'] .sf-workspace__canvas-controls { display: none; }
+  .sf-workspace__icon-button, .sf-workspace__fit-button, .sf-workspace__close { min-width: 2.75rem; min-height: 2.75rem; display: inline-grid; place-items: center; border-radius: .55rem; font-size: .875rem; font-weight: 700; color: var(--color-muted); }
+  .sf-workspace__icon-button:hover, .sf-workspace__fit-button:hover, .sf-workspace__close:hover { color: var(--color-ink); background: var(--color-surface); }
+  .sf-workspace__fit-button { padding-inline: .7rem; }
+  .sf-workspace__zoom { min-width: 3.4rem; text-align: center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .7rem; color: var(--color-muted); }
+  .sf-workspace__control-divider { width: 1px; height: 1.25rem; margin-inline: .2rem; background: var(--color-line); }
+  .sf-workspace__close { font-size: 1.35rem; font-weight: 400; }
+  .sf-workspace__body { min-height: 0; min-width: 0; overflow: hidden; }
+  .sf-workspace__surface > :global([data-workspace-result]) { grid-row: 3; max-height: 13rem; overflow-y: auto; border-top: 1px solid var(--color-line); }
+  .sf-workspace__mobile-nav { display: none; }
+  .sf-workspace__discard { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; padding: 1rem; background: rgb(8 12 28 / .58); backdrop-filter: blur(4px); }
+  .sf-workspace__discard-card { width: min(100%, 25rem); border-radius: 1rem; background: var(--color-surface); padding: 1.25rem; box-shadow: 0 24px 70px rgb(6 10 28 / .3); }
+
+  @media (max-width: 767px) {
+    .sf-workspace { padding: 0; }
+    .sf-workspace__surface, [data-workspace-mode='preview'] .sf-workspace__surface, [data-workspace-mode='quick'] .sf-workspace__surface { width: 100vw; height: 100dvh; max-height: none; border: 0; border-radius: 0; background: var(--color-surface); }
+    .sf-workspace__header { min-height: calc(3.6rem + env(safe-area-inset-top)); grid-template-columns: minmax(0,1fr) auto; padding: max(.55rem, env(safe-area-inset-top)) max(.65rem, env(safe-area-inset-right)) .55rem max(.9rem, env(safe-area-inset-left)); }
+    .sf-workspace__canvas-controls { grid-column: 1 / -1; grid-row: 2; justify-content: center; max-width: 100%; }
+    .sf-workspace__close { grid-column: 2; grid-row: 1; }
+    .sf-workspace__filename { max-width: 68vw; }
+    [data-workspace-mode='canvas'] .sf-workspace__surface, [data-workspace-mode='preview'] .sf-workspace__surface { grid-template-rows: auto minmax(0,1fr) auto; }
+    [data-workspace-mode='preview'][data-mobile-view='canvas'] :global([data-workspace-inspector]) { display: none !important; }
+    [data-workspace-mode='preview'][data-mobile-view='inspector'] :global([data-workspace-source]), [data-workspace-mode='preview'][data-mobile-view='inspector'] :global([data-workspace-canvas]) { display: none !important; }
+    .sf-workspace__mobile-nav { display: grid; grid-template-columns: repeat(3,1fr); gap: .35rem; padding: .45rem max(.6rem, env(safe-area-inset-right)) max(.45rem, env(safe-area-inset-bottom)) max(.6rem, env(safe-area-inset-left)); border-top: 1px solid var(--color-line); background: var(--color-surface); }
+    .sf-workspace__mobile-nav button { min-height: 2.75rem; border-radius: .65rem; touch-action: manipulation; font-size: .75rem; font-weight: 700; color: var(--color-muted); }
+    .sf-workspace__mobile-nav button[aria-current='page'] { color: var(--color-blue); background: var(--color-blue-soft); }
+    .sf-workspace :global(input:not([type='range']):not([type='checkbox']):not([type='radio']):not([type='color'])), .sf-workspace :global(select), .sf-workspace :global(textarea) { font-size: 16px !important; }
+    .sf-workspace :global(button), .sf-workspace :global(a), .sf-workspace :global(input[type='range']) { touch-action: manipulation; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sf-workspace__backdrop, .sf-workspace__surface { transition-duration: 1ms; }
+  }
+</style>

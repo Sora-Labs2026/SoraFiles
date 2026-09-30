@@ -1,0 +1,19 @@
+SoraFiles Desktop structural PDF compression
+
+qpdf WebAssembly runtime: 12.2.0
+Copyright (c) 2005-2021 Jay Berkenbilt
+Copyright (c) 2022-2025 Jay Berkenbilt and Manfred Holger
+License: Apache License, Version 2.0; see qpdf-Apache-2.0.txt.
+Source: https://github.com/qpdf/qpdf
+Version/license confirmed by invoking --version and --copyright on the installed
+WASM runtime during September 17 recovery. Complete build provenance and exact
+corresponding-source review remain required before release.
+
+JavaScript/WASM package wrapper: @neslinesli93/qpdf-wasm 0.3.0
+Declared package license: ISC
+Source: https://github.com/neslinesli93/qpdf-wasm
+The package metadata's ISC label does not replace qpdf's own Apache license.
+The installed package does not include a separate wrapper license text; retrieve
+and verify its copyright/license statement before distribution.
+
+This notice records development usage, not legal clearance for a public release.

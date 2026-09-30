@@ -1,0 +1,11 @@
+# Desktop runtime state and private deployment configuration
+.local/
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+*private*.pem
+*.key
+catalog.local.json

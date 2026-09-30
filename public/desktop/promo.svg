@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" role="img" aria-labelledby="title desc">
+  <title id="title">SoraFiles Desktop workflow concept</title>
+  <desc id="desc">A PDF file, a quick-action menu and a lock, illustrated in SoraFiles colors. This is a concept illustration, not a product screenshot.</desc>
+  <defs>
+    <linearGradient id="canvas" x2="1" y2="1"><stop stop-color="#ebf5ff"/><stop offset="1" stop-color="#f5f3ff"/></linearGradient>
+    <linearGradient id="accent" x2="1" y2="1"><stop stop-color="#2563eb"/><stop offset="1" stop-color="#7c3aed"/></linearGradient>
+    <filter id="lift" x="-30%" y="-30%" width="170%" height="180%"><feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#2563eb" flood-opacity=".13"/></filter>
+  </defs>
+  <rect width="600" height="800" rx="40" fill="url(#canvas)"/>
+  <circle cx="550" cy="120" r="200" fill="#d946ef" opacity=".06"/>
+  <circle cx="50" cy="680" r="190" fill="#06b6d4" opacity=".07"/>
+  <g filter="url(#lift)">
+    <rect x="65" y="125" width="470" height="450" rx="28" fill="#fff" stroke="#dde2ef"/>
+    <path d="M65 184h470" stroke="#dde2ef"/>
+    <circle cx="95" cy="154" r="7" fill="#ea580c"/><circle cx="119" cy="154" r="7" fill="#eab308"/><circle cx="143" cy="154" r="7" fill="#10b981"/>
+    <rect x="104" y="230" width="136" height="165" rx="20" fill="#fdf2f8" stroke="#fbcfe8"/>
+    <g transform="translate(144 257) scale(2.4)" fill="none" stroke="#db2777" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l4 4v14H5zM15 3v5h4"/><path d="M8 12h8M8 16h6"/></g>
+    <g fill="#dde2ef"><rect x="267" y="246" width="178" height="10" rx="5"/><rect x="267" y="272" width="126" height="9" rx="4"/><rect x="267" y="315" width="178" height="10" rx="5"/><rect x="267" y="341" width="106" height="9" rx="4"/></g>
+  </g>
+  <g filter="url(#lift)">
+    <rect x="184" y="388" width="352" height="239" rx="24" fill="#fff" stroke="#dde2ef"/>
+    <rect x="200" y="404" width="320" height="63" rx="15" fill="url(#accent)"/>
+    <g transform="translate(217 421) scale(1.25)" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="8" height="12" rx="2"/><rect x="13" y="8" width="8" height="12" rx="2"/><path d="M8 20h3M9.5 18.5v3"/></g>
+    <path d="M277 435h169" stroke="#fff" stroke-width="11" stroke-linecap="round"/>
+    <g stroke="#5b6178" stroke-width="8" stroke-linecap="round"><path d="M279 499h138M279 548h114M279 593h154"/></g>
+    <g fill="none" stroke="#7c3aed" stroke-width="2"><rect x="222" y="486" width="24" height="28" rx="3"/><path d="M234 486v28M222 500h24"/><path d="M244 539v11h-11M222 553a12 12 0 0 0 22-3M224 540a12 12 0 0 1 20 10"/><rect x="222" y="580" width="24" height="24" rx="4"/></g>
+  </g>
+  <g transform="translate(90 646)"><circle cx="37" cy="37" r="37" fill="#ebf5ff" stroke="#c4ccdc"/><g transform="translate(21 19) scale(1.4)" fill="none" stroke="#2563eb" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></g></g>
+  <path d="m465 607 13 55 11-17 19-4Z" fill="#0b0e1d" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+</svg>

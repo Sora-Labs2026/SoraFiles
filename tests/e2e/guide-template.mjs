@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import { readFile,writeFile,mkdir } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
+import { resolve } from 'node:path';
+import { transform } from '@astrojs/compiler-rs';
+import ts from 'typescript';
+import { experimental_AstroContainer as AstroContainer } from 'astro/container';
+await mkdir('.artifacts/astra-guides',{recursive:true});
+const compiled=await transform(await readFile('src/components/GuideBody.astro','utf8'),{filename:'GuideBody.astro',normalizedFilename:'GuideBody.astro',internalURL:'astro/compiler-runtime',resultScopedSlot:true,astroGlobalArgs:JSON.stringify('https://sorafiles.com'),resolvePath:specifier=>specifier});
+const code=ts.transpile(compiled.code,{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022});
+const file='.artifacts/astra-guides/body-fixture.mjs';await writeFile(file,code);
+const component=(await import(pathToFileURL(resolve(file)).href)).default;
+const blocks=[{type:'heading',level:2,id:'validation',text:'Validation fixture'},{type:'paragraph',text:'<script>alert("test")</script>'},{type:'heading',level:3,id:'details',text:'Details'},{type:'list',ordered:true,items:['One','Two']},{type:'table',caption:'Known values',headers:['Name','Value'],rows:[['Synthetic','7631']]},{type:'image',src:'/favicon-48x48.png',alt:'Existing SoraFiles icon',width:48,height:48},{type:'callout',text:'Synthetic test only.'}];
+const container=await AstroContainer.create();const html=await container.renderToString(component,{props:{blocks}});
+assert.match(html,/<h2[^>]*id="validation"/);assert.match(html,/<h3[^>]*id="details"/);assert.doesNotMatch(html,/<h1|<script>/);assert.match(html,/&lt;script&gt;/);assert.match(html,/scope="col"/);assert.match(html,/alt="Existing SoraFiles icon"/);
+await writeFile('.artifacts/astra-guides/body-fixture.html',html);console.log('PASS: test-only guide blocks render escaped text, H2/H3, list, accessible table, image and callout; no production fixture.');

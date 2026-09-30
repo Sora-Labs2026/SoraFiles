@@ -1,0 +1,152 @@
+name: Desktop native candidate builds
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/desktop-*']
+    paths: ['desktop/**', 'src/**', 'public/**', 'package.json', 'package-lock.json', '.gitattributes', '.github/workflows/desktop-native-build.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            bundles: nsis
+          - os: macos-15
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: dmg
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      SORA_BROWSER_CHANNEL: chromium
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.21.0'
+          cache: npm
+      - name: Install Linux native libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev patchelf xdg-utils xvfb
+      - name: Select Rust compiler
+        shell: bash
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup default 1.98.1
+          rustup target add ${{ matrix.target }}
+      - run: npm ci
+      - name: Verify native runner and bundled runtime architecture
+        run: node desktop/scripts/verify-native-target.mjs ${{ matrix.target }}
+      - name: Install browser for actual processing form tests
+        run: npx playwright install --with-deps chromium
+      - name: Prepare checksum-pinned background model for local tests
+        run: node desktop/scripts/sync-background-model.mjs --download
+      - name: Verify shared processing, licensing and release policy
+        run: node --test desktop/tests/*.test.mjs
+      - name: Build independent interface
+        run: node desktop/scripts/build-native-ui.mjs
+      - name: Verify compact action interface
+        run: |
+          node desktop/scripts/build-ui.mjs
+          node desktop/tests/quick-action-ui-qa.mjs
+          node desktop/tests/replacement-ui-qa.mjs
+          node desktop/tests/canvas-ui-qa.mjs
+          node desktop/tests/rating-ui-qa.mjs
+          node desktop/tests/language-ui-qa.mjs
+          node desktop/tests/ui-qa.mjs --desktop-only
+      - name: Measure processing resources and reject source-checkout links
+        run: node desktop/scripts/measure-processing-pack.mjs
+      - name: Verify isolated processing package
+        run: node desktop/scripts/verify-processing-pack.mjs
+      - name: Verify retained OCR CPU fallback engines
+        run: node desktop/scripts/verify-ocr-fallbacks.mjs
+      - name: Native host tests
+        run: cargo test --locked --manifest-path desktop/native/Cargo.toml --target ${{ matrix.target }}
+      - name: Install pinned native packaging CLI
+        run: npm install --global @tauri-apps/cli@2.11.4
+      - name: Preserve verified Linux processing binaries during AppImage packaging
+        if: runner.os == 'Linux'
+        run: chmod +x desktop/scripts/appimage-patchelf.sh
+      - name: Build platform package
+        working-directory: desktop/native
+        env:
+          APPLE_SIGNING_IDENTITY: '-'
+          PATCHELF: ${{ runner.os == 'Linux' && format('{0}/desktop/scripts/appimage-patchelf.sh', github.workspace) || '' }}
+        # Invoke Node directly: the Windows PowerShell npm shim consumes the
+        # argument separator before Cargo's --locked flag.
+        run: node "$(npm root --global)/@tauri-apps/cli/tauri.js" build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+        # Direct local packaging only: no release API or signing credentials.
+      - name: Verify Windows resource staging
+        if: runner.os == 'Windows'
+        run: node desktop/scripts/verify-windows-payload.mjs
+      - name: Inspect macOS ad-hoc bundle
+        if: runner.os == 'macOS'
+        run: node desktop/scripts/inspect-macos-bundle.mjs desktop/native/target/${{ matrix.target }}/release/bundle/macos
+      - name: Verify actual packaged Unix engines and executable runtime
+        if: runner.os != 'Windows'
+        run: node desktop/scripts/verify-unix-payload.mjs ${{ matrix.target }}
+      - name: Test actual native window lifecycle on macOS
+        if: runner.os == 'macOS'
+        run: node desktop/scripts/run-native-smoke.mjs 'desktop/native/target/${{ matrix.target }}/release/bundle/macos/SoraFiles Desktop.app/Contents/MacOS/sorafiles-desktop'
+      - name: Test actual native window lifecycle on Linux
+        if: runner.os == 'Linux'
+        run: xvfb-run -a --server-args="-screen 0 1600x1200x24" node desktop/scripts/run-native-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop
+      - name: Test actual native window lifecycle on Windows
+        if: runner.os == 'Windows'
+        run: node desktop/scripts/run-native-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop.exe
+      - name: Test forwarded launches racing native window close and creation on Windows
+        if: runner.os == 'Windows'
+        run: node desktop/scripts/run-native-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop.exe --window-race
+      - name: Test packaged Windows menu broker
+        if: runner.os == 'Windows'
+        run: node desktop/scripts/run-shell-broker-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop.exe
+      - name: Test packaged macOS menu broker
+        if: runner.os == 'macOS'
+        run: node desktop/scripts/run-shell-broker-smoke.mjs 'desktop/native/target/${{ matrix.target }}/release/bundle/macos/SoraFiles Desktop.app/Contents/MacOS/sorafiles-desktop'
+      - name: Test packaged Linux menu broker
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node desktop/scripts/run-shell-broker-smoke.mjs desktop/native/target/${{ matrix.target }}/release/sorafiles-desktop
+      - name: Collect immutable artifact hashes
+        run: node desktop/scripts/record-native-artifacts.mjs ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desktop-candidate-${{ matrix.target }}
+          path: |
+            desktop/native/target/${{ matrix.target }}/release/bundle/**/*.dmg
+            desktop/native/target/${{ matrix.target }}/release/bundle/**/*.deb
+            desktop/native/target/${{ matrix.target }}/release/bundle/**/*.AppImage
+            desktop/native/target/${{ matrix.target }}/release/bundle/**/*.exe
+            .artifacts/native-candidate-${{ matrix.target }}.json
+            .artifacts/macos-bundle-inspection.json
+            .artifacts/native-smoke-*.json
+            .artifacts/shell-broker-smoke-*.json
+            .artifacts/processing-pack-verification.json
+            .artifacts/ocr-fallback-verification.json
+            .artifacts/processing-pack-size.json
+            .artifacts/native-target-verification.json
+            .artifacts/windows-payload-verification.json
+            .artifacts/unix-payload-verification.json
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 14

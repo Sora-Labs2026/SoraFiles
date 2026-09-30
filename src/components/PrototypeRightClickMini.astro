@@ -1,0 +1,16 @@
+---
+import {guideText} from '../i18n/guides';
+import type {LocalePath} from '../i18n/config';
+interface Props {locale?:LocalePath}
+const {locale='en'}=Astro.props;
+const t=(s:string)=>guideText(locale,s);
+---
+<div class="rcm" data-play="false" data-reveal-threshold="0.5" aria-hidden="true"><div class="rcm__stage">
+  <div class="rcm__file"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg><span class="tnum">{t("Report.pdf")}</span></div>
+  <div class="ctx-menu rcm__menu"><span class="ctx-menu__item">{t("Open")}</span><span class="ctx-menu__item">{t("Rename")}</span><span class="ctx-menu__sep"></span><span class="ctx-menu__item is-hot"><svg class="logo-mark" width="13" height="13" viewBox="0 0 32 32" aria-hidden="true"><path fill="var(--brand-mark)" d="M18.5 4H26a2 2 0 0 1 2 2v6.75a2 2 0 0 1-2 2H7.75A10.75 10.75 0 0 1 18.5 4z"/><path fill="currentColor" d="M6 17.25h18.25A10.75 10.75 0 0 1 13.5 28H6a2 2 0 0 1-2-2v-6.75a2 2 0 0 1 2-2z"/></svg>{t("Edit with SoraFiles")} <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ctx-menu__chev lucide lucide-chevron-right" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></span></div>
+  <div class="ctx-menu rcm__sub"><span class="ctx-menu__item is-hot">{t("Compress PDF")}</span><span class="ctx-menu__item">{t("Merge PDF")}</span><span class="ctx-menu__item">{t("PDF to JPG")}</span></div>
+  <svg class="pointer rcm__pointer" width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><path d="M2 1.5v16.2l4.3-4 2.9 6.6 2.7-1.2-2.8-6.5h6.1z"/></svg>
+ </div></div>
+<script>
+document.querySelectorAll<HTMLElement>('.rcm[data-reveal-threshold]').forEach(el=>{const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting){el.dataset.play='true';observer.disconnect()}},{threshold:.5,rootMargin:'0px 0px -8% 0px'});observer.observe(el)});
+</script>

@@ -1,0 +1,9 @@
+{
+  "package": "heic-to",
+  "version": "1.5.2",
+  "license": "LGPL-3.0",
+  "source": "heic-to/src/lib/libheif-without-unsafe-eval.js",
+  "sha256": "356068bb64947a76f1490ee139b2cab52f62e5e60d1945413aed9ab94c09e754",
+  "adaptation": "ESM export changed to CommonJS export for existing Node branch",
+  "releaseGate": "Complete libheif/libde265 corresponding source and codec/redistribution review required"
+}

@@ -40,7 +40,12 @@ jobs:
         run: npx astro preview --background --port 4390
 
       - name: Run responsive site checks
-        run: node tests/e2e/site-shell.mjs
+        run: node tests/e2e/v10-shell.mjs
+        env:
+          SORA_BASE_URL: http://localhost:4390
+
+      - name: Test star ratings (placement, keyboard, persistence, tool gating)
+        run: node tests/e2e/ratings.mjs
         env:
           SORA_BASE_URL: http://localhost:4390
 

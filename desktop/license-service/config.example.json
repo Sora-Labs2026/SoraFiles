@@ -1,0 +1,15 @@
+{
+  "mode": "test_mode",
+  "listenHost": "127.0.0.1",
+  "listenPort": 8788,
+  "databasePath": "SET_PRIVATE_PERSISTENT_DATABASE_PATH",
+  "publicOrigin": "https://license.sorafiles.com",
+  "catalogConfig": [
+    {"plan":"personal-monthly","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"},
+    {"plan":"personal-annual","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"},
+    {"plan":"personal-lifetime","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"},
+    {"plan":"team-monthly","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"},
+    {"plan":"team-annual","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"},
+    {"plan":"team-lifetime","productId":"SET_DODO_PRODUCT_ID","entitlementId":"SET_DODO_ENTITLEMENT_ID"}
+  ]
+}

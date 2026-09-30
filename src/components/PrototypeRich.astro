@@ -1,0 +1,7 @@
+---
+type Part=string|{href:string;text:string};
+interface Props {content:Part|Part[]}
+const {content}=Astro.props;
+const parts=Array.isArray(content)?content:[content];
+---
+{parts.map(part=>typeof part==='string'?part:<a class="link" href={part.href} target={part.href.startsWith('/')?undefined:'_blank'} rel={part.href.startsWith('/')?undefined:'noopener noreferrer'}>{part.text}{!part.href.startsWith('/')&&<><svg class="ext-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6m-11 5L21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/></svg><span class="sr-only"> (External link, opens in a new tab)</span></>}</a>)}

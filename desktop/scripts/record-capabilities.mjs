@@ -1,0 +1,15 @@
+import {writeFile} from 'node:fs/promises';import {capabilities} from '../shared/capabilities.mjs';
+const evidence={};
+for(const id of ['merge-pdf','split-pdf','rotate-pdf','remove-pages'])evidence[id]=['desktop/tests/pdf-core.test.mjs','desktop/tests/pdf-jobs.test.mjs','.artifacts/desktop-pdf-core/independent-validation.json'];
+evidence['page-numbers']=['desktop/tests/page-numbers.test.mjs','desktop/tests/pdf-jobs.test.mjs'];
+for(const id of ['watermark-pdf','sign-pdf'])evidence[id]=['desktop/tests/pdf-overlays.test.mjs','desktop/tests/pdf-jobs.test.mjs'];
+evidence['jpg-to-pdf']=['desktop/tests/images-pdf.test.mjs','desktop/tests/pdf-jobs.test.mjs'];
+for(const id of ['image-converter','compress-image','resize-image','edit-image'])evidence[id]=['desktop/tests/images.test.mjs','desktop/tests/image-jobs.test.mjs'];
+evidence['pdf-to-jpg']=['desktop/tests/pdf-raster.test.mjs','.artifacts/processing-pack-verification.json'];
+evidence['pdf-ocr']=['desktop/tests/ocr.test.mjs','.artifacts/processing-pack-verification.json'];
+evidence['protect-pdf']=['desktop/tests/protect-pdf.test.mjs'];
+evidence['metadata-remover']=['desktop/tests/metadata.test.mjs','desktop/tests/processing-host.test.mjs','desktop/docs/metadata-removal.md'];
+evidence['pdf-to-excel']=['desktop/tests/pdf-excel.test.mjs','desktop/tests/processing-host.test.mjs','desktop/docs/pdf-to-excel.md'];
+const map=capabilities.map(tool=>({id:tool.id,webAvailable:true,desktopReleased:false,nativeQuickActionReleased:false,headlessPort:evidence[tool.id]?'implemented with scoped output tests; full native workflow and release validation pending':'not certified',evidence:evidence[tool.id]||[],verifiedEngineImprovementOverWeb:false,permittedPublicClaim:'Desktop in development; no superiority claim.'}));
+await writeFile('desktop/audit/capability-claims.json',JSON.stringify({recordedAt:new Date().toISOString(),scope:'Implementation evidence, not platform or release certification',tools:map},null,2)+'\n');
+console.log(`Recorded ${map.length} tool claim boundaries`);

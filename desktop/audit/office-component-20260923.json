@@ -1,0 +1,29 @@
+{
+  "recordedAt": "2026-09-23T15:20:39.781Z",
+  "status": "PASS",
+  "scenario": "writer-calc",
+  "native": {
+    "status": "CONVERTED",
+    "stage": "complete",
+    "outputs": 2,
+    "deniedRequests": 2,
+    "scope": "Synthetic local Office component only; no licensed processing route or installer certification"
+  },
+  "documents": [
+    {
+      "kind": "writer",
+      "pages": 1,
+      "bytes": 9618,
+      "sha256": "8820656fd555301a3a22c02f01a976384c0663ca9d013af7851588157b9647ee",
+      "expectedText": true
+    },
+    {
+      "kind": "calc",
+      "pages": 1,
+      "bytes": 8888,
+      "sha256": "d568dc4d8d0f9ccc625ca01da7e63117bfe6426f95806689c0125f6e2740dcef",
+      "expectedText": true
+    }
+  ],
+  "scope": "Synthetic Office component with allowlisted local resources and denied external fetch; not a production tool, comprehensive hostile-input test, redistribution clearance or full parity certification"
+}

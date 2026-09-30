@@ -1,0 +1,333 @@
+[
+  {
+    "id": "compress-pdf",
+    "name": "Compress PDF",
+    "slug": "pdf",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "merge-pdf",
+    "name": "Merge PDF",
+    "slug": "merge-pdf",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "split-pdf",
+    "name": "Split PDF",
+    "slug": "split-pdf",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "PDF",
+      "ZIP"
+    ]
+  },
+  {
+    "id": "rotate-pdf",
+    "name": "Rotate PDF",
+    "slug": "rotate-pdf",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "remove-pages",
+    "name": "Remove Pages",
+    "slug": "remove-pages",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "pdf-to-jpg",
+    "name": "PDF to JPG",
+    "slug": "pdf-to-jpg",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "JPG",
+      "ZIP"
+    ]
+  },
+  {
+    "id": "jpg-to-pdf",
+    "name": "JPG to PDF",
+    "slug": "jpg-to-pdf",
+    "inputFormats": [
+      "JPG",
+      "PNG"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "pdf-to-word",
+    "name": "PDF to Word",
+    "slug": "pdf-to-word",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "DOCX"
+    ]
+  },
+  {
+    "id": "word-to-pdf",
+    "name": "Word to PDF",
+    "slug": "word-to-pdf",
+    "inputFormats": [
+      "DOCX"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "watermark-pdf",
+    "name": "Watermark PDF",
+    "slug": "watermark-pdf",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "page-numbers",
+    "name": "Page Numbers",
+    "slug": "page-numbers",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "sign-pdf",
+    "name": "Sign PDF",
+    "slug": "sign-pdf",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "image-converter",
+    "name": "Image Converter",
+    "slug": "image-converter",
+    "inputFormats": [
+      "JPG",
+      "PNG",
+      "WebP",
+      "GIF",
+      "BMP",
+      "AVIF",
+      "SVG",
+      "HEIC",
+      "HEIF",
+      "TIFF",
+      "PSD",
+      "ICO",
+      "JP2"
+    ],
+    "outputFormats": [
+      "JPG",
+      "PNG",
+      "WebP"
+    ]
+  },
+  {
+    "id": "compress-image",
+    "name": "Compress Image",
+    "slug": "compress-image",
+    "inputFormats": [
+      "JPG",
+      "PNG",
+      "WebP",
+      "HEIC",
+      "HEIF"
+    ],
+    "outputFormats": [
+      "JPG",
+      "PNG",
+      "WebP"
+    ]
+  },
+  {
+    "id": "heic-to-jpg",
+    "name": "HEIC to JPG",
+    "slug": "heic-to-jpg",
+    "inputFormats": [
+      "HEIC",
+      "HEIF"
+    ],
+    "outputFormats": [
+      "JPG"
+    ]
+  },
+  {
+    "id": "edit-image",
+    "name": "Edit Image",
+    "slug": "edit-image",
+    "inputFormats": [
+      "JPG",
+      "PNG",
+      "WebP"
+    ],
+    "outputFormats": [
+      "JPG",
+      "PNG",
+      "WebP"
+    ]
+  },
+  {
+    "id": "remove-background",
+    "name": "Remove Background",
+    "slug": "remove-background",
+    "inputFormats": [
+      "JPG",
+      "PNG",
+      "WebP"
+    ],
+    "outputFormats": [
+      "PNG"
+    ]
+  },
+  {
+    "id": "protect-pdf",
+    "name": "Protect PDF",
+    "slug": "protect-pdf",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "repair-pdf",
+    "name": "Repair PDF",
+    "slug": "repair-pdf",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "metadata-remover",
+    "name": "Metadata Remover",
+    "slug": "metadata-remover",
+    "inputFormats": [
+      "PDF",
+      "JPG",
+      "PNG",
+      "WebP",
+      "DOCX",
+      "XLSX",
+      "PPTX"
+    ],
+    "outputFormats": [
+      "PDF",
+      "JPG",
+      "PNG",
+      "WebP",
+      "DOCX",
+      "XLSX",
+      "PPTX"
+    ]
+  },
+  {
+    "id": "pdf-to-excel",
+    "name": "PDF to Excel",
+    "slug": "pdf-to-excel",
+    "inputFormats": [
+      "PDF"
+    ],
+    "outputFormats": [
+      "XLSX"
+    ]
+  },
+  {
+    "id": "excel-to-pdf",
+    "name": "Excel to PDF",
+    "slug": "excel-to-pdf",
+    "inputFormats": [
+      "XLSX",
+      "XLS",
+      "CSV"
+    ],
+    "outputFormats": [
+      "PDF"
+    ]
+  },
+  {
+    "id": "pdf-ocr",
+    "name": "PDF OCR",
+    "slug": "pdf-ocr",
+    "inputFormats": [
+      "PDF",
+      "JPG",
+      "PNG",
+      "WebP"
+    ],
+    "outputFormats": [
+      "Searchable PDF",
+      "TXT"
+    ]
+  },
+  {
+    "id": "resize-image",
+    "name": "Resize Image",
+    "slug": "resize-image",
+    "inputFormats": [
+      "JPG",
+      "PNG",
+      "WebP"
+    ],
+    "outputFormats": [
+      "JPG",
+      "PNG",
+      "WebP"
+    ]
+  },
+  {
+    "id": "doc-scanner",
+    "name": "Doc Scanner",
+    "slug": "doc-scanner",
+    "inputFormats": [
+      "JPG",
+      "PNG",
+      "WebP"
+    ],
+    "outputFormats": [
+      "PDF",
+      "JPG",
+      "PNG"
+    ]
+  }
+]

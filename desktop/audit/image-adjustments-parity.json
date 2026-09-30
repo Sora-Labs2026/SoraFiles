@@ -1,0 +1,97 @@
+{
+  "status": "PASS",
+  "scope": "Actual browser adjustment source versus decoded Desktop PNG, synthetic varied sRGB pixels with transparency, all ten controls and a combined negative/positive case. No resampling, colour-profile, live-preview or full image-editor parity claim.",
+  "results": [
+    {
+      "adjustments": {},
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "exposure": 55
+      },
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "highlights": 55
+      },
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "shadows": 55
+      },
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "contrast": 55
+      },
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "brightness": 55
+      },
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "blackPoint": 55
+      },
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "definition": 55
+      },
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "sharpness": 55
+      },
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "noiseReduction": 55
+      },
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "saturation": 55
+      },
+      "mae": 0,
+      "maxDifference": 0
+    },
+    {
+      "adjustments": {
+        "exposure": -25,
+        "highlights": -40,
+        "shadows": 35,
+        "contrast": 15,
+        "brightness": -10,
+        "blackPoint": 20,
+        "definition": 45,
+        "sharpness": 30,
+        "noiseReduction": 25,
+        "saturation": -60
+      },
+      "mae": 0,
+      "maxDifference": 0
+    }
+  ]
+}

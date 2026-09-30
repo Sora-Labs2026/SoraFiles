@@ -1,0 +1,153 @@
+/* Calm tool workspaces (owner brief, 29 Sep 2026).
+   Once a file is loaded the document is the focus: a full-window workspace, a flat
+   neutral canvas, one quiet options column and a single monochrome primary action.
+   Presentation only: processing DOM, data attributes and scripts are unchanged. */
+
+/* Legacy workbench tokens resolve to the V10 neutral system inside tools only,
+   so selection, focus and canvas stay monochrome with SoraFiles identity. */
+.v10-workbench, .sf-workspace {
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-canvas: var(--sunken);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-action: var(--action);
+  --color-action-hover: var(--action-hover);
+  --color-action-contrast: var(--on-action);
+  --color-blue: var(--ink);
+  --color-blue-strong: var(--ink);
+  --color-blue-soft: var(--selected-soft);
+  --color-coral: var(--error);
+  --color-coral-soft: var(--error-soft);
+  --color-amber: var(--warning);
+  --color-amber-soft: var(--warning-soft);
+  --color-green: var(--success);
+  --color-green-soft: var(--success-soft);
+  --calm-canvas: #f4f5f7;
+  --calm-rail: #fafafb;
+  --calm-sheet-shadow: 0 0 0 1px rgba(3, 7, 18, .06), 0 2px 10px -4px rgba(3, 7, 18, .12);
+  --calm-inspector-w: clamp(19rem, 24vw, 23rem);
+}
+:root.dark :is(.v10-workbench, .sf-workspace), [data-theme="dark"] :is(.v10-workbench, .sf-workspace) {
+  --calm-canvas: #0c0d11;
+  --calm-rail: #111318;
+  --calm-sheet-shadow: 0 0 0 1px rgba(0, 0, 0, .5), 0 4px 14px -6px rgba(0, 0, 0, .7);
+}
+
+/* Shell: full window, no floating card, no blurred dark scrim. */
+html .sf-workspace[data-adaptive-workspace] { padding: 0; }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__backdrop { background: var(--paper); backdrop-filter: none; -webkit-backdrop-filter: none; }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__surface,
+html .sf-workspace[data-adaptive-workspace][data-workspace-mode='preview'] .sf-workspace__surface {
+  width: 100vw; height: 100dvh; max-height: none; border: 0; border-radius: 0;
+  background: var(--surface); box-shadow: none; transform: none;
+}
+/* Short confirmation-style tools stay a compact dialog over a light scrim. */
+html .sf-workspace[data-adaptive-workspace][data-workspace-mode='quick'] { padding: clamp(.75rem, 2vw, 2rem); }
+html .sf-workspace[data-adaptive-workspace][data-workspace-mode='quick'] .sf-workspace__backdrop { background: rgba(3, 7, 18, .28); }
+:root.dark .sf-workspace[data-workspace-mode='quick'] .sf-workspace__backdrop, [data-theme="dark"] .sf-workspace[data-workspace-mode='quick'] .sf-workspace__backdrop { background: rgba(0, 0, 0, .55); }
+html .sf-workspace[data-adaptive-workspace][data-workspace-mode='quick'] .sf-workspace__surface {
+  width: min(94vw, 34rem); height: auto; max-height: min(88vh, 46rem);
+  border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-pop);
+}
+
+/* Slim toolbar: identity left, quiet view controls, close. */
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__header { min-height: 3.25rem; padding: .375rem .5rem .375rem 1.25rem; gap: .75rem; background: var(--surface); border-bottom: 1px solid var(--line); }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__identity { display: flex; align-items: baseline; gap: .625rem; min-width: 0; }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__title { flex: none; font-size: .9375rem; font-weight: 700; letter-spacing: -.015em; color: var(--ink); }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__filename { margin: 0; font-size: .8125rem; color: var(--ink-3); }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__filename::before { content: '·'; margin-right: .625rem; color: var(--ink-4); }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__canvas-controls { gap: 0; padding: 0; background: transparent; border: 1px solid var(--line); border-radius: var(--r-sm); }
+html .sf-workspace[data-adaptive-workspace] :is(.sf-workspace__icon-button, .sf-workspace__fit-button) { min-width: 2.5rem; min-height: 2.25rem; border-radius: 0; font-weight: 600; color: var(--ink-2); }
+html .sf-workspace[data-adaptive-workspace] :is(.sf-workspace__icon-button, .sf-workspace__fit-button):hover { background: var(--selected-soft); color: var(--ink); }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__zoom { font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-size: .75rem; color: var(--ink-2); }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__close { min-width: 2.5rem; min-height: 2.5rem; border-radius: var(--r-sm); color: var(--ink-2); }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__close:hover { background: var(--selected-soft); color: var(--ink); }
+
+/* Canvas: flat neutral ground, the page is the only raised object. */
+html .sf-workspace[data-adaptive-workspace] :is(.pdf-main-stage, [data-workspace-canvas], [data-workspace-source]) { background-color: var(--calm-canvas); background-image: none; }
+html .sf-workspace[data-adaptive-workspace] :is(.pdf-main-page, .signature-page-stage) { box-shadow: var(--calm-sheet-shadow); }
+html .sf-workspace[data-adaptive-workspace] .pdf-canvas-area__bar { min-height: 2.5rem; padding: .375rem 1rem; background: var(--calm-canvas); border-bottom: 0; }
+html .sf-workspace[data-adaptive-workspace] .pdf-canvas-area__bar p:last-child { color: var(--ink-3); }
+html .sf-workspace[data-adaptive-workspace] .pdf-visual-workspace { background: var(--calm-canvas); }
+
+/* Page rail: quiet thumbnails, actions look like text until hovered. */
+html .sf-workspace[data-adaptive-workspace] .pdf-page-rail { padding: .75rem; background: var(--calm-rail); border-right: 1px solid var(--line); }
+html .sf-workspace[data-adaptive-workspace] .pdf-page-rail__heading h3 { font-size: .8125rem; font-weight: 700; }
+html .sf-workspace[data-adaptive-workspace] .pdf-page-rail__selection { border-color: var(--line); }
+html .sf-workspace[data-adaptive-workspace] .pdf-page-rail__selection summary { font-size: .75rem; font-weight: 600; color: var(--ink-2); }
+html .sf-workspace[data-adaptive-workspace] :is(.pdf-page-rail__actions, .pdf-page-rail__selection) button { background: transparent; border: 1px solid transparent; font-size: .75rem; font-weight: 600; color: var(--ink-2); border-radius: var(--r-sm); }
+html .sf-workspace[data-adaptive-workspace] :is(.pdf-page-rail__actions, .pdf-page-rail__selection) button:hover { background: var(--surface); border-color: var(--line); color: var(--ink); }
+html .sf-workspace[data-adaptive-workspace] .pdf-page-rail__actions button.text-coral { color: var(--ink-2); }
+html .sf-workspace[data-adaptive-workspace] .pdf-page-rail__actions button.text-coral:hover { color: var(--error); }
+html .sf-workspace[data-adaptive-workspace] [data-pdf-page-card] { border-color: var(--line); background: var(--surface); box-shadow: none; }
+html .sf-workspace[data-adaptive-workspace] [data-pdf-page-card][aria-selected='true'] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+
+/* File bar: one quiet line instead of a second heading. */
+html .sf-workspace[data-adaptive-workspace] [data-workspace-filebar] { min-height: 2.75rem !important; padding: .375rem 1rem !important; background: var(--surface) !important; color: var(--ink-2); }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-filebar] p:first-child { font-size: .8125rem; font-weight: 600; color: var(--ink); }
+
+/* Options column: predictable width, calm spacing, primary action pinned. */
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] { display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--line); padding: 1.25rem 1.25rem 0; }
+html .sf-workspace[data-adaptive-workspace].preview-workspace [data-workspace-body] { grid-template-columns: minmax(0, 1fr) var(--calm-inspector-w); }
+html .sf-workspace[data-adaptive-workspace].action-workspace [data-workspace-body],
+html .sf-workspace[data-adaptive-workspace].action-workspace[data-workspace-mode='canvas'] [data-workspace-body] { grid-template-columns: minmax(0, 1fr) var(--calm-inspector-w); }
+html .sf-workspace[data-adaptive-workspace].no-conversion-options [data-workspace-body] { grid-template-columns: minmax(0, 1fr); }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] :is(h2, h3, legend) { font-size: .8125rem; font-weight: 700; letter-spacing: -.005em; color: var(--ink); }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] :is(label, .text-muted, small) { color: var(--ink-2); }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] details > summary { color: var(--ink-2); font-weight: 600; }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] :is(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea) { border-color: var(--line-strong); background: var(--surface); border-radius: var(--r-sm); }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] :is(input, select, textarea):focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; box-shadow: none; }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[type='submit'] {
+  position: sticky; bottom: 0; z-index: 2; width: 100%; min-height: 3rem; margin-top: auto; flex: none;
+  border-radius: var(--r-pill); background: var(--action); color: var(--on-action); font-weight: 650; box-shadow: 0 -1.25rem 1.25rem -.25rem var(--surface);
+}
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[type='submit']:hover:not(:disabled) { background: var(--action-hover); }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[type='submit']:disabled { opacity: .45; }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector]::after { content: ''; display: block; flex: none; height: 1.25rem; }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] > * { flex: none; }
+
+/* Result: stays in the workspace, quiet surface, clear actions. */
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__surface > [data-workspace-result] { max-height: 15rem; background: var(--surface); border-top: 1px solid var(--line); }
+
+/* Mobile panel switcher: monochrome current state. */
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__mobile-nav button[aria-current='page'] { color: var(--ink); background: var(--selected-soft); }
+
+/* Discard confirmation: light scrim, no blur. */
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__discard { background: rgba(3, 7, 18, .28); backdrop-filter: none; -webkit-backdrop-filter: none; }
+html .sf-workspace[data-adaptive-workspace] .sf-workspace__discard-card { border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-pop); }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-confirm-discard] { background: var(--error); color: var(--on-error); }
+
+@media (max-width: 767px) {
+  html .sf-workspace[data-adaptive-workspace] .sf-workspace__header { padding: max(.375rem, env(safe-area-inset-top)) max(.5rem, env(safe-area-inset-right)) .375rem max(1rem, env(safe-area-inset-left)); }
+  html .sf-workspace[data-adaptive-workspace] .sf-workspace__filename::before { display: none; }
+  html .sf-workspace[data-adaptive-workspace] .sf-workspace__identity { display: block; }
+  html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] { border-left: 0; }
+  html .sf-workspace[data-adaptive-workspace][data-workspace-mode='quick'] { padding: 0; }
+  html .sf-workspace[data-adaptive-workspace][data-workspace-mode='quick'] .sf-workspace__surface { width: 100vw; height: 100dvh; max-height: none; border: 0; border-radius: 0; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html .sf-workspace[data-adaptive-workspace] :is(.sf-workspace__backdrop, .sf-workspace__surface) { transition: none; }
+}
+
+/* Sliders: monochrome fill (the legacy slider used violet). */
+html .sf-range::-webkit-slider-runnable-track { background: linear-gradient(to right, var(--ink) 0 var(--range-progress), var(--line-strong) var(--range-progress) 100%); }
+html[dir='rtl'] .sf-range::-webkit-slider-runnable-track { background: linear-gradient(to left, var(--ink) 0 var(--range-progress), var(--line-strong) var(--range-progress) 100%); }
+html .sf-range::-moz-range-progress { background: var(--ink); }
+html .sf-range::-webkit-slider-thumb { border-color: var(--ink); }
+html .sf-range::-moz-range-thumb { border-color: var(--ink); }
+html.dark .sf-range::-moz-range-progress { background: var(--ink); }
+html[dir='rtl'].dark .sf-range::-webkit-slider-runnable-track { background: linear-gradient(to left, var(--ink) 0 var(--range-progress), var(--line-strong) var(--range-progress) 100%); }
+
+/* Single-preview tools: the page sits directly on the canvas, no nested box. */
+html .sf-workspace[data-adaptive-workspace] [data-workspace-source] > figure { border: 0; background: transparent; padding: 0; margin-top: 1.25rem; }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-source] canvas { box-shadow: var(--calm-sheet-shadow); border-radius: 2px; }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-source] figcaption { color: var(--ink-3); }
+/* Selected toggles in tool settings (crop ratios and similar aria-pressed
+   buttons) use the site's standard selected state, like the category pills.
+   Unlayered, so Tailwind's layered utilities cannot flatten it. */
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[aria-pressed] { transition: background-color var(--dur-1, .15s) ease, border-color var(--dur-1, .15s) ease, color var(--dur-1, .15s) ease; }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[aria-pressed='false']:hover { border-color: var(--ink-3); color: var(--ink); }
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[aria-pressed='true'] { background: var(--action); border-color: var(--action); color: var(--on-action); box-shadow: var(--shadow-btn, none); }

@@ -18,6 +18,14 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    preview: {
+      // Local production QA needs the isolation required by Office and ONNX.
+      // Production retains its route-specific headers in worker.js.
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+      },
+    },
     server: {
       // LibreOffice WebAssembly uses SharedArrayBuffer. Production limits these
       // headers to Office-to-PDF routes in worker.js; local development is

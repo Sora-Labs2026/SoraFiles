@@ -1,0 +1,153 @@
+use serde_json::Value;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+pub fn local_navigation(url: &tauri::Url) -> bool {
+    url.username().is_empty() && url.password().is_none() && url.port().is_none()
+        && matches!((url.scheme(), url.host_str()),
+            ("tauri", Some("localhost")) | ("http", Some("tauri.localhost")))
+}
+
+fn selection_ids(ids: &Value) -> bool {
+    ids.as_array().is_some_and(|ids| !ids.is_empty() && ids.len() <= 256 && ids.iter().all(|id| id.as_str().is_some_and(|text| text.len() == 32 && text.bytes().all(|b| b.is_ascii_hexdigit()))))
+}
+
+fn rating_subject(subject: &Value) -> bool {
+    subject.as_str().is_some_and(|text| (1..=40).contains(&text.len()) && text.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-'))
+}
+
+pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
+    let Some(fields) = params.as_object() else { return false; };
+    if params.to_string().len() > 16384 { return false; }
+    match method {
+        "getState" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "supportDetails" | "checkUpdates" | "quit" | "cancelProcessing" | "processingStatus" | "openFullApp" | "closeQuickAction" => fields.is_empty(),
+        // A tool may narrow the file dialog to the formats it accepts.
+        "selectFiles" => fields.is_empty() || (fields.len()==1 && params["formats"].as_array().is_some_and(|formats|!formats.is_empty()&&formats.len()<=16&&formats.iter().all(|format|format.as_str().is_some_and(|name|!crate::file_formats::extensions(name).is_empty())))),
+        "previewSelection" => fields.len()==1 && selection_ids(&params["selectionIds"]),
+        "ratingStatus" => fields.len()==1 && rating_subject(&params["subject"]),
+        "ratingSubmit" => fields.len()==2 && rating_subject(&params["subject"]) && params["rating"].as_u64().is_some_and(|n|(1..=5).contains(&n)),
+        "processFiles" => fields.len()==3 && params["options"].is_object()
+            && matches!(params["tool"].as_str(),Some("remove-background"|"doc-scanner"|"repair-pdf"|"compress-pdf"|"heic-to-jpg"|"pdf-to-word"|"pdf-to-excel"|"metadata-remover"|"protect-pdf"|"pdf-ocr"|"pdf-to-jpg"|"merge-pdf"|"split-pdf"|"rotate-pdf"|"remove-pages"|"page-numbers"|"watermark-pdf"|"sign-pdf"|"jpg-to-pdf"|"image-converter"|"compress-image"|"resize-image"|"edit-image"))
+            && params["selectionIds"].as_array().is_some_and(|ids|!ids.is_empty()&&ids.len()<=256&&ids.iter().all(|id|id.as_str().is_some_and(|text|text.len()==32&&text.bytes().all(|b|b.is_ascii_hexdigit())))),
+        "replacementState" | "replacementStatus" | "replacementCancel" | "replacementCheckout" | "replacementEmailResend" | "replacementReset" => fields.is_empty(),
+        // A code is requested only with an email the person typed; an optional
+        // license key is accepted when this device has no saved key.
+        "replacementEmailStart" => fields.contains_key("email") && (fields.len()==1 || (fields.len()==2 && fields.contains_key("licenseKey")))
+            && params["email"].as_str().is_some_and(|email| (3..=254).contains(&email.len()) && email.matches('@').count()==1 && !email.chars().any(|c| c.is_control() || c.is_whitespace()))
+            && (fields.len()==1 || params["licenseKey"].as_str().is_some_and(|key| !key.trim().is_empty() && key.len() <= 4096 && !key.chars().any(char::is_control))),
+        "replacementEmailVerify" => fields.len()==1 && params["code"].as_str().is_some_and(|code|code.len()==8&&code.bytes().all(|b|b.is_ascii_digit())),
+        "replacementRequest" => fields.len()==1 && params["oldDeviceId"].as_str().is_some_and(|id|id.len()==43&&id.bytes().all(|b|b.is_ascii_alphanumeric()||b==b'-'||b==b'_')),
+        "activate" => fields.len() == 1 && params["licenseKey"].as_str()
+            .is_some_and(|key| !key.trim().is_empty() && key.len() <= 4096 && !key.chars().any(char::is_control)),
+        "openOutput"|"revealOutput"=>fields.len()==1&&params["id"].as_str().is_some_and(|id|id.len()==32&&id.bytes().all(|b|b.is_ascii_hexdigit())),
+        "releaseSelection" => fields.len() == 1 && params["ids"].as_array().is_some_and(|ids|
+            ids.len() <= 256 && ids.iter().all(|id| id.as_str().is_some_and(|text|
+                text.len() == 32 && text.bytes().all(|b| b.is_ascii_hexdigit())))),
+        "saveSettings" => fields.len() == 1 && (matches!(params["output"].as_str(), Some("source" | "downloads" | "custom" | "ask"))
+            || matches!(params["theme"].as_str(), Some("system" | "light" | "dark")) || params["language"].as_str().is_some_and(crate::locale::valid_preference) || params["startup"].is_boolean() || params["shellEntry"].is_boolean()),
+        "smokeReport" => diagnostic && fields.len() == 5 && ["heading", "tools", "overflow", "error", "layout"].iter().all(|key| fields.contains_key(*key)),
+        _ => false,
+    }
+}
+
+pub struct DialogLease<'a>(&'a AtomicBool);
+impl<'a> DialogLease<'a> {
+    pub fn acquire(busy: &'a AtomicBool) -> Result<Self, &'static str> {
+        busy.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .map(|_| Self(busy)).map_err(|_| "Finish the open file or folder dialog first.")
+    }
+}
+impl Drop for DialogLease<'_> { fn drop(&mut self) { self.0.store(false, Ordering::SeqCst); } }
+
+#[cfg(test)] mod tests {
+    use super::*;
+    use serde_json::json;
+    #[test] fn navigation_stays_on_packaged_origins() {
+        for value in ["tauri://localhost/index.html", "http://tauri.localhost/index.html#tools"] {
+            assert!(local_navigation(&tauri::Url::parse(value).unwrap()));
+        }
+        for value in ["http://localhost:8788", "http://localhost", "https://sorafiles.com", "https://tauri.localhost", "http://tauri.localhost:8788", "tauri://user@localhost", "file:///tmp/index.html", "https://tauri.localhost.example.com"] {
+            assert!(!local_navigation(&tauri::Url::parse(value).unwrap()), "{value}");
+        }
+    }
+    #[test] fn ipc_rejects_unknown_fields_and_actions() {
+        for language in crate::locale::SUPPORTED.into_iter().chain(["system"]) {assert!(valid_request("saveSettings",&json!({"language":language}),false));}
+        for language in [json!("ja-JP"),json!("unknown"),json!(null),json!(true)] {assert!(!valid_request("saveSettings",&json!({"language":language}),false));}
+        assert!(!valid_request("saveSettings",&json!({"language":"ja","locale":"fr"}),false));
+        assert!(!valid_request("deactivateLicense", &json!({}), false));
+        assert!(valid_request("getState", &json!({}), false));
+        assert!(valid_request("supportDetails", &json!({}), false));
+        assert!(valid_request("openOutput",&json!({"id":"a".repeat(32)}),false));
+        assert!(!valid_request("openOutput",&json!({"path":"C:/injected.exe"}),false));
+        assert!(!valid_request("supportDetails", &json!({"deviceId":"injected"}), false));
+        assert!(valid_request("saveSettings", &json!({"theme":"dark"}), false));
+        assert!(valid_request("saveSettings", &json!({"startup":true}), false));
+        assert!(valid_request("saveSettings", &json!({"shellEntry":true}), false));
+        assert!(!valid_request("saveSettings", &json!({"shellEntry":"yes"}), false));
+        assert!(!valid_request("saveSettings", &json!({"shellEntry":true,"path":"C:/injected.exe"}), false));
+        assert!(!valid_request("saveSettings", &json!({"startup":"yes"}), false));
+        assert!(valid_request("releaseSelection", &json!({"ids":["a".repeat(32)]}), false));
+        for (method, params) in [("getState", json!({"path":"secret"})), ("activate", json!({"licenseKey":"key", "plan":"lifetime"})), ("activate", json!({"licenseKey":"\nkey"})), ("releaseSelection", json!({"ids":["invalid"]})), ("quit", json!({"force":true})), ("smokeReport", json!({"heading":null,"tools":6,"overflow":false,"error":null})), ("readFile", json!({"path":"secret"}))] {
+            assert!(!valid_request(method, &params, false), "{method}");
+        }
+    }
+    #[test] fn dialog_lease_rejects_overlap_and_releases_on_error() {
+        let busy = AtomicBool::new(false);
+        let first = DialogLease::acquire(&busy).unwrap();
+        assert!(DialogLease::acquire(&busy).is_err());
+        drop(first);
+        assert!(DialogLease::acquire(&busy).is_ok());
+        assert!(!busy.load(Ordering::SeqCst));
+    }
+    #[test] fn quick_action_window_commands_accept_no_renderer_controls() {
+        for method in ["openFullApp","closeQuickAction"] {
+            assert!(valid_request(method,&json!({}),false));
+            for params in [json!(null),json!([]),json!({"window":"other"}),json!({"force":true}),json!({"quickAction":false}),json!({"width":1,"height":1})] {
+                assert!(!valid_request(method,&params,false),"{method}: {params}");
+            }
+        }
+        assert!(!valid_request("openWindow",&json!({}),false));
+        assert!(!valid_request("setWindowMode",&json!({"quick":true}),false));
+    }
+    #[test] fn replacement_bridge_keeps_proof_and_checkout_location_native() {
+        assert!(valid_request("replacementEmailStart",&json!({"email":"buyer@example.com"}),false));
+        assert!(valid_request("replacementEmailStart",&json!({"email":"buyer@example.com","licenseKey":"purchase-key"}),false));
+        assert!(valid_request("replacementEmailResend",&json!({}),false));
+        assert!(valid_request("replacementReset",&json!({}),false));
+        assert!(valid_request("replacementEmailVerify",&json!({"code":"12345678"}),false));
+        assert!(valid_request("replacementRequest",&json!({"oldDeviceId":"a".repeat(43)}),false));
+        assert!(valid_request("replacementCancel",&json!({}),false));
+        assert!(valid_request("previewSelection",&json!({"selectionIds":["a".repeat(32)]}),false));
+        assert!(valid_request("ratingStatus",&json!({"subject":"compress-pdf"}),false));
+        assert!(valid_request("selectFiles",&json!({}),false));
+        assert!(valid_request("selectFiles",&json!({"formats":["PDF","JPG"]}),false));
+        for params in [json!({"formats":[]}),json!({"formats":["EXE"]}),json!({"formats":["PDF"],"path":"C:/"}),json!({"formats":"PDF"})]{assert!(!valid_request("selectFiles",&params,false));}
+        assert!(valid_request("ratingSubmit",&json!({"subject":"sorafiles","rating":5}),false));
+        for (method,params) in [("ratingSubmit",json!({"subject":"compress-pdf","rating":0})),("ratingSubmit",json!({"subject":"compress-pdf","rating":6})),("ratingSubmit",json!({"subject":"compress-pdf","rating":4.5})),("ratingSubmit",json!({"subject":"../x","rating":5})),("ratingStatus",json!({"subject":"compress-pdf","rater":"forged"})),("ratingSubmit",json!({"subject":"compress-pdf","rating":5,"average":5}))]{assert!(!valid_request(method,&params,false));}
+        for params in [json!({"selectionIds":[]}),json!({"selectionIds":["C:/secret.png"]}),json!({"selectionIds":["a".repeat(32)],"paths":["C:/x"]}),json!({})]{assert!(!valid_request("previewSelection",&params,false));}
+        assert!(!valid_request("replacementCancel",&json!({"orderId":"forged"}),false));
+        assert!(valid_request("replacementCheckout",&json!({}),false));
+        // Nothing can request a code without a typed purchase email.
+        for params in [json!({}),json!({"licenseKey":"purchase-key"}),json!({"email":""}),json!({"email":"no-at-sign"}),json!({"email":"a b@example.com"}),json!({"email":"buyer@example.com","plan":"x"}),json!({"email":"buyer@example.com","licenseKey":"\nkey"})] {
+            assert!(!valid_request("replacementEmailStart",&params,false),"{params}");
+        }
+        assert!(!valid_request("replacementEmailResend",&json!({"email":"other@example.com"}),false));
+        for (method,params) in [("replacementEmailVerify",json!({"code":"12345678","identityToken":"forged"})),("replacementRequest",json!({"oldDeviceId":"a".repeat(43),"amount":1})),("replacementCheckout",json!({"url":"https://elsewhere.example"}))]{assert!(!valid_request(method,&params,false));}
+    }
+    #[test] fn processing_accepts_only_known_tools_and_opaque_selection_ids() {
+        let valid=json!({"tool":"pdf-to-jpg","selectionIds":["b".repeat(32)],"options":{"dpi":150}});
+        assert!(valid_request("processFiles",&valid,false));
+        assert!(valid_request("processFiles",&json!({"tool":"protect-pdf","selectionIds":["b".repeat(32)],"options":{"password":"synthetic-password"}}),false));
+        assert!(valid_request("processFiles",&json!({"tool":"metadata-remover","selectionIds":["b".repeat(32)],"options":{}}),false));
+        assert!(valid_request("processFiles",&json!({"tool":"pdf-to-excel","selectionIds":["b".repeat(32)],"options":{}}),false));
+        assert!(valid_request("processFiles",&json!({"tool":"pdf-to-word","selectionIds":["b".repeat(32)],"options":{"direction":"ltr"}}),false));
+        for params in [json!({"tool":"unknown", "selectionIds":["b".repeat(32)],"options":{}}),
+            json!({"tool":"unlock-pdf", "selectionIds":["b".repeat(32)],"options":{}}),
+            json!({"tool":"pdf-to-jpg","selectionIds":["C:/private.pdf"],"options":{}}),
+            json!({"tool":"pdf-to-jpg","selectionIds":[],"options":{}}),
+            json!({"tool":"pdf-to-jpg","selectionIds":["b".repeat(32)],"options":{},"path":"private"})] {
+            assert!(!valid_request("processFiles",&params,false));
+        }
+        assert!(valid_request("cancelProcessing",&json!({}),false));
+        assert!(!valid_request("cancelProcessing",&json!({"kill":true}),false));
+    }
+}

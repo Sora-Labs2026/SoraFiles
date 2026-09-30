@@ -1,0 +1,370 @@
+{
+  "recordedAt": "2026-09-23T14:58:06.1391318Z",
+  "platform": "windows",
+  "arch": "x64",
+  "binarySha256": "3fe4079dc3828b1571b7bcb23829c30a4303a8153e626c5309f463fc6130ef5e",
+  "status": "MEASURED",
+  "firstViewObservedMs": 925,
+  "totalMs": 6589,
+  "samples": [
+    {
+      "elapsedMs": 43,
+      "workingSetBytes": 7192576,
+      "privateBytes": 1634304,
+      "cpuMs": 15.625
+    },
+    {
+      "elapsedMs": 206,
+      "workingSetBytes": 16220160,
+      "privateBytes": 3395584,
+      "cpuMs": 78.125
+    },
+    {
+      "elapsedMs": 328,
+      "workingSetBytes": 16220160,
+      "privateBytes": 3395584,
+      "cpuMs": 78.125
+    },
+    {
+      "elapsedMs": 441,
+      "workingSetBytes": 16498688,
+      "privateBytes": 3407872,
+      "cpuMs": 78.125
+    },
+    {
+      "elapsedMs": 565,
+      "workingSetBytes": 16809984,
+      "privateBytes": 3424256,
+      "cpuMs": 78.125
+    },
+    {
+      "elapsedMs": 676,
+      "workingSetBytes": 21110784,
+      "privateBytes": 4739072,
+      "cpuMs": 93.75
+    },
+    {
+      "elapsedMs": 796,
+      "workingSetBytes": 21299200,
+      "privateBytes": 4734976,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 908,
+      "workingSetBytes": 21630976,
+      "privateBytes": 5091328,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 1048,
+      "workingSetBytes": 21630976,
+      "privateBytes": 5091328,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 1173,
+      "workingSetBytes": 21630976,
+      "privateBytes": 5091328,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 1296,
+      "workingSetBytes": 21630976,
+      "privateBytes": 5091328,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 1404,
+      "workingSetBytes": 21630976,
+      "privateBytes": 5091328,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 1510,
+      "workingSetBytes": 21630976,
+      "privateBytes": 5091328,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 1618,
+      "workingSetBytes": 21630976,
+      "privateBytes": 5091328,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 1728,
+      "workingSetBytes": 21835776,
+      "privateBytes": 5115904,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 1836,
+      "workingSetBytes": 21774336,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 1959,
+      "workingSetBytes": 21749760,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 2073,
+      "workingSetBytes": 21749760,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 2181,
+      "workingSetBytes": 21749760,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 2297,
+      "workingSetBytes": 21749760,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 2409,
+      "workingSetBytes": 21749760,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 2519,
+      "workingSetBytes": 21884928,
+      "privateBytes": 5001216,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 2642,
+      "workingSetBytes": 21884928,
+      "privateBytes": 5001216,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 2757,
+      "workingSetBytes": 21889024,
+      "privateBytes": 5001216,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 2870,
+      "workingSetBytes": 21901312,
+      "privateBytes": 5001216,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 2982,
+      "workingSetBytes": 21909504,
+      "privateBytes": 5005312,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 3092,
+      "workingSetBytes": 21843968,
+      "privateBytes": 4943872,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 3203,
+      "workingSetBytes": 21913600,
+      "privateBytes": 5033984,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 3330,
+      "workingSetBytes": 21917696,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 3454,
+      "workingSetBytes": 21917696,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 3578,
+      "workingSetBytes": 21917696,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 3685,
+      "workingSetBytes": 21917696,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 3793,
+      "workingSetBytes": 21917696,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 3900,
+      "workingSetBytes": 21917696,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 4008,
+      "workingSetBytes": 21917696,
+      "privateBytes": 5038080,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 4116,
+      "workingSetBytes": 21917696,
+      "privateBytes": 5251072,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 4230,
+      "workingSetBytes": 21901312,
+      "privateBytes": 5234688,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 4337,
+      "workingSetBytes": 21876736,
+      "privateBytes": 5234688,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 4444,
+      "workingSetBytes": 21876736,
+      "privateBytes": 5234688,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 4551,
+      "workingSetBytes": 21876736,
+      "privateBytes": 5234688,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 4673,
+      "workingSetBytes": 21876736,
+      "privateBytes": 5234688,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 4784,
+      "workingSetBytes": 21876736,
+      "privateBytes": 5234688,
+      "cpuMs": 125.0
+    },
+    {
+      "elapsedMs": 4906,
+      "workingSetBytes": 21970944,
+      "privateBytes": 5197824,
+      "cpuMs": 140.625
+    },
+    {
+      "elapsedMs": 5014,
+      "workingSetBytes": 21970944,
+      "privateBytes": 5197824,
+      "cpuMs": 140.625
+    },
+    {
+      "elapsedMs": 5123,
+      "workingSetBytes": 21975040,
+      "privateBytes": 5197824,
+      "cpuMs": 140.625
+    },
+    {
+      "elapsedMs": 5233,
+      "workingSetBytes": 21983232,
+      "privateBytes": 5197824,
+      "cpuMs": 140.625
+    },
+    {
+      "elapsedMs": 5359,
+      "workingSetBytes": 21811200,
+      "privateBytes": 4907008,
+      "cpuMs": 156.25
+    },
+    {
+      "elapsedMs": 5483,
+      "workingSetBytes": 22106112,
+      "privateBytes": 5369856,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5592,
+      "workingSetBytes": 22126592,
+      "privateBytes": 5390336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5702,
+      "workingSetBytes": 22126592,
+      "privateBytes": 5390336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5815,
+      "workingSetBytes": 22126592,
+      "privateBytes": 5390336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 5939,
+      "workingSetBytes": 22126592,
+      "privateBytes": 5390336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 6062,
+      "workingSetBytes": 22126592,
+      "privateBytes": 5390336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 6169,
+      "workingSetBytes": 22126592,
+      "privateBytes": 5390336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 6277,
+      "workingSetBytes": 22126592,
+      "privateBytes": 5390336,
+      "cpuMs": 187.5
+    },
+    {
+      "elapsedMs": 6384,
+      "workingSetBytes": 22130688,
+      "privateBytes": 5390336,
+      "cpuMs": 187.5
+    }
+  ],
+  "nativeLifecycle": {
+    "arch": "x86_64",
+    "backgroundJobState": false,
+    "closeReopenCycles": 2,
+    "nativeWindowLoads": 3,
+    "os": "windows",
+    "scope": "Native UI load and WebView destruction/recreation only; no engine, licensing or installer certification",
+    "status": "PASS",
+    "trayOnlyStartup": false,
+    "ui": {
+      "error": null,
+      "heading": "File tools for your desktop.",
+      "layout": {
+        "height": 900,
+        "overflowing": [],
+        "scrollWidth": 1180,
+        "width": 1180
+      },
+      "overflow": false,
+      "tools": 6
+    }
+  },
+  "scope": "Unsigned release candidate, hidden diagnostic window, three loads/two closes; first-view upper bound sampled every 100 ms; host process only, excludes WebView/process tree; not clean install, cold cache or sustained idle measurement"
+}

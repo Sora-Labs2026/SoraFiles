@@ -1,0 +1,10 @@
+{
+  "recordedAt": "2026-09-17T16:51:29.743Z",
+  "status": "NOT_CONVERTED",
+  "code": null,
+  "timedOut": true,
+  "totalAssetBytes": 262261407,
+  "stdout": "{\"status\":\"INITIALIZED\",\"hasVirtualFS\":true,\"hasUno\":false,\"scope\":\"WASM initialization only; no document conversion\"}\n",
+  "stderr": "pthread_create: failed to transfer control of canvas \"#qtcanvas\" to OffscreenCanvas! Error: ReferenceError: document is not defined\n",
+  "scope": "Cached hash-verified Office WASM feasibility probe, local-only metadata shim; optional synthetic headless DOCX test. Not a shipped engine or parity certification"
+}

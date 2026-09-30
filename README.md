@@ -39,6 +39,18 @@ The interface is statically rendered with Astro, supports 19 languages, includes
 
 These workflows are features of one SoraFiles application across 19 languages. This repository is the public source for the live Cloudflare deployment.
 
+## SoraFiles Desktop
+
+SoraFiles Desktop brings the same local engines to Windows, macOS and Linux as a native utility that lives in your file manager.
+
+- **Edit with SoraFiles** in Explorer, Finder and supported Linux file managers. Simple conversions run silently in the background; actions that need choices open a small options card instead of the full app. Results are saved beside the original by default, and originals are never overwritten.
+- **One engine for everything.** The full app and the file-manager actions use the same processing engine, which works offline after setup.
+- **Calm workspace.** Selected files take the main area, with one options panel and one primary action. Light, dark and system themes are supported, along with 19 interface languages that follow the operating-system language by default.
+- **Trial and plans.** A seven-day trial starts on first launch. Personal covers 1 active device ($1.99/month, $19.99/year or $99.99 lifetime). Team covers up to 5 active devices ($9.99/month, $99.99/year or $399.99 lifetime). Lifetime licenses never expire; monthly and annual licenses end on their paid-through date, even offline.
+- **Revoke Device.** To free an occupied seat, enter your purchase email and press Send code. The service checks the address against your purchase before any code is sent. You then pay a small one-time fee: Personal $0.99, $0.99 or $19.99; Team $3.99, $3.99 or $79.99 per occupied seat. Unused Team seats activate for free.
+
+The web tools stay free and fully featured. Desktop is optional. Unlock PDF remains web-only. Downloads, checksums and release notes are at [sorafiles.com/desktop](https://sorafiles.com/desktop) and on [GitHub Releases](https://github.com/Sora-Labs2026/SoraFiles/releases). The Desktop source (Tauri shell, native file-manager integration, processing host and license service) is in [`desktop/`](desktop/README.md).
+
 ## Privacy model
 
 SoraFiles has no file-upload or server-processing endpoint for its file tools. First-party processing code reads the selected file on the device and creates a new local result for download.
@@ -52,9 +64,9 @@ Do not use this software as a substitute for your organization’s document-hand
 
 ## Honest limitations
 
-- PDF compression rasterizes pages. It can remove selectable text, links, forms, signatures, bookmarks, and accessibility structure, and an already efficient PDF can become larger.
+- PDF compression preserves native PDF structure by default. The explicit Maximum / Flattened mode can remove selectable text, links, forms, signatures, bookmarks, and accessibility structure; an already efficient PDF is returned unchanged instead of being replaced by a larger result.
 - PDF-to-Word preserves each page as a full-page visual, so its page content is not editable in Word.
-- PDF-to-Excel offers exact page visuals or best-effort editable cells; arbitrary PDFs do not contain the original formulas, chart data, merged cells, or spreadsheet structure.
+- PDF-to-Excel offers page-visual worksheets or best-effort editable cells; arbitrary PDFs do not contain the original formulas, chart data, merged cells, or spreadsheet structure.
 - Word/Excel-to-PDF use LibreOffice WebAssembly locally. Missing non-embedded fonts can still be substituted by the browser runtime.
 - Background removal uses a semantic matting model and may need manual cleanup on transparent, reflective, very fine, or ambiguous edges.
 - OCR accuracy depends on scan quality, language, handwriting, layout, and device resources.
@@ -140,6 +152,7 @@ src/i18n/        19-language content contracts
 public/          static icons, PDF.js, and integrity-pinned OCR assets
 scripts/         build and validation utilities
 tests/           unit, browser, fixtures, and real-output validation
+desktop/         SoraFiles Desktop: native shell, file-manager actions, UI, engines, license service
 ```
 
 ## Project status

@@ -1,7 +1,8 @@
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { liveTools } from '../src/data/liveTools.ts';
-import { localeDefinitions, localizedPath, localizedRoutePaths, publishedLocales } from '../src/i18n/config.ts';
+import { guideSitemapUrls } from '../src/data/guides.ts';
+import { englishOnlyRoutes, localeDefinitions, localizedPath, localizedRoutePaths, publishedLocales } from '../src/i18n/config.ts';
 
 const allPages = process.argv.includes('--all');
 const failures = [];
@@ -11,6 +12,10 @@ const hreflangs = new Set([...publishedLocales.map((locale) => locale.code), 'x-
 const toolBasePaths = new Set(liveTools.map((tool) => `/${tool.slug}`));
 const titleIndex = new Map();
 const descriptionIndex = new Map();
+// Desktop is published: download and releases form full hreflang clusters; overview,
+// plans and help are English-only (localized copies noindex); license pages stay private.
+const desktopPrivateRoutes = new Set(['/desktop/redeem', '/desktop/purchase']);
+const englishOnly = new Set(englishOnlyRoutes);
 
 const decodeHtml = (value = '') => value
   .replace(/&amp;/g, '&')
@@ -76,7 +81,13 @@ function validateSchemas(text, label, locale, baseRoute, schemas) {
     if (!schema || typeof schema !== 'object') continue;
     if (schema['@type'] === 'Organization' && schema.name !== 'Sora Labs') failures.push(`${label}: Organization schema must name Sora Labs.`);
     if (schema['@type'] === 'WebSite' && schema.name !== 'SoraFiles') failures.push(`${label}: WebSite schema must name SoraFiles.`);
-    if (['WebApplication', 'SoftwareApplication'].includes(schema['@type'])) failures.push(`${label}: review-gated SoftwareApplication markup must not be published without genuine reviews.`);
+    // A tool page may describe its tool as "<visible tool name> - SoraFiles",
+    // part of the SoraFiles suite; everywhere else the product name is exact.
+    const toolApplication = toolBasePaths.has(baseRoute) && schema.applicationSuite === 'SoraFiles'
+      && /^(.+) - SoraFiles$/.test(schema.name ?? '') && text.includes(decodeHtml(schema.name.replace(/ - SoraFiles$/, '')));
+    if (['WebApplication', 'SoftwareApplication'].includes(schema['@type']) && schema.name !== 'SoraFiles' && !toolApplication) failures.push(`${label}: application schema must use the exact SoraFiles product name.`);
+    if (['WebApplication', 'SoftwareApplication'].includes(schema['@type']) && schema.alternateName !== undefined) failures.push(`${label}: application schema must not expose an alternate product name.`);
+    if (['WebApplication', 'SoftwareApplication'].includes(schema['@type']) && (schema.review || schema.aggregateRating)) failures.push(`${label}: application schema must not manufacture review-gated rating or review evidence.`);
     if (schema['@type'] === 'FAQPage') {
       for (const question of schema.mainEntity ?? []) if (question?.name && !text.includes(decodeHtml(question.name))) failures.push(`${label}: FAQ schema question is not visible: ${question.name}`);
     }
@@ -88,7 +99,7 @@ function validateSchemas(text, label, locale, baseRoute, schemas) {
     const itemList = schemas.find((item) => item?.['@type'] === 'ItemList');
     const collection = schemas.find((item) => item?.['@type'] === 'CollectionPage');
     if (locale === 'en' && (!website || website.name !== 'SoraFiles')) failures.push(`${label}: canonical homepage WebSite schema is missing.`);
-    if (locale === 'en' && JSON.stringify(website?.alternateName) !== JSON.stringify(['sorafiles.com'])) failures.push(`${label}: canonical homepage WebSite alternateName is incomplete.`);
+    if (locale === 'en' && website?.alternateName !== undefined) failures.push(`${label}: canonical homepage WebSite must not expose an alternate product name.`);
     if (locale === 'en' && (!organization || organization.name !== 'Sora Labs')) failures.push(`${label}: canonical homepage Organization schema is missing.`);
     if (locale !== 'en' && (!collection || collection.inLanguage !== localeDefinitions.find((item) => item.path === locale)?.code)) failures.push(`${label}: localized homepage CollectionPage schema is missing or has the wrong language.`);
     if (!itemList || itemList.itemListElement?.length !== liveTools.length) failures.push(`${label}: homepage ItemList must contain all ${liveTools.length} tools.`);
@@ -122,7 +133,9 @@ async function validatePage(file) {
   else if (Buffer.byteLength(html.slice(0, charset.index + charset[0].length), 'utf8') > 1024) failures.push(`${label}: UTF-8 character encoding declaration must be completely within the first 1024 bytes.`);
   const text = plainText(html);
   const { locale, base } = routeContext(route);
-  const h1Count = (html.match(/<h1\b/gi) ?? []).length;
+  // The checkout response has two mutually exclusive views; only one is shown.
+  const visibleHtml=html.replace(/<div\b[^>]*\bdata-replacement-return\b[^>]*\bhidden\b[^>]*>[\s\S]*?<\/div>/gi,'');
+  const h1Count = (visibleHtml.match(/<h1\b/gi) ?? []).length;
   if (route === '/404' ? h1Count !== 0 : h1Count !== 1) failures.push(`${label}: unexpected H1 count ${h1Count}.`);
   if ((html.match(/<title\b/gi) ?? []).length !== 1 || !/<title>[^<]+<\/title>/i.test(html)) failures.push(`${label}: expected one non-empty title.`);
 
@@ -158,7 +171,10 @@ async function validatePage(file) {
     if (canonical !== expectedCanonical) failures.push(`${label}: canonical ${canonical} does not match ${expectedCanonical}.`);
     const alternates = links.filter(({ attributes: attrs }) => attrs.rel === 'alternate' && attrs.hreflang);
     const actualHreflangs = new Set(alternates.map(({ attributes: attrs }) => attrs.hreflang));
-    if (alternates.length !== hreflangs.size || actualHreflangs.size !== hreflangs.size || [...hreflangs].some((code) => !actualHreflangs.has(code))) failures.push(`${label}: hreflang cluster must contain all ${hreflangs.size} unique languages including x-default.`);
+    if (englishOnly.has(base) && locale !== 'en') failures.push(`${label}: untranslated copy of an English-only page must be noindex.`);
+    if (!localizedRoutePaths.includes(base) || englishOnly.has(base)) {
+      if (alternates.length) failures.push(`${label}: English-only pages must not advertise translations.`);
+    } else if (alternates.length !== hreflangs.size || actualHreflangs.size !== hreflangs.size || [...hreflangs].some((code) => !actualHreflangs.has(code))) failures.push(`${label}: hreflang cluster must contain all ${hreflangs.size} unique languages including x-default.`);
     for (const alternate of alternates) {
       const code = alternate.attributes.hreflang;
       const localeDefinition = publishedLocales.find((item) => item.code === code);
@@ -169,7 +185,7 @@ async function validatePage(file) {
     const localeDefinition = localeDefinitions.find((item) => item.path === locale);
     if (htmlTag.lang !== localeDefinition?.code || (htmlTag.dir || 'ltr') !== localeDefinition?.direction) failures.push(`${label}: html lang/dir does not match locale ${locale}.`);
     validateSchemas(text, label, locale, base, schemasFrom(html, label));
-  } else if (!['/404', '/heic'].includes(route)) {
+  } else if (!['/404', '/heic'].includes(route) && !route.startsWith('/guides') && !desktopPrivateRoutes.has(base) && !(englishOnly.has(base) && locale !== 'en')) {
     failures.push(`${label}: unexpected noindex page.`);
   }
 }
@@ -228,6 +244,7 @@ async function validateSitemapAndRobots() {
   });
   const expectedByUrl = new Map();
   for (const route of localizedRoutePaths) {
+    if (desktopPrivateRoutes.has(route) || englishOnly.has(route)) continue;
     const alternates = new Map(publishedLocales.map((locale) => [
       locale.code,
       new URL(localizedPath(locale.path, route), siteUrl).toString(),
@@ -237,6 +254,8 @@ async function validateSitemapAndRobots() {
       expectedByUrl.set(new URL(localizedPath(locale.path, route), siteUrl).toString(), alternates);
     }
   }
+  for (const route of englishOnlyRoutes) expectedByUrl.set(new URL(route, siteUrl).toString(), new Map());
+  for (const url of guideSitemapUrls()) if (!expectedByUrl.has(url)) expectedByUrl.set(url, new Map());
   const expectedUrls = [...expectedByUrl.keys()];
   const expectedSet = new Set(expectedUrls);
   const actualSet = new Set(entries.map((entry) => entry.loc));
@@ -251,6 +270,10 @@ async function validateSitemapAndRobots() {
     }
     const expectedAlternates = expectedByUrl.get(entry.loc);
     if (!expectedAlternates) continue;
+    if (expectedAlternates.size === 0) {
+      if (entry.alternates.length) failures.push(`sitemap: English-only guide has fake alternates: ${entry.loc}`);
+      continue;
+    }
     const actualHreflangs = new Set(entry.alternates.map((alternate) => alternate.hreflang));
     if (entry.alternates.length !== hreflangs.size || actualHreflangs.size !== hreflangs.size || [...hreflangs].some((code) => !actualHreflangs.has(code))) {
       failures.push(`sitemap: ${entry.loc} must contain all ${hreflangs.size} unique reciprocal hreflang links.`);

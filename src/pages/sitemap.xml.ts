@@ -1,4 +1,5 @@
-import { publishedLocales, localizedRoutePaths, localizedPath } from '../i18n/config';
+import { publishedLocales, localizedRoutePaths, localizedPath, englishOnlyRoutes } from '../i18n/config';
+import { guideSitemapUrls } from '../data/guides';
 
 export const prerender = true;
 
@@ -12,7 +13,9 @@ const escapeXml = (value: string) => value
   .replaceAll('>', '&gt;');
 
 export function GET() {
-  const entries = localizedRoutePaths.flatMap((route) => {
+  // Desktop: download and releases are translated; overview, plans and help are
+  // English-only (listed once, below); purchase and redeem are private.
+  const entries = localizedRoutePaths.filter(route=>!route.startsWith('/desktop')||['/desktop/download','/desktop/releases'].includes(route)).flatMap((route) => {
     const alternates = publishedLocales.map((locale) => ({
       hreflang: locale.code,
       href: new URL(localizedPath(locale.path, route), siteUrl).toString(),
@@ -25,6 +28,8 @@ export function GET() {
 
     return alternates.map(({ href }) => ({ url: href, alternateLinks }));
   });
+  entries.push(...englishOnlyRoutes.map(route => ({ url: new URL(route, siteUrl).toString(), alternateLinks: [] })));
+  entries.push(...guideSitemapUrls().filter(url=>!entries.some(entry=>entry.url===url)).map(url => ({ url, alternateLinks: [] })));
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${entries
     .map(({ url, alternateLinks }) => `  <url>\n    <loc>${escapeXml(url)}</loc>\n${alternateLinks

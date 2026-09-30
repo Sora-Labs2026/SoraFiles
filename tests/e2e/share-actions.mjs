@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const baseUrl = process.env.SF_TEST_BASE_URL || 'http://127.0.0.1:4321';
-const browser = await chromium.launch({ headless: true });
+const executablePath = process.env.SORA_BROWSER_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const browser = await chromium.launch({ executablePath, headless: true });
 
 try {
   const context = await browser.newContext({
@@ -44,8 +45,8 @@ try {
   assert.deepEqual(
     await page.evaluate(() => ({ ...window.__sfSharePayload })),
     {
-      title: 'SoraFiles - Private File Processing in Your Browser',
-      text: 'SoraFiles - Private File Processing in Your Browser — SoraFiles is a privacy-first web app for working with PDFs and images directly in your browser. Supported file processing happens locally on your device.',
+      title: 'SoraFiles',
+      text: 'SoraFiles — SoraFiles is a privacy-first web app for working with PDFs and images directly in your browser. Supported file processing happens locally on your device.',
       url: 'https://sorafiles.com/',
     },
   );

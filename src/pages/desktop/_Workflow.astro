@@ -1,0 +1,51 @@
+---
+const steps = [
+ ['Select', 'Pick one file or a batch in your file manager.'],
+ ['Right-click', 'Choose Edit with SoraFiles.'],
+ ['Pick an action', 'For example, Compress PDF.'],
+ ['Done', 'New files are saved beside the originals.'],
+];
+const files = [['Contract-2026.pdf','8.4 MB','PDF document'],['Scan-0412.pdf','24.6 MB','PDF document'],['Scan-0413.pdf','18.2 MB','PDF document'],['Receipt-March.jpg','3.1 MB','JPEG image'],['Notes.docx','142 KB','Word document']];
+---
+<section class="workflow dw-container" id="how-it-works" aria-label="How SoraFiles Desktop works" data-workflow>
+  <div class="file-manager" data-phase="0" aria-hidden="true">
+    <div class="fm-bar"><span class="fm-back">‹ &nbsp; ›</span><span>▱ &nbsp; Documents <span class="fm-divider">/</span> Scans</span><span class="fm-search">⌕ &nbsp; Search</span></div>
+    <div class="fm-body"><div class="fm-sidebar">{['Home','Desktop','Documents','Downloads','Pictures'].map(place => <span class:list={{active:place==='Documents'}}>▱ &nbsp; {place}</span>)}</div>
+      <div class="fm-main"><div class="fm-row fm-heading"><span>Name</span><span>Size</span><span class="fm-kind">Kind</span></div><div class="fm-rows">{files.map((file,i) => <><div class="fm-row" data-file-index={i}><span class="fm-name"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" aria-hidden="true"><rect x="4" y="2" width="12" height="16" rx="2"/><path d="M7 6h6M7 10h6M7 14h4"/></svg>{file[0]}</span><span>{file[1]}</span><span class="fm-kind">{file[2]}</span></div>{(i===1||i===2)&&<div class="fm-row fm-output"><span class="fm-name">✓ &nbsp; {file[0].replace('.pdf','-compressed.pdf')}</span><span>{i===1?'4.8 MB':'3.6 MB'}</span><span class="fm-kind">PDF document</span></div>}</>)}</div></div>
+    </div>
+    <div class="fm-status">5 items</div>
+    <div class="fm-menu"><span>Open</span><span>Rename</span><span>Copy</span><span class="fm-edit"><img src="/brand/sorafiles-mark-full-color.svg" width="13" height="13" alt=""/>Edit with SoraFiles <span>›</span></span></div>
+    <div class="fm-submenu"><span class="fm-compress">Compress PDF</span><span>Merge PDF</span><span>Rotate PDF</span><span>PDF to JPG</span></div>
+    <svg class="fm-pointer" width="22" height="28" viewBox="0 0 22 28" fill="var(--ink)" stroke="var(--surface)" stroke-width="1.5"><path d="M2 2v22l6-6 5 9 4-2-5-9h9z"/></svg>
+  </div>
+  <div class="workflow-side"><ol>{steps.map(([title,copy],i)=><li><button type="button" data-workflow-step={i} aria-current={i===0?'step':undefined}><span class="step-number">0{i+1}</span><span><strong>{title}</strong><span class="step-description">{copy}</span></span></button></li>)}</ol><div class="workflow-controls"><button type="button" class="dw-button" data-workflow-toggle>Pause</button><button type="button" class="dw-button" data-workflow-replay>Replay</button></div><p class="workflow-caption">Illustrative workflow. Available actions depend on your files and platform.</p></div>
+</section>
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-workflow]')) {
+    const window = root.querySelector<HTMLElement>('.file-manager')!;
+    const status = root.querySelector<HTMLElement>('.fm-status')!;
+    const toggle = root.querySelector<HTMLButtonElement>('[data-workflow-toggle]')!;
+    const steps = [...root.querySelectorAll<HTMLButtonElement>('[data-workflow-step]')];
+    const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    const timings = [900,800,1100,1300,1000,600,1500,3600];
+    const stepForPhase = [0,0,0,1,2,2,3,3];
+    let phase=0, playing=!motion.matches, visible=false, timer:ReturnType<typeof setTimeout>|undefined;
+    const paint = () => {
+      window.dataset.phase=String(phase);
+      status.textContent=phase===0?'5 items':phase===1?'1 of 5 selected':phase===6?'Compressing 2 files…':phase===7?'2 files saved beside the originals':'2 of 5 selected';
+      steps.forEach((step,i)=>{if(i===stepForPhase[phase])step.setAttribute('aria-current','step');else step.removeAttribute('aria-current');});
+      toggle.textContent=playing?'Pause':'Play';
+    };
+    const schedule=()=>{clearTimeout(timer);if(playing&&visible&&!document.hidden)timer=setTimeout(()=>{phase=(phase+1)%timings.length;paint();schedule();},timings[phase]);};
+    toggle.addEventListener('click',()=>{playing=!playing;paint();schedule();});
+    root.querySelector('[data-workflow-replay]')!.addEventListener('click',()=>{phase=0;playing=!motion.matches;paint();schedule();});
+    steps.forEach((step,i)=>step.addEventListener('click',()=>{phase=[2,3,5,7][i];playing=false;paint();schedule();}));
+    motion.addEventListener('change',()=>{if(motion.matches)playing=false;paint();schedule();});
+    document.addEventListener('visibilitychange',schedule);
+    new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;schedule();},{threshold:.2}).observe(root);
+    paint();
+  }
+</script>
+<style>
+  .workflow{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:48px;padding-bottom:80px}.file-manager{height:432px;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:0 16px 40px #0000000b;font-size:12px;color:var(--ink-secondary);user-select:none}.fm-bar{height:44px;flex-shrink:0;display:flex;align-items:center;gap:18px;padding:0 16px;border-bottom:1px solid var(--line)}.fm-back,.fm-divider{color:var(--ink-secondary)}.fm-divider{padding:0 8px}.fm-search{margin-left:auto;border:1px solid var(--line);padding:4px 12px;border-radius:999px}.fm-body{display:flex;flex:1;min-height:0}.fm-sidebar{width:168px;flex-shrink:0;padding:12px 8px;background:var(--surface-subtle);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px}.fm-sidebar>span{padding:7px 8px;border-radius:8px}.fm-sidebar>.active{background:var(--sunken);color:var(--ink);font-weight:600}.fm-main{min-width:0;flex:1}.fm-rows{padding:4px 8px}.fm-row{display:grid;grid-template-columns:minmax(0,1fr) 72px 108px;gap:12px;align-items:center;height:40px;padding:0 8px;border-radius:8px;transition:background .2s,opacity .3s,height .3s}.fm-heading{height:32px;border-bottom:1px solid var(--line);border-radius:0;padding-inline:16px}.fm-name{display:flex;gap:8px;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);min-width:0}.fm-name svg{flex-shrink:0}.fm-kind{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fm-status{height:36px;display:flex;align-items:center;padding:0 16px;border-top:1px solid var(--line);background:var(--surface-subtle);flex-shrink:0}.fm-output{height:0;opacity:0;overflow:hidden}.file-manager[data-phase="7"] .fm-output{height:40px;opacity:1}.file-manager:is([data-phase="1"],[data-phase="2"],[data-phase="3"],[data-phase="4"],[data-phase="5"],[data-phase="6"]) [data-file-index="1"],.file-manager:is([data-phase="2"],[data-phase="3"],[data-phase="4"],[data-phase="5"],[data-phase="6"]) [data-file-index="2"]{background:var(--selected-soft);box-shadow:inset 0 0 0 1px var(--line-strong)}.fm-menu,.fm-submenu{position:absolute;z-index:2;top:180px;left:30%;padding:5px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 10px 25px #0002;opacity:0;visibility:hidden;transform:scale(.97);transition:opacity .15s,transform .2s}.fm-menu>span,.fm-submenu>span{display:flex;align-items:center;gap:7px;padding:8px;font-size:12px;white-space:nowrap;border-radius:5px;color:var(--ink)}.fm-edit{border-top:1px solid var(--line);margin-top:3px}.fm-edit>span{margin-left:auto}.fm-submenu{top:218px;left:auto;right:16px;z-index:3}.file-manager:is([data-phase="3"],[data-phase="4"],[data-phase="5"]) .fm-menu,.file-manager:is([data-phase="4"],[data-phase="5"]) .fm-submenu{visibility:visible;opacity:1;transform:none}.file-manager:is([data-phase="4"],[data-phase="5"]) .fm-edit,.file-manager[data-phase="5"] .fm-compress{background:var(--action);color:var(--on-action)}.fm-pointer{position:absolute;left:62%;top:370px;z-index:4;transition:left .64s,top .64s}.file-manager[data-phase="1"] .fm-pointer{left:43%;top:127px}.file-manager:is([data-phase="2"],[data-phase="3"]) .fm-pointer{left:45%;top:168px}.file-manager[data-phase="4"] .fm-pointer{left:49%;top:298px}.file-manager[data-phase="5"] .fm-pointer{left:84%;top:236px}.workflow-side ol{list-style:none;margin:0;padding:0}.workflow-side li button{display:flex;gap:16px;width:100%;padding:12px;border-left:2px solid var(--line);border-radius:0 12px 12px 0;text-align:left;color:var(--ink-secondary);min-height:80px;transition:background .2s,border-color .2s}.workflow-side li button:hover{background:var(--surface-subtle)}.workflow-side li button[aria-current=step]{border-color:var(--ink)}.step-number{font-size:12px;padding-top:3px;font-variant-numeric:tabular-nums}.workflow-side strong{display:block;font-size:14px;color:var(--ink)}.step-description{display:block;font-size:13px;line-height:1.5;margin-top:3px}.workflow-controls{display:flex;gap:8px;margin-top:20px}.workflow-controls button{min-height:40px;padding:6px 15px;font-size:12px}.workflow-caption{font-size:11px;margin-top:14px;line-height:1.5}@media(max-width:1023px){.workflow{grid-template-columns:1fr;gap:28px}.workflow-side ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}.workflow-side li button{height:100%;flex-direction:column;gap:4px;border-left:0;border-top:2px solid var(--line);border-radius:0 0 12px 12px}.workflow-controls{margin-top:16px}}@media(max-width:639px){.file-manager{height:400px}.fm-sidebar,.fm-kind,.fm-search{display:none}.fm-row{grid-template-columns:minmax(0,1fr) 62px;gap:8px}.workflow-side ol{grid-template-columns:repeat(2,minmax(0,1fr))}.fm-menu{left:22px}.fm-submenu{right:8px;top:252px}.workflow{padding-bottom:56px}}
+</style>

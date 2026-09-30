@@ -20,9 +20,15 @@ for (const path of publicPages) {
   check(existsSync(path), `${path} is missing.`);
   if (!existsSync(path)) continue;
   const html = read(path);
-  check(!/acscdn\.com\/script|runAutoTag|zoneId:\s*['"]ag86oktn3r|highperformanceformat|effectivecpmnetwork|data-ad-placement|data-sf-ad-slot|data-ad-frame|googletagmanager|google-analytics|G-GQ973RY74K|data-sf-google-analytics|\bgtag\s*\(/i.test(html), `${path} must remain free of advertising and Google Analytics runtime code.`);
+  check(!/acscdn\.com\/script|runAutoTag|zoneId:\s*['"]ag86oktn3r|highperformanceformat|effectivecpmnetwork|data-ad-placement|data-sf-ad-slot|data-ad-frame|googlesyndication|doubleclick|data-sf-google-analytics/i.test(html), `${path} must remain free of advertising runtime code.`);
   check(!staleAdvertisingCopy.test(html), `${path} still contains obsolete advertising copy.`);
-  check((html.match(/https:\/\/analytics\.ahrefs\.com\/analytics\.js/g) ?? []).length === 1, `${path} must contain exactly one Ahrefs Web Analytics loader.`);
+  const sensitiveDesktopPage = /^dist\/(?:[a-z]{2}\/|zh-(?:cn|tw)\/)?desktop\/(?:redeem|purchase)\/index\.html$/.test(path.replaceAll('\\', '/'));
+  const analyticsCount = (html.match(/https:\/\/analytics\.ahrefs\.com\/analytics\.js/g) ?? []).length;
+  check(analyticsCount === (sensitiveDesktopPage ? 0 : 1), sensitiveDesktopPage ? `${path} must not load analytics on a license page.` : `${path} must contain exactly one Ahrefs Web Analytics loader.`);
+  // Google Analytics (owner decision 2026-09-30) is analytics, not advertising:
+  // exactly one approved tag per page, never on license return pages.
+  const googleTags = (html.match(/https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=G-GQ973RY74K/g) ?? []).length;
+  check(googleTags === (sensitiveDesktopPage ? 0 : 1) && !/googletagmanager\.com\/gtm\.js|google-analytics\.com\/analytics\.js|\bG-(?!GQ973RY74K\b)[A-Z0-9]{8,}\b/.test(html), sensitiveDesktopPage ? `${path} must not load Google Analytics on a license page.` : `${path} must contain exactly one approved Google Analytics tag.`);
 }
 
 if (failures.length) { console.error(failures.map((failure) => `- ${failure}`).join('\n')); process.exit(1); }

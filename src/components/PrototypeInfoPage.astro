@@ -1,0 +1,13 @@
+---
+import pages from '../data/v10-prototype-pages.json';
+import '../styles/v10-site-exact.css';
+interface InfoPage {eyebrow:string;title:string;intro:string;features?:{title:string;body:string[]}[];sections:{n:string;title:string;body:string[]}[]}
+interface Props {slug:'about'|'privacy'|'terms'|'open-source';page?:InfoPage;onThisPage?:string;featuresLabel?:string}
+const {slug,onThisPage='On this page',featuresLabel='Features'}=Astro.props;
+const page=Astro.props.page??pages[slug] as InfoPage;
+---
+<main id="main" data-prototype-info>
+ <div class="container page-intro"><p class="eyebrow eyebrow--pill page-intro__eyebrow">{page.eyebrow}</p><h1 class="t-h1 page-intro__title"><span class="line-reveal"><span class="line-reveal__inner">{page.title}</span></span></h1><p class="t-lead page-intro__lead">{page.intro}</p></div>
+ {page.features&&<section class="container" aria-label={featuresLabel}><ul class="features">{page.features.map(feature=><li class="feature"><h2 class="t-h3">{feature.title}</h2>{feature.body.map(p=><p class="t-small">{p}</p>)}</li>)}</ul></section>}
+ <div class="container doc-layout"><nav class="toc" aria-label={onThisPage}><p class="eyebrow eyebrow--plain toc__title">{onThisPage}</p><ol>{page.sections.map(section=><li><a href={`#s-${section.n}`} class="toc__link">{section.title}</a></li>)}</ol></nav><div class="doc-sections">{page.sections.map(section=><section id={`s-${section.n}`} class="doc-section" aria-labelledby={`s-${section.n}-title`}><span class="tnum doc-section__n" aria-hidden="true">{section.n}</span><div class="doc-section__body"><h2 id={`s-${section.n}-title`} class="t-h3">{section.title}</h2>{section.body.map(p=><p>{p}</p>)}</div></section>)}</div></div>
+</main>

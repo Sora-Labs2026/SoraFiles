@@ -1,0 +1,17 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import PrototypeGuide from '../../components/PrototypeGuide.astro';
+import referenceGuides from '../../data/prototypeGuides.json';
+import { guides, isPublicGuide, isIndexableGuide, guidePath, guideSchema, type Guide } from '../../data/guides';
+export function getStaticPaths() { return guides.filter(isPublicGuide).map(guide => ({ params: { slug: guide.slug }, props: { guide } })); }
+interface Props { guide: Guide }
+const { guide } = Astro.props;
+if (!referenceGuides.some(g=>g.slug===guide.slug)) throw new Error('Missing locked prototype guide: '+guide.slug);
+---
+<Layout title={`${guide.title} | SoraFiles`} description={guide.description} canonicalPath={guidePath(guide.slug)} noIndex={!isIndexableGuide(guide)} schema={guideSchema(guide)} imagePath={guide.socialImage} ogType="article">
+  <Header />
+  <PrototypeGuide slug={guide.slug}/>
+  <Footer />
+</Layout>

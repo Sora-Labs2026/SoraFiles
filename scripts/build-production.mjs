@@ -5,7 +5,7 @@ const astro = fileURLToPath(new URL('../node_modules/astro/bin/astro.mjs', impor
 const generator = fileURLToPath(new URL('./generate-popularity-registry.mjs', import.meta.url));
 const officeRuntimeSync = fileURLToPath(new URL('./sync-office-runtime.mjs', import.meta.url));
 const typeScriptRuntimeArgs = ['--experimental-strip-types'];
-for (const setupScript of [generator, officeRuntimeSync]) {
+for (const setupScript of [fileURLToPath(new URL('./validate-guides.mjs', import.meta.url)), generator, officeRuntimeSync]) {
   const setup = spawnSync(process.execPath, [...typeScriptRuntimeArgs, setupScript], {
     cwd: fileURLToPath(new URL('..', import.meta.url)),
     env: process.env,
@@ -20,6 +20,12 @@ const result = spawnSync(process.execPath, [astro, 'build'], {
   stdio: 'inherit',
 });
 if (result.status !== 0) process.exit(result.status ?? 1);
+
+const markdown = spawnSync(process.execPath, [fileURLToPath(new URL('./build-agent-markdown.mjs', import.meta.url))], {
+  cwd: fileURLToPath(new URL('..', import.meta.url)),
+  stdio: 'inherit',
+});
+if (markdown.status !== 0) process.exit(markdown.status ?? 1);
 
 const checks = [
   './validate-tool-metadata.mjs',

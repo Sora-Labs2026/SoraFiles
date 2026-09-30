@@ -1,0 +1,497 @@
+/* Form fields and inline alerts, shared by tool pages, Contact and Redeem. */
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__label {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__input {
+  min-width: 0;
+  height: 2.75rem;
+  padding-inline: 0.875rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  color: var(--ink);
+  transition:
+    border-color var(--dur-2) var(--ease-std),
+    box-shadow var(--dur-2) var(--ease-std);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__input:hover:not(:disabled) {
+  border-color: var(--ink-4);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__input:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__input[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 4px var(--error-soft);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__hint,
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__error {
+  font-size: var(--fs-label);
+  color: var(--ink-3);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--error);
+  font-weight: var(--fw-medium);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .alert {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-size: var(--fs-small);
+  color: var(--ink);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .alert svg {
+  margin-top: 2px;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .alert--error {
+  border-color: color-mix(in srgb, var(--error) 30%, var(--line));
+  background: var(--error-soft);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .alert--error svg {
+  color: var(--error);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .alert--warning {
+  border-color: color-mix(in srgb, var(--warning) 30%, var(--line));
+  background: var(--warning-soft);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .alert--warning svg {
+  color: var(--warning);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .alert--success {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--line));
+  background: var(--success-soft);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .alert--success svg {
+  color: var(--success);
+}
+
+/* Phase 2 option controls. Built on feedback.css (.field, .field__input, .alert). */
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .opt-group {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .opt-group + .opt-group {
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--line);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .opt-group__title {
+  padding: 0;
+  margin-bottom: var(--s-4);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--ls-tight);
+  color: var(--ink);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__input--sm {
+  height: 2.25rem;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-small);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__select {
+  appearance: none;
+  padding-right: 2.25rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
+    linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 55%,
+    calc(100% - 13px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 64rem) {
+  :where(:where([data-prototype-contact],[data-prototype-controls])) .field__select {
+    font-size: var(--fs-small);
+  }
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) textarea.field__input {
+  height: auto;
+  min-height: 8rem;
+  padding-block: var(--s-3);
+  resize: vertical;
+  font: inherit;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__input::placeholder {
+  color: var(--ink-4);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .field__input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Slider */
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__value {
+  font-size: var(--fs-label);
+  color: var(--ink-2);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__input {
+  --track: 4px;
+  width: 100%;
+  height: 1.5rem;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__input::-webkit-slider-runnable-track {
+  height: var(--track);
+  border-radius: var(--r-pill);
+  background: linear-gradient(to right, var(--action) var(--pct), var(--sunken) var(--pct));
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__input::-moz-range-track {
+  height: var(--track);
+  border-radius: var(--r-pill);
+  background: var(--sunken);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__input::-moz-range-progress {
+  height: var(--track);
+  border-radius: var(--r-pill);
+  background: var(--action);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__input::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border: 2px solid var(--action);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-xs);
+  appearance: none;
+  transition: transform var(--dur-1) var(--ease-std);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__input::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--action);
+  border-radius: 50%;
+  background: var(--surface-raised);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__input:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__input:focus-visible {
+  outline: none;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider__input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .slider[data-disabled] {
+  opacity: 0.5;
+}
+
+/* Segmented control */
+:where(:where([data-prototype-contact],[data-prototype-controls])) .segmented {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .segmented__track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-md);
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .segmented__opt {
+  position: relative;
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  min-height: 2rem;
+  padding-inline: var(--s-3);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-small);
+  font-weight: var(--fw-medium);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: background-color var(--dur-2) var(--ease-std), color var(--dur-2) var(--ease-std), box-shadow var(--dur-2) var(--ease-std);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .segmented__opt input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .segmented__opt:hover {
+  color: var(--ink);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .segmented__opt[data-checked] {
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-weight: var(--fw-semibold);
+  box-shadow: 0 0 0 1px var(--line), var(--shadow-xs);
+}
+
+/* Pill variant with a black selected segment (billing period) */
+:where(:where([data-prototype-contact],[data-prototype-controls])) .segmented--pill .segmented__track {
+  border-radius: var(--r-pill);
+  padding: 4px;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .segmented--pill .segmented__opt {
+  min-height: 2.25rem;
+  padding-inline: var(--s-5);
+  border-radius: var(--r-pill);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .segmented--pill .segmented__opt[data-checked] {
+  background: var(--action);
+  color: var(--on-action);
+  box-shadow: var(--shadow-btn);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .segmented__opt:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+@media (pointer: coarse) {
+  :where(:where([data-prototype-contact],[data-prototype-controls])) .segmented__opt {
+    min-height: 2.5rem;
+  }
+}
+
+/* Radio cards */
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-cards {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-cards .field__label {
+  margin-bottom: 4px;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card {
+  position: relative;
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease-std), background-color var(--dur-1) var(--ease-std), box-shadow var(--dur-1) var(--ease-std);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card:hover {
+  border-color: var(--line-strong);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card[data-checked] {
+  border-color: var(--ink);
+  background: var(--selected-soft);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card__dot {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  transition: border-color var(--dur-1) var(--ease-std), box-shadow var(--dur-2) var(--ease-out);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card[data-checked] .radio-card__dot {
+  border-color: var(--action);
+  box-shadow: inset 0 0 0 3.5px var(--surface-raised), inset 0 0 0 8px var(--action);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card__text {
+  display: grid;
+  gap: 2px;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card__label {
+  font-size: var(--fs-small);
+  font-weight: var(--fw-semibold);
+  color: var(--ink);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card__desc {
+  font-size: var(--fs-label);
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .radio-card[data-checked] .radio-card__label {
+  color: var(--ink);
+}
+
+/* Checkbox */
+:where(:where([data-prototype-contact],[data-prototype-controls])) .check {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--s-3);
+  row-gap: 2px;
+  align-items: start;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .check__input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--action);
+  cursor: pointer;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .check__label {
+  font-size: var(--fs-small);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .check .field__hint {
+  grid-column: 2;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .check[data-disabled] {
+  opacity: 0.5;
+}
+
+/* Password */
+:where(:where([data-prototype-contact],[data-prototype-controls])) .password {
+  position: relative;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .password .field__input {
+  width: 100%;
+  padding-right: 3rem;
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .password__toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .password__toggle:active:not(:disabled) {
+  transform: translateY(calc(-50% + 1px));
+}
+
+/* Inline note inside options */
+:where(:where([data-prototype-contact],[data-prototype-controls])) .opt-note {
+  display: flex;
+  gap: var(--s-2);
+  font-size: var(--fs-label);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .opt-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--ink-3);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .opt-note--warning svg {
+  color: var(--warning);
+}
+
+:where(:where([data-prototype-contact],[data-prototype-controls])) .chip--sm {
+  height: 1.875rem;
+  padding-inline: 0.625rem;
+  font-size: var(--fs-label);
+}
+
+@media (pointer: coarse) {
+  :where(:where([data-prototype-contact],[data-prototype-controls])) .chip--sm {
+    height: 2.5rem;
+  }
+}
+
+:where([data-prototype-contact],[data-prototype-controls]) [hidden]{display:none!important}

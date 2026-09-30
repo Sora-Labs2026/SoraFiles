@@ -1,12 +1,13 @@
 import { createSign } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { publishedLocales, localizedRoutePaths } from '../src/i18n/config.ts';
+import { canonicalIndexableUrls, filterIndexNowUrls, indexNowBatches } from '../src/lib/indexnow.ts';
 
 const siteUrl = 'https://sorafiles.com/';
 const sitemapUrl = 'https://sorafiles.com/sitemap.xml';
 const indexNowKey = 'fc1b21d84d0549ba9d2ab3bea5dc3845';
 const indexNowKeyLocation = `${siteUrl}${indexNowKey}.txt`;
-const expectedUrlCount = publishedLocales.length * localizedRoutePaths.length;
+const expectedUrlCount = canonicalIndexableUrls().length;
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const liveSitemap = args.includes('--live');
@@ -56,6 +57,7 @@ async function sitemapXml() {
 function validateCanonicalUrls(xml) {
   const urls = locations(xml);
   const unique = new Set(urls);
+  if (filterIndexNowUrls(urls).length !== unique.size) throw new Error('Sitemap contains URLs outside the canonical indexable registry.');
   if (urls.length !== expectedUrlCount || unique.size !== expectedUrlCount) {
     throw new Error(`Search submission requires ${expectedUrlCount} unique sitemap URLs; found ${urls.length}/${unique.size}.`);
   }
@@ -89,12 +91,15 @@ async function submitIndexNow(urlList) {
     record('indexnow', 'planned', { urlCount: urlList.length, keyLocation: indexNowKeyLocation });
     return;
   }
+  if (!liveSitemap) throw new Error('External submission requires --live production sitemap validation.');
+  for (const batch of indexNowBatches(urlList)) {
   const response = await request(indexNowEndpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/json; charset=utf-8' },
-    body: JSON.stringify({ host: 'sorafiles.com', key: indexNowKey, keyLocation: indexNowKeyLocation, urlList }),
+    body: JSON.stringify({ host: 'sorafiles.com', key: indexNowKey, keyLocation: indexNowKeyLocation, urlList: batch }),
   }, 'IndexNow');
-  record('indexnow', 'accepted', { httpStatus: response.status, endpoint: indexNowEndpoint, urlCount: urlList.length, keyLocation: indexNowKeyLocation });
+  record('indexnow', response.status === 202 ? 'key-validation-pending' : 'accepted', { httpStatus: response.status, endpoint: indexNowEndpoint, urlCount: batch.length, keyLocation: indexNowKeyLocation });
+  }
 }
 
 const base64url = (value) => Buffer.from(value).toString('base64url');
