@@ -26,6 +26,8 @@ dirs = "=6.0.0"
 
 [target.'cfg(windows)'.dependencies]
 winreg = { version = "=0.55.0", features = ["transactions"] }
+# Same version Tauri already builds; only the Microsoft Store startup-task APIs.
+windows = { version = "=0.61.3", features = ["ApplicationModel", "ApplicationModel_Activation", "Foundation", "Win32_System_Com"] }
 
 [profile.release]
 codegen-units = 1

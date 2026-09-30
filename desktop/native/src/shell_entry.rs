@@ -1,6 +1,8 @@
 //! Per-user Explorer registration governed by the persisted application preference.
 //! Every mutation is one Windows registry transaction; unfamiliar data is untouched.
-pub const fn capability() -> bool { cfg!(windows) }
+/// The toggle is user-controlled only for installer builds; the Microsoft Store
+/// package always includes the command through its manifest.
+pub fn capability() -> bool { cfg!(windows) && !crate::store_package::packaged() }
 
 #[cfg(not(windows))]
 pub fn enabled() -> Result<bool, String> { Ok(false) }
@@ -141,7 +143,10 @@ mod windows {
         }
     }
     include!("explorer_registration.rs");
+    // A Microsoft Store package declares the command in its manifest: always on,
+    // never written to the registry (packaged registry writes are redirected).
     pub fn enabled() -> Result<bool, String> {
+        if crate::store_package::packaged() { return Ok(true); }
         let expected = command(&std::env::current_exe().map_err(|_| "Application location unavailable")?)?;
         dynamic_state(&RegKey::predef(HKEY_CURRENT_USER), BASE, r"Software\Classes\CLSID", &expected, &dll_path()?)
     }
@@ -152,6 +157,7 @@ mod windows {
         unsafe { SHChangeNotify(0x08000000, 0, std::ptr::null(), std::ptr::null()); }
     }
     pub fn set_enabled(value: bool) -> Result<bool, String> {
+        if crate::store_package::packaged() { let _ = value; return Ok(true); }
         let expected = command(&std::env::current_exe().map_err(|_| "Application location unavailable")?)?;
         let dll = dll_path()?;
         if value && !Path::new(&dll).is_file() { return Err("File-manager component is missing. Reinstall SoraFiles.".into()); }
@@ -186,6 +192,7 @@ mod windows {
     }
     /// Uninstaller-only cleanup: remove exact-current entries, skip foreign ones.
     pub fn remove_owned_entries() -> Result<(), String> {
+        if crate::store_package::packaged() { return Ok(()); }
         let expected = command(&std::env::current_exe().map_err(|_| "Application location unavailable")?)?;
         dynamic_update(&RegKey::predef(HKEY_CURRENT_USER), BASE, r"Software\Classes\CLSID", &expected, &dll_path()?, false, true, None)?;
         notify_explorer();

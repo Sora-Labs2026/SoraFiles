@@ -534,7 +534,9 @@
     "Activate license": "Activate license",
     "Cancel revocation": "Cancel revocation",
     "Text colour": "Text colour",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Included with the Microsoft Store version. It appears in the right-click menu for supported files.",
+    "Updates arrive automatically through the Microsoft Store.": "Updates arrive automatically through the Microsoft Store."
   },
   "ja": {
     "Language": "言語",
@@ -1088,7 +1090,9 @@
     "Activate license": "ライセンスを有効化",
     "Cancel revocation": "解除を取り消す",
     "Text colour": "文字色",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "支払いを完了しない限り請求されません。気が変わった、または別の端末を選んでしまいましたか？"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "支払いを完了しない限り請求されません。気が変わった、または別の端末を選んでしまいましたか？",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store 版に含まれています。対応ファイルの右クリックメニューに表示されます。",
+    "Updates arrive automatically through the Microsoft Store.": "更新は Microsoft Store から自動的に配信されます。"
   },
   "ko": {
     "Language": "언어",
@@ -1642,7 +1646,9 @@
     "Activate license": "라이선스 활성화",
     "Cancel revocation": "해제 취소",
     "Text colour": "글자 색",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "결제를 완료하지 않으면 요금이 청구되지 않습니다. 마음이 바뀌었거나 다른 기기를 선택하셨나요?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "결제를 완료하지 않으면 요금이 청구되지 않습니다. 마음이 바뀌었거나 다른 기기를 선택하셨나요?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store 버전에 포함되어 있습니다. 지원되는 파일의 오른쪽 클릭 메뉴에 표시됩니다.",
+    "Updates arrive automatically through the Microsoft Store.": "업데이트는 Microsoft Store를 통해 자동으로 제공됩니다."
   },
   "es": {
     "Language": "Idioma",
@@ -2196,7 +2202,9 @@
     "Activate license": "Activar licencia",
     "Cancel revocation": "Cancelar la revocación",
     "Text colour": "Color del texto",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "No se cobra nada a menos que completes el pago. ¿Has cambiado de idea o elegiste el dispositivo equivocado?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "No se cobra nada a menos que completes el pago. ¿Has cambiado de idea o elegiste el dispositivo equivocado?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Incluido en la versión de Microsoft Store. Aparece en el menú contextual de los archivos compatibles.",
+    "Updates arrive automatically through the Microsoft Store.": "Las actualizaciones llegan automáticamente a través de Microsoft Store."
   },
   "fr": {
     "Language": "Langue",
@@ -2750,7 +2758,9 @@
     "Activate license": "Activer la licence",
     "Cancel revocation": "Annuler la révocation",
     "Text colour": "Couleur du texte",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Rien n’est facturé tant que vous ne finalisez pas le paiement. Vous avez changé d’avis ou choisi le mauvais appareil ?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Rien n’est facturé tant que vous ne finalisez pas le paiement. Vous avez changé d’avis ou choisi le mauvais appareil ?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Inclus dans la version Microsoft Store. Il apparaît dans le menu contextuel des fichiers pris en charge.",
+    "Updates arrive automatically through the Microsoft Store.": "Les mises à jour arrivent automatiquement via le Microsoft Store."
   },
   "de": {
     "Language": "Sprache",
@@ -3304,7 +3314,9 @@
     "Activate license": "Lizenz aktivieren",
     "Cancel revocation": "Widerruf abbrechen",
     "Text colour": "Textfarbe",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Es wird nichts berechnet, solange du die Zahlung nicht abschließt. Meinung geändert oder das falsche Gerät gewählt?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Es wird nichts berechnet, solange du die Zahlung nicht abschließt. Meinung geändert oder das falsche Gerät gewählt?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "In der Microsoft Store-Version enthalten. Erscheint im Kontextmenü unterstützter Dateien.",
+    "Updates arrive automatically through the Microsoft Store.": "Updates kommen automatisch über den Microsoft Store."
   },
   "pt": {
     "Language": "Idioma",
@@ -3858,7 +3870,9 @@
     "Activate license": "Ativar licença",
     "Cancel revocation": "Cancelar revogação",
     "Text colour": "Cor do texto",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Nada é cobrado a menos que conclua o pagamento. Mudou de ideias ou escolheu o dispositivo errado?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Nada é cobrado a menos que conclua o pagamento. Mudou de ideias ou escolheu o dispositivo errado?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Incluído na versão da Microsoft Store. Aparece no menu de clique direito dos ficheiros suportados.",
+    "Updates arrive automatically through the Microsoft Store.": "As atualizações chegam automaticamente através da Microsoft Store."
   },
   "zh-cn": {
     "Language": "语言",
@@ -4412,7 +4426,9 @@
     "Activate license": "激活许可证",
     "Cancel revocation": "取消撤销",
     "Text colour": "文字颜色",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "除非完成付款，否则不会收费。改变主意了，或选错了设备？"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "除非完成付款，否则不会收费。改变主意了，或选错了设备？",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store 版本已包含此功能，会显示在受支持文件的右键菜单中。",
+    "Updates arrive automatically through the Microsoft Store.": "更新将通过 Microsoft Store 自动推送。"
   },
   "zh-tw": {
     "Language": "語言",
@@ -4966,7 +4982,9 @@
     "Activate license": "啟用授權",
     "Cancel revocation": "取消撤銷",
     "Text colour": "文字顏色",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "除非完成付款，否則不會收費。改變主意了，或選錯了裝置？"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "除非完成付款，否則不會收費。改變主意了，或選錯了裝置？",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store 版本已包含此功能，會顯示在支援檔案的右鍵選單中。",
+    "Updates arrive automatically through the Microsoft Store.": "更新會透過 Microsoft Store 自動推送。"
   },
   "hi": {
     "Language": "भाषा",
@@ -5520,7 +5538,9 @@
     "Activate license": "लाइसेंस सक्रिय करें",
     "Cancel revocation": "रद्दीकरण वापस लें",
     "Text colour": "टेक्स्ट का रंग",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "जब तक आप भुगतान पूरा नहीं करते, कोई शुल्क नहीं लगता। मन बदल गया या गलत डिवाइस चुन लिया?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "जब तक आप भुगतान पूरा नहीं करते, कोई शुल्क नहीं लगता। मन बदल गया या गलत डिवाइस चुन लिया?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store संस्करण में शामिल है। यह समर्थित फ़ाइलों के राइट-क्लिक मेनू में दिखता है।",
+    "Updates arrive automatically through the Microsoft Store.": "अपडेट Microsoft Store के ज़रिए अपने-आप मिलते हैं।"
   },
   "ar": {
     "Language": "اللغة",
@@ -6074,7 +6094,9 @@
     "Activate license": "تفعيل الترخيص",
     "Cancel revocation": "إلغاء الإبطال",
     "Text colour": "لون النص",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "لن يُخصم أي مبلغ ما لم تُكمل الدفع. هل غيّرت رأيك أو اخترت الجهاز الخطأ؟"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "لن يُخصم أي مبلغ ما لم تُكمل الدفع. هل غيّرت رأيك أو اخترت الجهاز الخطأ؟",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "مضمّن في إصدار Microsoft Store. يظهر في قائمة النقر بزر الماوس الأيمن للملفات المدعومة.",
+    "Updates arrive automatically through the Microsoft Store.": "تصل التحديثات تلقائيًا عبر Microsoft Store."
   },
   "ru": {
     "Language": "Язык",
@@ -6628,7 +6650,9 @@
     "Activate license": "Активировать лицензию",
     "Cancel revocation": "Отменить отзыв",
     "Text colour": "Цвет текста",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Оплата не спишется, пока вы не завершите платёж. Передумали или выбрали не то устройство?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Оплата не спишется, пока вы не завершите платёж. Передумали или выбрали не то устройство?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Входит в версию из Microsoft Store. Отображается в контекстном меню поддерживаемых файлов.",
+    "Updates arrive automatically through the Microsoft Store.": "Обновления приходят автоматически через Microsoft Store."
   },
   "id": {
     "Language": "Bahasa",
@@ -7182,7 +7206,9 @@
     "Activate license": "Aktifkan lisensi",
     "Cancel revocation": "Batalkan pencabutan",
     "Text colour": "Warna teks",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Tidak ada biaya kecuali Anda menyelesaikan pembayaran. Berubah pikiran atau salah memilih perangkat?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Tidak ada biaya kecuali Anda menyelesaikan pembayaran. Berubah pikiran atau salah memilih perangkat?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Disertakan dalam versi Microsoft Store. Muncul di menu klik kanan untuk file yang didukung.",
+    "Updates arrive automatically through the Microsoft Store.": "Pembaruan datang otomatis melalui Microsoft Store."
   },
   "it": {
     "Language": "Lingua",
@@ -7736,7 +7762,9 @@
     "Activate license": "Attiva licenza",
     "Cancel revocation": "Annulla revoca",
     "Text colour": "Colore del testo",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Non viene addebitato nulla finché non completi il pagamento. Hai cambiato idea o scelto il dispositivo sbagliato?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Non viene addebitato nulla finché non completi il pagamento. Hai cambiato idea o scelto il dispositivo sbagliato?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Incluso nella versione Microsoft Store. Compare nel menu contestuale dei file supportati.",
+    "Updates arrive automatically through the Microsoft Store.": "Gli aggiornamenti arrivano automaticamente tramite Microsoft Store."
   },
   "nl": {
     "Language": "Taal",
@@ -8290,7 +8318,9 @@
     "Activate license": "Licentie activeren",
     "Cancel revocation": "Intrekking annuleren",
     "Text colour": "Tekstkleur",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Er wordt niets in rekening gebracht tenzij je de betaling voltooit. Van gedachten veranderd of het verkeerde apparaat gekozen?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Er wordt niets in rekening gebracht tenzij je de betaling voltooit. Van gedachten veranderd of het verkeerde apparaat gekozen?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Inbegrepen in de Microsoft Store-versie. Verschijnt in het rechtermuismenu van ondersteunde bestanden.",
+    "Updates arrive automatically through the Microsoft Store.": "Updates komen automatisch via de Microsoft Store."
   },
   "tr": {
     "Language": "Dil",
@@ -8844,7 +8874,9 @@
     "Activate license": "Lisansı etkinleştir",
     "Cancel revocation": "İptali geri al",
     "Text colour": "Metin rengi",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Ödemeyi tamamlamadığınız sürece ücret alınmaz. Fikrinizi mi değiştirdiniz veya yanlış cihazı mı seçtiniz?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Ödemeyi tamamlamadığınız sürece ücret alınmaz. Fikrinizi mi değiştirdiniz veya yanlış cihazı mı seçtiniz?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store sürümüne dahildir. Desteklenen dosyaların sağ tık menüsünde görünür.",
+    "Updates arrive automatically through the Microsoft Store.": "Güncellemeler Microsoft Store üzerinden otomatik olarak gelir."
   },
   "vi": {
     "Language": "Ngôn ngữ",
@@ -9398,7 +9430,9 @@
     "Activate license": "Kích hoạt giấy phép",
     "Cancel revocation": "Hủy thu hồi",
     "Text colour": "Màu chữ",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Bạn sẽ không bị tính phí trừ khi hoàn tất thanh toán. Bạn đổi ý hoặc chọn nhầm thiết bị?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Bạn sẽ không bị tính phí trừ khi hoàn tất thanh toán. Bạn đổi ý hoặc chọn nhầm thiết bị?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Có sẵn trong phiên bản Microsoft Store. Xuất hiện trong menu chuột phải của các tệp được hỗ trợ.",
+    "Updates arrive automatically through the Microsoft Store.": "Bản cập nhật được gửi tự động qua Microsoft Store."
   },
   "th": {
     "Language": "ภาษา",
@@ -9952,7 +9986,9 @@
     "Activate license": "เปิดใช้งานไลเซนส์",
     "Cancel revocation": "ยกเลิกการเพิกถอน",
     "Text colour": "สีข้อความ",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "จะไม่มีการเรียกเก็บเงินจนกว่าคุณจะชำระเงินเสร็จ เปลี่ยนใจหรือเลือกอุปกรณ์ผิดใช่ไหม"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "จะไม่มีการเรียกเก็บเงินจนกว่าคุณจะชำระเงินเสร็จ เปลี่ยนใจหรือเลือกอุปกรณ์ผิดใช่ไหม",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "รวมอยู่ในเวอร์ชัน Microsoft Store และจะปรากฏในเมนูคลิกขวาของไฟล์ที่รองรับ",
+    "Updates arrive automatically through the Microsoft Store.": "การอัปเดตจะส่งมาโดยอัตโนมัติผ่าน Microsoft Store"
   },
   "pl": {
     "Language": "Język",
@@ -10506,6 +10542,8 @@
     "Activate license": "Aktywuj licencję",
     "Cancel revocation": "Anuluj unieważnienie",
     "Text colour": "Kolor tekstu",
-    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Nic nie zostanie pobrane, dopóki nie dokończysz płatności. Zmiana zdania lub wybrano złe urządzenie?"
+    "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Nic nie zostanie pobrane, dopóki nie dokończysz płatności. Zmiana zdania lub wybrano złe urządzenie?",
+    "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Dostępne w wersji ze sklepu Microsoft Store. Pojawia się w menu kontekstowym obsługiwanych plików.",
+    "Updates arrive automatically through the Microsoft Store.": "Aktualizacje przychodzą automatycznie przez Microsoft Store."
   }
 }

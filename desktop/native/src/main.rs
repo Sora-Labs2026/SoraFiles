@@ -20,6 +20,7 @@ mod file_formats;
 #[cfg(windows)] mod process_job;
 #[cfg(windows)] mod publication;
 #[cfg(windows)] mod startup;
+mod store_package;
 #[cfg(windows)] mod shell_entry;
 #[cfg(any(target_os = "macos", target_os = "linux"))] mod unix_shell_entry;
 #[cfg(unix)] mod unix_process_group;
@@ -153,6 +154,8 @@ fn state_value(app: &tauri::AppHandle) -> Result<Value,String> {
     value["version"] = json!(concat!("SoraFiles Desktop ",env!("CARGO_PKG_VERSION")));
     value["startupAvailable"]=json!(cfg!(windows) || cfg!(target_os = "macos") || cfg!(target_os = "linux"));
     value["shellEntryAvailable"]=json!(false);
+    // Microsoft Store package: Explorer command and startup task come from the manifest.
+    value["store"]=json!(store_package::packaged());
     value["shellEntry"]=json!(false);
     #[cfg(any(target_os = "macos", target_os = "linux"))] {value["shellEntryAvailable"]=json!(true);value["shellEntry"]=json!(state.settings.lock().map_err(|_|"Settings unavailable")?.get("shellEntry").and_then(Value::as_bool).unwrap_or(true));}
     #[cfg(windows)] {value["shellEntryAvailable"]=json!(shell_entry::capability());if smoke_output().is_none(){value["shellEntry"]=json!(shell_entry::enabled().unwrap_or(false));}}
@@ -536,7 +539,9 @@ async fn host_request(app: tauri::AppHandle, window: tauri::WebviewWindow, metho
         "processFiles" => {
             let handle=app.clone();tauri::async_runtime::spawn_blocking(move||run_processing(&handle,params,Some(generation))).await.map_err(|_|"Processing could not finish")?
         },
-        "checkUpdates" => {checkout::open_release_notes()?;Ok(json!({"message":"Release notes opened in your browser."}))},
+        "checkUpdates" => {
+            if store_package::packaged(){return Ok(json!({"message":"Updates arrive automatically through the Microsoft Store."}));}
+            checkout::open_release_notes()?;Ok(json!({"message":"Release notes opened in your browser."}))},
         "quit" => { if state.processing_busy.load(Ordering::SeqCst) {return Err("Wait for processing to finish, or cancel it before quitting.".into());} state.quitting.store(true,Ordering::SeqCst);app.exit(0);Ok(json!({"quitting":true})) }
         _ => Err("This action is not available.".into())
     }
@@ -667,7 +672,8 @@ fn main() {
             }
             let accepted=receive_launch(app.handle(),&std::env::args().skip(1).collect::<Vec<_>>());
             let args:Vec<_>=std::env::args().skip(1).collect();
-            let background=(args.len()==1&&args[0]=="--background")||startup_smoke();
+            // The Store startup task launches the executable without arguments.
+            let background=(args.len()==1&&args[0]=="--background")||startup_smoke()||(args.is_empty()&&store_package::launched_by_startup_task());
             let routed=accepted&&route_native_launch(app.handle(),&args);
             if !routed&&!background{open_window(app.handle())?;}
             if startup_smoke(){

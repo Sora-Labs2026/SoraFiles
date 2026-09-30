@@ -3628,6 +3628,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-single-instance",
  "uuid",
+ "windows",
  "winreg",
  "zeroize",
 ]

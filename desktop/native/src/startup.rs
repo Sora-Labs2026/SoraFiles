@@ -22,6 +22,9 @@ fn windows_allows_startup()->Result<bool,String>{
     approval_allows_startup(key.as_ref())
 }
 pub fn initialize_fresh_install(directory:&Path,value:&mut serde_json::Value)->Result<(),String>{
+    // The Microsoft Store package never opts in on its own: the user turns the
+    // startup task on in Settings (Store policy), and Windows remembers it.
+    if crate::store_package::packaged(){value["startup"]=serde_json::json!(crate::store_package::startup_enabled().unwrap_or(false));return Ok(());}
     initialize_with(directory,value,windows_allows_startup,self::enabled,set)
 }
 fn initialize_with(directory:&Path,value:&mut serde_json::Value,allowed:impl FnOnce()->Result<bool,String>,current:impl FnOnce()->Result<bool,String>,mut change:impl FnMut(bool)->Result<bool,String>)->Result<(),String>{
@@ -54,11 +57,13 @@ fn update(key:&RegKey,expected:&str,enabled:bool)->Result<bool,String>{
     Ok(enabled)
 }
 pub fn enabled()->Result<bool,String>{
+    if crate::store_package::packaged(){return crate::store_package::startup_enabled();}
     let executable=std::env::current_exe().map_err(|_|"Application location unavailable")?;let expected=command(&executable)?;
     let key=match RegKey::predef(HKEY_CURRENT_USER).open_subkey_with_flags(KEY,KEY_READ){Ok(key)=>key,Err(error) if error.kind()==std::io::ErrorKind::NotFound=>return Ok(false),Err(_)=>return Err("Sign-in setting unavailable".into())};
     Ok(stored(&key)?.is_some_and(|value|value==expected)&&windows_allows_startup()?)
 }
 pub fn set(enabled:bool)->Result<bool,String>{
+    if crate::store_package::packaged(){return crate::store_package::set_startup(enabled);}
     if enabled&&!windows_allows_startup()?{return Err("Enable SoraFiles Desktop in Windows Settings > Apps > Startup, then try again.".into());}
     let executable=std::env::current_exe().map_err(|_|"Application location unavailable")?;let expected=command(&executable)?;
     let (key,_)=RegKey::predef(HKEY_CURRENT_USER).create_subkey_with_flags(KEY,KEY_READ|KEY_SET_VALUE).map_err(|_|"Sign-in setting unavailable")?;

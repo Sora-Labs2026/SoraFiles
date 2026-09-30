@@ -99,6 +99,14 @@ jobs:
       - name: Verify Windows resource staging
         if: runner.os == 'Windows'
         run: node desktop/scripts/verify-windows-payload.mjs
+      - name: Build Microsoft Store package (unsigned; the Store signs it)
+        if: runner.os == 'Windows'
+        env:
+          # Partner Center > Product identity. Placeholders are used until these are set.
+          MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
+        run: node desktop/scripts/build-msix.mjs desktop/native/target/${{ matrix.target }}/release
       - name: Inspect macOS ad-hoc bundle
         if: runner.os == 'macOS'
         run: node desktop/scripts/inspect-macos-bundle.mjs desktop/native/target/${{ matrix.target }}/release/bundle/macos
@@ -146,6 +154,8 @@ jobs:
             .artifacts/processing-pack-size.json
             .artifacts/native-target-verification.json
             .artifacts/windows-payload-verification.json
+            .artifacts/msix/*.msix
+            .artifacts/msix/msix-receipt.json
             .artifacts/unix-payload-verification.json
           if-no-files-found: error
           include-hidden-files: true
