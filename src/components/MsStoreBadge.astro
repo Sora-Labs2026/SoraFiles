@@ -1,0 +1,12 @@
+---
+// Official "Get it from Microsoft" badge for SoraFiles Desktop (Store ID 9NXM2BTRQ4LQ).
+import type {LocalePath} from '../i18n/config';
+interface Props {locale?:LocalePath; class?:string}
+const {locale='en',class:className}=Astro.props;
+const language=locale==='en'?'en-gb':locale;
+---
+<script is:inline type="module" src="https://get.microsoft.com/badge/ms-store-badge.bundled.js"></script>
+<div class:list={['ms-store-badge',className]}>
+ <ms-store-badge productid="9nxm2btrq4lq" productname="SoraFiles Desktop" window-mode="direct" theme="auto" size="large" language={language} animation="on"></ms-store-badge>
+</div>
+<style>.ms-store-badge{display:flex;min-height:56px;align-items:center}.site-footer__store{margin-top:16px}.dl-platform__store{margin:4px 0 20px}@media (max-width:440px){.ms-store-badge ms-store-badge{zoom:.75}}</style>

@@ -1,6 +1,7 @@
 ---
 import {basePathFromLocalized,localeDefinitions,localizedPath,localizedRoutePaths,type LocalePath,type LocalizedRoutePath} from '../i18n/config';
 import PrototypeLogo from './PrototypeLogo.astro';
+import MsStoreBadge from './MsStoreBadge.astro';
 import icons from '../data/prototypeIcons.json';
 import {prototypeText} from '../i18n/prototype';
 interface Props {locale?:LocalePath;}
@@ -10,10 +11,12 @@ const localizedHref=(href:string)=>localizedRoutePaths.includes(href as Localize
 const language=localeDefinitions.find(item=>item.path===locale)!;
 const currentPath=basePathFromLocalized(Astro.url.pathname);
 const equivalentPath=localizedRoutePaths.includes(currentPath as LocalizedRoutePath)?currentPath:'/';
+// Office converter pages run cross-origin isolated (worker.js), which would block the Store badge's images.
+const crossOriginIsolated=/^\/(?:word-to-pdf|excel-to-pdf|remove-background)\/?$/.test(currentPath);
 const columns=[{title:'Web',links:[['All tools','/tools'],['Guides','/guides'],['Help','/desktop/help']]},{title:'Desktop',links:[['Overview','/desktop'],['Plans','/desktop/pricing'],['Download','/desktop/download'],['Releases','/desktop/releases']]},{title:'Sora Labs',links:[['About','/about'],['Open source','/open-source'],['Contact','/contact']]},{title:'Legal',links:[['Privacy','/privacy'],['Terms','/terms']]}];
 ---
 <footer class="site-footer" data-testid="site-footer"><div class="sf-container">
- <div class="site-footer__top"><div class="site-footer__brand"><PrototypeLogo size={20} href={localizedPath(locale,'/')}/><p class="t-small site-footer__tagline">{t('PDF and image tools by Sora Labs.')}</p></div>
+ <div class="site-footer__top"><div class="site-footer__brand"><PrototypeLogo size={20} href={localizedPath(locale,'/')}/><p class="t-small site-footer__tagline">{t('PDF and image tools by Sora Labs.')}</p>{!crossOriginIsolated&&<MsStoreBadge {locale} class="site-footer__store"/>}</div>
  {columns.map(column=><div class="site-footer__col"><h2 class="eyebrow eyebrow--plain site-footer__title">{t(column.title)}</h2><ul>{column.links.map(([label,href])=><li><a class="footer-link" href={localizedHref(href)}>{t(label)}</a></li>)}</ul></div>)}
  </div><div class="site-footer__bottom"><p>© 2026 Sora Labs</p><p class="site-footer__credit">{t('Made with')} <Fragment set:html={icons.Heart.replace('class="','class="site-footer__heart ')}/> {t('by')} <a href="https://x.com/Dri_shy_a" target="_blank" rel="noopener noreferrer" class="footer-link">Drishya Thapa</a></p><details class="prototype-language"><summary class="footer-link site-footer__lang"><Fragment set:html={icons.Globe}/>{language.nativeName}</summary><ul>{localeDefinitions.map(item=><li><a href={localizedPath(item.path,equivalentPath)} aria-current={item.path===locale?'true':undefined}>{item.nativeName}</a></li>)}</ul></details></div>
 </div></footer>
