@@ -11,10 +11,13 @@ pub enum Platform {
 const OWNER: &str = "com.soralabs.sorafiles.desktop";
 const MAX_ENTRY_BYTES: u64 = 64 * 1024;
 
+// A counter keeps names unique when a coarse clock repeats a timestamp.
 fn temp_nonce() -> String {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     format!(
-        "{}-{}",
+        "{}-{}-{}",
         std::process::id(),
+        NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |value| value.as_nanos())

@@ -3,10 +3,14 @@
 mod entry;
 use std::{fs, path::PathBuf};
 
+// Tests run in parallel and Windows clock resolution can repeat a timestamp, so a
+// per-process counter keeps every temporary directory name unique.
 fn nonce() -> String {
+    static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     format!(
-        "{}-{}",
+        "{}-{}-{}",
         std::process::id(),
+        NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |value| value.as_nanos())
