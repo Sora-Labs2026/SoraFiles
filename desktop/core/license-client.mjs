@@ -3,6 +3,7 @@ import {verifyValidationProof} from '../shared/validation-proof.mjs';
 import {deviceIdentity,verifyEntitlement} from '../shared/entitlement.mjs';
 import {requestContext} from '../shared/license-request.mjs';
 import {replacementPrice} from '../shared/replacement-prices.mjs';
+import {trustedPortal} from '../shared/portal.mjs';
 import {replacementMessages,replacementError} from '../shared/replacement-messages.mjs';
 
 // Native-host adapter. The UI never receives the private key, provider key or raw
@@ -66,6 +67,14 @@ export class LicenseClient {
   const response=await this.request('refresh',body,device),claims=this.verify(response.entitlement,device,saved.lastTrustedTime||0);
   if(claims.plan==='trial'||claims.licenseRef!==saved.licenseRef)throw Error('Invalid renewal response');
   await this.saveLicense({...saved,entitlement:response.entitlement,lastTrustedTime:this.now()});return {plan:claims.plan,expiresAt:claims.exp,maxDevices:claims.maxDevices};
+ });}
+ // Signed-in Dodo customer portal for this license's subscription (cancel,
+ // payment method, invoices). The link is short-lived and never stored.
+ async portal(){return this.exclusive(async()=>{
+  const device=await this.readDevice(),saved=await this.readLicense();if(!saved?.licenseRef||!saved?.instanceId||!saved?.licenseKey)throw Error('Activate a paid license first');
+  const response=await this.request('portal',{licenseKey:saved.licenseKey,licenseRef:saved.licenseRef,instanceId:saved.instanceId},device);
+  if(!trustedPortal(response?.portalUrl))throw Error('Invalid subscription portal response');
+  return {portalUrl:response.portalUrl};
  });}
  async devices(){return this.exclusive(async()=>{
   const device=await this.readDevice(),saved=await this.readLicense();if(!saved?.licenseRef)throw Error('Activate a paid license first');

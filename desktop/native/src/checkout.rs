@@ -8,6 +8,17 @@ pub fn open(value:&str)->Result<(),String>{
  if !trusted(value){return Err("Checkout unavailable".into());}
  open_url(value)
 }
+// Dodo customer portal (cancel, payment method, invoices); the same hosts as desktop/shared/portal.mjs.
+fn trusted_portal(value:&str)->bool{
+ if value.len()>2048||value.chars().any(char::is_control){return false;}
+ let Ok(url)=tauri::Url::parse(value) else{return false;};
+ url.scheme()=="https"&&url.username().is_empty()&&url.password().is_none()&&url.port().is_none()
+ &&matches!(url.host_str(),Some("live.dodopayments.com"|"test.dodopayments.com"|"customer.dodopayments.com"|"test.customer.dodopayments.com"))
+}
+pub fn open_portal(value:&str)->Result<(),String>{
+ if !trusted_portal(value){return Err("Subscription portal unavailable".into());}
+ open_url(value)
+}
 // Fixed first-party destination. No renderer-provided URL crosses this boundary.
 pub fn open_release_notes()->Result<(),String>{open_url("https://sorafiles.com/desktop/releases")}
 fn open_url(value:&str)->Result<(),String>{
@@ -29,5 +40,9 @@ fn open_url(value:&str)->Result<(),String>{
  #[test]fn checkout_urls_are_fixed_https_origins(){
   assert!(trusted("https://checkout.dodopayments.com/session?x=1"));assert!(trusted("https://test.checkout.dodopayments.com/session"));
   for url in ["http://checkout.dodopayments.com/","https://checkout.dodopayments.com.evil.test/","https://evil.test/","https://user@checkout.dodopayments.com/","https://checkout.dodopayments.com:444/","file:///C:/x.exe","https://checkout.dodopayments.com/\n"]{assert!(!trusted(url));}
+ }
+ #[test]fn portal_urls_are_dodo_https_origins(){
+  assert!(trusted_portal("https://live.dodopayments.com/customer-portal/session/abc"));assert!(trusted_portal("https://customer.dodopayments.com/session/abc"));
+  for url in ["http://live.dodopayments.com/","https://live.dodopayments.com.evil.test/","https://checkout.dodopayments.com/x","https://user@live.dodopayments.com/","https://live.dodopayments.com:444/","file:///C:/x.exe"]{assert!(!trusted_portal(url));}
  }
 }

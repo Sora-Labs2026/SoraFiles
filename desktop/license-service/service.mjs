@@ -1,5 +1,6 @@
 import {entitlementClaims,signEntitlement,signValidation} from './signing.mjs';
 import {licensePlans} from '../shared/license-plans.mjs';
+import {trustedPortal} from '../shared/portal.mjs';
 
 const reconciliationRequired=()=>Object.assign(Error('Activation requires reconciliation'),{code:'activationReconciliation',httpStatus:409});
 
@@ -78,12 +79,24 @@ export class LicenseService {
   if(!local||!binding)throw Error('Device is not activated');
   if(action==='devices')return {devices:this.store.devices(body.licenseRef).map(d=>({id:d.device_id,current:d.device_id===deviceId,active:!!d.active}))};
   if(local.instance_id!==body.instanceId)throw Error('Wrong activation instance');
+  if(action==='portal')return this.portal(body,deviceId,binding);
   if(action==='refresh'){
    const valid=await this.dodo.validate(body.licenseKey,body.instanceId);if(valid?.valid!==true)throw Error('License no longer valid');
    this.store.sync(await this.authority.resolve({customerId:binding.customer_id,licenseRef:body.licenseRef}));
    const entitlement=this.store.issueForDevice(body.licenseRef,deviceId,body.instanceId,this.now(),license=>this.issue(license,deviceId));return {entitlement};
   }
   throw Error('Unknown license action');
+ }
+ // Ownership is the proved device plus the key it activated with, not current
+ // validity: a subscriber whose renewal failed must still reach billing to fix or cancel it.
+ async portal({licenseKey,licenseRef,instanceId},deviceId,binding){
+  const keyHash=this.guard.activationFingerprint(licenseKey);
+  if(!this.store.db.prepare('SELECT 1 FROM activation_attempts WHERE key_hash=? AND device_id=? AND license_ref=? AND instance_id=?').get(keyHash,deviceId,licenseRef,instanceId))throw Error('Activation history required');
+  const license=this.store.db.prepare('SELECT plan FROM licenses WHERE ref=?').get(licenseRef);
+  if(!license||licensePlans[license.plan]?.interval==='lifetime')throw Object.assign(Error('No subscription'),{reason:'no-subscription'});
+  const session=await this.dodo.portal(binding.customer_id);
+  if(!trustedPortal(session?.link))throw Object.assign(Error('Invalid provider response'),{code:'providerUnavailable'});
+  return {portalUrl:session.link};
  }
  async validate(body,deviceId){
   const {licenseRef,instanceId,nonce,licenseKey}=body,keyHash=this.guard.activationFingerprint(licenseKey);

@@ -25,7 +25,7 @@ async function toolRating({action,params,state,fetchImpl=fetch}){
 // Trusted native parent supplies state/config and acknowledges every protected
 // write before execution continues. Renderer fields cannot configure this host.
 export async function runLicenseAction({action,params={},state,config,saveState,fetchImpl,now=Date.now}) {
- const fields={support:[],status:[],prepareTrial:[],initializeTrial:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],validate:[],nativeActions:['files','platform','actionId','outputMode','locale'],replacementState:[],replacementEmailStart:['email','licenseKey'],replacementEmailResend:[],replacementReset:[],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCancel:[],replacementCheckout:[],ratingStatus:['subject'],ratingSubmit:['subject','rating']};
+ const fields={support:[],status:[],prepareTrial:[],initializeTrial:[],trial:[],activate:['licenseKey'],refresh:[],devices:[],portal:[],validate:[],nativeActions:['files','platform','actionId','outputMode','locale'],replacementState:[],replacementEmailStart:['email','licenseKey'],replacementEmailResend:[],replacementReset:[],replacementEmailVerify:['code'],replacementRequest:['oldDeviceId'],replacementStatus:[],replacementCancel:[],replacementCheckout:[],ratingStatus:['subject'],ratingSubmit:['subject','rating']};
  if(!fields[action]||!params||typeof params!=='object'||Object.keys(params).some(key=>!fields[action].includes(key)))throw Error('Invalid license action');
  if(action==='ratingStatus'||action==='ratingSubmit')return {rating:await toolRating({action,params,state,fetchImpl})};
  if(action==='nativeActions'){
@@ -80,6 +80,7 @@ export async function runLicenseAction({action,params={},state,config,saveState,
  }
  if(action==='status'){try{const result=await client.authorize();return {license:result.plan==='trial'?'trial':'active',activationAvailable,...result};}catch{return {license:'needs-verification',activationAvailable};}}
  if(action==='devices')return {devices:await client.devices()};
+ if(action==='portal')return await client.portal();
  let result;
  try{result=await (action==='activate'?client.activate(params.licenseKey):action==='trial'||action==='initializeTrial'?client.trial(current.installedAt):client[action]());}
  catch(error){if(action!=='initializeTrial')throw error;return {license:'needs-verification',activationAvailable:true,trialPending:true,expiresAt:current.installedAt+7*86400};}

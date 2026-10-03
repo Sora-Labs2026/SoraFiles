@@ -19,7 +19,7 @@ pub fn valid_request(method: &str, params: &Value, diagnostic: bool) -> bool {
     let Some(fields) = params.as_object() else { return false; };
     if params.to_string().len() > 16384 { return false; }
     match method {
-        "getState" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "supportDetails" | "checkUpdates" | "quit" | "cancelProcessing" | "processingStatus" | "openFullApp" | "closeQuickAction" => fields.is_empty(),
+        "getState" | "chooseFolder" | "startTrial" | "licenseStatus" | "refreshLicense" | "licenseDevices" | "manageSubscription" | "supportDetails" | "checkUpdates" | "quit" | "cancelProcessing" | "processingStatus" | "openFullApp" | "closeQuickAction" => fields.is_empty(),
         // A tool may narrow the file dialog to the formats it accepts.
         "selectFiles" => fields.is_empty() || (fields.len()==1 && params["formats"].as_array().is_some_and(|formats|!formats.is_empty()&&formats.len()<=16&&formats.iter().all(|format|format.as_str().is_some_and(|name|!crate::file_formats::extensions(name).is_empty())))),
         "previewSelection" => fields.len()==1 && selection_ids(&params["selectionIds"]),

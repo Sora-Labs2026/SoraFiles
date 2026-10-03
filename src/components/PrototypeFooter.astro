@@ -7,13 +7,13 @@ import {prototypeText} from '../i18n/prototype';
 interface Props {locale?:LocalePath;}
 const {locale='en'}=Astro.props;
 const t=(text:string)=>prototypeText(locale,text);
-const localizedHref=(href:string)=>localizedRoutePaths.includes(href as LocalizedRoutePath)?localizedPath(locale,href):href;
+const localizedHref=(href:string)=>{const [path,hash]=href.split('#');return localizedRoutePaths.includes(path as LocalizedRoutePath)?localizedPath(locale,path)+(hash?'#'+hash:''):href;};
 const language=localeDefinitions.find(item=>item.path===locale)!;
 const currentPath=basePathFromLocalized(Astro.url.pathname);
 const equivalentPath=localizedRoutePaths.includes(currentPath as LocalizedRoutePath)?currentPath:'/';
 // Office converter pages run cross-origin isolated (worker.js), which would block the Store badge's images.
 const crossOriginIsolated=/^\/(?:word-to-pdf|excel-to-pdf|remove-background)\/?$/.test(currentPath);
-const columns=[{title:'Web',links:[['All tools','/tools'],['Guides','/guides'],['Help','/desktop/help']]},{title:'Desktop',links:[['Overview','/desktop'],['Plans','/desktop/pricing'],['Download','/desktop/download'],['Releases','/desktop/releases']]},{title:'Sora Labs',links:[['About','/about'],['Open source','/open-source'],['Contact','/contact']]},{title:'Legal',links:[['Privacy','/privacy'],['Terms','/terms']]}];
+const columns=[{title:'Web',links:[['All tools','/tools'],['Guides','/guides'],['Help','/desktop/help']]},{title:'Desktop',links:[['Overview','/desktop'],['Plans','/desktop/pricing'],['Download','/desktop/download'],['Releases','/desktop/releases'],['Cancel subscription','/desktop/help#cancel-subscription']]},{title:'Sora Labs',links:[['About','/about'],['Open source','/open-source'],['Contact','/contact']]},{title:'Legal',links:[['Privacy','/privacy'],['Terms','/terms']]}];
 ---
 <footer class="site-footer" data-testid="site-footer"><div class="sf-container">
  <div class="site-footer__top"><div class="site-footer__brand"><PrototypeLogo size={20} href={localizedPath(locale,'/')}/><p class="t-small site-footer__tagline">{t('PDF and image tools by Sora Labs.')}</p>{!crossOriginIsolated&&<MsStoreBadge {locale} class="site-footer__store"/>}</div>

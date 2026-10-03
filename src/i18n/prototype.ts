@@ -58,26 +58,26 @@ const scenes:Record<Exclude<LocalePath,'en'>,readonly string[]>={
 };
 const sceneText=Object.fromEntries(Object.entries(scenes).map(([locale,values])=>[locale,Object.fromEntries(sceneKeys.map((key,index)=>[key,values[index]]))])) as Record<Exclude<LocalePath,'en'>,Record<typeof sceneKeys[number],string>>;
 
-const smallKeys=['All','Security','Made with','by','Breadcrumb','Document.pdf','Combined.pdf','Contract.pdf','Contract-signed.pdf','Report.pdf','Rename'] as const;
+const smallKeys=['All','Security','Made with','by','Breadcrumb','Document.pdf','Combined.pdf','Contract.pdf','Contract-signed.pdf','Report.pdf','Rename','Cancel subscription'] as const;
 const smallRows:Record<Exclude<LocalePath,'en'>,readonly string[]>={
- ja:['すべて','セキュリティ','心を込めて','制作：','現在位置','文書.pdf','結合済み.pdf','契約書.pdf','契約書-署名済み.pdf','報告書.pdf','名前を変更'],
- ko:['전체','보안','정성을 담아','제작:','현재 위치','문서.pdf','합친-문서.pdf','계약서.pdf','계약서-서명.pdf','보고서.pdf','이름 바꾸기'],
- es:['Todo','Seguridad','Hecho con','por','Ruta de navegación','Documento.pdf','Combinado.pdf','Contrato.pdf','Contrato-firmado.pdf','Informe.pdf','Cambiar nombre'],
- fr:['Tout','Sécurité','Fait avec','par','Fil d’Ariane','Document.pdf','Fusionné.pdf','Contrat.pdf','Contrat-signé.pdf','Rapport.pdf','Renommer'],
- de:['Alle','Sicherheit','Mit Liebe gemacht','von','Navigationspfad','Dokument.pdf','Zusammengefügt.pdf','Vertrag.pdf','Vertrag-signiert.pdf','Bericht.pdf','Umbenennen'],
- pt:['Todas','Segurança','Feito com','por','Navegação','Documento.pdf','Combinado.pdf','Contrato.pdf','Contrato-assinado.pdf','Relatório.pdf','Mudar nome'],
- 'zh-cn':['全部','安全','用心制作','作者：','导航路径','文档.pdf','已合并.pdf','合同.pdf','已签署合同.pdf','报告.pdf','重命名'],
- 'zh-tw':['全部','安全','用心製作','作者：','導覽路徑','文件.pdf','已合併.pdf','合約.pdf','已簽署合約.pdf','報告.pdf','重新命名'],
- hi:['सभी','सुरक्षा','प्रेम से बनाया','द्वारा','नेविगेशन पथ','दस्तावेज़.pdf','संयुक्त.pdf','अनुबंध.pdf','हस्ताक्षरित-अनुबंध.pdf','रिपोर्ट.pdf','नाम बदलें'],
- ar:['الكل','الأمان','صُنع بحب','بواسطة','مسار التنقل','مستند.pdf','مجمّع.pdf','عقد.pdf','عقد-موقّع.pdf','تقرير.pdf','إعادة التسمية'],
- ru:['Все','Безопасность','Сделано с любовью','автор:','Навигация','Документ.pdf','Объединено.pdf','Договор.pdf','Подписанный-договор.pdf','Отчёт.pdf','Переименовать'],
- id:['Semua','Keamanan','Dibuat dengan cinta','oleh','Jejak navigasi','Dokumen.pdf','Gabungan.pdf','Kontrak.pdf','Kontrak-ditandatangani.pdf','Laporan.pdf','Ubah nama'],
- it:['Tutti','Sicurezza','Fatto con amore','da','Percorso di navigazione','Documento.pdf','Unito.pdf','Contratto.pdf','Contratto-firmato.pdf','Rapporto.pdf','Rinomina'],
- nl:['Alles','Beveiliging','Met liefde gemaakt','door','Navigatiepad','Document.pdf','Samengevoegd.pdf','Contract.pdf','Contract-ondertekend.pdf','Rapport.pdf','Naam wijzigen'],
- tr:['Tümü','Güvenlik','Sevgiyle yapıldı','geliştiren:','Gezinme yolu','Belge.pdf','Birleştirilmiş.pdf','Sözleşme.pdf','İmzalı-sözleşme.pdf','Rapor.pdf','Yeniden adlandır'],
- vi:['Tất cả','Bảo mật','Được làm bằng tình yêu','bởi','Đường dẫn điều hướng','Tài-liệu.pdf','Đã-gộp.pdf','Hợp-đồng.pdf','Hợp-đồng-đã-ký.pdf','Báo-cáo.pdf','Đổi tên'],
- th:['ทั้งหมด','ความปลอดภัย','สร้างด้วยใจ','โดย','เส้นทางนำทาง','เอกสาร.pdf','รวมแล้ว.pdf','สัญญา.pdf','สัญญาที่ลงนาม.pdf','รายงาน.pdf','เปลี่ยนชื่อ'],
- pl:['Wszystkie','Bezpieczeństwo','Stworzone z sercem','przez','Ścieżka nawigacji','Dokument.pdf','Połączony.pdf','Umowa.pdf','Podpisana-umowa.pdf','Raport.pdf','Zmień nazwę'],
+ ja:['すべて','セキュリティ','心を込めて','制作：','現在位置','文書.pdf','結合済み.pdf','契約書.pdf','契約書-署名済み.pdf','報告書.pdf','名前を変更','サブスクリプションを解約'],
+ ko:['전체','보안','정성을 담아','제작:','현재 위치','문서.pdf','합친-문서.pdf','계약서.pdf','계약서-서명.pdf','보고서.pdf','이름 바꾸기','구독 해지'],
+ es:['Todo','Seguridad','Hecho con','por','Ruta de navegación','Documento.pdf','Combinado.pdf','Contrato.pdf','Contrato-firmado.pdf','Informe.pdf','Cambiar nombre','Cancelar suscripción'],
+ fr:['Tout','Sécurité','Fait avec','par','Fil d’Ariane','Document.pdf','Fusionné.pdf','Contrat.pdf','Contrat-signé.pdf','Rapport.pdf','Renommer','Résilier l’abonnement'],
+ de:['Alle','Sicherheit','Mit Liebe gemacht','von','Navigationspfad','Dokument.pdf','Zusammengefügt.pdf','Vertrag.pdf','Vertrag-signiert.pdf','Bericht.pdf','Umbenennen','Abo kündigen'],
+ pt:['Todas','Segurança','Feito com','por','Navegação','Documento.pdf','Combinado.pdf','Contrato.pdf','Contrato-assinado.pdf','Relatório.pdf','Mudar nome','Cancelar subscrição'],
+ 'zh-cn':['全部','安全','用心制作','作者：','导航路径','文档.pdf','已合并.pdf','合同.pdf','已签署合同.pdf','报告.pdf','重命名','取消订阅'],
+ 'zh-tw':['全部','安全','用心製作','作者：','導覽路徑','文件.pdf','已合併.pdf','合約.pdf','已簽署合約.pdf','報告.pdf','重新命名','取消訂閱'],
+ hi:['सभी','सुरक्षा','प्रेम से बनाया','द्वारा','नेविगेशन पथ','दस्तावेज़.pdf','संयुक्त.pdf','अनुबंध.pdf','हस्ताक्षरित-अनुबंध.pdf','रिपोर्ट.pdf','नाम बदलें','सदस्यता रद्द करें'],
+ ar:['الكل','الأمان','صُنع بحب','بواسطة','مسار التنقل','مستند.pdf','مجمّع.pdf','عقد.pdf','عقد-موقّع.pdf','تقرير.pdf','إعادة التسمية','إلغاء الاشتراك'],
+ ru:['Все','Безопасность','Сделано с любовью','автор:','Навигация','Документ.pdf','Объединено.pdf','Договор.pdf','Подписанный-договор.pdf','Отчёт.pdf','Переименовать','Отменить подписку'],
+ id:['Semua','Keamanan','Dibuat dengan cinta','oleh','Jejak navigasi','Dokumen.pdf','Gabungan.pdf','Kontrak.pdf','Kontrak-ditandatangani.pdf','Laporan.pdf','Ubah nama','Batalkan langganan'],
+ it:['Tutti','Sicurezza','Fatto con amore','da','Percorso di navigazione','Documento.pdf','Unito.pdf','Contratto.pdf','Contratto-firmato.pdf','Rapporto.pdf','Rinomina','Annulla abbonamento'],
+ nl:['Alles','Beveiliging','Met liefde gemaakt','door','Navigatiepad','Document.pdf','Samengevoegd.pdf','Contract.pdf','Contract-ondertekend.pdf','Rapport.pdf','Naam wijzigen','Abonnement opzeggen'],
+ tr:['Tümü','Güvenlik','Sevgiyle yapıldı','geliştiren:','Gezinme yolu','Belge.pdf','Birleştirilmiş.pdf','Sözleşme.pdf','İmzalı-sözleşme.pdf','Rapor.pdf','Yeniden adlandır','Aboneliği iptal et'],
+ vi:['Tất cả','Bảo mật','Được làm bằng tình yêu','bởi','Đường dẫn điều hướng','Tài-liệu.pdf','Đã-gộp.pdf','Hợp-đồng.pdf','Hợp-đồng-đã-ký.pdf','Báo-cáo.pdf','Đổi tên','Hủy gói đăng ký'],
+ th:['ทั้งหมด','ความปลอดภัย','สร้างด้วยใจ','โดย','เส้นทางนำทาง','เอกสาร.pdf','รวมแล้ว.pdf','สัญญา.pdf','สัญญาที่ลงนาม.pdf','รายงาน.pdf','เปลี่ยนชื่อ','ยกเลิกการสมัครสมาชิก'],
+ pl:['Wszystkie','Bezpieczeństwo','Stworzone z sercem','przez','Ścieżka nawigacji','Dokument.pdf','Połączony.pdf','Umowa.pdf','Podpisana-umowa.pdf','Raport.pdf','Zmień nazwę','Anuluj subskrypcję'],
 };
 const smallText=Object.fromEntries(Object.entries(smallRows).map(([locale,values])=>[locale,Object.fromEntries(smallKeys.map((key,index)=>[key,values[index]]))])) as Record<Exclude<LocalePath,'en'>,Record<typeof smallKeys[number],string>>;
 const categoryFilter:Record<Exclude<LocalePath,'en'>,string>={

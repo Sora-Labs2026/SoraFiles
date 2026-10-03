@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-const fields={trial:[],activate:['licenseKey'],refresh:['licenseKey','licenseRef','instanceId'],validate:['licenseKey','licenseRef','instanceId','nonce'],devices:['licenseRef'],replacementEmailStart:['licenseKey','email'],replacementEmailVerify:['verificationId','code'],replacementRequest:['licenseRef','oldDeviceId','licenseKey','identityToken'],replacementStatus:['orderId','licenseKey','identityToken'],replacementCancel:['orderId','licenseKey','identityToken']};
+const fields={trial:[],activate:['licenseKey'],refresh:['licenseKey','licenseRef','instanceId'],portal:['licenseKey','licenseRef','instanceId'],validate:['licenseKey','licenseRef','instanceId','nonce'],devices:['licenseRef'],replacementEmailStart:['licenseKey','email'],replacementEmailVerify:['verificationId','code'],replacementRequest:['licenseRef','oldDeviceId','licenseKey','identityToken'],replacementStatus:['orderId','licenseKey','identityToken'],replacementCancel:['orderId','licenseKey','identityToken']};
 export function requestContext(action,body){
  if(action==='trial'){
   if(!body||Object.getPrototypeOf(body)!==Object.prototype||Object.keys(body).some(k=>k!=='installedAt')||Object.hasOwn(body,'installedAt')&&(!Number.isSafeInteger(body.installedAt)||body.installedAt<=0))throw Error('Invalid request fields');

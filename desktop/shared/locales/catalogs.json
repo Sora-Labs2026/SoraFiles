@@ -536,7 +536,12 @@
     "Text colour": "Text colour",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Included with the Microsoft Store version. It appears in the right-click menu for supported files.",
-    "Updates arrive automatically through the Microsoft Store.": "Updates arrive automatically through the Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "Updates arrive automatically through the Microsoft Store.",
+    "Subscription": "Subscription",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.",
+    "Manage or cancel subscription": "Manage or cancel subscription",
+    "Subscription portal opened in your browser.": "Subscription portal opened in your browser.",
+    "Subscription portal unavailable": "Subscription portal unavailable"
   },
   "ja": {
     "Language": "言語",
@@ -1092,7 +1097,12 @@
     "Text colour": "文字色",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "支払いを完了しない限り請求されません。気が変わった、または別の端末を選んでしまいましたか？",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store 版に含まれています。対応ファイルの右クリックメニューに表示されます。",
-    "Updates arrive automatically through the Microsoft Store.": "更新は Microsoft Store から自動的に配信されます。"
+    "Updates arrive automatically through the Microsoft Store.": "更新は Microsoft Store から自動的に配信されます。",
+    "Subscription": "サブスクリプション",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "プランは自動で更新されます。安全な Dodo Payments ポータルで、いつでも解約、支払い方法の変更、請求書の確認ができます。次回請求日で解約した場合、支払い済みの期間が終わるまで Desktop を使い続けられます。",
+    "Manage or cancel subscription": "サブスクリプションの管理・解約",
+    "Subscription portal opened in your browser.": "サブスクリプションのポータルをブラウザーで開きました。",
+    "Subscription portal unavailable": "サブスクリプションのポータルを開けません"
   },
   "ko": {
     "Language": "언어",
@@ -1648,7 +1658,12 @@
     "Text colour": "글자 색",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "결제를 완료하지 않으면 요금이 청구되지 않습니다. 마음이 바뀌었거나 다른 기기를 선택하셨나요?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store 버전에 포함되어 있습니다. 지원되는 파일의 오른쪽 클릭 메뉴에 표시됩니다.",
-    "Updates arrive automatically through the Microsoft Store.": "업데이트는 Microsoft Store를 통해 자동으로 제공됩니다."
+    "Updates arrive automatically through the Microsoft Store.": "업데이트는 Microsoft Store를 통해 자동으로 제공됩니다.",
+    "Subscription": "구독",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "요금제는 자동으로 갱신됩니다. 안전한 Dodo Payments 포털에서 언제든지 해지하고, 결제 수단을 바꾸고, 청구서를 확인할 수 있습니다. 다음 결제일에 해지하면 결제한 기간이 끝날 때까지 Desktop을 계속 사용할 수 있습니다.",
+    "Manage or cancel subscription": "구독 관리 또는 해지",
+    "Subscription portal opened in your browser.": "브라우저에서 구독 포털을 열었습니다.",
+    "Subscription portal unavailable": "구독 포털을 열 수 없습니다"
   },
   "es": {
     "Language": "Idioma",
@@ -2204,7 +2219,12 @@
     "Text colour": "Color del texto",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "No se cobra nada a menos que completes el pago. ¿Has cambiado de idea o elegiste el dispositivo equivocado?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Incluido en la versión de Microsoft Store. Aparece en el menú contextual de los archivos compatibles.",
-    "Updates arrive automatically through the Microsoft Store.": "Las actualizaciones llegan automáticamente a través de Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "Las actualizaciones llegan automáticamente a través de Microsoft Store.",
+    "Subscription": "Suscripción",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Tu plan se renueva automáticamente. Cancela cuando quieras, cambia tu método de pago o consulta tus facturas en el portal seguro de Dodo Payments. Si cancelas en la próxima fecha de facturación, Desktop sigue funcionando hasta el final del periodo que has pagado.",
+    "Manage or cancel subscription": "Gestionar o cancelar la suscripción",
+    "Subscription portal opened in your browser.": "Se ha abierto el portal de la suscripción en tu navegador.",
+    "Subscription portal unavailable": "El portal de la suscripción no está disponible"
   },
   "fr": {
     "Language": "Langue",
@@ -2760,7 +2780,12 @@
     "Text colour": "Couleur du texte",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Rien n’est facturé tant que vous ne finalisez pas le paiement. Vous avez changé d’avis ou choisi le mauvais appareil ?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Inclus dans la version Microsoft Store. Il apparaît dans le menu contextuel des fichiers pris en charge.",
-    "Updates arrive automatically through the Microsoft Store.": "Les mises à jour arrivent automatiquement via le Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "Les mises à jour arrivent automatiquement via le Microsoft Store.",
+    "Subscription": "Abonnement",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Votre offre se renouvelle automatiquement. Résiliez à tout moment, changez de moyen de paiement ou consultez vos factures dans le portail sécurisé de Dodo Payments. Si vous résiliez à la prochaine date de facturation, Desktop continue de fonctionner jusqu’à la fin de la période payée.",
+    "Manage or cancel subscription": "Gérer ou résilier l’abonnement",
+    "Subscription portal opened in your browser.": "Le portail de l’abonnement s’est ouvert dans votre navigateur.",
+    "Subscription portal unavailable": "Le portail de l’abonnement est indisponible"
   },
   "de": {
     "Language": "Sprache",
@@ -3316,7 +3341,12 @@
     "Text colour": "Textfarbe",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Es wird nichts berechnet, solange du die Zahlung nicht abschließt. Meinung geändert oder das falsche Gerät gewählt?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "In der Microsoft Store-Version enthalten. Erscheint im Kontextmenü unterstützter Dateien.",
-    "Updates arrive automatically through the Microsoft Store.": "Updates kommen automatisch über den Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "Updates kommen automatisch über den Microsoft Store.",
+    "Subscription": "Abo",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Dein Tarif verlängert sich automatisch. Kündige jederzeit, ändere deine Zahlungsmethode oder sieh deine Rechnungen im sicheren Dodo Payments-Portal ein. Wenn du zum nächsten Abrechnungsdatum kündigst, funktioniert Desktop bis zum Ende des bezahlten Zeitraums weiter.",
+    "Manage or cancel subscription": "Abo verwalten oder kündigen",
+    "Subscription portal opened in your browser.": "Das Abo-Portal wurde in deinem Browser geöffnet.",
+    "Subscription portal unavailable": "Das Abo-Portal ist nicht verfügbar"
   },
   "pt": {
     "Language": "Idioma",
@@ -3872,7 +3902,12 @@
     "Text colour": "Cor do texto",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Nada é cobrado a menos que conclua o pagamento. Mudou de ideias ou escolheu o dispositivo errado?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Incluído na versão da Microsoft Store. Aparece no menu de clique direito dos ficheiros suportados.",
-    "Updates arrive automatically through the Microsoft Store.": "As atualizações chegam automaticamente através da Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "As atualizações chegam automaticamente através da Microsoft Store.",
+    "Subscription": "Subscrição",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "O seu plano é renovado automaticamente. Cancele quando quiser, altere o método de pagamento ou consulte as faturas no portal seguro da Dodo Payments. Se cancelar na próxima data de faturação, o Desktop continua a funcionar até ao fim do período que pagou.",
+    "Manage or cancel subscription": "Gerir ou cancelar a subscrição",
+    "Subscription portal opened in your browser.": "O portal da subscrição foi aberto no seu navegador.",
+    "Subscription portal unavailable": "O portal da subscrição não está disponível"
   },
   "zh-cn": {
     "Language": "语言",
@@ -4428,7 +4463,12 @@
     "Text colour": "文字颜色",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "除非完成付款，否则不会收费。改变主意了，或选错了设备？",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store 版本已包含此功能，会显示在受支持文件的右键菜单中。",
-    "Updates arrive automatically through the Microsoft Store.": "更新将通过 Microsoft Store 自动推送。"
+    "Updates arrive automatically through the Microsoft Store.": "更新将通过 Microsoft Store 自动推送。",
+    "Subscription": "订阅",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "您的方案会自动续订。您可以随时在安全的 Dodo Payments 门户中取消订阅、更改付款方式或查看发票。如果选择在下一个账单日取消，Desktop 可继续使用到已付费期间结束。",
+    "Manage or cancel subscription": "管理或取消订阅",
+    "Subscription portal opened in your browser.": "已在浏览器中打开订阅门户。",
+    "Subscription portal unavailable": "订阅门户暂不可用"
   },
   "zh-tw": {
     "Language": "語言",
@@ -4984,7 +5024,12 @@
     "Text colour": "文字顏色",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "除非完成付款，否則不會收費。改變主意了，或選錯了裝置？",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store 版本已包含此功能，會顯示在支援檔案的右鍵選單中。",
-    "Updates arrive automatically through the Microsoft Store.": "更新會透過 Microsoft Store 自動推送。"
+    "Updates arrive automatically through the Microsoft Store.": "更新會透過 Microsoft Store 自動推送。",
+    "Subscription": "訂閱",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "您的方案會自動續訂。您可以隨時在安全的 Dodo Payments 入口網站取消訂閱、變更付款方式或查看發票。若選擇在下一個帳單日取消，Desktop 可繼續使用到已付費期間結束。",
+    "Manage or cancel subscription": "管理或取消訂閱",
+    "Subscription portal opened in your browser.": "已在瀏覽器中開啟訂閱入口網站。",
+    "Subscription portal unavailable": "訂閱入口網站暫時無法使用"
   },
   "hi": {
     "Language": "भाषा",
@@ -5540,7 +5585,12 @@
     "Text colour": "टेक्स्ट का रंग",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "जब तक आप भुगतान पूरा नहीं करते, कोई शुल्क नहीं लगता। मन बदल गया या गलत डिवाइस चुन लिया?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store संस्करण में शामिल है। यह समर्थित फ़ाइलों के राइट-क्लिक मेनू में दिखता है।",
-    "Updates arrive automatically through the Microsoft Store.": "अपडेट Microsoft Store के ज़रिए अपने-आप मिलते हैं।"
+    "Updates arrive automatically through the Microsoft Store.": "अपडेट Microsoft Store के ज़रिए अपने-आप मिलते हैं।",
+    "Subscription": "सदस्यता",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "आपका प्लान अपने आप रिन्यू होता है। सुरक्षित Dodo Payments पोर्टल में कभी भी रद्द करें, भुगतान का तरीका बदलें या अपने इनवॉइस देखें। अगर आप अगली बिलिंग तारीख पर रद्द करते हैं, तो भुगतान की गई अवधि खत्म होने तक Desktop चलता रहेगा।",
+    "Manage or cancel subscription": "सदस्यता प्रबंधित या रद्द करें",
+    "Subscription portal opened in your browser.": "सदस्यता पोर्टल आपके ब्राउज़र में खुल गया है।",
+    "Subscription portal unavailable": "सदस्यता पोर्टल उपलब्ध नहीं है"
   },
   "ar": {
     "Language": "اللغة",
@@ -6096,7 +6146,12 @@
     "Text colour": "لون النص",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "لن يُخصم أي مبلغ ما لم تُكمل الدفع. هل غيّرت رأيك أو اخترت الجهاز الخطأ؟",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "مضمّن في إصدار Microsoft Store. يظهر في قائمة النقر بزر الماوس الأيمن للملفات المدعومة.",
-    "Updates arrive automatically through the Microsoft Store.": "تصل التحديثات تلقائيًا عبر Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "تصل التحديثات تلقائيًا عبر Microsoft Store.",
+    "Subscription": "الاشتراك",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "تتجدد خطتك تلقائيًا. ألغِ في أي وقت أو غيّر طريقة الدفع أو اطّلع على فواتيرك في بوابة Dodo Payments الآمنة. إذا ألغيت في تاريخ الفوترة التالي، يستمر Desktop في العمل حتى نهاية الفترة التي دفعت مقابلها.",
+    "Manage or cancel subscription": "إدارة الاشتراك أو إلغاؤه",
+    "Subscription portal opened in your browser.": "فُتحت بوابة الاشتراك في متصفحك.",
+    "Subscription portal unavailable": "بوابة الاشتراك غير متاحة"
   },
   "ru": {
     "Language": "Язык",
@@ -6652,7 +6707,12 @@
     "Text colour": "Цвет текста",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Оплата не спишется, пока вы не завершите платёж. Передумали или выбрали не то устройство?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Входит в версию из Microsoft Store. Отображается в контекстном меню поддерживаемых файлов.",
-    "Updates arrive automatically through the Microsoft Store.": "Обновления приходят автоматически через Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "Обновления приходят автоматически через Microsoft Store.",
+    "Subscription": "Подписка",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Ваш тариф продлевается автоматически. Отмените подписку в любой момент, смените способ оплаты или посмотрите счета на защищённом портале Dodo Payments. Если отменить подписку с даты следующего списания, Desktop будет работать до конца оплаченного периода.",
+    "Manage or cancel subscription": "Управление подпиской и отмена",
+    "Subscription portal opened in your browser.": "Портал подписки открыт в браузере.",
+    "Subscription portal unavailable": "Портал подписки недоступен"
   },
   "id": {
     "Language": "Bahasa",
@@ -7208,7 +7268,12 @@
     "Text colour": "Warna teks",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Tidak ada biaya kecuali Anda menyelesaikan pembayaran. Berubah pikiran atau salah memilih perangkat?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Disertakan dalam versi Microsoft Store. Muncul di menu klik kanan untuk file yang didukung.",
-    "Updates arrive automatically through the Microsoft Store.": "Pembaruan datang otomatis melalui Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "Pembaruan datang otomatis melalui Microsoft Store.",
+    "Subscription": "Langganan",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Paket Anda diperpanjang otomatis. Batalkan kapan saja, ubah metode pembayaran, atau lihat tagihan di portal Dodo Payments yang aman. Jika Anda membatalkan pada tanggal tagihan berikutnya, Desktop tetap berfungsi hingga akhir periode yang sudah dibayar.",
+    "Manage or cancel subscription": "Kelola atau batalkan langganan",
+    "Subscription portal opened in your browser.": "Portal langganan dibuka di browser Anda.",
+    "Subscription portal unavailable": "Portal langganan tidak tersedia"
   },
   "it": {
     "Language": "Lingua",
@@ -7764,7 +7829,12 @@
     "Text colour": "Colore del testo",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Non viene addebitato nulla finché non completi il pagamento. Hai cambiato idea o scelto il dispositivo sbagliato?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Incluso nella versione Microsoft Store. Compare nel menu contestuale dei file supportati.",
-    "Updates arrive automatically through the Microsoft Store.": "Gli aggiornamenti arrivano automaticamente tramite Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "Gli aggiornamenti arrivano automaticamente tramite Microsoft Store.",
+    "Subscription": "Abbonamento",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Il tuo piano si rinnova automaticamente. Annulla quando vuoi, cambia il metodo di pagamento o consulta le fatture nel portale sicuro di Dodo Payments. Se annulli alla prossima data di fatturazione, Desktop continua a funzionare fino alla fine del periodo già pagato.",
+    "Manage or cancel subscription": "Gestisci o annulla l’abbonamento",
+    "Subscription portal opened in your browser.": "Il portale dell’abbonamento è stato aperto nel browser.",
+    "Subscription portal unavailable": "Il portale dell’abbonamento non è disponibile"
   },
   "nl": {
     "Language": "Taal",
@@ -8320,7 +8390,12 @@
     "Text colour": "Tekstkleur",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Er wordt niets in rekening gebracht tenzij je de betaling voltooit. Van gedachten veranderd of het verkeerde apparaat gekozen?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Inbegrepen in de Microsoft Store-versie. Verschijnt in het rechtermuismenu van ondersteunde bestanden.",
-    "Updates arrive automatically through the Microsoft Store.": "Updates komen automatisch via de Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "Updates komen automatisch via de Microsoft Store.",
+    "Subscription": "Abonnement",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Je abonnement wordt automatisch verlengd. Zeg op wanneer je wilt, wijzig je betaalmethode of bekijk je facturen in het beveiligde Dodo Payments-portaal. Als je opzegt per de volgende factuurdatum, blijft Desktop werken tot het einde van de betaalde periode.",
+    "Manage or cancel subscription": "Abonnement beheren of opzeggen",
+    "Subscription portal opened in your browser.": "Het abonnementsportaal is geopend in je browser.",
+    "Subscription portal unavailable": "Het abonnementsportaal is niet beschikbaar"
   },
   "tr": {
     "Language": "Dil",
@@ -8876,7 +8951,12 @@
     "Text colour": "Metin rengi",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Ödemeyi tamamlamadığınız sürece ücret alınmaz. Fikrinizi mi değiştirdiniz veya yanlış cihazı mı seçtiniz?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Microsoft Store sürümüne dahildir. Desteklenen dosyaların sağ tık menüsünde görünür.",
-    "Updates arrive automatically through the Microsoft Store.": "Güncellemeler Microsoft Store üzerinden otomatik olarak gelir."
+    "Updates arrive automatically through the Microsoft Store.": "Güncellemeler Microsoft Store üzerinden otomatik olarak gelir.",
+    "Subscription": "Abonelik",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Planınız otomatik olarak yenilenir. Güvenli Dodo Payments portalında istediğiniz zaman iptal edebilir, ödeme yönteminizi değiştirebilir veya faturalarınızı görebilirsiniz. Bir sonraki fatura tarihinde iptal ederseniz Desktop, ödediğiniz dönemin sonuna kadar çalışmaya devam eder.",
+    "Manage or cancel subscription": "Aboneliği yönet veya iptal et",
+    "Subscription portal opened in your browser.": "Abonelik portalı tarayıcınızda açıldı.",
+    "Subscription portal unavailable": "Abonelik portalı kullanılamıyor"
   },
   "vi": {
     "Language": "Ngôn ngữ",
@@ -9432,7 +9512,12 @@
     "Text colour": "Màu chữ",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Bạn sẽ không bị tính phí trừ khi hoàn tất thanh toán. Bạn đổi ý hoặc chọn nhầm thiết bị?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Có sẵn trong phiên bản Microsoft Store. Xuất hiện trong menu chuột phải của các tệp được hỗ trợ.",
-    "Updates arrive automatically through the Microsoft Store.": "Bản cập nhật được gửi tự động qua Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "Bản cập nhật được gửi tự động qua Microsoft Store.",
+    "Subscription": "Gói đăng ký",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Gói của bạn tự động gia hạn. Bạn có thể hủy bất cứ lúc nào, đổi phương thức thanh toán hoặc xem hóa đơn trong cổng Dodo Payments an toàn. Nếu hủy vào ngày thanh toán tiếp theo, Desktop vẫn hoạt động đến hết thời gian bạn đã trả tiền.",
+    "Manage or cancel subscription": "Quản lý hoặc hủy gói đăng ký",
+    "Subscription portal opened in your browser.": "Đã mở cổng gói đăng ký trong trình duyệt.",
+    "Subscription portal unavailable": "Cổng gói đăng ký hiện không khả dụng"
   },
   "th": {
     "Language": "ภาษา",
@@ -9988,7 +10073,12 @@
     "Text colour": "สีข้อความ",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "จะไม่มีการเรียกเก็บเงินจนกว่าคุณจะชำระเงินเสร็จ เปลี่ยนใจหรือเลือกอุปกรณ์ผิดใช่ไหม",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "รวมอยู่ในเวอร์ชัน Microsoft Store และจะปรากฏในเมนูคลิกขวาของไฟล์ที่รองรับ",
-    "Updates arrive automatically through the Microsoft Store.": "การอัปเดตจะส่งมาโดยอัตโนมัติผ่าน Microsoft Store"
+    "Updates arrive automatically through the Microsoft Store.": "การอัปเดตจะส่งมาโดยอัตโนมัติผ่าน Microsoft Store",
+    "Subscription": "การสมัครสมาชิก",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "แผนของคุณต่ออายุโดยอัตโนมัติ ยกเลิกได้ทุกเมื่อ เปลี่ยนวิธีชำระเงิน หรือดูใบแจ้งหนี้ในพอร์ทัล Dodo Payments ที่ปลอดภัย หากยกเลิกในวันเรียกเก็บเงินครั้งถัดไป Desktop จะใช้งานได้จนถึงสิ้นสุดช่วงเวลาที่ชำระแล้ว",
+    "Manage or cancel subscription": "จัดการหรือยกเลิกการสมัครสมาชิก",
+    "Subscription portal opened in your browser.": "เปิดพอร์ทัลการสมัครสมาชิกในเบราว์เซอร์แล้ว",
+    "Subscription portal unavailable": "พอร์ทัลการสมัครสมาชิกไม่พร้อมใช้งาน"
   },
   "pl": {
     "Language": "Język",
@@ -10544,6 +10634,11 @@
     "Text colour": "Kolor tekstu",
     "Nothing is charged unless you complete payment. Changed your mind or chose the wrong device?": "Nic nie zostanie pobrane, dopóki nie dokończysz płatności. Zmiana zdania lub wybrano złe urządzenie?",
     "Included with the Microsoft Store version. It appears in the right-click menu for supported files.": "Dostępne w wersji ze sklepu Microsoft Store. Pojawia się w menu kontekstowym obsługiwanych plików.",
-    "Updates arrive automatically through the Microsoft Store.": "Aktualizacje przychodzą automatycznie przez Microsoft Store."
+    "Updates arrive automatically through the Microsoft Store.": "Aktualizacje przychodzą automatycznie przez Microsoft Store.",
+    "Subscription": "Subskrypcja",
+    "Your plan renews automatically. Cancel anytime, change your payment method or see your invoices in the secure Dodo Payments portal. If you cancel at the next billing date, Desktop keeps working until the end of the period you have paid for.": "Twój plan odnawia się automatycznie. Anuluj w dowolnym momencie, zmień metodę płatności lub sprawdź faktury w bezpiecznym portalu Dodo Payments. Jeśli anulujesz z kolejną datą rozliczenia, Desktop działa do końca opłaconego okresu.",
+    "Manage or cancel subscription": "Zarządzaj subskrypcją lub ją anuluj",
+    "Subscription portal opened in your browser.": "Portal subskrypcji otwarto w przeglądarce.",
+    "Subscription portal unavailable": "Portal subskrypcji jest niedostępny"
   }
 }
