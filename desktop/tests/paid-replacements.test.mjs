@@ -26,7 +26,7 @@ function setup(plan='personal-annual'){
  const replacements=new PaidReplacementService({store,guard,dodo,authority,products,now:()=>now,verifyIdentity:async token=>({customerId:token==='owner'?'customer':'someone_else',verified:token==='owner'})});
  const service=new LicenseService({store,guard,dodo,authority,replacements,signing:{privateKey:signer.privateKey,kid:'test'},now:()=>now});
  const execute=async(action,body,device)=>{const {challenge:c,token}=service.challenge({action,body,publicKey:device.publicKey});const signature=sign(null,Buffer.from(`sorafiles-device-v1\n${c.id}\n${c.context}\n${c.expires}`),device.privateKey).toString('base64url');return service.execute(action,{body,publicKey:device.publicKey,signature,token});};
- return {store,guard,dodo,state,product,replacements,execute,advance:n=>now+=n,checkoutCalls:()=>checkoutCalls,deactivateCalls:()=>deactivateCalls,payment:()=>payment,verify:(response,device,body)=>verifyValidationProof(response.validation,{keys:{test:signer.publicKey},deviceId:deviceIdentity(device.publicKey),...body,now:now*1000}),verifyGrant:(token,device)=>verifyEntitlement(token,{keys:{test:signer.publicKey},deviceId:deviceIdentity(device.publicKey),now:now*1000})};
+ return {store,guard,dodo,authority,state,product,replacements,execute,advance:n=>now+=n,checkoutCalls:()=>checkoutCalls,deactivateCalls:()=>deactivateCalls,payment:()=>payment,verify:(response,device,body)=>verifyValidationProof(response.validation,{keys:{test:signer.publicKey},deviceId:deviceIdentity(device.publicKey),...body,now:now*1000}),verifyGrant:(token,device)=>verifyEntitlement(token,{keys:{test:signer.publicKey},deviceId:deviceIdentity(device.publicKey),now:now*1000})};
 }
 
 test('all six replacement products require exact fixed amounts, no promotions or license grant',()=>{
@@ -76,8 +76,8 @@ test('signed online validation binds request and preserves paid period; outages 
   const activation=await s.execute('activate',{licenseKey:'key'},device),body={licenseKey:'key',licenseRef:'lic',instanceId:activation.instanceId,nonce:randomBytes(32).toString('base64url')};
   const response=await s.execute('validate',body,device),claim=s.verify(response,device,body);assert.equal(claim.status,'active');assert.equal(s.verifyGrant(claim.entitlement,device).exp,s.state.periodEnd);
   assert.throws(()=>s.verify(response,device,{...body,nonce:randomBytes(32).toString('base64url')}),/claims/);
-  s.dodo.validate=async()=>{throw Object.assign(Error('network'),{code:'providerUnavailable'});};await assert.rejects(s.execute('validate',body,device),/network/);
-  s.dodo.validate=async()=>({valid:true});s.advance(1);s.state.status='revoked';const revoked=s.verify(await s.execute('validate',body,device),device,body);assert.equal(revoked.status,'inactive');assert.equal(revoked.reason,'license-inactive');
+  const resolve=s.authority.resolve;s.authority.resolve=async()=>{throw Object.assign(Error('network'),{code:'providerUnavailable'});};await assert.rejects(s.execute('validate',body,device),/network/);
+  s.authority.resolve=resolve;s.advance(1);s.state.status='revoked';const revoked=s.verify(await s.execute('validate',body,device),device,body);assert.equal(revoked.status,'inactive');assert.equal(revoked.reason,'license-inactive');
  }finally{s.store.close();}
 });
 
@@ -133,7 +133,7 @@ test('an online validation already waiting on Dodo cannot renew the old device a
  try{
   const activation=await s.execute('activate',{licenseKey:'key'},old);
   await s.execute('replacementRequest',{licenseRef:'lic',oldDeviceId:deviceIdentity(old.publicKey),licenseKey:'key',identityToken:'owner'},next);
-  s.dodo.validate=async()=>{entered();await gate;return {valid:true};};
+  const resolve=s.authority.resolve;let first=true;s.authority.resolve=async(...args)=>{if(first){first=false;entered();await gate;}return resolve(...args);};
   const body={licenseKey:'key',licenseRef:'lic',instanceId:activation.instanceId,nonce:randomBytes(32).toString('base64url')};
   const validating=s.execute('validate',body,old);await ready;s.payment().status='succeeded';s.replacements.applyPayment(s.payment());release();
   const claim=s.verify(await validating,old,body);assert.equal(claim.reason,'device-replaced');assert.equal(claim.status,'inactive');assert.equal(claim.entitlement,undefined);

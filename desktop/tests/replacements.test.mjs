@@ -108,11 +108,12 @@ test('a refresh already waiting on the provider cannot issue after support revok
  const f=fixture(),pair=generateKeyPairSync('ed25519');try{
   let release,started;const waiting=new Promise(resolve=>{started=resolve;});
   const guard={verify:request=>request.publicKey,activationFingerprint:key=>f.guard.activationFingerprint(key)};
-  const dodo={validate:async()=>{started();return new Promise(resolve=>{release=resolve;});}};
-  const service=new LicenseService({store:f.store,guard,dodo,authority:f.authority,signing:{kid:'test',privateKey:pair.privateKey.export({type:'pkcs8',format:'pem'})},now:()=>f.now});
+  // The provider wait is the authority lookup (key, grant and subscription state).
+  const authority={resolve:async(...args)=>{started();await new Promise(resolve=>{release=resolve;});return f.authority.resolve(...args);}};
+  const service=new LicenseService({store:f.store,guard,dodo:{},authority,signing:{kid:'test',privateKey:pair.privateKey.export({type:'pkcs8',format:'pem'})},now:()=>f.now});
   const refresh=service.execute('refresh',{publicKey:f.old,body:{licenseKey:f.licenseKey,licenseRef:'license',instanceId:'old-instance'}});
   const rejected=assert.rejects(refresh,/replaced/);
-  await waiting;await replaceDevice(f);release({valid:true});await rejected;
+  await waiting;await replaceDevice(f);release();await rejected;
   assert.equal(f.store.active('license',f.old),undefined);
  }finally{f.store.close();}
 });

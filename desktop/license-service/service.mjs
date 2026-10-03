@@ -38,8 +38,9 @@ export class LicenseService {
     if(previous?.status!=='complete')throw reconciliationRequired();
     const local=this.store.active(previous.license_ref,deviceId);
     if(!local||local.instance_id!==previous.instance_id)throw reconciliationRequired();
-    const valid=await this.dodo.validate(body.licenseKey,previous.instance_id);
-    if(valid?.valid!==true)throw Error('License no longer valid');
+    // The fingerprint lookup above already proves this key bound this device. The
+    // Dodo instance is not consulted: buyers can switch it off in Dodo's customer
+    // portal, which must not lock out a device the SoraFiles ledger still binds.
     const state=await this.authority.resolve({customerId:previous.customer_id,licenseRef:previous.license_ref});
     if(state.ref!==previous.license_ref)throw Error('License reference mismatch');
     this.store.sync(state);
@@ -81,7 +82,7 @@ export class LicenseService {
   if(local.instance_id!==body.instanceId)throw Error('Wrong activation instance');
   if(action==='portal')return this.portal(body,deviceId,binding);
   if(action==='refresh'){
-   const valid=await this.dodo.validate(body.licenseKey,body.instanceId);if(valid?.valid!==true)throw Error('License no longer valid');
+   if(!this.keyBound(body,deviceId))throw Error('Activation history required');
    this.store.sync(await this.authority.resolve({customerId:binding.customer_id,licenseRef:body.licenseRef}));
    const entitlement=this.store.issueForDevice(body.licenseRef,deviceId,body.instanceId,this.now(),license=>this.issue(license,deviceId));return {entitlement};
   }
@@ -90,14 +91,18 @@ export class LicenseService {
  // Ownership is the proved device plus the key it activated with, not current
  // validity: a subscriber whose renewal failed must still reach billing to fix or cancel it.
  async portal({licenseKey,licenseRef,instanceId},deviceId,binding){
-  const keyHash=this.guard.activationFingerprint(licenseKey);
-  if(!this.store.db.prepare('SELECT 1 FROM activation_attempts WHERE key_hash=? AND device_id=? AND license_ref=? AND instance_id=?').get(keyHash,deviceId,licenseRef,instanceId))throw Error('Activation history required');
+  if(!this.keyBound({licenseKey,licenseRef,instanceId},deviceId))throw Error('Activation history required');
   const license=this.store.db.prepare('SELECT plan FROM licenses WHERE ref=?').get(licenseRef);
   if(!license||licensePlans[license.plan]?.interval==='lifetime')throw Object.assign(Error('No subscription'),{reason:'no-subscription'});
   const session=await this.dodo.portal(binding.customer_id);
   if(!trustedPortal(session?.link))throw Object.assign(Error('Invalid provider response'),{code:'providerUnavailable'});
   return {portalUrl:session.link};
  }
+ // Key possession: this exact key activated this device and instance through SoraFiles.
+ // The SoraFiles ledger, not Dodo's per-device instance, decides which devices are
+ // bound: buyers can deactivate instances in Dodo's customer portal, and that must
+ // neither free a seat (the ledger still counts it) nor lock out the bound device.
+ keyBound({licenseKey,licenseRef,instanceId},deviceId){return !!this.store.db.prepare('SELECT 1 FROM activation_attempts WHERE key_hash=? AND device_id=? AND license_ref=? AND instance_id=?').get(this.guard.activationFingerprint(licenseKey),deviceId,licenseRef,instanceId);}
  async validate(body,deviceId){
   const {licenseRef,instanceId,nonce,licenseKey}=body,keyHash=this.guard.activationFingerprint(licenseKey);
   const history=this.store.db.prepare('SELECT 1 FROM activation_attempts WHERE key_hash=? AND device_id=? AND license_ref=? AND instance_id=?').get(keyHash,deviceId,licenseRef,instanceId);
@@ -107,14 +112,13 @@ export class LicenseService {
   if(replaced())return answer('inactive','device-replaced');
   // Provider/authority failures propagate without a signed revocation. Offline
   // access changes only after an authenticated, request-bound authoritative reply.
-  const valid=await this.dodo.validate(licenseKey,instanceId);
-  if(typeof valid?.valid!=='boolean')throw Object.assign(Error('Invalid provider response'),{code:'providerUnavailable'});
+  // Key status, grant revocation and subscription state come from the authority.
   const state=await this.authority.resolve({customerId:binding.customer_id,licenseRef});
   if(state.ref!==licenseRef)throw Error('License reference mismatch');this.store.sync(state);
   return this.store.transaction(()=>{
    if(replaced())return answer('inactive','device-replaced');
    const license=this.store.db.prepare('SELECT * FROM licenses WHERE ref=?').get(licenseRef);
-   if(license.status!=='active'||!valid.valid||!this.store.active(licenseRef,deviceId))return answer('inactive','license-inactive');
+   if(license.status!=='active'||!this.store.active(licenseRef,deviceId))return answer('inactive','license-inactive');
    if(licensePlans[license.plan].interval!=='lifetime'&&license.period_end<=this.now())return answer('inactive','subscription-expired');
    return answer('active',null,this.issue(this.store.currentLicense(licenseRef,deviceId,instanceId,this.now()),deviceId));
   });

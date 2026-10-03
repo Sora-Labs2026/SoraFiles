@@ -43,12 +43,12 @@ test('Worker fetch transport issues verified offline grants, persists replay/sea
   if(url.pathname.startsWith('/products/')){const p=plans[url.pathname.split('/').pop()];return Response.json({product_id:p.id,is_recurring:p.recurring,price:{currency:'USD',price:Math.round(Number(p.amount)*100),tax_inclusive:true,type:p.recurring?'recurring_price':'one_time_price',payment_frequency_count:1,payment_frequency_interval:p.interval==='monthly'?'Month':'Year'},entitlements:[{id:'ent-'+p.id,integration_type:'license_key',integration_config:{activations_limit:p.maxDevices,fulfillment_mode:'auto'}}]});}
   if(url.pathname==='/licenses/activate'){activations++;return Response.json({id:'instance-'+activations,license_key_id:'license',customer:{customer_id:'customer'}});}
   if(url.pathname==='/licenses/validate'){
-   const valid=!released.has((await request.json()).license_key_instance_id),paused=pauseValidation;
-   if(paused){pauseValidation=null;paused.enter();await paused.gate;}
-   return Response.json({valid});
+   return Response.json({valid:!released.has((await request.json()).license_key_instance_id)});
   }
   if(url.pathname==='/licenses/deactivate'){released.add((await request.json()).license_key_instance_id);return new Response(null,{status:204});}
   if(url.pathname==='/checkouts')return Response.json({checkout_url:'https://checkout.dodopayments.com/session/synthetic-checkout'});
+  // A refresh waits on this authority lookup; the test can hold it open once.
+  if(url.pathname==='/customers/customer/entitlement-grants'&&pauseValidation){const paused=pauseValidation;pauseValidation=null;paused.enter();await paused.gate;}
   if(url.pathname==='/customers/customer/entitlement-grants')return Response.json({items:[{customer_id:'customer',integration_type:'license_key',entitlement_id:'ent-personal-lifetime',status:'Delivered',license_key:{id:'license',activations_limit:1,status:'active'}}]});
   throw Error('Unexpected network request');
  };

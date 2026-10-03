@@ -6,10 +6,11 @@ const keys=()=>{const p=generateKeyPairSync('ed25519');return {privateKey:p.priv
 function setup({file=':memory:',secret=randomBytes(32)}={}){let now=1800000000,counter=0;const signing=keys(),store=new LicenseStore(file),guard=new RequestGuard({secret,store,now:()=>now});const calls=[];
  const state={ref:'lic',plan:'personal-monthly',status:'active',periodEnd:now+86400,observedAt:now};
  const dodo={activate:async()=>({id:'instance-'+(++counter),license_key_id:'lic',customer:{customer_id:'customer'}}),deactivate:async(key,id)=>calls.push({op:'deactivate',id}),validate:async()=>({valid:true})};
- const service=new LicenseService({store,guard,dodo,authority:{resolve:async()=>({...state,observedAt:now})},signing:{privateKey:signing.privateKey,kid:'test'},now:()=>now});
+ const authority={resolve:async()=>({...state,observedAt:now})};
+ const service=new LicenseService({store,guard,dodo,authority,signing:{privateKey:signing.privateKey,kid:'test'},now:()=>now});
  async function execute(action,body,device){const {challenge:c,token}=service.challenge({action,body,publicKey:device.publicKey});const signature=sign(null,Buffer.from(`sorafiles-device-v1\n${c.id}\n${c.context}\n${c.expires}`),device.privateKey).toString('base64url');return service.execute(action,{body,publicKey:device.publicKey,signature,token});}
  const verify=(token,device)=>verifyEntitlement(token,{keys:{test:signing.publicKey},deviceId:deviceIdentity(device.publicKey),now:now*1000});
- return {store,service,dodo,calls,state,execute,verify,activationCount:()=>counter,advance:seconds=>now+=seconds};
+ return {store,service,dodo,authority,calls,state,execute,verify,activationCount:()=>counter,advance:seconds=>now+=seconds};
 }
 test('paid activation binds the device and refuses unapproved transfer requests',async()=>{const s=setup(),device=keys(),other=keys();try{
  const activated=await s.execute('activate',{licenseKey:'key'},device);assert.equal(s.verify(activated.entitlement,device).maxDevices,1);
@@ -108,7 +109,8 @@ test('failed compensation blocks retries without releasing the original device b
 test('refresh cannot resurrect a device revoked during provider verification',async()=>{
  const s=setup(),device=keys();try{
   const activation=await s.execute('activate',{licenseKey:'key'},device);
-  s.dodo.validate=async()=>{s.store.revokeDevice(activation.licenseRef,deviceIdentity(device.publicKey));return {valid:true};};
+  // Revocation lands while refresh waits on the provider (the authority lookup).
+  const resolve=s.authority.resolve;s.authority.resolve=async(...args)=>{s.store.revokeDevice(activation.licenseRef,deviceIdentity(device.publicKey));return resolve(...args);};
   await assert.rejects(s.execute('refresh',{licenseKey:'key',licenseRef:activation.licenseRef,instanceId:activation.instanceId},device),/not activated/);
   assert.equal(s.store.active(activation.licenseRef,deviceIdentity(device.publicKey)),undefined);
  }finally{s.store.close();}
