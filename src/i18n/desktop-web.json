@@ -251,7 +251,6 @@
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.",
     "No longer have Desktop installed?": "No longer have Desktop installed?",
     "Contact us": "Contact us",
-    "and we will cancel it for you.": "and we will cancel it for you.",
     "Open License → Replace device. SoraFiles sends a short-lived code to the purchaser email on the verified order. The address is masked in Desktop. After verification, the one-time replacement checkout opens; payment alone cannot bypass email verification.": "Open License → Replace device. SoraFiles sends a short-lived code to the purchaser email on the verified order. The address is masked in Desktop. After verification, the one-time replacement checkout opens; payment alone cannot bypass email verification.",
     "One-time device replacement fee": "One-time device replacement fee",
     "Enter a discount code in Dodo checkout before payment. SoraFiles Web remains free.": "Enter a discount code in Dodo checkout before payment. SoraFiles Web remains free.",
@@ -326,7 +325,9 @@
     "148.5 MB": "148.5 MB",
     "154.1 MB": "154.1 MB",
     "226.0 MB": "226.0 MB",
-    "Published artifacts: windows x64, macos arm64, macos x64, linux x64, linux x64.": "Published artifacts: windows x64, macos arm64, macos x64, linux x64, linux x64."
+    "Published artifacts: windows x64, macos arm64, macos x64, linux x64, linux x64.": "Published artifacts: windows x64, macos arm64, macos x64, linux x64, linux x64.",
+    "Open the customer portal": "Open the customer portal",
+    "and sign in with the email address you used at checkout.": "and sign in with the email address you used at checkout."
   },
   "ja": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "ファイルツールはファイルのある場所にあります。 SoraFiles Desktop を使用して、コンピュータ上の PDF と画像を処理します。 SoraFiles ウェブは引き続き無料です。",
@@ -655,7 +656,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "「Cancel at next billing date」を選ぶと、支払い済みの期間が終わるまで Desktop を使えます。「Cancel now」を選ぶとすぐに終了します。",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "解約後に請求されることはありません。同じポータルで請求書の確認や支払い方法の変更もできます。買い切りライセンスには解約するサブスクリプションはありません。",
     "No longer have Desktop installed?": "Desktop をアンインストール済みですか？",
-    "and we will cancel it for you.": "ください。こちらで解約します。"
+    "Open the customer portal": "カスタマーポータルを開き",
+    "and sign in with the email address you used at checkout.": "、購入時のメールアドレスでサインインしてください。"
   },
   "ko": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "파일이 있는 바로 그 곳에 파일 도구가 있습니다. SoraFiles 데스크톱을 사용하여 컴퓨터에서 PDF와 이미지를 처리하세요. SoraFiles 웹은 무료로 유지됩니다.",
@@ -984,7 +986,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "“Cancel at next billing date”를 선택하면 결제한 기간이 끝날 때까지 Desktop을 계속 사용할 수 있습니다. “Cancel now”를 선택하면 즉시 종료됩니다.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "해지 후에는 더 이상 청구되지 않습니다. 같은 포털에서 청구서를 확인하고 결제 수단을 바꿀 수 있습니다. 평생 라이선스에는 해지할 구독이 없습니다.",
     "No longer have Desktop installed?": "Desktop을 이미 삭제하셨나요?",
-    "and we will cancel it for you.": "주시면 대신 해지해 드립니다."
+    "Open the customer portal": "고객 포털을 열고",
+    "and sign in with the email address you used at checkout.": "구매할 때 사용한 이메일 주소로 로그인하세요."
   },
   "es": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "Herramientas de archivos, justo donde están tus archivos. Procese archivos PDF e imágenes en su computadora con SoraFiles Desktop. SoraFiles Web sigue siendo gratuita.",
@@ -1313,7 +1316,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Elige «Cancel at next billing date» para seguir usando Desktop hasta el final del periodo que has pagado. «Cancel now» lo termina de inmediato.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "No se te volverá a cobrar después de cancelar. En el mismo portal puedes ver tus facturas y cambiar tu método de pago. Las licencias de por vida no tienen suscripción que cancelar.",
     "No longer have Desktop installed?": "¿Ya no tienes Desktop instalado?",
-    "and we will cancel it for you.": "y la cancelaremos por ti."
+    "Open the customer portal": "Abre el portal de clientes",
+    "and sign in with the email address you used at checkout.": "e inicia sesión con el correo electrónico que usaste al comprar."
   },
   "fr": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "Des outils de fichiers, là où se trouvent vos fichiers. Traitez des PDF et des images sur votre ordinateur avec SoraFiles Desktop. SoraFiles Le Web reste gratuit.",
@@ -1642,7 +1646,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Choisissez « Cancel at next billing date » pour continuer à utiliser Desktop jusqu’à la fin de la période payée. « Cancel now » y met fin immédiatement.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "Vous ne serez plus débité après la résiliation. Le même portail affiche vos factures et permet de changer de moyen de paiement. Les licences à vie n’ont pas d’abonnement à résilier.",
     "No longer have Desktop installed?": "Desktop n’est plus installé ?",
-    "and we will cancel it for you.": "et nous le résilierons pour vous."
+    "Open the customer portal": "Ouvrez le portail client",
+    "and sign in with the email address you used at checkout.": "et connectez-vous avec l’adresse e-mail utilisée lors de l’achat."
   },
   "de": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "Datei-Tools, genau dort, wo Ihre Dateien sind. Verarbeiten Sie PDFs und Bilder auf Ihrem Computer mit SoraFiles Desktop. SoraFiles Web bleibt kostenlos.",
@@ -1971,7 +1976,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Wähle „Cancel at next billing date“, um Desktop bis zum Ende des bezahlten Zeitraums weiter zu nutzen. „Cancel now“ beendet es sofort.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "Nach der Kündigung wird dir nichts mehr berechnet. Im selben Portal siehst du deine Rechnungen und kannst deine Zahlungsmethode ändern. Lifetime-Lizenzen haben kein Abo, das gekündigt werden muss.",
     "No longer have Desktop installed?": "Desktop nicht mehr installiert?",
-    "and we will cancel it for you.": "und wir kündigen es für dich."
+    "Open the customer portal": "Öffne das Kundenportal",
+    "and sign in with the email address you used at checkout.": "und melde dich mit der E-Mail-Adresse an, die du beim Kauf verwendet hast."
   },
   "pt": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "Ferramentas de arquivo, exatamente onde estão seus arquivos. Processe PDFs e imagens em seu computador com SoraFiles Desktop. SoraFiles Web permanece gratuito.",
@@ -2300,7 +2306,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Escolha “Cancel at next billing date” para continuar a usar o Desktop até ao fim do período que pagou. “Cancel now” termina-o de imediato.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "Não voltará a ser cobrado depois de cancelar. No mesmo portal pode ver as faturas e alterar o método de pagamento. As licenças vitalícias não têm subscrição para cancelar.",
     "No longer have Desktop installed?": "Já não tem o Desktop instalado?",
-    "and we will cancel it for you.": "e cancelamos por si."
+    "Open the customer portal": "Abra o portal do cliente",
+    "and sign in with the email address you used at checkout.": "e inicie sessão com o endereço de email que usou na compra."
   },
   "zh-cn": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "文件工具，就在您的文件所在的位置。使用 SoraFiles Desktop 在计算机上处​​理 PDF 和图像。 SoraFiles 网络保持免费。",
@@ -2629,7 +2636,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "选择“Cancel at next billing date”可继续使用 Desktop 至已付费期间结束；选择“Cancel now”会立即结束。",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "取消后不会再收费。在同一门户中还可以查看发票、更改付款方式。终身许可证没有需要取消的订阅。",
     "No longer have Desktop installed?": "已经卸载了 Desktop？",
-    "and we will cancel it for you.": "即可，我们会为您取消。"
+    "Open the customer portal": "打开客户门户",
+    "and sign in with the email address you used at checkout.": "，然后使用购买时的电子邮件地址登录。"
   },
   "zh-tw": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "文件工具，就在您的文件所在的位置。使用 SoraFiles Desktop 在電腦上處理 PDF 和影像。 SoraFiles 網路保持免費。",
@@ -2958,7 +2966,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "選擇「Cancel at next billing date」可繼續使用 Desktop 至已付費期間結束；選擇「Cancel now」會立即結束。",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "取消後不會再收費。在同一入口網站中也可以查看發票、變更付款方式。終身授權沒有需要取消的訂閱。",
     "No longer have Desktop installed?": "已經解除安裝 Desktop？",
-    "and we will cancel it for you.": "即可，我們會為您取消。"
+    "Open the customer portal": "開啟客戶入口網站",
+    "and sign in with the email address you used at checkout.": "，然後使用購買時的電子郵件地址登入。"
   },
   "hi": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "फ़ाइल उपकरण, ठीक वहीं जहां आपकी फ़ाइलें हैं। SoraFiles डेस्कटॉप के साथ अपने कंप्यूटर पर PDF और छवियों को संसाधित करें। SoraFiles वेब निःशुल्क रहता है।",
@@ -3287,7 +3296,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "भुगतान की गई अवधि खत्म होने तक Desktop इस्तेमाल करने के लिए “Cancel at next billing date” चुनें। “Cancel now” इसे तुरंत खत्म कर देता है।",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "रद्द करने के बाद आपसे दोबारा शुल्क नहीं लिया जाएगा। उसी पोर्टल में आप अपने इनवॉइस देख सकते हैं और भुगतान का तरीका बदल सकते हैं। लाइफ़टाइम लाइसेंस में रद्द करने के लिए कोई सदस्यता नहीं होती।",
     "No longer have Desktop installed?": "Desktop अब इंस्टॉल नहीं है?",
-    "and we will cancel it for you.": "और हम आपके लिए इसे रद्द कर देंगे।"
+    "Open the customer portal": "ग्राहक पोर्टल खोलें",
+    "and sign in with the email address you used at checkout.": "और खरीदारी के समय इस्तेमाल किए गए ईमेल पते से साइन इन करें।"
   },
   "ar": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "أدوات الملفات، حيث توجد ملفاتك مباشرةً. قم بمعالجة ملفات PDF والصور على جهاز الكمبيوتر الخاص بك باستخدام SoraFiles Desktop. SoraFiles يظل الويب مجانيًا.",
@@ -3616,7 +3626,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "اختر «Cancel at next billing date» لتواصل استخدام Desktop حتى نهاية الفترة التي دفعت مقابلها. أما «Cancel now» فيُنهيه فورًا.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "لن يتم تحصيل أي رسوم منك بعد الإلغاء. تعرض البوابة نفسها فواتيرك وتتيح لك تحديث طريقة الدفع. لا تتضمن التراخيص مدى الحياة اشتراكًا يمكن إلغاؤه.",
     "No longer have Desktop installed?": "لم يعد Desktop مثبتًا لديك؟",
-    "and we will cancel it for you.": "وسنلغيه نيابةً عنك."
+    "Open the customer portal": "افتح بوابة العملاء",
+    "and sign in with the email address you used at checkout.": "وسجّل الدخول بعنوان البريد الإلكتروني الذي استخدمته عند الشراء."
   },
   "ru": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "Файловые инструменты прямо там, где находятся ваши файлы. Обрабатывайте PDF-файлы и изображения на своем компьютере с помощью SoraFiles Desktop. SoraFiles Web остается бесплатным.",
@@ -3945,7 +3956,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Выберите «Cancel at next billing date», чтобы пользоваться Desktop до конца оплаченного периода. «Cancel now» завершает подписку сразу.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "После отмены списаний больше не будет. На том же портале можно посмотреть счета и сменить способ оплаты. У бессрочных лицензий нет подписки, которую нужно отменять.",
     "No longer have Desktop installed?": "Desktop уже не установлен?",
-    "and we will cancel it for you.": "— и мы отменим подписку за вас."
+    "Open the customer portal": "Откройте портал клиента",
+    "and sign in with the email address you used at checkout.": "и войдите с адресом электронной почты, указанным при покупке."
   },
   "id": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "Alat file, tepat di tempat file Anda berada. Proses PDF dan gambar di komputer Anda dengan SoraFiles Desktop. SoraFiles Web tetap gratis.",
@@ -4274,7 +4286,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Pilih “Cancel at next billing date” agar tetap bisa memakai Desktop hingga akhir periode yang sudah dibayar. “Cancel now” langsung mengakhirinya.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "Anda tidak akan ditagih lagi setelah membatalkan. Portal yang sama menampilkan tagihan Anda dan memungkinkan Anda mengubah metode pembayaran. Lisensi seumur hidup tidak memiliki langganan untuk dibatalkan.",
     "No longer have Desktop installed?": "Desktop sudah tidak terpasang?",
-    "and we will cancel it for you.": "dan kami akan membatalkannya untuk Anda."
+    "Open the customer portal": "Buka portal pelanggan",
+    "and sign in with the email address you used at checkout.": "lalu masuk dengan alamat email yang Anda gunakan saat membeli."
   },
   "it": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "File tools, right where your files are. Elabora PDF e immagini sul tuo computer con SoraFiles Desktop. SoraFiles Web stays free.",
@@ -4603,7 +4616,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Scegli “Cancel at next billing date” per continuare a usare Desktop fino alla fine del periodo pagato. “Cancel now” lo termina subito.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "Dopo l’annullamento non ti verrà addebitato altro. Nello stesso portale puoi vedere le fatture e cambiare il metodo di pagamento. Le licenze a vita non hanno un abbonamento da annullare.",
     "No longer have Desktop installed?": "Desktop non è più installato?",
-    "and we will cancel it for you.": "e lo annulleremo noi per te."
+    "Open the customer portal": "Apri il portale clienti",
+    "and sign in with the email address you used at checkout.": "e accedi con l’indirizzo email usato per l’acquisto."
   },
   "nl": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "Bestandstools, precies waar uw bestanden zich bevinden. Verwerk PDF's en afbeeldingen op uw computer met SoraFiles Desktop. SoraFiles Web blijft gratis.",
@@ -4932,7 +4946,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Kies ‘Cancel at next billing date’ om Desktop te blijven gebruiken tot het einde van de betaalde periode. ‘Cancel now’ beëindigt het meteen.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "Na het opzeggen wordt er niets meer afgeschreven. In hetzelfde portaal zie je je facturen en kun je je betaalmethode wijzigen. Levenslange licenties hebben geen abonnement om op te zeggen.",
     "No longer have Desktop installed?": "Desktop niet meer geïnstalleerd?",
-    "and we will cancel it for you.": "en wij zeggen het voor je op."
+    "Open the customer portal": "Open het klantenportaal",
+    "and sign in with the email address you used at checkout.": "en log in met het e-mailadres dat je bij de aankoop hebt gebruikt."
   },
   "tr": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "Dosya araçları, dosyalarınızın olduğu yerde. SoraFiles Masaüstü ile bilgisayarınızdaki PDF'leri ve görüntüleri işleyin. SoraFiles Web ücretsiz kalır.",
@@ -5261,7 +5276,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Ödediğiniz dönemin sonuna kadar Desktop’u kullanmaya devam etmek için “Cancel at next billing date” seçeneğini seçin. “Cancel now” aboneliği hemen sonlandırır.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "İptal ettikten sonra sizden tekrar ücret alınmaz. Aynı portalda faturalarınızı görebilir ve ödeme yönteminizi değiştirebilirsiniz. Ömür boyu lisanslarda iptal edilecek bir abonelik yoktur.",
     "No longer have Desktop installed?": "Desktop artık yüklü değil mi?",
-    "and we will cancel it for you.": "ve sizin için iptal edelim."
+    "Open the customer portal": "Müşteri portalını açın",
+    "and sign in with the email address you used at checkout.": "ve satın alırken kullandığınız e-posta adresiyle oturum açın."
   },
   "vi": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "Công cụ tệp, ngay tại nơi chứa tệp của bạn. Xử lý tệp PDF và hình ảnh trên máy tính của bạn bằng SoraFiles Desktop. SoraFiles Web vẫn miễn phí.",
@@ -5590,7 +5606,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Chọn “Cancel at next billing date” để tiếp tục dùng Desktop đến hết thời gian bạn đã trả tiền. “Cancel now” sẽ kết thúc ngay.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "Bạn sẽ không bị tính phí nữa sau khi hủy. Cũng trong cổng này, bạn có thể xem hóa đơn và đổi phương thức thanh toán. Giấy phép trọn đời không có gói đăng ký để hủy.",
     "No longer have Desktop installed?": "Không còn cài Desktop?",
-    "and we will cancel it for you.": "và chúng tôi sẽ hủy giúp bạn."
+    "Open the customer portal": "Mở cổng khách hàng",
+    "and sign in with the email address you used at checkout.": "và đăng nhập bằng địa chỉ email bạn đã dùng khi mua."
   },
   "th": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "เครื่องมือไฟล์ในที่ที่ไฟล์ของคุณอยู่ ประมวลผล PDF และรูปภาพบนคอมพิวเตอร์ของคุณด้วย SoraFiles Desktop SoraFiles เว็บใช้งานได้ฟรี",
@@ -5919,7 +5936,8 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "เลือก “Cancel at next billing date” เพื่อใช้ Desktop ต่อจนสิ้นสุดช่วงเวลาที่ชำระแล้ว ส่วน “Cancel now” จะสิ้นสุดทันที",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "หลังยกเลิกจะไม่มีการเรียกเก็บเงินอีก ในพอร์ทัลเดียวกันคุณดูใบแจ้งหนี้และเปลี่ยนวิธีชำระเงินได้ ใบอนุญาตตลอดชีพไม่มีการสมัครสมาชิกให้ยกเลิก",
     "No longer have Desktop installed?": "ไม่ได้ติดตั้ง Desktop แล้วใช่ไหม",
-    "and we will cancel it for you.": "แล้วเราจะยกเลิกให้คุณ"
+    "Open the customer portal": "เปิดพอร์ทัลลูกค้า",
+    "and sign in with the email address you used at checkout.": "แล้วลงชื่อเข้าใช้ด้วยอีเมลที่ใช้ตอนซื้อ"
   },
   "pl": {
     "File tools, right where your files are. Process PDFs and images on your computer with SoraFiles Desktop. SoraFiles Web stays free.": "Narzędzia do plików tam, gdzie są Twoje pliki. Przetwarzaj pliki PDF i obrazy na swoim komputerze za pomocą SoraFiles Desktop. SoraFiles Web pozostaje bezpłatny.",
@@ -6248,6 +6266,7 @@
     "Choose Cancel at next billing date to keep using Desktop until the end of the period you have paid for. Cancel now ends it right away.": "Wybierz „Cancel at next billing date”, aby korzystać z Desktop do końca opłaconego okresu. „Cancel now” kończy subskrypcję od razu.",
     "You won't be charged again after cancelling. The same portal shows your invoices and lets you update your payment method. Lifetime licenses have no subscription to cancel.": "Po anulowaniu nie zostaniesz ponownie obciążony. W tym samym portalu zobaczysz faktury i zmienisz metodę płatności. Licencje dożywotnie nie mają subskrypcji do anulowania.",
     "No longer have Desktop installed?": "Nie masz już zainstalowanego Desktop?",
-    "and we will cancel it for you.": "a anulujemy ją za Ciebie."
+    "Open the customer portal": "Otwórz portal klienta",
+    "and sign in with the email address you used at checkout.": "i zaloguj się adresem e-mail użytym przy zakupie."
   }
 }
