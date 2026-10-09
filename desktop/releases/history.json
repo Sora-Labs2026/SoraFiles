@@ -2,6 +2,19 @@
   "schema": 1,
   "releases": [
     {
+      "version": "0.1.3",
+      "date": "2026-10-09",
+      "tag": "v0.1.3",
+      "platforms": ["Windows x64", "macOS arm64", "macOS x64", "Linux x64"],
+      "changes": [
+        "Resize by print size: centimetres, millimetres or inches at a chosen DPI, with passport, stamp, A4 and Letter presets.",
+        "Set a maximum file size in KB or MB for Resize and Compress image; quality is lowered first, then pixels.",
+        "Your options stay as you set them after a run or when you add more files.",
+        "The options panel scrolls as a whole with Process files always in reach; larger, clearer text throughout.",
+        "Resized images carry only the print resolution, never the original photo’s hidden camera or location data."
+      ]
+    },
+    {
       "version": "0.1.2",
       "date": "2026-10-03",
       "tag": "v0.1.2",
