@@ -45,7 +45,7 @@ const detailAdjustments = [['definition',adjust('definition'),0,100],['sharpness
                 <h2 class="truncate text-sm font-extrabold text-white">{c3('preview')}</h2>
                 <span data-scanner-crop-state class="scanner-crop-state">{c3('useFullImage')}</span>
               </div>
-              <p data-scanner-selected-name data-workspace-source-name class="mt-1 truncate text-[11px] font-semibold text-slate-400"></p>
+              <p data-scanner-selected-name data-workspace-source-name class="mt-1 truncate text-sm font-semibold text-slate-200"></p>
             </div>
             <div class="scanner-stage-actions">
               <button type="button" data-scanner-rotate-left class="scanner-stage-button" aria-label={`${c3('rotate')} −90°`} title={`${c3('rotate')} −90°`}>↶</button>
@@ -62,7 +62,7 @@ const detailAdjustments = [['definition',adjust('definition'),0,100],['sharpness
 
         <aside data-workspace-inspector data-workbench-controls class="scanner-inspector-panel">
           <section class="scanner-control-section">
-            <div class="scanner-panel-heading"><div><p class="scanner-kicker">{c3('crop')}</p><p class="scanner-panel-note">{c3('useFullImage')}</p></div></div>
+            <div class="scanner-panel-heading"><div><p class="scanner-kicker">{c3('crop')}</p></div></div>
             <div class="grid grid-cols-2 gap-2">
               <button type="button" data-scanner-recrop class="scanner-control-button scanner-control-button-primary">{c3('adjustCorners')}</button>
               <button type="button" data-scanner-full class="scanner-control-button">{c3('useFullImage')}</button>
@@ -73,7 +73,7 @@ const detailAdjustments = [['definition',adjust('definition'),0,100],['sharpness
           <fieldset class="scanner-control-section"><legend class="scanner-kicker">{c3('filter')}</legend><div class="mt-3 grid grid-cols-2 gap-2">{filters.map(([value,key]) => <label class="scanner-choice"><input type="radio" name="scan-filter" value={value} checked={value === 'color'} class="h-4 w-4 shrink-0 accent-emerald-500" /><span>{c3(key)}</span></label>)}</div></fieldset>
 
           <section data-scanner-adjustments class="scanner-control-section">
-            <div class="scanner-panel-heading"><div><p class="scanner-kicker">{adjust('adjustments')}</p><p class="scanner-panel-note">{c3('preview')}</p></div><button type="button" data-scanner-adjustments-reset class="scanner-text-action">{c3('reset')}</button></div>
+            <div class="scanner-panel-heading"><div><p class="scanner-kicker">{adjust('adjustments')}</p></div><button type="button" data-scanner-adjustments-reset class="scanner-text-action">{c3('reset')}</button></div>
             <details open class="scanner-adjustment-group"><summary>{adjust('light')}</summary><div>{lightAdjustments.map(([key,label,min,max]) => <label class="scanner-slider"><span><span>{label}</span><output data-scanner-adjustment-output={key}>0</output></span><input data-scanner-adjustment={key} aria-label={label} type="range" min={min} max={max} value="0" /></label>)}</div></details>
             <details open class="scanner-adjustment-group"><summary>{adjust('detail')}</summary><div>{detailAdjustments.map(([key,label,min,max]) => <label class="scanner-slider"><span><span>{label}</span><output data-scanner-adjustment-output={key}>0</output></span><input data-scanner-adjustment={key} aria-label={label} type="range" min={min} max={max} value="0" /></label>)}</div></details>
           </section>
@@ -81,10 +81,10 @@ const detailAdjustments = [['definition',adjust('definition'),0,100],['sharpness
           <section data-scanner-export class="scanner-control-section scanner-export-section">
             <div class="scanner-panel-heading"><div><p class="scanner-kicker">{c3('export')}</p><p class="scanner-panel-note">{c3('format')}</p></div></div>
             <fieldset><legend class="sr-only">{c3('format')}</legend><div class="grid grid-cols-3 gap-2">{['pdf','jpg','png'].map((value) => <label class="scanner-format-choice"><input data-export-format type="radio" name="scanner-export-format" value={value} checked={value === 'pdf'} class="sr-only"/><span>{value.toUpperCase()}</span></label>)}</div></fieldset>
-            <label data-searchable-wrap class="mt-3 flex min-h-11 items-start gap-2 rounded-xl bg-slate-100 p-3 text-xs font-bold text-slate-700 dark:bg-white/[.06] dark:text-slate-200"><input data-searchable-pdf name="scanner-searchable-pdf" type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 accent-violet-600" /><span>{c3('ocr')}<small class="mt-1 block font-medium leading-4 text-slate-500 dark:text-slate-400">{c3('ocrNote')}</small></span></label>
-            <button type="button" data-export-run class="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-950 px-5 text-sm font-extrabold text-white shadow-lg shadow-slate-950/15 hover:bg-violet-700 focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-wait disabled:opacity-70 dark:bg-white dark:text-slate-950">{c3('exportPdf')}</button>
-            <div data-export-result hidden role="status" aria-live="polite" tabindex="-1" class="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-400/20 dark:bg-emerald-500/10"><span data-export-result-text class="block text-xs font-bold text-emerald-700 dark:text-emerald-200"></span><a data-export-download download class="mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-emerald-600 px-4 text-xs font-extrabold text-white">{c3('download')}</a></div>
+            <label data-searchable-wrap class="mt-3 flex min-h-11 items-start gap-2 rounded-xl bg-slate-100 p-3 text-xs font-bold text-slate-700 dark:bg-white/[.06] dark:text-slate-200"><input data-searchable-pdf name="scanner-searchable-pdf" type="checkbox" class="mt-0.5 h-4 w-4 shrink-0 accent-violet-600" /><span>{c3('ocr')}</span></label>
           </section>
+          <div data-scanner-export-action class="scanner-export-action"><button type="button" data-export-run data-workspace-primary class="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-slate-950 px-5 text-sm font-extrabold text-white shadow-lg shadow-slate-950/15 hover:bg-violet-700 focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-wait disabled:opacity-70 dark:bg-white dark:text-slate-950">{c3('exportPdf')}</button></div>
+          <div data-export-result hidden role="status" aria-live="polite" tabindex="-1" class="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-400/20 dark:bg-emerald-500/10"><span data-export-result-text class="block text-xs font-bold text-emerald-700 dark:text-emerald-200"></span><a data-export-download download class="mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-emerald-600 px-4 text-xs font-extrabold text-white">{c3('download')}</a></div>
         </aside>
       </div>
     </AdaptiveWorkspace>
@@ -107,9 +107,12 @@ const detailAdjustments = [['definition',adjust('definition'),0,100],['sharpness
   .scanner-pages-panel, .scanner-inspector-panel { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--color-surface); }
   .scanner-pages-panel { display: flex; flex-direction: column; padding: 1rem; border-inline-end: 1px solid var(--color-line); }
   .scanner-inspector-panel { padding: 1rem; border-inline-start: 1px solid var(--color-line); }
+  /* Save stays reachable while the long inspector scrolls. */
+  .scanner-export-action { position: sticky; bottom: 0; z-index: 2; padding-bottom: .25rem; background: var(--color-surface); box-shadow: 0 -.75rem .75rem -.25rem var(--color-surface); }
+  .scanner-export-action[hidden] { display: none; }
   .scanner-panel-heading { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: .75rem; }
-  .scanner-kicker { font-size: .68rem; line-height: 1rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--color-muted); }
-  .scanner-panel-note { margin-top: .18rem; font-size: .68rem; line-height: 1rem; font-weight: 600; color: var(--color-muted); }
+  .scanner-kicker { font-size: .9375rem; line-height: 1.4; font-weight: 700; letter-spacing: 0; color: var(--color-ink); }
+  .scanner-panel-note { margin-top: .18rem; font-size: .875rem; line-height: 1.4; font-weight: 500; color: var(--color-muted); }
   .scanner-mini-action { min-height: 2.4rem; flex: none; border: 1px solid var(--color-line); border-radius: .7rem; padding-inline: .7rem; font-size: .7rem; font-weight: 800; color: var(--color-violet); background: var(--color-surface); }
   .scanner-mini-action:hover { border-color: color-mix(in srgb,var(--color-violet) 45%,var(--color-line)); background: var(--color-violet-soft); }
   .scanner-page-list { flex: 1; min-height: 6rem; margin-top: .85rem; overflow-y: auto; }
@@ -118,37 +121,37 @@ const detailAdjustments = [['definition',adjust('definition'),0,100],['sharpness
   .scanner-preview-panel { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; overflow: hidden; color: #fff; background: #0b1020; }
   .scanner-preview-header { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem 1rem; border-bottom: 1px solid rgb(255 255 255 / .08); background: rgb(15 23 42 / .82); }
   .scanner-live-dot { width: .45rem; height: .45rem; flex: none; border-radius: 999px; background: #34d399; box-shadow: 0 0 0 4px rgb(52 211 153 / .12); }
-  .scanner-crop-state { flex: none; border: 1px solid rgb(255 255 255 / .1); border-radius: 999px; padding: .2rem .5rem; font-size: .62rem; line-height: .9rem; font-weight: 800; color: #cbd5e1; background: rgb(255 255 255 / .05); }
+  .scanner-crop-state { flex: none; border: 1px solid rgb(255 255 255 / .1); border-radius: 999px; padding: .2rem .5rem; font-size: .875rem; line-height: 1.2; font-weight: 800; color: #cbd5e1; background: rgb(255 255 255 / .05); }
   .scanner-stage-actions { display: flex; flex: none; align-items: center; gap: .35rem; }
   .scanner-stage-button { min-width: 2.5rem; min-height: 2.5rem; display: inline-grid; place-items: center; border: 1px solid rgb(255 255 255 / .1); border-radius: .7rem; padding-inline: .7rem; font-size: .72rem; font-weight: 800; color: #e2e8f0; background: rgb(255 255 255 / .055); }
   .scanner-stage-button:hover { border-color: rgb(255 255 255 / .35); background: rgb(255 255 255 / .08); }
   .scanner-stage-button-primary { color: #030712; background: #ffffff; border-color: #ffffff; }
-  .scanner-action-status { min-height: 1.65rem; padding: .35rem 1rem 0; font-size: .68rem; font-weight: 750; color: #6ee7b7; background: #0b1020; }
+  .scanner-action-status { min-height: 1.65rem; padding: .35rem 1rem 0; font-size: .75rem; font-weight: 750; color: #6ee7b7; background: #0b1020; }
   .scanner-light-table { position: relative; display: grid; min-width: 0; min-height: 0; place-items: center; overflow: auto; padding: clamp(1rem,3vw,2.5rem); background-color: #0b1020; background-image: radial-gradient(circle at center, rgb(67 56 202 / .13), transparent 48%), linear-gradient(rgb(255 255 255 / .025) 1px, transparent 1px), linear-gradient(90deg,rgb(255 255 255 / .025) 1px,transparent 1px); background-size: auto, 24px 24px, 24px 24px; }
   .scanner-paper-shadow { display: grid; max-width: 100%; max-height: 100%; place-items: center; border-radius: .28rem; background: #fff; box-shadow: 0 32px 80px rgb(0 0 0 / .5), 0 0 0 1px rgb(255 255 255 / .14); }
   .scanner-preview-image { display: block; width: auto; height: auto; max-width: 100%; max-height: calc(92vh - 11.5rem); object-fit: contain; border-radius: .2rem; }
-  .scanner-preview-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .55rem 1rem; border-top: 1px solid rgb(255 255 255 / .08); font-size: .65rem; font-weight: 700; color: #94a3b8; background: rgb(15 23 42 / .8); }
+  .scanner-preview-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .55rem 1rem; border-top: 1px solid rgb(255 255 255 / .08); font-size: .875rem; font-weight: 700; color: #94a3b8; background: rgb(15 23 42 / .8); }
   .scanner-control-section + .scanner-control-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-line); }
   .scanner-control-button { min-height: 2.75rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-line); border-radius: .75rem; padding-inline: .75rem; font-size: .7rem; font-weight: 800; color: var(--color-ink); background: var(--color-surface); }
   .scanner-control-button:hover { border-color: color-mix(in srgb,var(--color-violet) 45%,var(--color-line)); color: var(--color-violet); background: var(--color-violet-soft); }
   .scanner-control-button-primary { color: var(--on-action, #fff); border-color: var(--action, #09090b); background: var(--action, #09090b); }
   .scanner-control-button-primary:hover { color: var(--on-action, #fff); background: var(--action-hover, #27272a); }
-  .scanner-choice, .scanner-format-choice { min-height: 2.65rem; display: flex; cursor: pointer; align-items: center; justify-content: flex-start; gap: .5rem; border: 1px solid var(--color-line); border-radius: .7rem; padding: .5rem .65rem; font-size: .68rem; font-weight: 750; color: var(--color-muted); background: var(--color-surface); }
+  .scanner-choice, .scanner-format-choice { min-height: 2.65rem; display: flex; cursor: pointer; align-items: center; justify-content: flex-start; gap: .5rem; border: 1px solid var(--color-line); border-radius: .7rem; padding: .5rem .65rem; font-size: .75rem; font-weight: 750; color: var(--color-muted); background: var(--color-surface); }
   .scanner-choice:hover, .scanner-format-choice:hover { border-color: color-mix(in srgb,var(--color-green) 45%,var(--color-line)); }
   .scanner-choice:has(:checked) { border-color: var(--color-green); color: var(--color-green); background: var(--color-green-soft); box-shadow: 0 0 0 1px color-mix(in srgb,var(--color-green) 18%,transparent); }
   .scanner-format-choice { justify-content: center; }
   .scanner-format-choice:has(:checked) { border-color: var(--color-violet); color: var(--color-violet); background: var(--color-violet-soft); box-shadow: 0 0 0 1px color-mix(in srgb,var(--color-violet) 18%,transparent); }
-  .scanner-text-action { min-height: 2.25rem; border-radius: .6rem; padding-inline: .6rem; font-size: .65rem; font-weight: 800; color: var(--color-violet); }
+  .scanner-text-action { min-height: 2.25rem; border-radius: .6rem; padding-inline: .6rem; font-size: .75rem; font-weight: 800; color: var(--color-violet); }
   .scanner-text-action:hover { background: var(--color-violet-soft); }
   .scanner-adjustment-group { margin-top: .7rem; border: 1px solid var(--color-line); border-radius: .8rem; background: color-mix(in srgb,var(--color-canvas) 58%,var(--color-surface)); }
-  .scanner-adjustment-group summary { min-height: 2.5rem; display: flex; cursor: pointer; list-style: none; align-items: center; justify-content: space-between; padding: .55rem .7rem; font-size: .66rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; color: var(--color-ink); }
+  .scanner-adjustment-group summary { min-height: 2.5rem; display: flex; cursor: pointer; list-style: none; align-items: center; justify-content: space-between; padding: .55rem .7rem; font-size: .75rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; color: var(--color-ink); }
   .scanner-adjustment-group summary::-webkit-details-marker { display: none; }
   .scanner-adjustment-group summary::after { content: '⌄'; font-size: .8rem; color: var(--color-muted); transition: transform 160ms ease; }
   .scanner-adjustment-group:not([open]) summary::after { transform: rotate(-90deg); }
   .scanner-adjustment-group > div { padding: 0 .7rem .7rem; }
   .scanner-slider { display: block; padding-block: .38rem; }
-  .scanner-slider > span { display: flex; align-items: center; justify-content: space-between; gap: .65rem; font-size: .67rem; font-weight: 720; color: var(--color-muted); }
-  .scanner-slider output { min-width: 2.25rem; border-radius: .42rem; padding: .12rem .3rem; text-align: end; font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: .62rem; color: var(--color-ink); background: var(--color-surface); }
+  .scanner-slider > span { display: flex; align-items: center; justify-content: space-between; gap: .65rem; font-size: .75rem; font-weight: 720; color: var(--color-muted); }
+  .scanner-slider output { min-width: 2.25rem; border-radius: .42rem; padding: .12rem .3rem; text-align: end; font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: .7rem; color: var(--color-ink); background: var(--color-surface); }
   .scanner-slider input { width: 100%; height: 1.25rem; margin-top: .15rem; cursor: ew-resize; accent-color: var(--color-violet); }
   .scanner-slider input:focus-visible { outline: 2px solid var(--color-violet); outline-offset: 2px; }
 
@@ -223,10 +226,10 @@ const detailAdjustments = [['definition',adjust('definition'),0,100],['sharpness
         const li=document.createElement('li');li.className=`mb-2 rounded-xl border p-2 transition-colors ${index===selected?'border-emerald-400 bg-emerald-50 shadow-sm dark:bg-emerald-500/10':'border-slate-200 bg-white hover:border-violet-300 dark:border-white/10 dark:bg-white/5'}`;
         const button=document.createElement('button');button.type='button';button.className='flex w-full items-center gap-2 text-left';button.setAttribute('aria-current',index===selected?'page':'false');button.addEventListener('click',()=>selectPage(index));
         const img=document.createElement('img');img.src=page.previewUrl;img.alt='';img.width=48;img.height=64;img.className='h-16 w-12 shrink-0 rounded-md bg-slate-100 object-cover shadow-sm';
-        const text=document.createElement('span');text.className='min-w-0 flex-1';const title=document.createElement('span');title.className='block truncate text-xs font-extrabold text-slate-800 dark:text-white';title.textContent=`${msg.page} ${index+1}`;const name=document.createElement('span');name.className='block truncate text-[10px] font-semibold text-slate-500';name.textContent=page.name;const crop=document.createElement('span');crop.className='mt-1 block text-[9px] font-extrabold uppercase tracking-wide text-emerald-700 dark:text-emerald-300';crop.textContent=page.cropMode==='full'?msg.useFullImage:msg.adjustCorners;text.append(title,name,crop);button.append(img,text);
-        const actions=document.createElement('div');actions.className='mt-2 grid grid-cols-4 gap-1';const action=(symbol:string,label:string,fn:()=>void)=>{const control=document.createElement('button');control.type='button';control.className='min-h-9 rounded-lg bg-slate-100 text-[10px] font-bold text-slate-600 hover:bg-violet-100 hover:text-violet-700 dark:bg-white/10 dark:text-slate-300';control.textContent=symbol;control.setAttribute('aria-label',label);control.addEventListener('click',fn);return control;};actions.append(action('↑',msg.moveUp,()=>movePage(index,-1)),action('↓',msg.moveDown,()=>movePage(index,1)),action('↻',msg.rotate,()=>rotatePage(index,90)),action('×',msg.deletePage,()=>deletePage(index)));li.append(button,actions);pageList.append(li);
+        const text=document.createElement('span');text.className='min-w-0 flex-1';const title=document.createElement('span');title.className='block truncate text-xs font-extrabold text-slate-800 dark:text-white';title.textContent=`${msg.page} ${index+1}`;const name=document.createElement('span');name.className='block truncate text-[11px] font-semibold text-slate-500';name.textContent=page.name;const crop=document.createElement('span');crop.className='mt-1 block text-[11px] font-extrabold uppercase tracking-wide text-emerald-700 dark:text-emerald-300';crop.textContent=page.cropMode==='full'?msg.useFullImage:msg.adjustCorners;text.append(title,name,crop);button.append(img,text);
+        const actions=document.createElement('div');actions.className='mt-2 grid grid-cols-4 gap-1';const action=(symbol:string,label:string,fn:()=>void)=>{const control=document.createElement('button');control.type='button';control.className='min-h-9 rounded-lg bg-slate-100 text-[11px] font-bold text-slate-600 hover:bg-violet-100 hover:text-violet-700 dark:bg-white/10 dark:text-slate-300';control.textContent=symbol;control.setAttribute('aria-label',label);control.addEventListener('click',fn);return control;};actions.append(action('↑',msg.moveUp,()=>movePage(index,-1)),action('↓',msg.moveDown,()=>movePage(index,1)),action('↻',msg.rotate,()=>rotatePage(index,90)),action('×',msg.deletePage,()=>deletePage(index)));li.append(button,actions);pageList.append(li);
       });
-      workspace.hidden=pages.length===0;exportBox.hidden=pages.length===0;adaptiveWorkspace.hidden=pages.length===0;root.querySelector<HTMLElement>('[data-export-summary]')!.textContent=`${pages.length} ${msg.pages}`;
+      workspace.hidden=pages.length===0;exportBox.hidden=pages.length===0;root.querySelector<HTMLElement>('[data-scanner-export-action]')!.hidden=exportBox.hidden;if(exportBox.hidden)root.querySelector<HTMLElement>('[data-export-result]')!.hidden=true;adaptiveWorkspace.hidden=pages.length===0;root.querySelector<HTMLElement>('[data-export-summary]')!.textContent=`${pages.length} ${msg.pages}`;
     };
     const markDirty=()=>adaptiveWorkspace.dispatchEvent(new CustomEvent('workspace-dirty'));
     const movePage=(index:number,delta:number)=>{const next=index+delta;if(next<0||next>=pages.length)return;[pages[index],pages[next]]=[pages[next],pages[index]];selected=next;renderPages();selectPage(next);markDirty();void writeDraft();};

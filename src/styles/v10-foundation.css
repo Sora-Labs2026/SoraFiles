@@ -34,11 +34,13 @@ code,kbd,pre {font-family:var(--font-mono)}
 .sf-logo-dark {display:none}.dark .sf-logo-light {display:none}.dark .sf-logo-dark {display:block}
 /* Neutral legacy presentation utilities; these apply to interface chrome only,
    never pixel data in canvas/images or semantic error/success/warning colors. */
-:is([class*=text-violet],[class*=text-indigo],[class*=text-fuchsia],[class*=text-purple],[class*=text-blue],[class*=text-cyan]) {color:var(--ink)}
-:is([class*=bg-violet],[class*=bg-indigo],[class*=bg-fuchsia],[class*=bg-purple],[class*=bg-blue],[class*=bg-cyan]) {background-color:var(--selected-soft);color:var(--ink)}
-:is([class*=border-violet],[class*=border-indigo],[class*=border-fuchsia],[class*=border-purple],[class*=border-blue],[class*=border-cyan]) {border-color:var(--line-strong)}
-:is([class*=shadow-violet],[class*=shadow-indigo],[class*=shadow-fuchsia],[class*=shadow-blue]) {--tw-shadow-color:transparent;box-shadow:none}
-[class*=bg-gradient]:not(.atmos) {background-image:none}
-.dark :is([class*=text-slate-900],[class*=text-slate-800],[class*=text-slate-700]) {color:var(--ink)}
-:is([class*=text-slate-500],[class*=text-slate-600],[class*=text-slate-400]) {color:var(--ink-2)}
+:is([class^="text-violet"],[class*=" text-violet"],[class^="text-indigo"],[class*=" text-indigo"],[class^="text-fuchsia"],[class*=" text-fuchsia"],[class^="text-purple"],[class*=" text-purple"],[class^="text-blue"],[class*=" text-blue"],[class^="text-cyan"],[class*=" text-cyan"]) {color:var(--ink)}
+:is([class^="bg-violet"],[class*=" bg-violet"],[class^="bg-indigo"],[class*=" bg-indigo"],[class^="bg-fuchsia"],[class*=" bg-fuchsia"],[class^="bg-purple"],[class*=" bg-purple"],[class^="bg-blue"],[class*=" bg-blue"],[class^="bg-cyan"],[class*=" bg-cyan"]) {background-color:var(--selected-soft);color:var(--ink)}
+:is([class^="border-violet"],[class*=" border-violet"],[class^="border-indigo"],[class*=" border-indigo"],[class^="border-fuchsia"],[class*=" border-fuchsia"],[class^="border-purple"],[class*=" border-purple"],[class^="border-blue"],[class*=" border-blue"],[class^="border-cyan"],[class*=" border-cyan"]) {border-color:var(--line-strong)}
+:is([class^="shadow-violet"],[class*=" shadow-violet"],[class^="shadow-indigo"],[class*=" shadow-indigo"],[class^="shadow-fuchsia"],[class*=" shadow-fuchsia"],[class^="shadow-blue"],[class*=" shadow-blue"]) {--tw-shadow-color:transparent;box-shadow:none}
+[class^="bg-gradient"],[class*=" bg-gradient"]:not(.atmos) {background-image:none}
+/* Light slate text turns light in dark mode, except where the element names its own dark colour
+   (e.g. dark:text-slate-900 on a white button); the substring match used to catch those too. */
+.dark :is([class^="text-slate-900"],[class*=" text-slate-900"],[class^="text-slate-800"],[class*=" text-slate-800"],[class^="text-slate-700"],[class*=" text-slate-700"]):not([class*="dark:text-"]) {color:var(--ink)}
+:is([class^="text-slate-500"],[class*=" text-slate-500"],[class^="text-slate-600"],[class*=" text-slate-600"],[class^="text-slate-400"],[class*=" text-slate-400"]) {color:var(--ink-2)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:1ms!important;animation-iteration-count:1!important;transition-duration:1ms!important;scroll-behavior:auto!important}}

@@ -37,11 +37,13 @@ async function compressImages(bytes: ArrayBuffer, dpi: number, qFactor: number, 
   const input = `/input-${suffix}.pdf`;
   const output = `/output-${suffix}.pdf`;
   gs.FS.writeFile(input, new Uint8Array(bytes));
-  const distiller = `<< /ColorImageDownsampleType /Bicubic /ColorImageResolution ${dpi} /ColorImageDownsampleThreshold 1.0 /GrayImageDownsampleType /Bicubic /GrayImageResolution ${dpi} /GrayImageDownsampleThreshold 1.0 /MonoImageDownsampleType /Subsample /MonoImageResolution ${monoDpi} /MonoImageDownsampleThreshold 1.0 /AutoFilterColorImages false /AutoFilterGrayImages false /ColorImageFilter /DCTEncode /GrayImageFilter /DCTEncode /ColorImageDict << /QFactor ${qFactor} >> /GrayImageDict << /QFactor ${qFactor} >> >> setdistillerparams`;
+  // pdfwrite ignores the *ImageResolution targets unless downsampling is switched on, and passes
+  // JPEGs through untouched by default; each candidate is still checked page by page afterwards.
+  const distiller = `<< /DownsampleColorImages true /DownsampleGrayImages true /DownsampleMonoImages true /ColorImageDownsampleType /Bicubic /ColorImageResolution ${dpi} /ColorImageDownsampleThreshold 1.0 /GrayImageDownsampleType /Bicubic /GrayImageResolution ${dpi} /GrayImageDownsampleThreshold 1.0 /MonoImageDownsampleType /Subsample /MonoImageResolution ${monoDpi} /MonoImageDownsampleThreshold 1.0 /AutoFilterColorImages false /AutoFilterGrayImages false /ColorImageFilter /DCTEncode /GrayImageFilter /DCTEncode /ColorImageDict << /QFactor ${qFactor} >> /GrayImageDict << /QFactor ${qFactor} >> >> setdistillerparams`;
   try {
     gs.callMain([
       '-dSAFER', '-dBATCH', '-dNOPAUSE', '-dQUIET', '-sDEVICE=pdfwrite', '-dCompatibilityLevel=1.7',
-      '-dDetectDuplicateImages=true', '-dCompressFonts=true', '-dSubsetFonts=true', '-dAutoRotatePages=/None',
+      '-dDetectDuplicateImages=true', '-dPassThroughJPEGImages=false', '-dCompressFonts=true', '-dSubsetFonts=true', '-dAutoRotatePages=/None',
       `-sOutputFile=${output}`, '-c', distiller, '-f', input,
     ]);
     return new Uint8Array(gs.FS.readFile(output, { encoding: 'binary' }));

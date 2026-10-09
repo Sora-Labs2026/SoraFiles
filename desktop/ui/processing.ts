@@ -30,8 +30,25 @@ labels.pdf='PDF';labels.jpg='JPG';labels.transparent='Transparent';labels['#ffff
 const ratioChoices=[['free','Free'],['original','Original'],['1:1','1:1'],['3:4','3:4'],['2:3','2:3'],['4:5','4:5'],['9:16','9:16'],['4:3','4:3'],['3:2','3:2'],['5:4','5:4'],['16:9','16:9'],['21:9','21:9']];
 // Shown only when a single image is previewed; the workspace un-hides it.
 const cropRatios=()=>`<fieldset class="ratio-field" data-crop-only hidden><legend>Crop</legend><div class="ratio-chips">${ratioChoices.map(([value,label])=>`<button type="button" class="ratio-chip" data-ratio="${value}" aria-pressed="${value==='original'}">${label}</button>`).join('')}</div><p>Drag the frame on the preview to choose the area to keep. Drag a corner to resize it.</p></fieldset>`;
+// Print size: physical presets convert to pixels at the chosen DPI, like the website.
+const perInch:Record<string,number>={in:1,cm:2.54,mm:25.4};
+const printPresets:Record<string,[string,number,number]>={passport:['mm',35,45],'us-passport':['in',2,2],stamp:['mm',20,25],a4:['mm',210,297],letter:['in',8.5,11]};
+const toPixels=(value:number,unit:string,dpi:number)=>Math.round(value/perInch[unit]*dpi);
+const printFields=()=>'<div class="size-fields print-fields" data-when="sizeBy=print" hidden><label class="wide">Common sizes<select name="printPreset" aria-label="Common sizes"><option value="">Custom size</option><option value="passport" selected>Passport photo (35 × 45 mm)</option><option value="us-passport">US passport photo (2 × 2 in)</option><option value="stamp">Stamp size (20 × 25 mm)</option><option value="a4">A4 paper (210 × 297 mm)</option><option value="letter">US Letter paper (8.5 × 11 in)</option></select></label>'
+ +'<label>Width<input name="printWidth" type="number" min="0.01" step="any" value="35" inputmode="decimal"></label><label>Height<input name="printHeight" type="number" min="0.01" step="any" value="45" inputmode="decimal"></label>'
+ +'<label>Unit<select name="printUnit" aria-label="Unit"><option value="mm" selected>mm</option><option value="cm">cm</option><option value="in">in</option></select></label><label>Resolution (DPI)<input name="dpi" type="number" min="30" max="1200" step="1" value="300" inputmode="numeric"></label>'
+ +'<p class="wide print-pixels" data-print-pixels translate="no"></p><p class="wide">Photo labs and print shops usually ask for 300 DPI.</p></div>';
+const maxSizeField=()=>'<div class="size-fields max-size-field"><label>Maximum file size<input name="maxSize" type="number" min="1" step="any" placeholder="No limit" inputmode="decimal"></label><label>Size unit<select name="maxUnit" aria-label="Size unit"><option value="KB">KB</option><option value="MB">MB</option></select></label><p class="wide">Optional. Quality is lowered first; if that is not enough, the image is made smaller to fit.</p></div>';
+const maxBytesFrom=(text:(name:string)=>string)=>{
+ const value=Number(text('maxSize'));if(!text('maxSize').trim())return undefined;
+ const bytes=Math.round(value*(text('maxUnit')==='MB'?1_000_000:1000));
+ if(!Number.isFinite(bytes)||bytes<1000||bytes>64*1024*1024)throw Error('Choose a maximum file size from 1 KB to 64 MB');
+ return bytes;
+};
 const resizeModes=[['inside','Fit inside','Keeps proportions within the size'],['cover','Fill and crop','Fills the size and trims the edges'],['contain','Pad','Fits inside and fills the rest'],['fill','Stretch','Exact size; may distort']];
 export function syncProcessingOptions(form:HTMLFormElement){
+ // Presets may switch the resize mode, so they apply before groups are shown or hidden.
+ syncPrintSize(form);
  const data=new FormData(form);
  // data-when="name=value|value": show a group only for those choices.
  form.querySelectorAll<HTMLElement>('[data-when]').forEach(group=>{
@@ -41,11 +58,41 @@ export function syncProcessingOptions(form:HTMLFormElement){
  // The smaller-file option exists only at full strength.
  const strength=form.querySelector<HTMLInputElement>('input[name="strength"]'),smallest=form.querySelector<HTMLInputElement>('input[name="smallest"]');
  if(strength&&smallest){smallest.disabled=Number(strength.value)!==100;if(smallest.disabled)smallest.checked=false;}
+ const maxSize=form.querySelector<HTMLInputElement>('input[name="maxSize"]'),quality=form.querySelector<HTMLInputElement>('input[name="quality"]');
+ if(maxSize&&quality){const limited=Boolean(maxSize.value.trim());quality.disabled=limited;const output=quality.closest('.percent-field')?.querySelector('output');if(limited&&output){output.textContent=t('Automatic');quality.setAttribute('aria-valuetext',t('Automatic'));}else syncPercentRange(quality);}
  const mode=data.get('mode');
  form.querySelectorAll<HTMLElement>('[data-split-option]').forEach(group=>{
   const active=group.dataset.splitOption===mode;group.hidden=!active;
   group.querySelectorAll<HTMLInputElement>('input').forEach(input=>input.disabled=!active);
  });
+}
+// Restored values are already consistent: forget what earlier syncs of a fresh form
+// recorded, so the next sync neither converts units nor re-applies a preset.
+export function forgetOptionHistory(form:HTMLFormElement){delete form.dataset.printUnit;delete form.dataset.printPreset;delete form.dataset.sizeBy;}
+function syncPrintSize(form:HTMLFormElement){
+ const field=(name:string)=>form.querySelector<HTMLInputElement|HTMLSelectElement>(`[name="${name}"]`);
+ const preset=field('printPreset') as HTMLSelectElement|null,unit=field('printUnit') as HTMLSelectElement|null,width=field('printWidth'),height=field('printHeight'),dpi=field('dpi');
+ if(!preset||!unit||!width||!height||!dpi)return;
+ const round=(value:number)=>String(Math.round(value*100)/100);
+ // A print comes out at its exact size, so entering print mode or picking a preset
+ // selects "Fill and crop". The first sync of a fresh form only records the state.
+ const fillAndCrop=()=>{const cover=form.querySelector<HTMLInputElement>('input[name="fit"][value="cover"]');if(cover)cover.checked=true;};
+ const sizeBy=form.querySelector<HTMLInputElement>('input[name="sizeBy"]:checked')?.value||'';
+ if(form.dataset.sizeBy!==undefined&&form.dataset.sizeBy!==sizeBy&&sizeBy==='print')fillAndCrop();
+ form.dataset.sizeBy=sizeBy;form.dataset.printPreset??=preset.value;form.dataset.printUnit??=unit.value;
+ if(preset.value&&preset.value!==form.dataset.printPreset){
+  const [presetUnit,w,h]=printPresets[preset.value];unit.value=presetUnit;width.value=String(w);height.value=String(h);fillAndCrop();
+ }else if(form.dataset.printUnit&&form.dataset.printUnit!==unit.value){
+  const factor=perInch[unit.value]/perInch[form.dataset.printUnit];
+  for(const input of [width,height])if(input.value)input.value=round(Number(input.value)*factor);
+ }
+ form.dataset.printUnit=unit.value;
+ // Typing a different size turns the preset back into "Custom size".
+ if(preset.value){const [presetUnit,w,h]=printPresets[preset.value],mm=(value:number,from:string)=>value/perInch[from]*25.4;
+  if(Math.abs(mm(Number(width.value),unit.value)-mm(w,presetUnit))>.05||Math.abs(mm(Number(height.value),unit.value)-mm(h,presetUnit))>.05)preset.value='';}
+ form.dataset.printPreset=preset.value;
+ const readout=form.querySelector<HTMLElement>('[data-print-pixels]'),px=[width,height].map(input=>toPixels(Number(input.value),unit.value,Number(dpi.value)));
+ if(readout)readout.textContent=px.every(value=>Number.isFinite(value)&&value>0)?`= ${px[0]} × ${px[1]} px`:'';
 }
 export function processingOptions(tool:string){
  let fields='';
@@ -68,18 +115,19 @@ export function processingOptions(tool:string){
  if(tool==='watermark-pdf')fields='<label>Watermark text<input name="text" type="text" maxlength="256" required placeholder="e.g. DRAFT"></label>'+number('Text size (points)','size',42,6,144)+number('Opacity (%)','opacity',20,1,100)+number('Angle (degrees)','angle',45,-180,180)+number('Minimum page margin (points)','margin',24,0,144)+colour('#667085')+overlayRange('Pages to watermark')+'<p>Text is centred on each selected page. Positive angles rise from left to right; 0 is horizontal. Use a smaller size or shorter text if it does not fit. Review the saved copy; live placement preview is not available yet.</p>';
  if(tool==='jpg-to-pdf')fields=choice('Page size','paper',['a4','letter','image'])+choice('Orientation','orientation',['auto','portrait','landscape']);
  if(tool==='resize-image')fields=cropRatios()
-  +'<fieldset class="segmented"><legend>Size by</legend><label><input type="radio" name="sizeBy" value="pixels" checked>Pixels</label><label><input type="radio" name="sizeBy" value="percent">Percentage</label></fieldset>'
+  +'<fieldset class="segmented"><legend>Size by</legend><label><input type="radio" name="sizeBy" value="pixels" checked>Pixels</label><label><input type="radio" name="sizeBy" value="percent">Percentage</label><label><input type="radio" name="sizeBy" value="print">Print size</label></fieldset>'
   +'<div class="size-fields" data-when="sizeBy=pixels"><label>Width (px)<input name="width" type="number" min="1" max="16000" value="1600" inputmode="numeric"></label><label>Height (px)<input name="height" type="number" min="1" max="16000" placeholder="Auto" inputmode="numeric"></label><label class="check"><input type="checkbox" name="keep" checked>Keep aspect ratio</label><label class="check"><input type="checkbox" name="enlarge">Allow enlarging small images</label></div>'
-  +`<div class="size-fields" data-when="sizeBy=percent" hidden>${percent('Scale','percent',100,1,400)}</div>`
+  +`<div class="size-fields" data-when="sizeBy=percent" hidden>${percent('Scale','percent',100,1,400)}</div>`+printFields()
   +`<fieldset class="mode-field"><legend>Resize mode</legend>${resizeModes.map(([value,label,hint],index)=>`<label class="mode-option"><input type="radio" name="fit" value="${value}"${index===0?' checked':''}><span><strong>${label}</strong><small>${hint}</small></span></label>`).join('')}</fieldset>`
   +`<div data-when="fit=contain" hidden>${choice('Padding colour','background',['transparent','#ffffff','#000000'])}</div>`;
  if(tool==='edit-image')fields=cropRatios();
  if(['image-converter','resize-image','edit-image'].includes(tool))fields+=choice('Save as','format',['png','jpeg','webp']);
  if(tool==='image-converter')fields+=percent('JPEG / WebP quality','quality',85,40,100);
  if(tool==='resize-image'||tool==='edit-image')fields+=percent('JPEG / WebP quality','quality',90,40,100);
+ if(tool==='resize-image'||tool==='compress-image')fields+=maxSizeField();
  if(tool==='compress-image')fields+=percent('Quality (lower means a smaller file)','quality',75,40,100)+'<label>Maximum width in pixels<input name="width" type="number" min="1" max="16000" placeholder="Keep original size"></label><p>Quality 75 is a good balance for photos; 60 or lower gives much smaller files. Below 90, PNG images use fewer colours. Setting a maximum width saves the most space. Each image keeps its format, and if no smaller result is found an unchanged copy is saved.</p>';
  if(tool==='edit-image')fields+=choice('Rotate clockwise','rotation',['0','90','180','270'])+choice('Mirror horizontally','flop',['no','yes'])+choice('Flip vertically','flip',['no','yes'])+'<details class="image-adjustments"><summary>Colour and detail</summary><p>Zero keeps each adjustment unchanged. Review the saved copy.</p><div class="option-fields">'+manualAdjustmentKeys.map((key:string)=>number(adjustmentLabels[key],'adjust-'+key,0,['blackPoint','definition','sharpness','noiseReduction'].includes(key)?0:-100,100)).join('')+'</div><button type="button" class="secondary" data-reset-adjustments>Reset colour and detail</button></details>';
- return `<form id="processing-form" class="panel processing-options"><h2>Options</h2><div class="option-fields">${fields}</div><button class="primary" type="submit">Process files</button></form>`;
+ return `<form id="processing-form" class="panel processing-options" data-tool="${tool}"><h2>Options</h2><div class="option-fields">${fields}</div><button class="primary" type="submit">Process files</button></form>`;
 }
 export function readProcessingOptions(form:HTMLFormElement,tool:string,extra:{crop?:{left:number;top:number;width:number;height:number}}={}){
  const fields=new FormData(form),text=(name:string)=>String(fields.get(name)||''),num=(name:string)=>Number(text(name));
@@ -107,11 +155,20 @@ export function readProcessingOptions(form:HTMLFormElement,tool:string,extra:{cr
   case 'watermark-pdf':return {text:text('text'),size:num('size'),opacity:num('opacity')/100,angle:num('angle'),margin:num('margin'),color:text('color'),...(text('pages').trim()?{selected:parsePageSelection(text('pages'),1000)}:{})};
   case 'jpg-to-pdf':return {paper:text('paper'),orientation:text('orientation')};
   case 'image-converter':return {format:text('format'),quality:num('quality')};
-  case 'compress-image':return {quality:num('quality'),...(text('width').trim()?{width:num('width')}:{})};
+  case 'compress-image':{const maxBytes=maxBytesFrom(text);return {quality:maxBytes?90:num('quality'),...(text('width').trim()?{width:num('width')}:{}),...(maxBytes?{maxBytes}:{})};}
   case 'resize-image':{
    const fit=text('fit')||'inside',crop=extra.crop?{crop:extra.crop}:{};
-   const base={format:text('format'),quality:num('quality'),fit,...(fit==='contain'?{background:text('background')}:{}),...crop};
+   const maxBytes=maxBytesFrom(text);
+   const base={format:text('format'),quality:maxBytes?90:num('quality'),fit,...(fit==='contain'?{background:text('background')}:{}),...crop,...(maxBytes?{maxBytes}:{})};
    if(text('sizeBy')==='percent')return {...base,percent:num('percent')};
+   if(text('sizeBy')==='print'){
+    const unit=text('printUnit'),dpi=num('dpi');
+    if(!perInch[unit]||!Number.isInteger(dpi)||dpi<30||dpi>1200)throw Error('Choose a resolution from 30 to 1200 DPI');
+    const width=toPixels(num('printWidth'),unit,dpi),height=toPixels(num('printHeight'),unit,dpi);
+    if(!(width>=1&&height>=1&&width<=16000&&height<=16000&&width*height<=25_000_000))throw Error('Choose a smaller print size or resolution');
+    // A print must come out at its exact size, so small sources may be enlarged.
+    return {...base,width,height,dpi,allowEnlargement:true};
+   }
    const width=num('width')||undefined,height=num('height')||undefined;
    if(!width&&!height)throw Error('Enter a width or a height.');
    return {...base,allowEnlargement:fields.get('enlarge')==='on',...(width?{width}:{}),...(height?{height}:{})};

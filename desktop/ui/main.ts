@@ -6,7 +6,7 @@ import {languages,setLocale,locale,t,localizeUi} from './localization';
 import {toolCategories} from './tool-categories';
 import {confirmDisableQuickAction} from './startup-confirmation';
 import prototypeToolIcons from './tool-icons.json';
-import {connectedTools,processingOptions,readProcessingOptions,syncProcessingOptions,syncPercentRange} from './processing';
+import {connectedTools,processingOptions,readProcessingOptions,syncProcessingOptions,syncPercentRange,forgetOptionHistory} from './processing';
 import {capabilities,relevantActions,searchTools} from '../shared/capabilities.mjs';
 import {CROP_TOOLS,bindCanvas,canvasView,cropPixels,cropSize,hasCropCanvas,loadPreviews} from './canvas';
 import {eligibleForRatingPrompt,readPromptState,recordDismissed,recordRated,recordShown,recordSuccess} from '../shared/rating-prompt.mjs';
@@ -157,26 +157,38 @@ function settings(){return `${heading('YOUR PREFERENCES','Settings','Set up file
  <section class="panel settings-panel"><h2>Appearance</h2><div class="setting-row"><label for="theme">Theme</label><select id="theme" aria-label="Appearance">${['system','light','dark'].map(value=>`<option value="${value}" ${state.theme===value?'selected':''}>${value==='system'?'Follow system':value[0].toUpperCase()+value.slice(1)}</option>`).join('')}</select></div></section>`;}
 function updates(){return `${heading('BUILT BY SORA LABS','Updates & about','A private space for working with your files.')}${feedback()}<section class="panel about-panel"><img src="/icon-192.png" width="64" height="64" alt=""><h2>SoraFiles Desktop</h2><p>${escape(state.version)}</p><p>This release processes your files locally and keeps the web tools free.</p><button class="secondary" data-action="updates">View release notes</button></section>`;}
 function renderFull(){root.innerHTML=`<a class="skip-link" href="#main">Skip to content</a><aside class="sidebar"><div class="brand"><img src="/icon-192.png" alt="" width="36" height="36"><div>SoraFiles<span>DESKTOP</span></div></div><nav aria-label="Main navigation">${[['home','Home','home'],['tools','All tools','grid'],['license','License','lock'],['settings','Settings','settings'],['updates','Updates & about','update']].map(([id,name,glyph])=>`<button aria-label="${name}" data-page="${id}" ${state.page===id||state.page==='workspace'&&id==='tools'?'aria-current="page"':''}>${icon(glyph)}<span>${name}</span></button>`).join('')}</nav><div class="sidebar-bottom"><button class="quit" data-action="quit" aria-label="Quit SoraFiles" title="Quit SoraFiles">${icon('power')}<span>Quit SoraFiles</span></button><small>SoraFiles Desktop</small></div></aside><main id="main" tabindex="-1">${state.page==='native'?nativeActions():state.page==='home'?home():state.page==='tools'?tools():state.page==='workspace'?workspace():state.page==='license'?license():state.page==='settings'?settings():updates()}</main>`;syncBusy();}
+// Radios and checkboxes share a name, so match them by value; other fields take the value.
+function restoreFields(fields:{name:string;value:string;checked:boolean}[]){
+ for(const field of fields){
+  const inputs=Array.from(root.querySelectorAll<HTMLInputElement|HTMLSelectElement>('#processing-form [name="'+CSS.escape(field.name)+'"]'));
+  const choice=(input:Element)=>input instanceof HTMLInputElement&&(input.type==='radio'||input.type==='checkbox');
+  const input=inputs.find(item=>!choice(item)||item.value===field.value);if(!input)continue;
+  if(choice(input))(input as HTMLInputElement).checked=field.checked;else input.value=field.value;
+ }
+ const form=root.querySelector<HTMLFormElement>('#processing-form');if(form){forgetOptionHistory(form);syncProcessingOptions(form);}
+}
 function render(){
  setLocale(state.locale);
- // Preserve in-progress options only across renders of the same quick action.
- // Values are kept for this synchronous render, never in persistent app state.
+ // Preserve in-progress options across renders of the same quick action or the same
+ // workspace tool (a finished run or newly added files must not reset them). Values are
+ // kept for this synchronous render, never in persistent app state; passwords never are.
  const previous=quick.active&&root.querySelector<HTMLElement>('.quick-action')?.dataset.tool===state.tool;
- const fields=previous?Array.from(root.querySelectorAll<HTMLInputElement|HTMLSelectElement>('#processing-form input,#processing-form select')).map(input=>({name:input.name,value:input.value,checked:(input as HTMLInputElement).checked})):[];
+ const sameWorkspace=!quick.active&&state.page==='workspace'&&root.querySelector<HTMLElement>('#processing-form')?.dataset.tool===state.tool;
+ const fields=previous||sameWorkspace?Array.from(root.querySelectorAll<HTMLInputElement|HTMLSelectElement>('#processing-form input,#processing-form select')).filter(input=>input.type!=='password').map(input=>({name:input.name,value:input.value,checked:(input as HTMLInputElement).checked})):[];
  const focused=previous?document.activeElement as HTMLInputElement:null;
  const scroll=previous?root.querySelector('.quick-content')?.scrollTop||0:0;
  const details=previous?Array.from(root.querySelectorAll<HTMLDetailsElement>('details')).map(item=>item.open):[];
  applyTheme();document.body.dataset.quickAction=String(quick.active);
  if(quick.active){
   root.innerHTML=quickActionView();
-  for(const field of fields){const input=root.querySelector<HTMLInputElement|HTMLSelectElement>('#processing-form [name="'+CSS.escape(field.name)+'"]');if(input){input.value=field.value;if(input instanceof HTMLInputElement)input.checked=field.checked;}}
-  const form=root.querySelector<HTMLFormElement>('#processing-form');if(form)syncProcessingOptions(form);
+  restoreFields(fields);
   root.querySelectorAll<HTMLDetailsElement>('details').forEach((item,index)=>{if(index<details.length)item.open=details[index];});
   syncBusy();
   if(focused?.name)root.querySelector<HTMLElement>('#processing-form [name="'+CSS.escape(focused.name)+'"]')?.focus({preventScroll:true});
   const content=root.querySelector('.quick-content');if(content)content.scrollTop=scroll;
  }else{
   renderFull();
+  if(sameWorkspace)restoreFields(fields);
   if(state.page==='workspace'){loadPreviews(usableFiles(),state.tool,refreshCanvas);applyCanvasToForm();loadToolRating(state.tool);}
  }
  localizeUi(root);
@@ -276,7 +288,9 @@ root.addEventListener('click',event=>{const target=(event.target as HTMLElement)
  switch(target.dataset.action){case 'rating-dismiss':if(ratingPrompt){promptState=recordDismissed(promptState,ratingPrompt.tool);savePromptState();ratingPrompt=null;render();}return;case 'replace-device':void perform(async()=>{Object.assign(state,await host('replacementState'));if(state.replacement?.stage==='complete')state.replacement={stage:'idle'};state.replacing=true;});break;case 'replacement-back':state.replacing=false;render();break;case 'replacement-activate':state.replacing=false;render();document.querySelector<HTMLInputElement>('#license-key')?.focus();break;case 'replacement-resend':void perform(async()=>{Object.assign(state,await host('replacementEmailResend'));state.notice='A new code has been sent. Check your inbox and Spam folder.';});break;case 'replacement-change-email':void perform(async()=>{Object.assign(state,await host('replacementReset'));});break;case 'replacement-cancel':void perform(async()=>{Object.assign(state,await host('replacementCancel'));state.notice=['verified','idle'].includes(state.replacement?.stage)?'Revocation cancelled. Nothing was charged.':'';});break;case 'replacement-checkout':void perform(async()=>{await host('replacementCheckout');state.notice='Payment page opened in your browser.';});break;case 'manage-subscription':void perform(async()=>{await host('manageSubscription');state.notice='Subscription portal opened in your browser.';});break;case 'replacement-status':void perform(async()=>{Object.assign(state,await host('replacementStatus'));state.notice=state.replacement?.stage==='complete'?'Device revoked. A fresh online activation is required to use that device again.':'Payment checked.';});break;case 'support-details':void perform(async()=>{const details=await host('supportDetails');if(!/^[A-Za-z0-9_-]{43}$/.test(details.supportDeviceId))throw Error('Device support details unavailable');state.supportDeviceId=details.supportDeviceId;});break;case 'select':void perform(async()=>acceptFiles(await host('selectFiles',toolFormats())));break;case 'clear':void perform(async()=>{await host('releaseSelection',{ids:state.files.map(f=>f.id)});state.files=[];batchResults=[];savedOutput=null;state.launchIntent=null;});break;case 'reset-search':state.query='';render();document.querySelector<HTMLInputElement>('#tool-search')?.focus();break;case 'trial':void perform(async()=>{Object.assign(state,await host('startTrial'));state.notice='Trial activated.';});break;case 'refresh-license':void perform(async()=>{Object.assign(state,await host('refreshLicense'));state.notice='License verified.';});break;case 'license-devices':void perform(async()=>{state.devices=(await host('licenseDevices')).devices;});break;case 'folder':void perform(async()=>{const result=await host('chooseFolder');if(result.selected)state.notice='Output folder saved.';});break;case 'updates':void perform(async()=>{const result=await host('checkUpdates');state.notice=result.message;});break;case 'quit':void perform(async()=>{await host('quit');});break;case 'reveal-key':{const input=document.querySelector<HTMLInputElement>('#license-key')!;input.type=input.type==='password'?'text':'password';target.textContent=t(input.type==='password'?'Show':'Hide');target.setAttribute('aria-pressed',String(input.type==='text'));break;}}
 });
 root.addEventListener('click',event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-reset-adjustments]');if(!button||state.busy)return;button.closest('details')?.querySelectorAll<HTMLInputElement>('input[name^="adjust-"]').forEach(input=>input.value='0');document.querySelector('#announcement')!.textContent='Colour and detail adjustments reset.';});
-root.addEventListener('input',event=>{const range=event.target as HTMLInputElement;if(range.type==='range'&&range.closest('.percent-field')){syncPercentRange(range);if(range.name==='strength'&&range.form)syncProcessingOptions(range.form);}});
+root.addEventListener('input',event=>{const range=event.target as HTMLInputElement;if(range.type==='range'&&range.closest('.percent-field')){syncPercentRange(range);if(range.name==='strength'&&range.form)syncProcessingOptions(range.form);}
+ // Print sizes and size limits update their readouts while typing.
+ else if(range.form?.id==='processing-form'&&['printWidth','printHeight','dpi','maxSize'].includes(range.name))syncProcessingOptions(range.form);});
 root.addEventListener('input',event=>{const input=event.target as HTMLInputElement;if(input.id!=='tool-search')return;state.query=input.value;const position=input.selectionStart;render();const replacement=document.querySelector<HTMLInputElement>('#tool-search')!;replacement.focus();try{replacement.setSelectionRange(position,position);}catch{}});
 root.addEventListener('change',async event=>{const input=event.target as HTMLInputElement;if(input.form?.id==='processing-form')syncProcessingOptions(input.form);if(input.id==='output-mode'||input.id==='theme'||input.id==='language'||input.id==='startup'||input.id==='shellEntry'){
  const value=input.type==='checkbox'?input.checked:input.value;

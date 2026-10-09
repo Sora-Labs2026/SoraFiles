@@ -4,6 +4,7 @@ import type { LocalePath } from '../i18n/config';
 import { getPdfPageLimit, getWorkbenchMessages } from '../i18n/workbench';
 import { liveText } from '../data/liveI18n';
 import AdaptiveWorkspace from './AdaptiveWorkspace.astro';
+import { printSizeMessages, printSizeText } from '../data/printSizeUi';
 interface Props { locale?: LocalePath; copy?: LocalizedToolCopy; }
 const { locale = 'en', copy = { title: 'Compress PDF', description: 'Reduce a PDF file size on your device.', note: 'The smallest-file option may make text non-selectable and can remove links, forms, bookmarks, signatures, and accessibility information.' } as LocalizedToolCopy } = Astro.props;
 const m = getWorkbenchMessages(locale);
@@ -51,13 +52,20 @@ const pdfStrengthHelp = locale === 'en'
       </div>
       <form data-workspace-inspector data-workbench-controls id="pdf-form" class="min-w-0 overflow-y-auto p-5 sm:p-7">
         <div>
-          <div class="flex items-center justify-between gap-4"><label for="pdf-strength" class="text-sm font-semibold">Compression strength</label><output id="pdf-strength-output" for="pdf-strength" class="font-mono text-sm">60 · Balanced</output></div>
+          <div class="flex items-center justify-between gap-4"><label for="pdf-strength" class="text-sm font-semibold">Compression strength</label><output id="pdf-strength-output" for="pdf-strength" class="text-sm tabular-nums">60 · Balanced</output></div>
           <input id="pdf-strength" name="pdfStrength" type="range" min="0" max="100" step="1" value="60" class="compression-range mt-3 w-full"/>
-          <p class="mt-2 text-xs leading-5 text-muted">{pdfStrengthHelp}</p>
-          <div id="pdf-profile-note" class="mt-4 rounded-control bg-blue-soft px-4 py-3 text-sm leading-6 text-blue-strong">Balanced · Good size reduction with clear text and images.</div>
-          <label class="mt-4 flex cursor-pointer items-start gap-3 text-sm leading-6"><input id="pdf-smallest-opt-in" type="checkbox" class="mt-1.5 accent-blue"/><span>At strength 100 only, allow a smaller-file option. It may soften images, and SoraFiles still checks the result before download.</span></label>
+          <div id="pdf-profile-note" hidden class="mt-4 rounded-control bg-blue-soft px-4 py-3 text-sm leading-6 text-blue-strong">Balanced · Good size reduction with clear text and images.</div>
+          <label class="mt-4 flex cursor-pointer items-start gap-3 text-sm leading-6"><input id="pdf-smallest-opt-in" type="checkbox" class="mt-1.5 accent-blue"/><span>Allow the smallest file at strength 100 (images may soften).</span></label>
         </div>
-        <button id="pdf-process" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-not-allowed disabled:opacity-50">{pdfActionLabel}</button>
+        <div class="mt-5">
+          <label for="pdf-max-size" class="text-sm font-semibold">{printSizeText(locale, 'maxSize')}</label>
+          <div class="mt-2 flex gap-2">
+            <input id="pdf-max-size" name="pdfMaxSize" type="number" min="0.01" step="any" inputmode="decimal" placeholder="—" class="min-h-12 min-w-0 flex-1 rounded-control border border-line bg-surface px-3 text-sm text-ink" />
+            <select id="pdf-max-size-unit" aria-label={printSizeText(locale, 'maxSize')} class="min-h-12 w-24 rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="MB">MB</option><option value="KB">KB</option></select>
+          </div>
+          <script type="application/json" id="pdf-print-size-messages" is:inline set:html={JSON.stringify(printSizeMessages(locale)).replace(/</g, '\\u003c')}></script>
+        </div>
+        <button id="pdf-process" data-workspace-primary type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-not-allowed disabled:opacity-50">{pdfActionLabel}</button>
         <p data-workbench-status id="pdf-status" class="mt-3 min-h-5 text-center text-xs text-muted" aria-live="polite"></p>
       </form>
     </AdaptiveWorkspace>
@@ -94,6 +102,7 @@ const pdfStrengthHelp = locale === 'en'
   import { reductionPercent } from '../lib/compression/targets';
   import { fallbackPdfProfile, pdfProfileForStrength } from '../lib/compression/profiles';
   import type { PdfCompressionProfile } from '../lib/compression/profiles';
+  import { formatBytes as formatLimitBytes, limitToBytes } from '../lib/image/print-size';
   import { rgbaSsim } from '../lib/compression/ssim';
   const pdfMessages = JSON.parse(document.querySelector('#pdf-workbench-messages')?.textContent || '{}') as WorkbenchMessages;
   const pdfEl = <T extends HTMLElement>(selector: string) => { const node = document.querySelector<T>(selector); if (!node) throw new Error(`Missing element: ${selector}`); return node; };
@@ -110,6 +119,9 @@ const pdfStrengthHelp = locale === 'en'
   const pdfStrength = pdfEl<HTMLInputElement>('#pdf-strength');
   const pdfStrengthOutput = pdfEl<HTMLOutputElement>('#pdf-strength-output');
   const pdfProfileNote = pdfEl('#pdf-profile-note');
+  const pdfMaxInput = pdfEl<HTMLInputElement>('#pdf-max-size');
+  const pdfMaxUnit = pdfEl<HTMLSelectElement>('#pdf-max-size-unit');
+  const pdfPrintMessages = JSON.parse(pdfEl('#pdf-print-size-messages').textContent || '{}') as Record<string, string>;
   const pdfSmallestOptIn = pdfEl<HTMLInputElement>('#pdf-smallest-opt-in');
   const pdfRoot = pdfEl('#pdf-tool');
   const localizedPdf = pdfRoot.dataset.localized === 'true';
@@ -222,10 +234,12 @@ const pdfStrengthHelp = locale === 'en'
   const inspectPdf = async (source: PDFDocumentProxy, raw: Uint8Array) => {
     let textCharacters = 0;
     let interactive = false;
+    const pageTexts: string[] = [];
     for (let index = 1; index <= source.numPages; index += 1) {
       const page = await source.getPage(index);
       const text = await page.getTextContent();
       textCharacters += text.items.reduce((count, item) => count + ('str' in item ? item.str.trim().length : 0), 0);
+      pageTexts.push(text.items.map(item => 'str' in item ? item.str : '').join('').replace(/\s+/g, ''));
       const annotations = await page.getAnnotations({ intent: 'display' });
       interactive ||= annotations.some(annotation => ['Link', 'Widget', 'FileAttachment'].includes(annotation.subtype));
       page.cleanup();
@@ -235,6 +249,8 @@ const pdfStrengthHelp = locale === 'en'
     const attachments = /\/EmbeddedFiles\b|\/FileAttachment\b/.test(sourceText);
     return {
       textCharacters,
+      pageTexts,
+      hasImages: /\/Subtype\s*\/Image\b/.test(sourceText),
       nativeText: textCharacters >= Math.max(40, source.numPages * 24),
       protectedContent: interactive || signatures || attachments,
       signatures,
@@ -283,6 +299,22 @@ const pdfStrengthHelp = locale === 'en'
     }
   };
 
+  const textPreserved = async (candidateBytes: Uint8Array, pageTexts: string[]) => {
+    const pdfjs = await loadPdfJs();
+    const candidate = await pdfjs.getDocument({ data: candidateBytes.slice(), wasmUrl: '/pdfjs/wasm/' }).promise;
+    try {
+      for (let index = 1; index <= candidate.numPages; index += 1) {
+        const page = await candidate.getPage(index);
+        const text = (await page.getTextContent()).items.map(item => 'str' in item ? item.str : '').join('').replace(/\s+/g, '');
+        page.cleanup();
+        if (text !== pageTexts[index - 1]) return false;
+      }
+      return candidate.numPages === pageTexts.length;
+    } finally {
+      await candidate.cleanup();
+    }
+  };
+
   const compressPdf = async () => {
     if (!pdfFile || !pdfSource) return;
     clearPdfResult(); pdfButton.disabled = true; pdfRoot.setAttribute('aria-busy', 'true'); pdfButton.textContent = pdfMessages.processing;
@@ -319,7 +351,10 @@ const pdfStrengthHelp = locale === 'en'
       }
       let runtimeNote = '';
 
-      const eligibleForImageCompression = profile.name !== 'safe' && !preflight.nativeText && !preflight.protectedContent;
+      // Text PDFs qualify only when they hold images, and every candidate must keep the text.
+      const imagesCompressible = !preflight.protectedContent && (!preflight.nativeText || preflight.hasImages);
+      const keepsText = async (candidate: Uint8Array) => !preflight.nativeText || await textPreserved(candidate, preflight.pageTexts);
+      const eligibleForImageCompression = profile.name !== 'safe' && imagesCompressible;
       if (eligibleForImageCompression) {
         const profiles = [profile, fallbackPdfProfile(profile)].filter((item): item is PdfCompressionProfile => Boolean(item));
         for (const candidateProfile of profiles) {
@@ -328,6 +363,7 @@ const pdfStrengthHelp = locale === 'en'
             const candidate = await runPdfWorker('images', structural, candidateProfile);
             await validateCompressedPdf(candidate, pdfSource.numPages);
             const quality = await validatePdfQuality(pdfSource, candidate, candidateProfile.ssimFloor);
+            if (quality.passed && candidate.length < bytes.length && !await keepsText(candidate)) { runtimeNote = 'A smaller result was rejected because it did not preserve all readable text.'; continue; }
             if (quality.passed && candidate.length < bytes.length) {
               bytes = candidate;
               method = `${candidateProfile.label} compression`;
@@ -338,6 +374,7 @@ const pdfStrengthHelp = locale === 'en'
             runtimeNote = 'Stronger compression was unavailable, so SoraFiles used the safer result.';
           }
         }
+        if (preflight.nativeText && bytes !== structural && bytes !== original) runtimeNote = 'Selectable text was detected and preserved.';
       } else if (preflight.protectedContent) {
         runtimeNote = 'Important PDF features were detected, so SoraFiles used a safer method to keep them working.';
       } else if (preflight.nativeText) {
@@ -346,13 +383,33 @@ const pdfStrengthHelp = locale === 'en'
         runtimeNote = 'The safest setting was used without reducing image detail.';
       }
 
+      // "Under X MB": try stronger image settings (never on selectable text or
+      // protected content) until it fits; each candidate passes the same checks.
+      const maxBytes = limitToBytes(Number(pdfMaxInput.value), pdfMaxUnit.value as 'KB' | 'MB');
+      const limitLabel = `${pdfMaxInput.value} ${pdfMaxUnit.value}`;
+      if (maxBytes && bytes.length > maxBytes && imagesCompressible && !preflight.signatures) {
+        // A typed target is consent to go as far as Smallest; every rung keeps its own visual floor.
+        const ladder = [pdfProfileForStrength(55), pdfProfileForStrength(80), pdfProfileForStrength(100), pdfProfileForStrength(100, true)].filter(item => item.dpi < profile.dpi);
+        for (const stronger of ladder) {
+          try {
+            pdfStatus.textContent = `Compressing images · ${stronger.label.toLowerCase()} setting`;
+            const candidate = await runPdfWorker('images', structural, stronger);
+            await validateCompressedPdf(candidate, pdfSource.numPages);
+            const quality = await validatePdfQuality(pdfSource, candidate, stronger.ssimFloor);
+            if (quality.passed && candidate.length < bytes.length && await keepsText(candidate)) { bytes = candidate; method = `${stronger.label} compression`; }
+          } catch { /* keep the best checked result so far */ }
+          if (bytes.length <= maxBytes) break;
+        }
+      }
+      if (maxBytes) runtimeNote = bytes.length <= maxBytes ? `${runtimeNote} ${formatLimitBytes(bytes.length)} · ${pdfPrintMessages.fitsLimit.replace('{limit}', limitLabel)}.` : `${pdfPrintMessages.pdfLimitMissed.replace('{limit}', limitLabel).replace('{size}', formatLimitBytes(bytes.length))} ${runtimeNote}`;
+
       const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' });
       pdfResultUrl = URL.createObjectURL(blob);
       const changed = bytes.length < original.length;
       const link = pdfEl<HTMLAnchorElement>('#pdf-download'); link.href = pdfResultUrl; link.download = `${pdfFile.name.replace(/\.pdf$/i, '')}-${changed ? 'compressed' : 'original'}.pdf`;
       const delta = reductionPercent(pdfFile.size, blob.size);
       pdfEl('#pdf-result-stats').textContent = `${pdfBytes(pdfFile.size)} → ${pdfBytes(blob.size)}${delta > 0 ? ` · ${delta}% smaller` : ' · original retained'} · ${method}`;
-      const warning = pdfEl('#pdf-result-warning'); warning.textContent = `${structuralFailure}${runtimeNote} Page count and readability were checked. Review the result before replacing the original.`; warning.hidden = false;
+      const warning = pdfEl('#pdf-result-warning'); warning.textContent = `${structuralFailure}${runtimeNote}`.trim(); warning.hidden = !warning.textContent;
       pdfWork.dispatchEvent(new CustomEvent('workspace-complete'));
       pdfResult.hidden = false; pdfStatus.textContent = pdfMessages.finished; pdfResult.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
     } catch (error) { const detail = error instanceof Error ? error.message : ''; pdfStatus.textContent = localizedPdf ? pdfMessages.failed : (detail || pdfMessages.failed); }

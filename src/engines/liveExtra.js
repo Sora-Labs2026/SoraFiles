@@ -78,7 +78,11 @@ export async function unlockPdf(files, opts) {
         }
         try {
             const dec = await decryptPDF(bytes, pw);
-            results.push({ name: `${baseName(file.name)}-unlocked.pdf`, blob: pdfBlob(dec), detail: 'Password removed. Reader restrictions were removed where possible.' });
+            // The decryptor leaves the old /Encrypt dictionary behind as an orphan object (it holds the
+            // password hashes). Rewriting through pdf-lib keeps only referenced objects, so it goes away.
+            let clean = dec;
+            try { const doc = await PDFDocument.load(dec); if (!doc.isEncrypted) clean = await doc.save(); } catch { /* keep the decrypted bytes as they are */ }
+            results.push({ name: `${baseName(file.name)}-unlocked.pdf`, blob: pdfBlob(clean), detail: 'Password removed. Reader restrictions were removed where possible.' });
         } catch (e) {
             throw new Error(pw ? "wrongPassword" : "needPassword");
         }
@@ -220,7 +224,7 @@ export async function excelToPdf(files, _opts, prog, ctrl) {
         });
     } catch (error) {
         if (error?.name === 'AbortError') throw new Error('cancelled');
-        if (error?.message === 'officeIsolation') throw new Error('officeIsolation');
+        if (error?.message === 'officeIsolation' || error?.message === 'officeSlow') throw new Error(error.message);
         throw new Error('officeFailed');
     }
     checkCancel(ctrl);

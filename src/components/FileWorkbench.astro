@@ -4,6 +4,7 @@ import type { LocalePath } from '../i18n/config';
 import { getWorkbenchMessages } from '../i18n/workbench';
 import { liveText } from '../data/liveI18n';
 import AdaptiveWorkspace from './AdaptiveWorkspace.astro';
+import { printSizeMessages, printSizeText } from '../data/printSizeUi';
 interface Props { locale?: LocalePath; copy?: LocalizedToolCopy; forceJpg?: boolean; }
 const { locale = 'en', forceJpg = false, copy = { title: 'Compress Images', description: 'Compress JPG, PNG, WebP, HEIC, or HEIF locally.', note: 'Choose a strength and review the result. Dimensions are retained. Metadata may not be preserved; the original is never changed.' } as LocalizedToolCopy } = Astro.props;
 const m = getWorkbenchMessages(locale);
@@ -73,10 +74,18 @@ const imageActionLabel = locale === 'en' ? (forceJpg ? 'Convert to JPG' : 'Compr
         <div hidden={forceJpg}>
           <div class="flex items-center justify-between gap-4">
             <label for="compression-strength" class="text-sm font-semibold">Compression strength</label>
-            <output id="strength-output" for="compression-strength" class="font-mono text-sm">60 · Balanced</output>
+            <output id="strength-output" for="compression-strength" class="tabular-nums text-sm">60 · Balanced</output>
           </div>
           <input id="compression-strength" name="compressionStrength" type="range" min="0" max="100" step="1" value="60" class="compression-range mt-3 w-full" />
-          <p class="mt-2 text-xs leading-5 text-muted">Higher settings make a smaller file. SoraFiles keeps the original format and dimensions by default, and chooses a gentler result if the image changes too much.</p>
+        </div>
+
+        <div class="mt-5">
+          <label for="max-file-size" class="text-sm font-semibold">{printSizeText(locale, 'maxSize')}</label>
+          <div class="mt-2 flex gap-2">
+            <input id="max-file-size" name="maxFileSize" type="number" min="1" step="any" inputmode="decimal" placeholder="—" class="min-h-12 min-w-0 flex-1 rounded-control border border-line bg-surface px-3 text-sm text-ink" />
+            <select id="max-file-size-unit" aria-label={printSizeText(locale, 'maxSize')} class="min-h-12 w-24 rounded-control border border-line bg-surface px-3 text-sm text-ink"><option value="KB">KB</option><option value="MB">MB</option></select>
+          </div>
+          <script type="application/json" id="print-size-messages" is:inline set:html={JSON.stringify(printSizeMessages(locale)).replace(/</g, '\\u003c')}></script>
         </div>
 
         <div class="mt-5">
@@ -88,7 +97,6 @@ const imageActionLabel = locale === 'en' ? (forceJpg ? 'Convert to JPG' : 'Compr
           </select>
         </div>
 
-        <p class="mt-3 text-xs leading-5 text-muted">{forceJpg ? 'HEIC and HEIF images are converted to JPG. Review the preview before downloading.' : 'Compression keeps the source format by default. Use the image converter when you want a different format.'}</p>
 
         <div id="format-warning" hidden role="status" class="mt-4 rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></div>
 
@@ -98,11 +106,10 @@ const imageActionLabel = locale === 'en' ? (forceJpg ? 'Convert to JPG' : 'Compr
         </label>
 
         <details class="mt-5 rounded-control border border-line px-4 py-3">
-          <summary class="cursor-pointer text-sm font-medium">{m.whatChanges}</summary>
-          <p class="mt-3 text-sm leading-6 text-muted">{copy.note}</p>
+          <summary class="cursor-pointer py-3 text-sm font-medium">{m.whatChanges}</summary>
         </details>
 
-        <button id="process-file" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-60">
+        <button id="process-file" data-workspace-primary type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-60">
           {imageActionLabel}
         </button>
         <p data-workbench-status id="process-status" class="mt-3 min-h-5 text-center text-xs text-muted" aria-live="polite"></p>
@@ -134,7 +141,6 @@ const imageActionLabel = locale === 'en' ? (forceJpg ? 'Convert to JPG' : 'Compr
     </div>
   </div>
 
-  <p class="mt-4 text-center text-xs leading-5 text-muted">{copy.note}</p>
 </section>
 
 <style is:global>
@@ -159,6 +165,7 @@ const imageActionLabel = locale === 'en' ? (forceJpg ? 'Convert to JPG' : 'Compr
   import { reductionPercent } from '../lib/compression/targets';
   import { imageProfileForStrength, profileNameForStrength } from '../lib/compression/profiles';
   import { rgbaSsim } from '../lib/compression/ssim';
+  import { fitImageToBytes, formatBytes as formatLimitBytes, limitToBytes } from '../lib/image/print-size';
   import type { WorkbenchMessages } from '../i18n/workbench';
 
   const fileMessages = JSON.parse(document.querySelector('#file-workbench-messages')?.textContent || '{}') as WorkbenchMessages;
@@ -192,6 +199,14 @@ const imageActionLabel = locale === 'en' ? (forceJpg ? 'Convert to JPG' : 'Compr
   const fileError = $('#file-error');
   const processButton = $('#process-file') as HTMLButtonElement;
   const processButtonLabel = processButton.textContent?.trim() ?? fileMessages.process;
+  // Optional "smaller than X": quality first, then fewer pixels (see fitImageToBytes).
+  const maxSizeInput = $('#max-file-size') as HTMLInputElement;
+  const maxSizeUnit = $('#max-file-size-unit') as HTMLSelectElement;
+  const printMessages = JSON.parse($('#print-size-messages')?.textContent || '{}') as Record<string, string>;
+  const sizeLimit = () => limitToBytes(Number(maxSizeInput.value), maxSizeUnit.value as 'KB' | 'MB');
+  const syncLimitMode = () => { const limited = sizeLimit() !== null; const strength = $('#compression-strength') as HTMLInputElement | null; if (strength) strength.disabled = limited; const output = $('#strength-output'); if (output && limited) output.textContent = printMessages.autoQuality; else if (output) strength?.dispatchEvent(new Event('input')); };
+  const scaledPixels = (source: HTMLCanvasElement, width: number, height: number) => { const target = document.createElement('canvas'); target.width = width; target.height = height; const context = target.getContext('2d', { willReadFrequently: true })!; context.imageSmoothingEnabled = true; context.imageSmoothingQuality = 'high'; context.drawImage(source, 0, 0, width, height); return context.getImageData(0, 0, width, height); };
+  maxSizeInput.addEventListener('input', syncLimitMode); maxSizeUnit.addEventListener('change', syncLimitMode);
   const form = $('#settings-form') as HTMLFormElement;
 
   let selectedFile: File | null = null;
@@ -459,9 +474,18 @@ const imageActionLabel = locale === 'en' ? (forceJpg ? 'Convert to JPG' : 'Compr
       }
       const originalPixels = context.getImageData(0, 0, canvas.width, canvas.height);
       const strength = forceJpg ? 35 : Number(strengthInput?.value ?? 60);
-      const encoded = await encodeQualityGuarded(originalPixels, mime, strength);
-      const useOriginal = selectedMime === mime && encoded.blob.size >= selectedFile.size;
-      const blob = useOriginal ? selectedFile : encoded.blob;
+      const maxBytes = sizeLimit();
+      let fitted: Awaited<ReturnType<typeof fitImageToBytes>> | null = null;
+      let encoded: Awaited<ReturnType<typeof encodeQualityGuarded>> | null = null;
+      if (maxBytes) {
+        if (selectedMime === mime && selectedFile.size <= maxBytes) fitted = { blob: selectedFile, quality: 1, fits: true, width: canvas.width, height: canvas.height, scaled: false };
+        else {
+          fitted = await fitImageToBytes({ width: canvas.width, height: canvas.height }, (width, height, quality) => encodeInWorker(width === canvas.width && height === canvas.height ? originalPixels : scaledPixels(canvas, width, height), mime, mime === 'image/png' ? 100 : Math.round(quality * 100)), maxBytes, { lossy: mime !== 'image/png' });
+          if (!fitted.fits) throw Object.assign(new Error(printMessages.sizeUnreachable.replace('{size}', formatLimitBytes(fitted.blob.size))), { sizeLimit: true });
+        }
+      } else encoded = await encodeQualityGuarded(originalPixels, mime, strength);
+      const useOriginal = !fitted && selectedMime === mime && encoded!.blob.size >= selectedFile.size;
+      const blob = fitted ? fitted.blob : useOriginal ? selectedFile : encoded!.blob;
       await validateEncodedImage(blob, mime);
 
       if (resultUrl) URL.revokeObjectURL(resultUrl);
@@ -481,11 +505,11 @@ const imageActionLabel = locale === 'en' ? (forceJpg ? 'Convert to JPG' : 'Compr
         : `${formatBytes(selectedFile.size)} → ${formatBytes(blob.size)}${saved > 0 ? ` · ${percent}% smaller` : ' · original retained'}`;
 
       const resultWarning = $('#result-warning');
-      resultWarning.textContent = useOriginal
+      resultWarning.textContent = fitted
+        ? `${formatLimitBytes(blob.size)} · ${printMessages.fitsLimit.replace('{limit}', `${maxSizeInput.value} ${maxSizeUnit.value}`)}${fitted.scaled ? ` ${printMessages.resizedToFit.replace('{size}', `${fitted.width} × ${fitted.height}px`)}` : ''}`
+        : useOriginal
         ? 'The compressed result was not smaller, so SoraFiles returned the original file unchanged.'
-        : mime === 'image/png'
-          ? 'The image stayed lossless. Transparency, colors, and dimensions were preserved.'
-          : `${encoded.profile.label} compression used. The original dimensions were preserved${encoded.screenshot ? ', with extra protection for sharp text and flat colors' : ''}.`;
+        : '';
       resultWarning.hidden = !resultWarning.textContent;
       resultState.hidden = false;
       workState.dispatchEvent(new CustomEvent('workspace-complete'));
@@ -493,7 +517,7 @@ const imageActionLabel = locale === 'en' ? (forceJpg ? 'Convert to JPG' : 'Compr
       resultState.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
     } catch (error) {
       const detail = error instanceof Error ? error.message : '';
-      status.textContent = document.documentElement.lang === 'en' ? (detail || fileMessages.failed) : (/size|MB|megapixel|20 KB/i.test(detail) ? fileMessages.tooLarge : /valid|signature|decode|format/i.test(detail) ? fileMessages.invalidFile : fileMessages.failed);
+      status.textContent = (error as { sizeLimit?: boolean })?.sizeLimit ? detail : document.documentElement.lang === 'en' ? (detail || fileMessages.failed) : (/size|MB|megapixel|20 KB/i.test(detail) ? fileMessages.tooLarge : /valid|signature|decode|format/i.test(detail) ? fileMessages.invalidFile : fileMessages.failed);
     } finally {
       imageToolRoot.removeAttribute('aria-busy');
       processButton.disabled = false;

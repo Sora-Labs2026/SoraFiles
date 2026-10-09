@@ -208,6 +208,20 @@ try{
  await disclosure.click();await page.getByLabel('Brightness',{exact:true}).fill('45');await page.getByRole('button',{name:'Reset colour and detail'}).click();assert.equal(await page.getByLabel('Brightness',{exact:true}).inputValue(),'0');
  await removePhoto();
  checks.push('Image adjustment disclosure works with keyboard; all ten controls reach processing and reset is local');
+ await page.getByRole('button',{name:'All tools',exact:true}).click();await page.getByRole('searchbox').fill('resize');await page.locator('[data-tool="resize-image"]').click();await addPhoto();
+ await page.locator('.segmented label',{hasText:'Print size'}).click();
+ assert.equal(await page.locator('[data-print-pixels]').textContent(),'= 413 × 531 px');
+ await page.getByLabel('Unit',{exact:true}).selectOption('cm');assert.equal(await page.getByLabel('Width',{exact:true}).inputValue(),'3.5');assert.equal(await page.getByLabel('Common sizes').inputValue(),'passport');
+ await page.getByLabel('Save as').selectOption('jpeg');await page.getByLabel('Maximum file size',{exact:true}).fill('50');
+ const quality=page.getByRole('slider',{name:'JPEG / WebP quality'});assert.equal(await quality.isDisabled(),true);assert.equal(await quality.getAttribute('aria-valuetext'),'Automatic');
+ await page.getByRole('button',{name:'Process files',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#pending-action').hidden);
+ const printed=(await page.evaluate(()=>window.__hostCalls.filter(call=>call.method==='processFiles').at(-1))).params.options;
+ assert.deepEqual([printed.width,printed.height,printed.dpi,printed.maxBytes,printed.quality,printed.fit,printed.allowEnlargement,printed.format],[413,531,300,50000,90,'cover',true,'jpeg']);
+ // Options survive the finished run; typing a size switches the preset to custom.
+ assert.equal(await page.locator('.segmented input[value="print"]').isChecked(),true);assert.equal(await page.getByLabel('Maximum file size',{exact:true}).inputValue(),'50');
+ await page.getByLabel('Width',{exact:true}).fill('4');assert.equal(await page.getByLabel('Common sizes').inputValue(),'');assert.equal(await page.locator('[data-print-pixels]').textContent(),'= 472 × 531 px');
+ await removePhoto();
+ checks.push('Resize print size: the passport preset gives 413 × 531 px at 300 DPI, unit changes keep the physical size, a 50 KB limit makes quality automatic and reaches processing, options survive a finished run, and typing a size switches to custom');
  await page.setViewportSize(scaledViewport);await page.evaluate(()=>document.documentElement.style.zoom='2');
  for(const tool of ['merge-pdf','split-pdf','rotate-pdf','metadata-remover','pdf-to-word','pdf-to-jpg','edit-image','watermark-pdf','page-numbers']){
   await page.keyboard.press('Control+k');await page.getByRole('searchbox').fill(tool.replaceAll('-',' '));await page.keyboard.press('Enter');

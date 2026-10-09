@@ -48,10 +48,10 @@ const common = {
       </div>
       <label class="mt-4 flex items-start gap-3 rounded-control border border-line p-3 text-sm text-ink">
         <input data-background-cleanup type="checkbox" class="mt-1 h-4 w-4 shrink-0 accent-violet-600" />
-        <span><span class="font-semibold">{m.cleanup}</span><span class="mt-1 block text-xs leading-5 text-muted">{m.cleanupHint}</span></span>
+        <span><span class="font-semibold">{m.cleanup}</span></span>
       </label>
       <div data-background-actionbar class="mt-4 flex flex-wrap items-center gap-3">
-        <button type="button" data-background-process class="inline-flex min-h-12 flex-1 items-center justify-center rounded-control bg-action px-6 text-sm font-semibold text-action-contrast hover:bg-action-hover disabled:cursor-wait disabled:opacity-50">{m.remove}</button>
+        <button type="button" data-background-process data-workspace-primary class="inline-flex min-h-12 flex-1 items-center justify-center rounded-control bg-action px-6 text-sm font-semibold text-action-contrast hover:bg-action-hover disabled:cursor-wait disabled:opacity-50">{m.remove}</button>
         <button type="button" data-background-cancel hidden class="min-h-12 rounded-control border border-line bg-surface px-5 text-sm font-semibold text-ink">{liveText(locale, 'wb.cancel')}</button><button type="button" data-background-reset class="inline-flex min-h-12 items-center justify-center rounded-control border border-line bg-surface px-5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink">{common.newTask}</button>
       </div>
       <div data-background-progress hidden role="status" aria-live="polite" class="mt-4 rounded-control border border-line bg-canvas p-4"><span data-background-status class="text-sm font-semibold text-muted">{common.loading}</span></div>

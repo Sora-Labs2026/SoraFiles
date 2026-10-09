@@ -1,6 +1,7 @@
 import sharp from 'sharp';
 import {imageOptions} from './image-options.mjs';
 import {applyManualAdjustments,normalizeManualAdjustments,hasManualAdjustments} from '../shared/image-adjustments.mjs';
+import {fitToBytes} from '../shared/fit-bytes.mjs';
 // This process has one job and exits. Disable the reusable image cache because
 // retaining pixels brings no benefit here. SVG/PDF and animated input are refused.
 sharp.cache(false);sharp.concurrency(1);
@@ -38,8 +39,29 @@ process.once('message',async message=>{
   const format=options.action==='compress'?metadata.format:decode?'png':options.format;
   // Compression below quality 90 uses standard 4:2:0 chroma (visually close for
   // photos, much smaller) and a reduced PNG palette; 90+ stays full-chroma/lossless.
-  const shrink=options.action==='compress'&&options.quality<90;let encoded=null;
-  if(format==='jpeg')image=image.flatten({background:options.background==='transparent'?'#ffffff':options.background}).jpeg({quality:options.quality,chromaSubsampling:shrink?'4:2:0':'4:4:4',mozjpeg:true});
+  const shrink=options.action==='compress'&&options.quality<90;let encoded=null,scaledToFit=false;
+  if(options.maxBytes||options.dpi){
+   // Re-encode from the finished raw pixels: they carry no source metadata, so the
+   // resolution tag never drags EXIF/GPS along (sharp's withDensity on the source
+   // pipeline would). With a limit, search quality (and if needed size) for the
+   // largest result under it; PNG stays lossless, so only its pixels can shrink.
+   if(format==='jpeg')image=image.flatten({background:options.background==='transparent'?'#ffffff':options.background});
+   const {data:raw,info:rawInfo}=await image.raw().toBuffer({resolveWithObject:true});
+   const encodeAt=async(width,height,quality)=>{
+    let next=sharp(raw,{raw:{width:rawInfo.width,height:rawInfo.height,channels:rawInfo.channels}}).timeout({seconds:90});
+    if(width!==rawInfo.width||height!==rawInfo.height)next=next.resize({width,height,fit:'fill',kernel:'lanczos3'});
+    next=format==='jpeg'?next.jpeg({quality,chromaSubsampling:(options.maxBytes||options.action==='compress')&&quality<90?'4:2:0':'4:4:4',mozjpeg:true}):format==='webp'?next.webp({quality,effort:5}):next.png({compressionLevel:9,adaptiveFiltering:true});
+    return (options.dpi?next.withDensity(options.dpi):next).toBuffer();
+   };
+   if(!options.maxBytes)encoded={data:await encodeAt(rawInfo.width,rawInfo.height,options.quality),info:{width:rawInfo.width,height:rawInfo.height}};
+   else{
+    const fitted=await fitToBytes({width:rawInfo.width,height:rawInfo.height},encodeAt,options.maxBytes,{lossy:format!=='png'});
+    if(!fitted.fits){process.send({ok:false,limitMissed:fitted.bytes.length},()=>process.exit(1));return;}
+    encoded={data:fitted.bytes,info:{width:fitted.width,height:fitted.height}};scaledToFit=fitted.scaled;
+   }
+  }
+  if(encoded){/* already encoded under the size limit */}
+  else if(format==='jpeg')image=image.flatten({background:options.background==='transparent'?'#ffffff':options.background}).jpeg({quality:options.quality,chromaSubsampling:shrink?'4:2:0':'4:4:4',mozjpeg:true});
   else if(format==='webp')image=image.webp({quality:options.quality,effort:options.action==='compress'?6:5});
   else if(shrink){
    // Palettes shrink screenshots and graphics dramatically but add dithering noise
@@ -55,7 +77,7 @@ process.once('message',async message=>{
   if(options.action==='compress'&&data.length>=bytes.length){data=bytes;info={width:metadata.autoOrient?.width||metadata.width,height:metadata.autoOrient?.height||metadata.height};unchanged=true;}
   // Force a complete second decode of the produced file before publishing it.
   await sharp(data,settings).raw().toBuffer();
-  process.send({ok:true,bytes:data,width:info.width,height:info.height,sourceWidth,sourceHeight,format,unchanged},()=>process.exit(0));
+  process.send({ok:true,bytes:data,width:info.width,height:info.height,sourceWidth,sourceHeight,format,unchanged,scaledToFit},()=>process.exit(0));
  }catch{process.send({ok:false},()=>process.exit(1));}
 });
 process.once('disconnect',()=>process.exit(1));

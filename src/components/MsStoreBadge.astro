@@ -5,7 +5,7 @@ interface Props {locale?:LocalePath; class?:string}
 const {locale='en',class:className}=Astro.props;
 const language=locale==='en'?'en-gb':locale;
 ---
-<script is:inline type="module" src="https://get.microsoft.com/badge/ms-store-badge.bundled.js"></script>
+<script is:inline type="module" async src="https://get.microsoft.com/badge/ms-store-badge.bundled.js"></script>
 <div class:list={['ms-store-badge',className]}>
  <ms-store-badge productid="9nxm2btrq4lq" productname="SoraFiles Desktop" window-mode="direct" theme="auto" size="large" language={language} animation="on"></ms-store-badge>
 </div>

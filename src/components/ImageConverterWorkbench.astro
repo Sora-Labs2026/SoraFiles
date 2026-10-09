@@ -53,15 +53,13 @@ const converterActionLabel = locale === 'en' ? 'Convert image' : m.process;
         <div id="converter-quality-wrap" class="mt-6">
           <div class="flex items-center justify-between gap-4"><label for="converter-quality" class="text-sm font-medium">{m.imageQuality}</label><output id="converter-quality-value" for="converter-quality" class="font-mono text-sm">88%</output></div>
           <input id="converter-quality" name="quality" autocomplete="off" type="range" min="40" max="100" step="1" value="88" aria-valuetext="88%" class="mt-3 w-full accent-ink" />
-          <p class="mt-2 text-xs leading-5 text-muted">{copy.note}</p>
         </div>
 
         <div id="converter-warning" hidden role="status" class="mt-5 rounded-control bg-amber-soft px-4 py-3 text-sm leading-6 text-amber"></div>
         <details class="mt-5 rounded-control border border-line px-4 py-3">
-          <summary class="cursor-pointer text-sm font-medium">{m.whatPreserved}</summary>
-          <p class="mt-3 text-sm leading-6 text-muted">{copy.note}</p>
+          <summary class="cursor-pointer py-3 text-sm font-medium">{m.whatPreserved}</summary>
         </details>
-        <button id="converter-submit" type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-60">{converterActionLabel}</button>
+        <button id="converter-submit" data-workspace-primary type="submit" class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-action px-5 text-sm font-medium text-action-contrast transition-colors hover:bg-action-hover disabled:cursor-wait disabled:opacity-60">{converterActionLabel}</button>
         <p data-workbench-status id="converter-status" class="mt-3 min-h-5 text-center text-xs text-muted" aria-live="polite"></p>
       </form>
     </AdaptiveWorkspace>
@@ -73,7 +71,6 @@ const converterActionLabel = locale === 'en' ? 'Convert image' : m.process;
       </div>
     </div>
   </div>
-  <p class="mt-4 text-center text-xs leading-5 text-muted">{copy.note}</p>
 </section>
 
 <style is:global>

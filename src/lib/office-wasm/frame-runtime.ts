@@ -50,7 +50,9 @@ function removeFile(helper: ZetaHelperMain, path: string) {
 }
 
 async function initializeRuntime(): Promise<Runtime> {
-  if (!globalThis.crossOriginIsolated || typeof SharedArrayBuffer === 'undefined') {
+  // The runtime also renders through a canvas handed to its worker; a browser without OffscreenCanvas
+  // (Safari before 16.4) would otherwise download everything and then wait forever for "ready".
+  if (!globalThis.crossOriginIsolated || typeof SharedArrayBuffer === 'undefined' || typeof OffscreenCanvas === 'undefined') {
     throw new Error('officeIsolation');
   }
   ensureCanvas();
@@ -58,7 +60,9 @@ async function initializeRuntime(): Promise<Runtime> {
   let resolveReady!: () => void;
   let rejectReady!: (error: Error) => void;
   const ready = new Promise<void>((resolve, reject) => { resolveReady = resolve; rejectReady = reject; });
-  const initializationTimer = setTimeout(() => rejectReady(new Error('officeFailed')), 120_000);
+  // The runtime is a one-time ~52 MB download (36 MB WebAssembly + 16 MB data); on a slow link that alone
+  // takes minutes, so the start-up limit is sized for the download and reports it as slowness, not failure.
+  const initializationTimer = setTimeout(() => rejectReady(new Error('officeSlow')), 420_000);
   // Register rejection cleanup immediately, before any caller awaits initialization.
   const boundedReady = ready.finally(() => clearTimeout(initializationTimer));
   boundedReady.catch(() => {});

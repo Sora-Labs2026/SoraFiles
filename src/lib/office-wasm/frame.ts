@@ -10,6 +10,6 @@ addEventListener('message', async (event: MessageEvent) => {
     });
     port.postMessage({ type: 'result', bytes }, [bytes.buffer as ArrayBuffer]);
   } catch (error) {
-    port.postMessage({ type: 'error', code: error instanceof Error && error.message === 'officeIsolation' ? 'officeIsolation' : 'officeFailed' });
+    port.postMessage({ type: 'error', code: error instanceof Error && ['officeIsolation', 'officeSlow'].includes(error.message) ? error.message : 'officeFailed' });
   }
 }, { once: true });

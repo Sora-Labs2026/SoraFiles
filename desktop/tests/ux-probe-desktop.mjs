@@ -1,0 +1,15 @@
+// node desktop/tests/ux-probe-desktop.mjs <tool> <width> <height> — lists elements extending past the window.
+import {chromium} from 'playwright';import {createServer} from 'node:http';import {readFile} from 'node:fs/promises';import {resolve,extname,sep} from 'node:path';import {once} from 'node:events';
+const [tool='resize-image',w='1920',h='1080']=process.argv.slice(2);
+const folder=resolve('.artifacts/desktop-ui');
+const server=createServer(async(req,res)=>{try{const p=resolve(folder,'.'+new URL(req.url,'http://x').pathname.replace(/\/$/,'/index.html'));if(!p.startsWith(folder+sep))throw 0;res.writeHead(200,{'Content-Type':{'.html':'text/html','.js':'text/javascript','.css':'text/css'}[extname(p)]||'application/octet-stream'});res.end(await readFile(p));}catch{res.writeHead(404);res.end();}});
+server.listen(0,'127.0.0.1');await once(server,'listening');
+const browser=await chromium.launch({channel:'msedge'});const page=await browser.newPage({viewport:{width:+w,height:+h}});
+await page.addInitScript(()=>{const L=[];const img='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000"><rect width="1600" height="1000" fill="%233b82f6"/></svg>');
+ const reply=m=>{let result,ok=true;switch(m.method){case 'getState':result={language:'en',platform:'windows',output:'source',theme:'light',license:'active',plan:'personal-monthly',expiresAt:1900000000,version:'0.1.2',startupAvailable:true,shellEntryAvailable:true};break;case 'licenseStatus':result={license:'active',plan:'personal-monthly',expiresAt:1900000000};break;case 'selectFiles':result={files:[{id:'c'.repeat(32),name:'Lake.jpg',format:'JPG',validated:true,bytes:4e6}],rejected:false};break;case 'previewSelection':result={previews:[{index:0,kind:'image',src:img,width:1600,height:1000,sourceWidth:4000,sourceHeight:2500}]};break;default:result={};}
+ setTimeout(()=>L.forEach(fn=>fn({data:{protocol:1,id:m.id,ok,result}})),0);};window.chrome=window.chrome||{};Object.defineProperty(window.chrome,'webview',{value:{postMessage:reply,addEventListener:(_n,fn)=>L.push(fn)}});});
+await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('[data-action="select"]').first().waitFor();
+await page.locator('.sidebar [data-page="tools"]').first().click();await page.locator(`[data-tool="${tool}"]`).first().click();
+const choose=page.locator('main [data-action="select"]').first();if(await choose.isVisible())await choose.click();await page.waitForTimeout(800);
+console.log(await page.evaluate(()=>{const vw=innerWidth;const out=[`scrollWidth ${document.documentElement.scrollWidth} vw ${vw}`];for(const el of document.querySelectorAll('body *')){const r=el.getBoundingClientRect();if(r.right>vw+2&&r.width>0){out.push(`${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]} right=${Math.round(r.right)} w=${Math.round(r.width)} pos=${getComputedStyle(el).position}`);if(out.length>12)break;}}return out.join('\n');}));
+await browser.close();server.close();

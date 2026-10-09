@@ -388,6 +388,10 @@
 }
 
 .footer-link {
+  /* 24px minimum target (WCAG 2.2 2.5.8); phones raise it to 32px below. */
+  display: inline-flex;
+  min-height: 1.5rem;
+  align-items: center;
   color: var(--ink-2);
   border-radius: var(--r-xs);
   transition: color var(--dur-1) var(--ease-std);
@@ -503,6 +507,7 @@
 
 .logo {
   display: inline-flex;
+  min-height: 1.5rem;
   align-items: center;
   gap: 0.5rem;
   color: var(--ink);

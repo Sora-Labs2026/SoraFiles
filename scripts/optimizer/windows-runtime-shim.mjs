@@ -6,3 +6,7 @@
 if (process.platform === 'win32' && typeof process.geteuid !== 'function') {
   Object.defineProperty(process, 'geteuid', { configurable: true, value: () => 1000 });
 }
+
+// Browser engine modules import Vite `?url` assets; give those a path string under node:test.
+import { register } from 'node:module';
+register('./vite-url-loader.mjs', import.meta.url);

@@ -3,9 +3,15 @@ import type { LocalePath } from '../i18n/config';
 import { chapter3English, chapter3Text } from '../data/chapter3Ui';
 import { liveText } from '../data/liveI18n';
 import AdaptiveWorkspace from './AdaptiveWorkspace.astro';
+import { printSizeMessages, printSizeText, type PrintSizeKey } from '../data/printSizeUi';
+import { SIZE_UNITS } from '../lib/image/print-size';
 interface Props { locale?: LocalePath; }
 const { locale = 'en' } = Astro.props;
 const c3 = (key: keyof typeof chapter3English) => chapter3Text(locale, key);
+const ps = (key: PrintSizeKey) => printSizeText(locale, key);
+// Common sizes a real user is asked for: id, label key, width, height, unit.
+const sizePresets = [['passport','passport',35,45,'mm'],['us-passport','usPassport',2,2,'in'],['stamp','stamp',20,25,'mm'],['a4','a4',210,297,'mm'],['letter','letter',8.5,11,'in'],['full-hd','fullHd',1920,1080,'px'],['square-post','squarePost',1080,1080,'px']] as const;
+const printMessages = JSON.stringify({ ...printSizeMessages(locale), presets: sizePresets.map(([id,, w, h, unit]) => ({ id, w, h, unit })) }).replace(/</g, '\\u003c');
 const uploadCopy = { drop: liveText(locale, 'wb.dropOne'), click: liveText(locale, 'wb.orClick') };
 const clientMessages = JSON.stringify(Object.fromEntries(Object.keys(chapter3English).map((key) => [key, c3(key as keyof typeof chapter3English)]))).replace(/</g, '\\u003c');
 const ratioGroups = [
@@ -19,6 +25,7 @@ const ratioGroups = [
 <section data-workbench data-resize-workbench data-testid="workbench-resize-image" class="mx-auto max-w-4xl px-4 py-8 sm:px-6">
   <div class="glass overflow-hidden rounded-[1.75rem] p-4 shadow-2xl shadow-cyan-500/10 sm:p-6">
     <script type="application/json" data-resize-messages is:inline set:html={clientMessages}></script>
+    <script type="application/json" data-resize-print-messages is:inline set:html={printMessages}></script>
     <div data-resize-empty>
       <button type="button" data-resize-choose aria-controls="resize-file" class="sf-upload-dropzone flex w-full cursor-pointer flex-col items-center justify-center gap-3 px-6 py-10 text-center">
         <span class="sf-upload-dropzone__icon flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-white shadow-lg shadow-cyan-500/25"><svg aria-hidden="true" viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H3v5M16 21h5v-5M3 8l6-6M21 16l-6 6"/><rect x="7" y="7" width="10" height="10" rx="2"/></svg></span>
@@ -28,6 +35,7 @@ const ratioGroups = [
       </button>
       <input id="resize-file" data-resize-input name="resize-image" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" class="sr-only" />
       <button type="button" data-resize-close hidden>Close editor</button>
+      <p data-resize-select-error hidden role="alert" tabindex="-1" class="mt-3 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-200"></p>
     </div>
 
     <AdaptiveWorkspace id="resize-image-editor" mode="canvas" title={c3('resize')} resetTarget="[data-resize-close]" class="resize-canvas-workspace">
@@ -43,16 +51,20 @@ const ratioGroups = [
       </figure>
 
       <div data-workspace-inspector class="space-y-5">
-      <fieldset class="rounded-2xl border border-slate-200/80 bg-white/65 p-4 dark:border-white/10 dark:bg-white/[.03]"><legend class="px-1 text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('ratio')}</legend><div class="space-y-3">{ratioGroups.map(([label, options]) => <div class="flex flex-wrap items-center gap-2"><span class="w-20 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">{label}</span>{options.map(([value, text]) => <button type="button" data-ratio={value} aria-pressed={value === 'original' ? 'true' : 'false'} class="min-h-10 rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition-colors aria-pressed:border-violet-400 aria-pressed:bg-violet-50 aria-pressed:text-violet-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:aria-pressed:bg-violet-500/15 dark:aria-pressed:text-violet-200">{text}</button>)}</div>)}</div></fieldset>
+      <fieldset class="rounded-2xl border border-slate-200/80 bg-white/65 p-4 dark:border-white/10 dark:bg-white/[.03]"><legend class="px-1 text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('ratio')}</legend><div class="space-y-3">{ratioGroups.map(([label, options]) => <div class="grid grid-cols-[5.5rem_minmax(0,1fr)] items-start gap-2"><span class="pt-2.5 text-sm font-semibold text-slate-500 dark:text-slate-400">{label}</span><div class="flex flex-wrap gap-2">{options.map(([value, text]) => <button type="button" data-ratio={value} aria-pressed={value === 'original' ? 'true' : 'false'} class="min-h-10 rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 transition-colors aria-pressed:border-violet-400 aria-pressed:bg-violet-50 aria-pressed:text-violet-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:aria-pressed:bg-violet-500/15 dark:aria-pressed:text-violet-200">{text}</button>)}</div></div>)}</div></fieldset>
 
       <div class="grid gap-4 rounded-2xl border border-slate-200/80 bg-white/65 p-4 sm:grid-cols-2 dark:border-white/10 dark:bg-white/[.03]">
-        <fieldset class="space-y-3"><legend class="text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('dimensions')}</legend><div class="grid grid-cols-2 gap-3"><label><span class="mb-1 block text-[11px] font-bold text-slate-500">{c3('width')} px</span><input data-resize-width name="resize-width" autocomplete="off" type="number" min="1" max="20000" inputmode="numeric" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5" /></label><label><span class="mb-1 block text-[11px] font-bold text-slate-500">{c3('height')} px</span><input data-resize-height name="resize-height" autocomplete="off" type="number" min="1" max="20000" inputmode="numeric" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5" /></label></div><label class="flex min-h-11 items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300"><input data-resize-lock name="resize-lock" type="checkbox" checked class="h-4 w-4 accent-violet-600" /> {c3('keepRatio')}</label><label><span class="mb-1 block text-[11px] font-bold text-slate-500">{c3('percent')}</span><div class="flex items-center gap-2"><input data-resize-percent name="resize-percent" type="range" min="1" max="200" value="100" class="w-full accent-violet-600" /><output data-resize-percent-output class="w-14 text-right text-xs font-extrabold">100%</output></div></label></fieldset>
+        <fieldset class="space-y-3"><legend class="text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('dimensions')}</legend>
+          <label class="block"><span class="mb-1 block text-[11px] font-bold text-slate-500">{ps('sizes')}</span><select data-resize-preset class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5"><option value="">{ps('sizesChoose')}</option>{sizePresets.map(([id, key]) => <option value={id}>{ps(key)}</option>)}</select></label>
+          <div role="radiogroup" aria-label={ps('unit')} data-resize-units class="grid grid-cols-4 gap-1 rounded-xl border border-slate-200 bg-white p-1 dark:border-white/10 dark:bg-white/5">{SIZE_UNITS.map((unit) => <button type="button" role="radio" data-unit={unit} aria-checked={unit === 'px' ? 'true' : 'false'} class="min-h-10 rounded-lg text-xs font-bold text-slate-600 aria-checked:bg-violet-50 aria-checked:text-violet-700 dark:text-slate-300 dark:aria-checked:bg-violet-500/15 dark:aria-checked:text-violet-200">{unit}</button>)}</div>
+          <div class="grid grid-cols-2 gap-3"><label><span class="mb-1 block text-[11px] font-bold text-slate-500">{c3('width')} <span data-unit-label>px</span></span><input data-resize-width name="resize-width" autocomplete="off" type="number" min="0.01" max="20000" step="any" inputmode="decimal" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5" /></label><label><span class="mb-1 block text-[11px] font-bold text-slate-500">{c3('height')} <span data-unit-label>px</span></span><input data-resize-height name="resize-height" autocomplete="off" type="number" min="0.01" max="20000" step="any" inputmode="decimal" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5" /></label></div>
+          <label data-resize-dpi-field hidden class="block"><span class="mb-1 block text-[11px] font-bold text-slate-500">{ps('dpi')}</span><input data-resize-dpi name="resize-dpi" type="number" min="30" max="1200" step="1" value="300" inputmode="numeric" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5" /></label><label class="flex min-h-11 items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300"><input data-resize-lock name="resize-lock" type="checkbox" checked class="h-4 w-4 accent-violet-600" /> {c3('keepRatio')}</label><label><span class="mb-1 block text-[11px] font-bold text-slate-500">{c3('percent')}</span><div class="flex items-center gap-2"><input data-resize-percent name="resize-percent" type="range" min="1" max="200" value="100" class="w-full accent-violet-600" /><output data-resize-percent-output class="w-14 text-right text-xs font-extrabold">100%</output></div></label></fieldset>
         <fieldset class="space-y-3"><legend class="text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('mode')}</legend><div class="grid grid-cols-2 gap-2">{[['contain','contain'],['fill','fill'],['pad','pad'],['stretch','stretch']].map(([value,key]) => <label class="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 has-[:checked]:border-violet-400 has-[:checked]:bg-violet-50 has-[:checked]:text-violet-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:has-[:checked]:bg-violet-500/15"><input type="radio" name="resize-mode" value={value} checked={value === 'contain'} class="accent-violet-600" /> {c3(key as 'contain')}</label>)}</div><p data-stretch-warning hidden class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200">{c3('stretchWarning')}</p><label data-pad-color hidden><span class="mb-1 block text-[11px] font-bold text-slate-500">{c3('background')}</span><select data-resize-background class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold dark:border-white/10 dark:bg-white/5"><option value="transparent">{c3('transparent')}</option><option value="#ffffff">{c3('white')}</option><option value="#000000">{c3('black')}</option></select></label></fieldset>
       </div>
 
-      <div class="grid gap-4 rounded-2xl border border-slate-200/80 bg-white/65 p-4 sm:grid-cols-2 dark:border-white/10 dark:bg-white/[.03]"><label><span class="mb-1.5 block text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('format')}</span><select data-resize-format name="resize-format" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5"><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select></label><label><span class="mb-1.5 block text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('quality')}</span><div class="flex h-11 items-center gap-2"><input data-resize-quality name="resize-quality" type="range" min="40" max="100" value="90" class="w-full accent-violet-600" /><output data-resize-quality-output class="w-12 text-right text-xs font-extrabold">90%</output></div></label></div>
+      <div class="grid gap-4 rounded-2xl border border-slate-200/80 bg-white/65 p-4 sm:grid-cols-2 dark:border-white/10 dark:bg-white/[.03]"><label><span class="mb-1.5 block text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('format')}</span><select data-resize-format name="resize-format" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5"><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select></label><label><span class="mb-1.5 block text-xs font-extrabold text-slate-700 dark:text-slate-200">{c3('quality')}</span><div class="flex h-11 items-center gap-2"><input data-resize-quality name="resize-quality" type="range" min="40" max="100" value="90" class="w-full accent-violet-600" /><output data-resize-quality-output class="w-20 text-right text-xs font-extrabold">90%</output></div></label><div class="sm:col-span-2"><label for="resize-max-size" class="mb-1.5 block text-xs font-extrabold text-slate-700 dark:text-slate-200">{ps('maxSize')}</label><div class="flex gap-2"><input id="resize-max-size" data-resize-max name="resize-max-size" type="number" min="1" step="any" inputmode="decimal" placeholder="—" class="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5" /><select data-resize-max-unit aria-label={ps('maxSize')} class="h-11 w-24 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold dark:border-white/10 dark:bg-white/5"><option value="KB">KB</option><option value="MB">MB</option></select></div><p class="mt-1 text-[11px] font-medium text-slate-500">{ps('maxSizeHint')}</p></div></div>
       <div data-resize-error hidden role="alert" tabindex="-1" class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-200"></div>
-      <div data-resize-actionbar class="flex flex-wrap items-center gap-3"><button type="button" data-resize-run class="inline-flex min-h-12 items-center rounded-full bg-slate-900 px-7 text-sm font-extrabold text-white shadow-lg dark:bg-white dark:text-slate-900">{c3('resize')}</button><button type="button" data-resize-cancel hidden class="min-h-12 rounded-full border border-slate-200 bg-white px-5 text-sm font-bold dark:border-white/10 dark:bg-white/5">{c3('cancel')}</button><span class="text-[11px] font-bold text-emerald-600 dark:text-emerald-300">✓ {c3('localOnly')}</span></div>
+      <div data-resize-actionbar class="flex flex-wrap items-center gap-3"><button type="button" data-resize-run data-workspace-primary class="inline-flex min-h-12 items-center rounded-full bg-slate-900 px-7 text-sm font-extrabold text-white shadow-lg dark:bg-white dark:text-slate-900">{c3('resize')}</button><button type="button" data-resize-cancel hidden class="min-h-12 rounded-full border border-slate-200 bg-white px-5 text-sm font-bold dark:border-white/10 dark:bg-white/5">{c3('cancel')}</button></div>
       <div data-resize-progress hidden role="status" aria-live="polite" class="rounded-2xl border border-violet-100 bg-violet-50/60 p-4 text-xs font-bold text-violet-700 dark:border-violet-400/20 dark:bg-violet-500/10 dark:text-violet-200">{c3('processing')}</div>
       <div data-resize-result hidden role="status" tabindex="-1" class="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-400/20 dark:bg-emerald-500/10"><div class="flex flex-wrap items-center justify-between gap-3"><div><strong class="block text-sm font-extrabold text-emerald-800 dark:text-emerald-200">{c3('result')}</strong><span data-resize-summary class="mt-1 block text-xs font-semibold text-emerald-700 dark:text-emerald-300"></span></div><a data-resize-download class="inline-flex min-h-11 items-center rounded-full bg-emerald-600 px-5 text-sm font-extrabold text-white shadow-lg" download>{c3('download')}</a></div></div>
       </div>
@@ -90,10 +102,13 @@ const ratioGroups = [
     .resize-canvas-workspace [data-workspace-body] { overflow: hidden; padding: 0; }
     .resize-canvas-workspace [data-resize-editor] { display: grid; grid-template-rows: auto minmax(0,1fr); height: 100%; gap: 0; }
     .resize-canvas-workspace [data-resize-editor] > :first-child { padding: .65rem .75rem .15rem; }
-    .resize-canvas-workspace [data-resize-stage] { min-height: 0; height: calc(100% - .75rem); margin: .5rem .65rem .25rem; }
+    .resize-canvas-workspace [data-resize-stage] { min-height: 0; width: auto; height: calc(100% - .75rem); margin: .5rem .65rem .25rem; }
     .resize-canvas-workspace [data-resize-canvas-wrap], .resize-canvas-workspace [data-resize-preview] { max-height: 100%; }
     .resize-canvas-workspace[data-mobile-view='canvas'] [data-workspace-inspector] { display: none; }
-    .resize-canvas-workspace[data-mobile-view='inspector'] [data-resize-editor] { grid-template-rows: auto minmax(11rem,40%) minmax(0,1fr); }
+    /* Options tab: the preview stays visible above the options; the file header
+       row is dropped so small phones keep room for the controls. */
+    .resize-canvas-workspace[data-mobile-view='inspector'] [data-resize-editor] { grid-template-rows: minmax(10rem,38%) minmax(0,1fr); }
+    .resize-canvas-workspace[data-mobile-view='inspector'] [data-resize-editor] > :first-child { display: none; }
     .resize-canvas-workspace[data-mobile-view='inspector'] [data-workspace-inspector] { min-height: 0; overflow-y: auto; padding: .75rem .75rem max(1rem, env(safe-area-inset-bottom)); }
     .resize-canvas-workspace [data-resize-actionbar] { position: sticky; bottom: 0; z-index: 4; margin-inline: -.2rem; border-radius: 1rem; padding: .5rem; background: color-mix(in srgb,var(--color-surface) 96%,transparent); box-shadow: 0 -12px 26px color-mix(in srgb,var(--color-ink) 12%,transparent); }
     .resize-canvas-workspace [data-resize-run] { flex: 1; justify-content: center; }
@@ -103,9 +118,11 @@ const ratioGroups = [
 <script>
   import { assertSafeResize, canvasToBlob, fitSize, resizeLanczos, type ResizeMethod } from '../lib/image/resize';
   import { safeOutputStem } from '../utils/filename';
+  import { clampDpi, encodeWithinBytes, formatBytes, fromPixels, limitToBytes, toPixels, withDpi, type SizeUnit } from '../lib/image/print-size';
   const root = document.querySelector<HTMLElement>('[data-resize-workbench]');
   if (root) {
     const msg = JSON.parse(root.querySelector<HTMLElement>('[data-resize-messages]')?.textContent || '{}') as Record<string, string>;
+    const pmsg = JSON.parse(root.querySelector<HTMLElement>('[data-resize-print-messages]')?.textContent || '{}') as Record<string, string> & { presets: { id: string; w: number; h: number; unit: SizeUnit }[] };
     const input = root.querySelector<HTMLInputElement>('[data-resize-input]')!;
     const empty = root.querySelector<HTMLElement>('[data-resize-empty]')!;
     const editor = root.querySelector<HTMLElement>('[data-resize-editor]')!;
@@ -135,6 +152,30 @@ const ratioGroups = [
     let resultUrl = '';
     let job = 0;
     let activeResizeAbort: AbortController | null = null;
+    // Pixels are the source of truth; the width/height boxes show them in `unit`.
+    const dpiInput = root.querySelector<HTMLInputElement>('[data-resize-dpi]')!;
+    const dpiField = root.querySelector<HTMLElement>('[data-resize-dpi-field]')!;
+    const unitButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-unit]')];
+    const unitLabels = [...root.querySelectorAll<HTMLElement>('[data-unit-label]')];
+    const presetSelect = root.querySelector<HTMLSelectElement>('[data-resize-preset]')!;
+    const maxInput = root.querySelector<HTMLInputElement>('[data-resize-max]')!;
+    const maxUnit = root.querySelector<HTMLSelectElement>('[data-resize-max-unit]')!;
+    let unit: SizeUnit = 'px';
+    let pxW = 1;
+    let pxH = 1;
+    const dpi = () => clampDpi(Number(dpiInput.value));
+    const showDims = () => { widthInput.value = String(fromPixels(pxW, unit, dpi())); heightInput.value = String(fromPixels(pxH, unit, dpi())); };
+    const setPx = (width: number, height: number) => { pxW = Math.max(1, Math.min(20000, Math.round(width))); pxH = Math.max(1, Math.min(20000, Math.round(height))); showDims(); };
+    const readPx = (field: HTMLInputElement) => Math.min(20000, toPixels(Number(field.value), unit, dpi()));
+    const setUnit = (next: SizeUnit) => {
+      unit = next;
+      unitButtons.forEach((button) => button.setAttribute('aria-checked', String(button.dataset.unit === next)));
+      unitLabels.forEach((label) => { label.textContent = next; });
+      dpiField.hidden = next === 'px';
+      for (const field of [widthInput, heightInput]) field.step = next === 'px' ? '1' : '0.01';
+      showDims();
+    };
+    const syncQualityMode = () => { const limited = limitToBytes(Number(maxInput.value), maxUnit.value as 'KB' | 'MB') !== null; qualityInput.disabled = limited; qualityOutput.value = limited ? pmsg.autoQuality : `${qualityInput.value}%`; };
     const closeSource = () => { if (source && 'close' in source && typeof source.close === 'function') source.close(); source = null; };
     const clearResult = () => {
       job += 1;
@@ -156,7 +197,7 @@ const ratioGroups = [
     };
     const cropAspect = () => (crop.width * sourceWidth) / Math.max(1, crop.height * sourceHeight);
     const updateCropBox = () => { cropBox.style.left = `${crop.x * 100}%`; cropBox.style.top = `${crop.y * 100}%`; cropBox.style.width = `${crop.width * 100}%`; cropBox.style.height = `${crop.height * 100}%`; };
-    const updateDimensionsFromCrop = () => { const width = Math.max(1, Math.round(crop.width * sourceWidth)); const height = Math.max(1, Math.round(crop.height * sourceHeight)); widthInput.value = String(width); heightInput.value = String(height); percentInput.value = '100'; percentOutput.value = '100%'; };
+    const updateDimensionsFromCrop = () => { setPx(crop.width * sourceWidth, crop.height * sourceHeight); percentInput.value = '100'; percentOutput.value = '100%'; };
     const setRatio = (value: string) => {
       selectedRatio = value;
       root.querySelectorAll<HTMLButtonElement>('[data-ratio]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.ratio === value)));
@@ -182,14 +223,19 @@ const ratioGroups = [
       updateCropBox();
     };
     const loadFile = async (selected: File) => {
-      clearResult(); errorBox.hidden = true;
+      clearResult(); errorBox.hidden = true; root.querySelector<HTMLElement>('[data-resize-select-error]')!.hidden = true;
       try {
         if (!/^image\/(jpeg|png|webp)$/.test(selected.type) || selected.size <= 0 || selected.size > 80_000_000) throw new Error('invalidImage');
         const image = await decode(selected); const dimensions = sourceDimensions(image);
         assertSafeResize(dimensions, dimensions, dimensions);
         closeSource(); source = image; sourceWidth = dimensions.width; sourceHeight = dimensions.height; file = selected; crop = { x: 0, y: 0, width: 1, height: 1 };
         empty.hidden = true; editor.hidden = false; workspace.hidden = false; sourceText.textContent = `${selected.name} · ${sourceWidth} × ${sourceHeight}px`; renderPreview(); setRatio('original'); workspace.dispatchEvent(new CustomEvent('workspace-clean'));
-      } catch (error) { closeSource(); workspace.hidden = false; errorBox.textContent = error instanceof Error && error.message === 'image-too-large' ? msg.tooLarge : msg.invalidImage; errorBox.hidden = false; editor.hidden = false; empty.hidden = true; errorBox.focus(); }
+      } catch (error) {
+        const text = error instanceof Error && error.message === 'image-too-large' ? msg.tooLarge : msg.invalidImage;
+        // Nothing loaded yet: say so beside the drop zone and keep the editor closed. Replacing a loaded image: explain inside the editor.
+        if (!source) { const selectError = root.querySelector<HTMLElement>('[data-resize-select-error]')!; selectError.textContent = text; selectError.hidden = false; selectError.focus(); return; }
+        workspace.hidden = false; errorBox.textContent = text; errorBox.hidden = false; editor.hidden = false; empty.hidden = true; errorBox.focus();
+      }
     };
     const applyHandle = (handle: string, nextX: number, nextY: number) => {
       const minW = Math.min(.25, 40 / Math.max(1, preview.clientWidth)); const minH = Math.min(.25, 40 / Math.max(1, preview.clientHeight));
@@ -225,7 +271,7 @@ const ratioGroups = [
       if (!source || !file) return; const thisJob = ++job; activeResizeAbort?.abort(); activeResizeAbort = new AbortController(); errorBox.hidden = true; result.hidden = true; setRunning(true);
       try {
         let rect = { x: Math.round(crop.x * sourceWidth), y: Math.round(crop.y * sourceHeight), width: Math.max(1, Math.round(crop.width * sourceWidth)), height: Math.max(1, Math.round(crop.height * sourceHeight)) };
-        const target = { width: Math.max(1, Math.min(20000, Number(widthInput.value) || 1)), height: Math.max(1, Math.min(20000, Number(heightInput.value) || 1)) };
+        const target = { width: pxW, height: pxH };
         const mode = currentMode();
         if (mode === 'fill') { const targetRatio = target.width / target.height; const sourceRatio = rect.width / rect.height; if (sourceRatio > targetRatio) { const width = Math.round(rect.height * targetRatio); rect.x += Math.round((rect.width - width) / 2); rect.width = width; } else { const height = Math.round(rect.width / targetRatio); rect.y += Math.round((rect.height - height) / 2); rect.height = height; } }
         const fitted = fitSize(rect, target, mode); assertSafeResize({ width: sourceWidth, height: sourceHeight }, rect, mode === 'contain' ? fitted : target);
@@ -236,10 +282,23 @@ const ratioGroups = [
         const resizedCanvas = document.createElement('canvas'); resizedCanvas.width = resized.width; resizedCanvas.height = resized.height; resizedCanvas.getContext('2d')!.putImageData(resized, 0, 0); finalContext.drawImage(resizedCanvas, Math.round((finalCanvas.width - resized.width) / 2), Math.round((finalCanvas.height - resized.height) / 2));
         const mime = formatInput.value; const quality = Number(qualityInput.value) / 100; let encodeCanvas = finalCanvas;
         if (mime === 'image/jpeg') { encodeCanvas = document.createElement('canvas'); encodeCanvas.width = finalCanvas.width; encodeCanvas.height = finalCanvas.height; const context = encodeCanvas.getContext('2d')!; context.fillStyle = '#fff'; context.fillRect(0, 0, encodeCanvas.width, encodeCanvas.height); context.drawImage(finalCanvas, 0, 0); }
-        const blob = await canvasToBlob(encodeCanvas, mime, quality); if (thisJob !== job) return;
-        resultUrl = URL.createObjectURL(blob); const extension = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1]; download.href = resultUrl; download.download = `${safeOutputStem(file.name, 'image')}-${finalCanvas.width}x${finalCanvas.height}.${extension}`; summary.textContent = `${sourceWidth} × ${sourceHeight}px → ${finalCanvas.width} × ${finalCanvas.height}px · ${(blob.size / 1024).toFixed(1)} KB`; result.hidden = false; result.focus();
+        // A physical unit stores its print resolution; a size limit picks the highest
+        // quality that fits without changing the requested dimensions.
+        const physical = unit !== 'px'; const printDpi = dpi();
+        const encode = async (q: number) => { const encoded = await canvasToBlob(encodeCanvas, mime, q); return physical ? withDpi(encoded, mime, printDpi) : encoded; };
+        const maxBytes = limitToBytes(Number(maxInput.value), maxUnit.value as 'KB' | 'MB');
+        if (maxBytes && mime === 'image/png') throw new Error('pngLimit');
+        let blob: Blob; let note = '';
+        if (maxBytes) {
+          const limited = await encodeWithinBytes(encode, maxBytes, quality);
+          if (!limited.fits) throw Object.assign(new Error('sizeUnreachable'), { size: limited.blob.size });
+          blob = limited.blob; note = ` · ${pmsg.fitsLimit.replace('{limit}', `${maxInput.value} ${maxUnit.value}`)}`;
+        } else blob = await encode(quality);
+        if (thisJob !== job) return;
+        const printed = physical ? ` (${fromPixels(finalCanvas.width, unit, printDpi)} × ${fromPixels(finalCanvas.height, unit, printDpi)} ${unit}, ${printDpi} DPI)` : '';
+        resultUrl = URL.createObjectURL(blob); const extension = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1]; download.href = resultUrl; download.download = `${safeOutputStem(file.name, 'image')}-${finalCanvas.width}x${finalCanvas.height}.${extension}`; summary.textContent = `${sourceWidth} × ${sourceHeight}px → ${finalCanvas.width} × ${finalCanvas.height}px${printed} · ${formatBytes(blob.size)}${note}`; result.hidden = false; result.focus();
         cropCanvas.width = 1; cropCanvas.height = 1; resizedCanvas.width = 1; resizedCanvas.height = 1;
-      } catch (error) { if (thisJob === job && !(error instanceof DOMException && error.name === 'AbortError')) { errorBox.textContent = error instanceof Error && error.message === 'image-too-large' ? msg.tooLarge : msg.invalidImage; errorBox.hidden = false; errorBox.focus(); } } finally { if (thisJob === job) { activeResizeAbort = null; setRunning(false); } }
+      } catch (error) { if (thisJob === job && !(error instanceof DOMException && error.name === 'AbortError')) { const reason = error instanceof Error ? error.message : ''; errorBox.textContent = reason === 'image-too-large' ? msg.tooLarge : reason === 'pngLimit' ? pmsg.pngLimit : reason === 'sizeUnreachable' ? pmsg.sizeUnreachable.replace('{size}', formatBytes((error as Error & { size: number }).size)) : msg.invalidImage; errorBox.hidden = false; errorBox.focus(); } } finally { if (thisJob === job) { activeResizeAbort = null; setRunning(false); } }
     };
     const resizeDrop = root.querySelector<HTMLElement>('[data-resize-choose]')!;
     resizeDrop.addEventListener('click', () => input.click()); root.querySelector('[data-resize-replace]')?.addEventListener('click', () => input.click()); input.addEventListener('change', () => input.files?.[0] && void loadFile(input.files[0]));
@@ -247,10 +306,22 @@ const ratioGroups = [
     for (const eventName of ['dragleave','drop']) resizeDrop.addEventListener(eventName, (event) => { event.preventDefault(); delete resizeDrop.dataset.dragActive; });
     resizeDrop.addEventListener('drop', (event) => { const selected = event.dataTransfer?.files[0]; if (selected) void loadFile(selected); });
     root.querySelector('[data-resize-close]')?.addEventListener('click', () => { workspace.dispatchEvent(new CustomEvent('workspace-clean')); workspace.hidden = true; clearResult(); closeSource(); file = null; input.value = ''; empty.hidden = false; editor.hidden = true; });
-    root.querySelectorAll<HTMLButtonElement>('[data-ratio]').forEach((button) => button.addEventListener('click', () => setRatio(button.dataset.ratio || 'free')));
-    widthInput.addEventListener('input', () => { if (lockInput.checked) heightInput.value = String(Math.max(1, Math.round((Number(widthInput.value) || 1) / cropAspect()))); clearResult(); });
-    heightInput.addEventListener('input', () => { if (lockInput.checked) widthInput.value = String(Math.max(1, Math.round((Number(heightInput.value) || 1) * cropAspect()))); clearResult(); });
-    percentInput.addEventListener('input', () => { const percent = Number(percentInput.value); percentOutput.value = `${percent}%`; widthInput.value = String(Math.max(1, Math.round(crop.width * sourceWidth * percent / 100))); heightInput.value = String(Math.max(1, Math.round(crop.height * sourceHeight * percent / 100))); clearResult(); });
+    root.querySelectorAll<HTMLButtonElement>('[data-ratio]').forEach((button) => button.addEventListener('click', () => { presetSelect.value = ''; setRatio(button.dataset.ratio || 'free'); }));
+    // Typing updates only the other box, so the caret never jumps.
+    widthInput.addEventListener('input', () => { presetSelect.value = ''; pxW = readPx(widthInput); if (lockInput.checked) { pxH = Math.max(1, Math.min(20000, Math.round(pxW / cropAspect()))); heightInput.value = String(fromPixels(pxH, unit, dpi())); } clearResult(); });
+    heightInput.addEventListener('input', () => { presetSelect.value = ''; pxH = readPx(heightInput); if (lockInput.checked) { pxW = Math.max(1, Math.min(20000, Math.round(pxH * cropAspect()))); widthInput.value = String(fromPixels(pxW, unit, dpi())); } clearResult(); });
+    percentInput.addEventListener('input', () => { presetSelect.value = ''; const percent = Number(percentInput.value); percentOutput.value = `${percent}%`; setPx(crop.width * sourceWidth * percent / 100, crop.height * sourceHeight * percent / 100); clearResult(); });
+    unitButtons.forEach((button) => button.addEventListener('click', () => setUnit((button.dataset.unit || 'px') as SizeUnit)));
+    // A new print resolution keeps the physical size (e.g. 35 × 45 mm) and changes the pixels.
+    dpiInput.addEventListener('input', () => { if (unit !== 'px' && Number(dpiInput.value) >= 30) { pxW = readPx(widthInput); pxH = readPx(heightInput); } clearResult(); });
+    dpiInput.addEventListener('change', () => { dpiInput.value = String(dpi()); showDims(); });
+    presetSelect.addEventListener('change', () => {
+      const preset = pmsg.presets.find((item) => item.id === presetSelect.value); if (!preset || !source) return;
+      setUnit(preset.unit); setRatio(`${preset.w}:${preset.h}`); setPx(toPixels(preset.w, preset.unit, dpi()), toPixels(preset.h, preset.unit, dpi()));
+      const contain = root.querySelector<HTMLInputElement>('input[name="resize-mode"][value="contain"]'); if (contain) { contain.checked = true; contain.dispatchEvent(new Event('change', { bubbles: true })); }
+      clearResult();
+    });
+    maxInput.addEventListener('input', () => { syncQualityMode(); clearResult(); }); maxUnit.addEventListener('change', () => { syncQualityMode(); clearResult(); });
     qualityInput.addEventListener('input', () => { qualityOutput.value = `${qualityInput.value}%`; clearResult(); }); formatInput.addEventListener('change', clearResult);
     root.querySelectorAll<HTMLInputElement>('input[name="resize-mode"]').forEach((radio) => radio.addEventListener('change', () => { const mode = currentMode(); root.querySelector<HTMLElement>('[data-stretch-warning]')!.hidden = mode !== 'stretch'; root.querySelector<HTMLElement>('[data-pad-color]')!.hidden = mode !== 'pad'; clearResult(); }));
     runButton.addEventListener('click', () => void run()); cancelButton.addEventListener('click', () => { job += 1; activeResizeAbort?.abort(); activeResizeAbort = null; setRunning(false); });

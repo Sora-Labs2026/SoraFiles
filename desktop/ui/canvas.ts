@@ -63,7 +63,7 @@ function cropCaption(image:ImagePreview,files:FileItem[],tool:string){
 function imageStage(image:ImagePreview,file:FileItem,tool:string,files:FileItem[]){
  const cropping=CROP_TOOLS.has(tool);
  const box=cropping?`<div class="crop-box" tabindex="0" role="group" aria-label="${escape(t('Crop area. Drag to move it, drag a corner to resize, or use the arrow keys.'))}" style="${boxStyle()}">${['tl','tr','br','bl'].map(handle=>`<span class="crop-handle" data-handle="${handle}" aria-hidden="true"></span>`).join('')}</div>`:'';
- return `<div class="canvas-stage"><div class="canvas-frame${cropping?' is-cropping':''}" style="aspect-ratio:${image.width}/${image.height};width:min(100%,calc(56vh * ${image.width} / ${image.height}))"><img src="${image.src}" alt="${escape(t('Preview'))}: ${escape(file.name)}" draggable="false">${box}</div><p class="canvas-caption" data-crop-caption>${cropCaption(image,files,tool)}</p></div>`;
+ return `<div class="canvas-stage"><div class="canvas-frame${cropping?' is-cropping':''}" style="aspect-ratio:${image.width}/${image.height};--ar:${image.width/image.height}"><img src="${image.src}" alt="${escape(t('Preview'))}: ${escape(file.name)}" draggable="false">${box}</div><p class="canvas-caption" data-crop-caption>${cropCaption(image,files,tool)}</p></div>`;
 }
 function pageGrid(preview:PdfPreview,tool:string){
  const picking=PAGE_TOOLS.has(tool);

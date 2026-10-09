@@ -19,11 +19,13 @@ export function runImageProcess(bytes,options,{signal}={}) {
   child.on('error',()=>stop(Error('Image decoder unavailable')));
   child.on('message',message=>{
    if(received)return stop(Error('Invalid image decoder response'));received=true;
+   // The worker reports an unreachable size limit with the smallest size it produced.
+   if(message?.ok===false&&Number.isSafeInteger(message.limitMissed)&&message.limitMissed>0)return stop(Object.assign(Error('This image could not get under the size limit. Try a higher limit, a smaller size, or JPG or WebP.'),{smallestBytes:message.limitMissed}));
    if(!message?.ok||!(message.bytes instanceof Uint8Array)||!message.bytes.length||message.bytes.length>MAX_IMAGE_BYTES
     ||!Number.isSafeInteger(message.width)||!Number.isSafeInteger(message.height)||message.width<1||message.height<1||message.width*message.height>MAX_IMAGE_PIXELS)return stop(Error('The image could not be decoded safely'));
    if(!['png','jpeg','webp'].includes(message.format))return stop(Error('Invalid image output format'));
    if(!Number.isSafeInteger(message.sourceWidth)||!Number.isSafeInteger(message.sourceHeight)||message.sourceWidth<1||message.sourceHeight<1)return stop(Error('The image could not be decoded safely'));
-   result={bytes:message.bytes,width:message.width,height:message.height,sourceWidth:message.sourceWidth,sourceHeight:message.sourceHeight,format:message.format,unchanged:message.unchanged===true};
+   result={bytes:message.bytes,width:message.width,height:message.height,sourceWidth:message.sourceWidth,sourceHeight:message.sourceHeight,format:message.format,unchanged:message.unchanged===true,scaledToFit:message.scaledToFit===true};
   });
   child.on('close',code=>{clearTimeout(timer);signal?.removeEventListener('abort',abort);if(error||code!==0||!result)reject(error||Error('The image could not be decoded safely'));else resolve(result);});
   child.send({bytes,options},err=>{if(err)stop(Error('Image decoder unavailable'));});

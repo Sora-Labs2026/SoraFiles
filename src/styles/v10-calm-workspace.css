@@ -91,11 +91,15 @@ html .sf-workspace[data-adaptive-workspace] [data-workspace-filebar] p:first-chi
 
 /* Options column: predictable width, calm spacing, primary action pinned. */
 html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] { display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--line); padding: 1.25rem 1.25rem 0; }
-html .sf-workspace[data-adaptive-workspace].preview-workspace [data-workspace-body] { grid-template-columns: minmax(0, 1fr) var(--calm-inspector-w); }
-html .sf-workspace[data-adaptive-workspace].action-workspace [data-workspace-body],
-html .sf-workspace[data-adaptive-workspace].action-workspace[data-workspace-mode='canvas'] [data-workspace-body] { grid-template-columns: minmax(0, 1fr) var(--calm-inspector-w); }
-html .sf-workspace[data-adaptive-workspace].no-conversion-options [data-workspace-body] { grid-template-columns: minmax(0, 1fr); }
-html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] :is(h2, h3, legend) { font-size: .8125rem; font-weight: 700; letter-spacing: -.005em; color: var(--ink); }
+/* Two columns only from tablet width; phones keep the components' one-column
+   tabs (a global two-column rule squeezed the PDF preview to ~16px there). */
+@media (min-width: 768px) {
+  html .sf-workspace[data-adaptive-workspace].preview-workspace [data-workspace-body] { grid-template-columns: minmax(0, 1fr) var(--calm-inspector-w); }
+  html .sf-workspace[data-adaptive-workspace].action-workspace [data-workspace-body],
+  html .sf-workspace[data-adaptive-workspace].action-workspace[data-workspace-mode='canvas'] [data-workspace-body] { grid-template-columns: minmax(0, 1fr) var(--calm-inspector-w); }
+  html .sf-workspace[data-adaptive-workspace].no-conversion-options [data-workspace-body] { grid-template-columns: minmax(0, 1fr); }
+}
+html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] :is(h2, h3, legend) { font-size: .9375rem; font-weight: 700; letter-spacing: 0; color: var(--ink); }
 html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] :is(label, .text-muted, small) { color: var(--ink-2); }
 html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] details > summary { color: var(--ink-2); font-weight: 600; }
 html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] :is(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea) { border-color: var(--line-strong); background: var(--surface); border-radius: var(--r-sm); }
@@ -106,8 +110,22 @@ html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[ty
 }
 html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[type='submit']:hover:not(:disabled) { background: var(--action-hover); }
 html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] button[type='submit']:disabled { opacity: .45; }
+/* Tools whose primary is a plain button inside an action bar pin the bar instead,
+   matching the surface it scrolls over (options column or canvas). */
+html .sf-workspace[data-adaptive-workspace] [data-resize-actionbar] { position: sticky; bottom: 0; z-index: 2; padding-block: .75rem; background: var(--surface); box-shadow: 0 -1.25rem 1.25rem -.25rem var(--surface); }
+html .sf-workspace[data-adaptive-workspace] [data-background-actionbar] { position: sticky; bottom: 0; z-index: 2; padding-block: .75rem; background: var(--calm-canvas); box-shadow: 0 -1.25rem 1.25rem -.25rem var(--calm-canvas); }
 html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector]::after { content: ''; display: block; flex: none; height: 1.25rem; }
 html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] > * { flex: none; }
+
+/* Type inside the workspace: nothing under 14px, no squeezed tracking, no all-caps micro labels,
+   numbers in the body face. Captions sit with the thing they describe. */
+html .sf-workspace[data-adaptive-workspace] :is(.text-xs, .text-\[9px\], .text-\[10px\], .text-\[11px\], .text-\[12px\], .text-\[13px\], small) { font-size: .875rem; line-height: 1.5; letter-spacing: 0; }
+html .sf-workspace[data-adaptive-workspace] .text-sm { font-size: .9375rem; line-height: 1.55; letter-spacing: 0; }
+html .sf-workspace[data-adaptive-workspace] :is(.tracking-tight, .tracking-tighter, .tracking-wide, .tracking-wider, .tracking-widest, [class*='tracking-[']) { letter-spacing: 0; }
+html .sf-workspace[data-adaptive-workspace] .uppercase { text-transform: none; }
+html .sf-workspace[data-adaptive-workspace] .font-mono { font-family: inherit; font-variant-numeric: tabular-nums; }
+html .sf-workspace[data-adaptive-workspace] :is([data-pdf-active-title], [data-pdf-preview-title], [data-pdf-workspace-summary]) { text-align: center; }
+html .sf-workspace[data-adaptive-workspace] #merge-minimum { padding: .75rem 1.25rem 0; text-align: center; }
 
 /* Result: stays in the workspace, quiet surface, clear actions. */
 html .sf-workspace[data-adaptive-workspace] .sf-workspace__surface > [data-workspace-result] { max-height: 15rem; background: var(--surface); border-top: 1px solid var(--line); }
@@ -125,6 +143,10 @@ html .sf-workspace[data-adaptive-workspace] [data-workspace-confirm-discard] { b
   html .sf-workspace[data-adaptive-workspace] .sf-workspace__filename::before { display: none; }
   html .sf-workspace[data-adaptive-workspace] .sf-workspace__identity { display: block; }
   html .sf-workspace[data-adaptive-workspace] [data-workspace-inspector] { border-left: 0; }
+  /* With phone tabs showing, the Canvas and Pages tabs hide the options panel.
+     The calm display:flex above otherwise re-showed it and squeezed the canvas
+     (Resize image collapsed to its padding). Tab-less canvas tools keep options. */
+  html .sf-workspace[data-adaptive-workspace][data-workspace-mode='canvas']:is([data-mobile-view='canvas'], [data-mobile-view='pages']):has([data-workspace-mobile-nav]:not([hidden])) [data-workspace-inspector] { display: none; }
   html .sf-workspace[data-adaptive-workspace][data-workspace-mode='quick'] { padding: 0; }
   html .sf-workspace[data-adaptive-workspace][data-workspace-mode='quick'] .sf-workspace__surface { width: 100vw; height: 100dvh; max-height: none; border: 0; border-radius: 0; box-shadow: none; }
 }

@@ -64,3 +64,26 @@ test('range errors, invalid browser constraints and engine-dependent limits reje
  await form('page-numbers',{pages:'5'});await assert.rejects(numberPdfPages(await source(),await options('page-numbers')),/selection/);
  await form('page-numbers',{skip:4});await assert.rejects(numberPdfPages(await source(),await options('page-numbers')),/at least one/);
 });
+
+// Resize "Print size" and the size limit travel from the real form into the real image engine.
+test('resize print size and size limit reach the image engine as pixels, DPI and bytes',async()=>{
+ const {processImage}=await import('../core/images.mjs');const sharp=(await import('sharp')).default;
+ const photo=await sharp({create:{width:1600,height:1000,channels:3,background:'#6b8cae'}}).composite([{input:Buffer.from('<svg width="1600" height="1000"><circle cx="800" cy="500" r="380" fill="#e8c170"/><rect x="100" y="100" width="300" height="200" fill="#2a3d55"/></svg>')}]).jpeg({quality:95}).toBuffer();
+ await form('resize-image');await page.evaluate(()=>processing.syncProcessingOptions(document.querySelector('form')));// the app syncs once after rendering
+ await page.locator('[name="sizeBy"][value="print"]').check();await page.evaluate(()=>processing.syncProcessingOptions(document.querySelector('form')));
+ assert.equal(await page.locator('[data-print-pixels]').textContent(),'= 413 × 531 px');
+ await page.locator('[name="format"]').selectOption('jpeg');await page.locator('[name="maxSize"]').fill('50');await page.evaluate(()=>processing.syncProcessingOptions(document.querySelector('form')));
+ const parsed=await options('resize-image');
+ assert.deepEqual([parsed.width,parsed.height,parsed.dpi,parsed.maxBytes,parsed.fit,parsed.allowEnlargement,parsed.quality],[413,531,300,50000,'cover',true,90]);
+ const result=await processImage(photo,{action:'resize',...parsed});
+ const meta=await sharp(result.bytes).metadata();
+ assert.deepEqual([meta.width,meta.height,meta.density],[413,531,300]);assert.ok(result.bytes.length<=50000,`size ${result.bytes.length}`);
+ // Percent and pixel modes are unchanged by the new fields.
+ await page.locator('[name="sizeBy"][value="percent"]').check();await page.locator('[name="maxSize"]').fill('');await page.evaluate(()=>processing.syncProcessingOptions(document.querySelector('form')));
+ assert.deepEqual(Object.keys(await options('resize-image')).sort(),['fit','format','percent','quality']);
+ // Compress image: a limit alone (no width) is accepted by the engine and honoured.
+ await form('compress-image',{maxSize:'0.03'});await page.locator('[name="maxUnit"]').selectOption('MB');await page.evaluate(()=>processing.syncProcessingOptions(document.querySelector('form')));
+ const compress=await options('compress-image');assert.deepEqual(compress,{quality:90,maxBytes:30000});
+ const smaller=await processImage(photo,{action:'compress',...compress});assert.ok(smaller.bytes.length<=30000,`compressed ${smaller.bytes.length}`);
+ assert.equal(await page.locator('[name="quality"]').isDisabled(),true);
+});

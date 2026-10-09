@@ -38,6 +38,7 @@ const steps = [
     <h1 class="t-h1 tool-hero__title" data-testid="tool-title"><span class="line-reveal"><span class="line-reveal__inner" style="--i:0">{words.n}</span></span></h1>
     <p class="t-lead tool-hero__lead enter" style="--d:1" data-testid="tool-lead">{words.t}</p>
   </div> : <>
+    <details class="tool-about container" data-testid="tool-about"><summary class="t-h3 tool-about__summary">{copy.sectionTitle}</summary>
     <section class="section section--ruled how" aria-labelledby="how-title" data-testid="how-it-works">
       <div class="reveal container" data-inview="false">
         <p class="eyebrow">{t('peek.howTitle')}</p>
@@ -51,6 +52,7 @@ const steps = [
         <div class="tool-guide__body">{copy.paragraphs.map((paragraph) => <p>{paragraph}</p>)}{copy.note && <p class="opt-note opt-note--info"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>{copy.note}</span></p>}</div>
       </div>
     </section>}
+    </details>
     {hasFaq && <section class="section section--ruled faq" id="faq" aria-labelledby="faq-title" data-testid="tool-faq">
       <div class="container"><div class="faq__grid"><h2 id="faq-title" class="t-h2">{content.home.faqTitle}</h2><div class="faq__list">
         {faqs.map((faq, index) => <div class="faq__item" data-open={index === 0 ? 'true' : 'false'}><h3><button type="button" id={`faq-q-${index}`} class="faq__q" aria-expanded={index === 0 ? 'true' : 'false'} aria-controls={`faq-a-${index}`} data-testid={`faq-question-${index}`}>{faq.question}<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="faq__icon" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></h3><div id={`faq-a-${index}`} role="region" aria-labelledby={`faq-q-${index}`} class="faq__panel" data-testid={`faq-answer-${index}`}><div><p>{faq.answer}</p></div></div></div>)}

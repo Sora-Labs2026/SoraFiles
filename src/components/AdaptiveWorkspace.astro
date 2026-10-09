@@ -184,6 +184,35 @@ const { id, mode, title, resetTarget, canvasControls = true, class: className = 
       if (target instanceof HTMLElement) target.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     }));
 
+    // Phones: the tool's main action stays in the bottom bar on every tab, so a
+    // first-time user never has to discover the Options tab to finish. It opens
+    // Options (where progress, errors and the download appear) and runs the real
+    // button, mirroring its label and enabled state.
+    const primary = workspace.querySelector('[data-workspace-primary]');
+    if (mobileNav && !mobileNav.hidden && primary instanceof HTMLButtonElement) {
+      const proxy = document.createElement('button');
+      proxy.type = 'button'; proxy.dataset.mobilePrimary = ''; proxy.className = 'sf-workspace__mobile-primary';
+      // Writes only real changes: the observer also sees the proxy, so an
+      // unconditional write would re-trigger it forever.
+      const sync = () => {
+        const label = primary.textContent.replace(/\s+/g, ' ').trim() || 'Continue';
+        const hidden = primary.hidden || Boolean(primary.closest('[hidden]:not([data-adaptive-workspace])'));
+        if (proxy.textContent !== label) proxy.textContent = label;
+        if (proxy.disabled !== primary.disabled) proxy.disabled = primary.disabled;
+        if (proxy.hidden !== hidden) proxy.hidden = hidden;
+      };
+      sync();
+      new MutationObserver(sync).observe(workspace, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['disabled', 'hidden'] });
+      proxy.addEventListener('click', () => {
+        if (primary.disabled) return;
+        mobileNav.querySelector('[data-mobile-panel="inspector"]')?.click();
+        const form = primary.form;
+        if (form && !form.checkValidity()) { requestAnimationFrame(() => form.reportValidity()); return; }
+        primary.click();
+      });
+      mobileNav.append(proxy);
+    }
+
     workspace.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -243,8 +272,21 @@ const { id, mode, title, resetTarget, canvasControls = true, class: className = 
     [data-workspace-mode='preview'][data-mobile-view='canvas'] :global([data-workspace-inspector]) { display: none !important; }
     [data-workspace-mode='preview'][data-mobile-view='inspector'] :global([data-workspace-source]), [data-workspace-mode='preview'][data-mobile-view='inspector'] :global([data-workspace-canvas]) { display: none !important; }
     .sf-workspace__mobile-nav { display: grid; grid-template-columns: repeat(3,1fr); gap: .35rem; padding: .45rem max(.6rem, env(safe-area-inset-right)) max(.45rem, env(safe-area-inset-bottom)) max(.6rem, env(safe-area-inset-left)); border-top: 1px solid var(--color-line); background: var(--color-surface); }
-    .sf-workspace__mobile-nav button { min-height: 2.75rem; border-radius: .65rem; touch-action: manipulation; font-size: .75rem; font-weight: 700; color: var(--color-muted); }
+    .sf-workspace__mobile-nav button { min-height: 2.75rem; border-radius: .65rem; touch-action: manipulation; font-size: .875rem; font-weight: 700; color: var(--color-muted); }
     .sf-workspace__mobile-nav button[aria-current='page'] { color: var(--color-blue); background: var(--color-blue-soft); }
+        /* The primary action is created by script (the scoped `button` rule never reaches it). It takes a
+       full-width row of its own above the tabs, so it never shares space with them or wraps. */
+    .sf-workspace__mobile-nav :global(.sf-workspace__mobile-primary) { grid-column: 1 / -1; order: -1; min-height: 3rem; border-radius: .8rem; font-size: 1rem; font-weight: 700; touch-action: manipulation; padding-inline: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--action, var(--color-blue)); color: var(--on-action, #fff); }
+    .sf-workspace__canvas-controls .sf-workspace__zoom { display: none; }
+    .sf-workspace__mobile-nav :global(.sf-workspace__mobile-primary:disabled) { opacity: .45; }
+    [data-mobile-view='inspector'] .sf-workspace__mobile-nav :global(.sf-workspace__mobile-primary) { display: none; }
+    .sf-workspace :global(input:not([type='range']):not([type='checkbox']):not([type='radio']):not([type='color'])), .sf-workspace :global(select), .sf-workspace :global(textarea) { font-size: 16px !important; }
+    .sf-workspace :global(button), .sf-workspace :global(a), .sf-workspace :global(input[type='range']) { touch-action: manipulation; }
+  }
+
+  /* Touch tablets use the two-column layout but Safari still zooms into fields
+     smaller than 16px, so every touch screen gets the phone field size. */
+  @media (pointer: coarse) {
     .sf-workspace :global(input:not([type='range']):not([type='checkbox']):not([type='radio']):not([type='color'])), .sf-workspace :global(select), .sf-workspace :global(textarea) { font-size: 16px !important; }
     .sf-workspace :global(button), .sf-workspace :global(a), .sf-workspace :global(input[type='range']) { touch-action: manipulation; }
   }

@@ -923,7 +923,7 @@
             "href": "/pdf",
             "text": "Compress PDF with SoraFiles"
           },
-          " uses a strength control. It first attempts a structural reduction. Additional image compression is limited to eligible documents without detected native text or protected content; the current checks compare candidate pages and keep an accepted smaller result. Signed documents are returned unchanged."
+          " uses a strength control and an optional maximum file size. It first attempts a structural reduction. Additional image compression skips protected content, and for documents with detected native text a smaller result is kept only when every page still has the same text. The checks compare candidate pages and keep an accepted smaller result. Signed documents are returned unchanged."
         ]
       },
       {

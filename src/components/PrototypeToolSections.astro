@@ -5,8 +5,20 @@ interface Props {id:string;part:'hero'|'after'}
 const {id,part}=Astro.props;
 const page=pages[id as keyof typeof pages];
 if(!page)throw Error('Missing prototype tool: '+id);
+// The how-to and guide copy stay in the page (and in search), folded behind one summary line so the
+// tool itself is what the page is about; the FAQ keeps its own open section.
+function fold(html:string){
+ const how=html.match(/<section class="section section--ruled how"[\s\S]*?<\/section>/);
+ const guide=html.match(/<section class="section section--ruled tool-guide"[\s\S]*?<\/section>/);
+ if(!how)return html;
+ const title=(guide??how)[0].match(/<h2[^>]*>([\s\S]*?)<\/h2>/)?.[1]??'About this tool';
+ const block=`<details class="tool-about container" data-testid="tool-about"><summary class="t-h3 tool-about__summary">${title}</summary>${how[0]}${guide?guide[0]:''}</details>`;
+ // Remove the original guide first; the block inserted in place of the how-section carries its own copy.
+ return (guide?html.replace(guide[0],''):html).replace(how[0],block);
+}
+const html=part==='after'?fold(page.after):page[part];
 ---
-<Fragment set:html={page[part]}/>
+<Fragment set:html={html}/>
 <script>
 document.querySelectorAll<HTMLElement>('[data-prototype-tool] .reveal').forEach(el=>{const observer=new IntersectionObserver(([entry])=>{if(entry.isIntersecting){el.dataset.inview='true';observer.disconnect()}},{threshold:.15,rootMargin:'0px 0px -8% 0px'});observer.observe(el)});
 document.querySelectorAll<HTMLButtonElement>('[data-prototype-tool] .faq__q').forEach(button=>button.addEventListener('click',()=>{const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));button.closest<HTMLElement>('.faq__item')!.dataset.open=String(open)}));

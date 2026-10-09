@@ -407,6 +407,9 @@
 }
 
 :where([data-prototype-tool]) .crumbs__link {
+  display: inline-flex;
+  min-height: 1.5rem;
+  align-items: center;
   border-radius: var(--r-xs);
   transition: color var(--dur-1) var(--ease-std);
 }
@@ -555,7 +558,7 @@
   bottom: var(--s-2);
   padding: 2px 7px;
   border-radius: var(--r-pill);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: var(--fw-medium);
   color: var(--ink-2);
   background: var(--sunken);
@@ -2204,3 +2207,11 @@
   padding-bottom: var(--s-5);
   color: var(--ink-2);
 }
+
+/* Tool pages: the how-to and guide copy sit folded behind one summary line; the FAQ stays open. */
+:where([data-prototype-tool]) .tool-about { margin-top: var(--s-6, 2rem); border-top: 1px solid var(--line); }
+:where([data-prototype-tool]) .tool-about__summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3.25rem; padding: .75rem 0; color: var(--ink); }
+:where([data-prototype-tool]) .tool-about__summary::-webkit-details-marker { display: none; }
+:where([data-prototype-tool]) .tool-about__summary::after { content: '+'; font-size: 1.5rem; font-weight: 300; color: var(--ink-3); }
+:where([data-prototype-tool]) .tool-about[open] .tool-about__summary::after { content: '−'; }
+:where([data-prototype-tool]) .tool-about > .section { border-top: 0; }

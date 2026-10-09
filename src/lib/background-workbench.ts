@@ -107,7 +107,10 @@ export function initializeBackgroundWorkbench(root: HTMLElement) {
       download.href = resultUrl; download.download = `${safeOutputStem(source.name, 'image')}-transparent.png`;
       progress.hidden = true; result.hidden = false;
       q('comparison').after(result); viewButtons[1].disabled = false; setView('after');
-      result.focus({ preventScroll: true }); q('editor').scrollTo({ top: 0 });
+      // After a wait of minutes the Download must be on screen: bring the result card just into view (keeping as
+      // much of the image visible as possible) instead of parking the editor at the top with the card below the fold.
+      result.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      result.focus({ preventScroll: true });
     } catch { if (jobs.current(token)) { fail(messages.failed); progress.hidden = true; } }
     finally { if (jobs.current(token)) setBusy(false); }
   });

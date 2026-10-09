@@ -29,12 +29,12 @@ export function convertOfficeToPdf(
       if (error) reject(error); else resolve(bytes!);
     };
     const abort = () => finish(new DOMException('Cancelled', 'AbortError'));
-    const timer = setTimeout(() => finish(new Error('officeFailed')), 240_000);
+    const timer = setTimeout(() => finish(new Error('officeSlow')), 540_000);
     options.signal?.addEventListener('abort', abort, { once: true });
     channel.port1.onmessage = ({ data }) => {
       if (data.type === 'progress') options.onProgress?.(data.stage);
       else if (data.type === 'result' && data.bytes instanceof Uint8Array && data.bytes.byteLength) finish(undefined, data.bytes);
-      else if (data.type === 'error') finish(new Error(data.code === 'officeIsolation' ? 'officeIsolation' : 'officeFailed'));
+      else if (data.type === 'error') finish(new Error(['officeIsolation', 'officeSlow'].includes(data.code) ? data.code : 'officeFailed'));
     };
     frame.addEventListener('load', () => {
       if (!settled) frame.contentWindow?.postMessage({ type: 'office-convert', file, kind }, location.origin, [channel.port2]);
