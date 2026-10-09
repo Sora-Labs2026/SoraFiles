@@ -98,7 +98,7 @@ for (const deviceName of deviceNames) {
       if (only && !only.includes(tool)) continue;
       const context = await browser.newContext({ ...options, acceptDownloads: true, serviceWorkers: 'block', colorScheme: dark ? 'dark' : 'light' });
       // Third parties stay out of the test, except the hosts that serve the LibreOffice and background-removal engines.
-      const engineHosts = new Set(['127.0.0.1', 'cdn.zetaoffice.net', 'business-cdn.zetaoffice.net', 'staticimgly.com']);
+      const engineHosts = new Set([new URL(base).hostname, 'cdn.zetaoffice.net', 'business-cdn.zetaoffice.net', 'staticimgly.com']);
       await context.route((url) => /^https?:$/.test(url.protocol) && !engineHosts.has(url.hostname), (route) => route.abort());
       if (dark) await context.addInitScript(() => { try { localStorage.setItem('sora-theme', 'dark'); } catch {} });
       const page = await context.newPage();
